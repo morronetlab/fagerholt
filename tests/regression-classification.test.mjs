@@ -26,7 +26,7 @@ test('4th: overdue headings do not become empty tasks; loose learning-goal secti
  ]);
  const data=result([pdf],'4');
  assert.ok(!data.homework.some(x=>/^\s*til torsdag\s*:\s*$/i.test(x.text)));
- assert.ok(data.homework.some(x=>/Til torsdag.*Les side 35/i.test(x.text)));
+ assert.ok(data.homework.some(x=>/Til torsdag/i.test(x.subject)&&/Les side 35/i.test(x.text)));
  assert.ok(data.homework.some(x=>/Les side 22/i.test(x.text)));
  assert.deepEqual(data.learningGoals,['Jeg kan forklare en multiplikasjon']);
  assert.ok(data.notices.some(x=>/foreldremøtet/i.test(x)));
@@ -116,7 +116,7 @@ test('4th: homework due-date grid without separate title extracts assignments, n
    token('Læringsmål',20,250),token('Jeg kan lese',20,280)
  ]);
  const data=result([pageData],'4');
- assert.ok(data.homework.some(x=>/Til torsdag: Gjør oppgave 12/i.test(x.text)));
+ assert.ok(data.homework.some(x=>/Til torsdag/i.test(x.subject)&&/Gjør oppgave 12/i.test(x.text)));
  assert.ok(data.homework.every(x=>!/^Til\s+\w+:\s*$/.test(x.text)));
  assert.deepEqual(data.learningGoals,['Jeg kan lese']);
 });
