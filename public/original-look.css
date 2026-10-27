@@ -91,3 +91,8 @@ footer{border-color:var(--line);color:#92a49c}
 @media(max-width:900px){.shell{padding:0 20px 50px}.topbar{height:86px}.columns{grid-template-columns:minmax(0,1fr) 340px;gap:14px}.panel{padding:21px}}
 @media(max-width:700px){.shell{width:auto;padding:0 14px 48px}.topbar{height:73px;align-items:center}.brand-mark{height:36px;width:36px;font-size:19px;border-radius:11px}.logo strong{font-size:21px}.logo small{font-size:8px}.week-badge{font-size:12px;padding:8px 10px}.hero{grid-template-columns:1fr;gap:12px;margin-top:14px}.hero>div:first-child{padding:23px;min-height:135px}.hero-actions{margin-top:15px}.weather{min-height:130px;padding:18px 21px}.weather-main{margin:0}.columns{grid-template-columns:1fr;gap:0}.weekdays{gap:4px}.day{min-height:70px;padding:10px 3px}.day span{font-size:12px}.day strong{font-size:11px}.homework .items{grid-template-columns:1fr}.gate{padding:27px 20px;margin:25px auto 45px}.grades{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:420px){.hero h1{font-size:33px}.logo strong{font-size:19px}.header-actions{gap:6px}.ghost{padding:8px 9px;font-size:11px}.day span{font-size:10.5px}.day strong{font-size:10px}.gate h1{font-size:32px}.checkrow{overflow-wrap:anywhere}}
+
+/* Keep weekly subject overview separate from a genuine theme / optional mission. */
+.subjects-panel{margin-top:19px;background:#fff}
+.subjects-panel .items{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.subject-item{margin:0;padding:12px 15px;border-radius:13px;background:#f4f6f2;color:#45695b;font-size:13px;line-height:1.45}

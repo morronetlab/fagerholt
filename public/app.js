@@ -73,9 +73,11 @@ function renderContent(){
   const missionText=features.optionalMission?(p?.optionalMission||''):'';
   const isSuggestedMission=Boolean(missionText&&!p?.optionalMission);
   const hasMission=Boolean(missionText);
-  $('theme-panel').hidden=!(hasTheme||hasMission||subjects.length);
+  $('theme-panel').hidden=!(hasTheme||hasMission);
+  $('subjects-panel').hidden=!subjects.length;
+  $('subjects-list').innerHTML=subjects.map(x=>`<p class="subject-item">${safe(x)}</p>`).join('');
   $('theme-content').hidden=!hasTheme;$('theme-content').textContent=p?.weekTheme||'';
-  $('mission-slot').innerHTML=(subjects.length?`<div class="subjects"><strong>Fag denne uka</strong><ul>${subjects.map(x=>`<li>${safe(x)}</li>`).join('')}</ul></div>`:'')+(!hasMission?'':
+  $('mission-slot').innerHTML=(!hasMission?'':
     isChecked('mission',0)?`<button type="button" class="mission-done" id="undo-mission">✓ Frivillig oppdrag fullført · Vis igjen</button>`:
     `<div class="mission"><div><strong>🌟 Frivillig oppdrag ${isSuggestedMission?'· forslag fra Ukeplanen':''}</strong><p>${safe(missionText)}</p></div><label class="mission-check"><input type="checkbox" data-check="mission" data-index="0" data-progress-day="all"> Fullført</label></div>`);
   const notices=p?.notices||[];

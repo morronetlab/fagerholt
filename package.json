@@ -1,10 +1,17 @@
 {
   "name": "ukeplanen-white-label",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "Konfigurerbar ukeplan for MinSkole, med ett valgt klassetrinn.",
-  "engines": {"node": ">=20"},
-  "scripts": {"test": "node --test tests/*.test.mjs", "check": "npm test"},
-  "dependencies": {"pdfjs-dist": "4.10.38"}
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "npm test"
+  },
+  "dependencies": {
+    "pdfjs-dist": "4.10.38"
+  }
 }

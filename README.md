@@ -1,6 +1,6 @@
 # Ukeplanen – white-label prototype
 
-Ukeplanen er et eget prototypeprosjekt for `morronetlab/fagerholt`. `morronetlab/skolesekken` er kun en referanse og endres ikke. Det er ikke opprettet noen Netlify-side eller pushet noen kode.
+Ukeplanen er et eget prototypeprosjekt for `morronetlab/fagerholt`. `morronetlab/skolesekken` er kun en referanse og endres ikke. Endringer utvikles i GitHub-grenen `prototype/ukeplanen-white-label`; ingen Netlify-side er opprettet.
 
 ## Test forhåndsvisningen
 
@@ -37,7 +37,7 @@ Ingen personlig gruppe, aktiviteter, barnenavn eller sjåførrotasjoner er konfi
 ## Kvalitet og kjente begrensninger
 
 - Automatisk PDF-tolkning er heuristisk: tabeller og overskrifter varierer mellom klassetrinn. Manglende eller uleselige planer gir ærlig status; innhold fylles aldri fra eksempeldata.
-- Oppgaven «Frivillig oppdrag» vises når PDF-en inneholder et oppdrag. Dersom PDF-en bare inneholder et tema, kan klienten vise et **tydelig merket forslag fra Ukeplanen**, ikke en skolebeskjed.
+- Oppgaven «Frivillig oppdrag» vises når PDF-en inneholder et oppdrag. Det opprettes ikke fiktive oppdrag, temaer eller lekser.
 - Ikke alle klassetrinn publiserer ny ukeplan i tide. Systemet viser ikke en eldre PDF som om den gjaldt aktuell uke.
 - Avkrysning lagres lokalt per skole, klassetrinn og ISO-uke. Den sendes ikke til serveren.
 - Testene bruker mockede HTML-/PDF-data; de beviser **ikke** at PDF-uttrekk fungerer for alle sju publiserte PDF-formater.
@@ -51,7 +51,7 @@ Ingen personlig gruppe, aktiviteter, barnenavn eller sjåførrotasjoner er konfi
 - Kontroller PDF-nedlasting og MET-kontrakten på lokal Netlify CLI / deploy preview.
 - Test mobil, nettbrett, desktop, tilgjengelighet og state ved natt-/ukeskifte.
 - Bekreft at bare `public/` publiseres og at `docs/forhandsvisning.html` **ikke** serveres fra produksjonskatalogen.
-- Innfør ikke Netlify-deploy eller GitHub-push uten eksplisitt beslutning.
+- Netlify-deploy og sammenslåing til `main` skal ikke skje uten egen beslutning.
 
 ## Oppdatering v0.2 – 27. oktober 2026
 
@@ -74,3 +74,15 @@ Ved gjennomgang 27.10.2026 var den tilgjengelige 4.-trinns-PDF-en fra uke 25
 ikke mulig å åpne (404), 5. trinns tidligere PDF for uke 46 kunne inspiseres
 som indeksert PDF-tekst, og den tilgjengelige 6.-trinnssiden viste ingen
 ukeplan-PDF. Ingen av disse brukes som live-data i appen.
+
+
+## Oppdatering v0.3 – kategorisering og 4.–6. trinn
+
+- Frister som `Til torsdag:` vises aldri alene som en lekse. Etterfølgende oppgavetekst kobles til fristen der teksten kan leses.
+- Innhold fanget under `Læringsmål` fordeles mer presist: reelle kompetansemål beholdes, lesing/oppgaver går til lekser, utstyrsinstruksjoner til pakkeliste, og praktiske beskjeder til beskjeder/dag.
+- Dagsmeldinger som `Onsdag: ...` eller `Tirsdag – ...` flyttes til riktig dagsprogram. Ukespesifikke fag listes i et eget panel, ikke som «Ukas tema».
+- Utvidet støtte for 5. trinns `Dag / På skolen / I lekse`, inkludert en defensiv reserveparser for fragmenterte PDF-overskrifter.
+- Leksematriser med `Til tirsdag`/`Til torsdag` støttes også uten tittelen `Ukas utfordringer`, samtidig som ordinære ukedagstabeller ikke blir tolket som lekser.
+- 24 isolerte automatiske Node-tester, deriblant nye regresjonstester for problemene i 4.–6. trinn.
+
+**Datagrunnlag/begrensning:** Tilgjengelig nettindeksert Fagerholt-ukeplan for 5. trinn (uke 46, eldre) er brukt som formatreferanse. PDF for 4. trinn (uke 25) var ikke tilgjengelig (HTTP 404), og den tilgjengelige 6.-trinnssiden manglet ukeplan-PDF. Testene bruker derfor representative PDF-tekstkoordinater, ikke komplette faktiske PDF-er for disse trinnene. Før produksjon må resultater fra nåværende PDF-er verifiseres manuelt mot originalene.
