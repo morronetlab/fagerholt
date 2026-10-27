@@ -13,7 +13,7 @@ function allowedUrl(url,requirePdf=false){
 }
 async function load(url,{pdf=false,fetchImpl=fetch}={}){
   if(!allowedUrl(url,pdf)) throw new Error('Ikke godkjent kildeadresse');
-  const res=await fetchImpl(url,{headers:HEADERS,redirect:'follow',signal:AbortSignal.timeout(11000)});
+  const res=await fetchImpl(url,{headers:HEADERS,redirect:'follow',signal:AbortSignal.timeout(pdf ? 24000 : 12000)});
   if(!res.ok)throw new Error(`Skolens nettsted svarte ${res.status}`);
   if(!allowedUrl(res.url||url,pdf))throw new Error('Uventet videresending fra skolekilden');
   const limit=pdf?MAX_PDF_BYTES:1_000_000;
@@ -53,6 +53,13 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
       if(!pdf)return reply({...base,status:'unpublished',pdf:null,warning:`Ukeplan for uke ${week} er ikke publisert som PDF på trinnsiden.`});
       const bytes=await load(pdf.url,{pdf:true,fetchImpl});
       const pages=await parsePdfPages(bytes);
+      const textChars=pages.reduce((count,page)=>count+(page.items||[]).reduce((n,item)=>n+String(item.text||'').trim().length,0),0);
+      // A scanned/image-only PDF has no searchable text and cannot be trusted as a parsed plan.
+      if(textChars<20){
+        return reply({...base,pdf:pdf.url,publishedWeek:pdf.week,status:'unreadable',parsedFromPdf:false,
+          warning:'Ukeplan-PDF-en har ikke et lesbart tekstlag. Åpne original-PDF-en; den kan være skannet og kreve OCR.',
+          days:{},homework:[],learningGoals:[],notices:[],subjects:[],weekTheme:null,optionalMission:null,everyday:[]});
+      }
       return reply({...base,...analyzePdfPages(pages,grade,pdf.url,week,year,source),publishedWeek:pdf.week});
     }catch(error){
       console.error('Failed to fetch published school PDF:',grade,error);
