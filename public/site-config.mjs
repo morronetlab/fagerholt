@@ -17,6 +17,8 @@ export const siteConfig = Object.freeze({
   },
   brand: { title: 'Ukeplanen', subtitle: 'En enklere skoleuke', color: '#225e52', accent: '#ed9561' },
   weather: { lat: 58.14671, lon: 7.9956, label: 'Ved skolen', attribution: 'Meteorologisk institutt / Yr' },
-  allowedSourceHosts: ['www.minskole.no', 'minskole.no'],
+  // MinSkole uses both minskole.no and minskule.no as official hostnames.
+  // Whitelist explicit origins so a PDF redirect cannot fetch from an arbitrary host.
+  allowedSourceHosts: ['www.minskole.no', 'minskole.no', 'www.minskule.no', 'minskule.no'],
   features: {weather: true, rainReminder: true, learningGoals: true, optionalMission: true, theme: true}
 });

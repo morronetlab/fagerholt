@@ -99,8 +99,8 @@ function renderWeather(){
   $('rain-reminder').hidden=!rainy;
   $('rain-reminder').textContent=rainy?'☔ Regntøy kan være lurt å pakke for denne dagen.':'';
 }
-async function fetchJSON(url){
-  const controller=new AbortController();const t=setTimeout(()=>controller.abort(),13000);
+async function fetchJSON(url,timeoutMs=13000){
+  const controller=new AbortController();const t=setTimeout(()=>controller.abort(),timeoutMs);
   try{
     const response=await fetch(url,{signal:controller.signal});
     const data=await response.json();if(!response.ok)throw new Error(data.warning||data.error||`Feil ${response.status}`);
@@ -113,7 +113,8 @@ async function reload(){
   state.plan=null;state.planError=null;state.weather=null;state.weatherError=null;state.loading=true;
   renderContent();
   const grade=state.grade;
-  const requests=[fetchJSON(`/api/plan?grade=${encodeURIComponent(grade)}`)];
+  // Week-plan PDFs may be several MB; do not cancel the client before the server timeout.
+  const requests=[fetchJSON(`/api/plan?grade=${encodeURIComponent(grade)}`,32000)];
   if(features.weather)requests.push(fetchJSON('/api/weather'));
   const [plan,weather]=await Promise.allSettled(requests);
   if(id!==state.requestId||state.grade!==grade)return;

@@ -86,3 +86,15 @@ ukeplan-PDF. Ingen av disse brukes som live-data i appen.
 - 24 isolerte automatiske Node-tester, deriblant nye regresjonstester for problemene i 4.–6. trinn.
 
 **Datagrunnlag/begrensning:** Tilgjengelig nettindeksert Fagerholt-ukeplan for 5. trinn (uke 46, eldre) er brukt som formatreferanse. PDF for 4. trinn (uke 25) var ikke tilgjengelig (HTTP 404), og den tilgjengelige 6.-trinnssiden manglet ukeplan-PDF. Testene bruker derfor representative PDF-tekstkoordinater, ikke komplette faktiske PDF-er for disse trinnene. Før produksjon må resultater fra nåværende PDF-er verifiseres manuelt mot originalene.
+
+## Uke 44: direkte kildelenker for 4. og 6. trinn (rapportert 27. oktober 2026)
+
+De følgende filnavnene er kun **regresjonstestdata**, ikke produksjonskonfigurasjon.
+Appen oppdager fortsatt PDF fra riktig trinnside basert på aktuell ISO-uke.
+
+- 4. trinn: `https://www.minskole.no/fagerholt/seksjon/22637` — «Ukeplan uke 44», eksempel-PDF med filnavnet `854-fagerholt-Ukeplan-uke-44-93c849fa-ad01.pdf`.
+- 6. trinn: `https://www.minskole.no/fagerholt/seksjon/22639` — «Ukeplan uke 44, 6. trinn», eksempel-PDF med filnavnet `854-fagerholt-_Ukeplan-uke-44-c435a642-e540.pdf`.
+
+`tests/week44-official-links.test.mjs` kontrollerer kildevalg, eksakte URL-varianter, avvisning av eldre uker og at en PDF uten tekstlag ikke presenteres som en korrekt tolket plan. `allowedSourceHosts` inkluderer nå begge offisielle MinSkole-domenene, `minskole.no` og `minskule.no`. Store PDF-er får lengre HTTP-/klient-timeout.
+
+**Gjenstår:** Direkte nedlasting av disse to PDF-ene var ikke tilgjengelig i arbeidsmiljøet. Derfor er **innholdet i uke-44-dokumentene ennå ikke verifisert**; verken dagsprogram, lekser, beskjeder eller pakkeliste kan erklæres korrekt ut fra URL-tester alene. Hvis PDF-ene er tilgjengelige lokalt, kjør f.eks. `npm install && node scripts/inspect-pdf.mjs 4 /path/uke44.pdf 44 2026`, og sammenlign JSON-feltene med den visuelle original-PDF-en. Dersom dokumentet er skannet uten tekstlag, må OCR vurderes før innhold kan trekkes ut.
