@@ -1,6 +1,6 @@
 # Ukeplanen – white-label prototype
 
-Ukeplanen er et eget prototypeprosjekt for `morronetlab/fagerholt`. `morronetlab/skolesekken` er kun en referanse og endres ikke. Det er ikke opprettet noen Netlify-side. Prototypen er pushet til egen GitHub-gren for gjennomgang.
+Ukeplanen er et eget prototypeprosjekt for `morronetlab/fagerholt`. `morronetlab/skolesekken` er kun en referanse og endres ikke. Det er ikke opprettet noen Netlify-side eller pushet noen kode.
 
 ## Test forhåndsvisningen
 
@@ -51,4 +51,26 @@ Ingen personlig gruppe, aktiviteter, barnenavn eller sjåførrotasjoner er konfi
 - Kontroller PDF-nedlasting og MET-kontrakten på lokal Netlify CLI / deploy preview.
 - Test mobil, nettbrett, desktop, tilgjengelighet og state ved natt-/ukeskifte.
 - Bekreft at bare `public/` publiseres og at `docs/forhandsvisning.html` **ikke** serveres fra produksjonskatalogen.
-- GitHub-push til prototypegren er godkjent. Opprettelse av Netlify-prosjekt og produksjonssetting krever egen beslutning.
+- Innfør ikke Netlify-deploy eller GitHub-push uten eksplisitt beslutning.
+
+## Oppdatering v0.2 – 27. oktober 2026
+
+Designet er oppdatert i `public/original-look.css` for å følge formspråket fra
+originale Skolesekken 3.x: lys grønn spotlight, kompakt værkort, samlet dagvelger,
+tydelig dagsprogram, mintgrønn pakkeliste og gul temaseksjon.
+
+PDF-parseren er utvidet med disse strukturelle variantene:
+
+- Fem parallelle dagskolonner, som i enkelte ukeplaner for småskolen.
+- Tre kolonner: **Dag / På skolen / I lekse** (observasjon fra Fagerholt 5. trinns ukeplan uke 46).
+- Vertikale dagsblokker med `Mandag på skolen` / `Hjemmelekse mandag`.
+- Lekseskjema med ukedager som kolonner (`Ukas utfordringer` / `Lekser til`).
+- Pakkeliste ut fra **eksplisitte** PDF-instruksjoner (`Ta med`, `Husk gymtøy`, `Husk innesko`), ikke fra antatt utstyr ut fra fag.
+
+Testgrunnlag: 17 automatiserte tester, inkludert syntetiske koordinatfiksturer som
+gjenskaper de ulike PDF-tabellene. Dette er **ikke** en garanti for alle publiserte PDF-er.
+Kontroll av faktiske PDF-filer er nødvendig før produksjonssetting.
+Ved gjennomgang 27.10.2026 var den tilgjengelige 4.-trinns-PDF-en fra uke 25
+ikke mulig å åpne (404), 5. trinns tidligere PDF for uke 46 kunne inspiseres
+som indeksert PDF-tekst, og den tilgjengelige 6.-trinnssiden viste ingen
+ukeplan-PDF. Ingen av disse brukes som live-data i appen.

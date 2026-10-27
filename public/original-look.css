@@ -1,0 +1,94 @@
+/* Ukeplanen v0.2 — design language adapted from Skolesekken 3.x.
+   The single-grade view and white-label API remain independent. */
+:root{
+  --bg:#f6f7f3;--ink:#263d3a;--muted:#78918c;--line:#e7ebe5;
+  --forest:#225e52;--mint:#e4f2e9;--sun:#ffe8c8;--orange:#ed9561;
+  --shadow:0 12px 35px rgba(37,70,58,.05);
+  --brand:var(--forest);--accent:#ed9561;
+}
+body{background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;}
+.shell{max-width:1170px;width:auto;padding:0 30px 70px;margin:auto}
+.topbar{height:100px;padding:0;border:0;gap:16px}
+.logo{gap:12px;color:var(--ink)}
+.brand-mark{width:42px;height:42px;border-radius:14px;background:var(--forest);box-shadow:0 6px 12px rgba(45,85,65,.13);color:#fff;font-size:23px}
+.logo strong{font-size:24px;font-weight:870;letter-spacing:-1.35px}
+.logo .logo-accent{color:var(--orange)}
+.logo small{font-size:10px;font-weight:800;letter-spacing:.18em;color:#8da49b;margin-top:2px}
+.date-chip{font-size:13px;font-weight:700;color:#768c84;text-transform:none}
+.week-badge{background:#e2f0e7;color:#285f53;border-radius:13px;padding:9px 14px;font-size:14px;letter-spacing:.02em}
+.ghost,.small-button{background:#fff;border:1px solid var(--line);padding:11px 15px;border-radius:12px;color:#426f61;font-weight:800;font-size:12px;min-height:42px}
+.ghost:hover,.small-button:hover{background:#e9f4ec}
+/* Gate is its own first-run page, styled consistently with the original app. */
+.gate{max-width:760px;margin:5vh auto 9vh;padding:42px;background:linear-gradient(130deg,#eaf5e9,#f4f8ed 70%,#fff);border:1px solid #e3eee0;box-shadow:var(--shadow);border-radius:28px}
+.gate-icon{background:var(--forest);color:#fff;border-radius:21px}
+.gate h1{font-weight:880;letter-spacing:-1.7px}
+.gate .eyebrow{color:#528575}
+.gate .grade{background:#fff;border-color:#e4ede5;box-shadow:0 6px 14px rgba(37,70,58,.03)}
+.gate .grade:hover{background:#e8f5ed;border-color:#71a08b}
+.gate .grade strong{color:var(--forest)}
+/* Primary header reproduces Skolesekken's wide green spotlight and small weather tile. */
+.hero{grid-template-columns:minmax(0,1fr) 242px;gap:14px;margin:15px 0 20px}
+.hero>div:first-child{position:relative;overflow:hidden;background:linear-gradient(108deg,#eaf5e9,#f4f8ed);border:1px solid #e3eee0;border-radius:25px;min-height:163px;padding:27px 32px;align-self:stretch}
+.hero>div:first-child::after{content:'✳';position:absolute;right:-6px;top:-53px;font-size:170px;line-height:1;color:#b7d5bf;opacity:.2;pointer-events:none}
+.hero h1{font-size:clamp(30px,4vw,45px);line-height:1.14;letter-spacing:-1.2px;font-weight:900;margin:0 0 6px;position:relative;z-index:1}
+.hero .eyebrow{font-size:10px;color:#528575;font-weight:900;letter-spacing:.15em;margin-bottom:8px;position:relative;z-index:1}
+.hero .lead{font-size:14px;line-height:1.6;color:#59796d;position:relative;z-index:1;margin:0}
+.hero-actions{position:relative;z-index:1;margin-top:19px;gap:9px}
+.hero-actions a{font-size:12px;color:#3f7665}
+.state-pill{font-size:11px;font-weight:850;border-radius:9px;padding:8px 10px;background:#e3f0e6}
+.state-warning{background:#fff0d9;color:#94611d}.state-error{background:#fce6e1;color:#ad4637}
+.weather{background:#fff;border:1px solid #e2ece4;min-height:163px;box-shadow:none;border-radius:25px;padding:21px 23px;display:flex;flex-direction:column;justify-content:center;gap:5px}
+.weather .eyebrow{font-size:10px;letter-spacing:.09em;color:#769289;margin:0 0 7px}
+.weather-main{margin:0;gap:10px}.weather-icon{font-size:33px}
+.weather-main strong{font-size:26px;line-height:1.2;letter-spacing:-1px;font-weight:880}
+.weather-desc{font-size:12px;color:#768b82;line-height:1.4}
+.source-note{font-size:10px;color:#91a49b;margin:4px 0 0}
+.alert,.rain-alert{border-radius:14px;font-size:13px}
+/* Distinct original-style single white weekday selector. */
+.weekdays{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:22px;padding:8px;gap:6px;margin:0 0 22px}
+.day{min-height:81px;background:transparent;border:0;border-radius:16px;padding:12px 8px;align-items:center;justify-content:center;gap:5px;color:#607d72}
+.day span{font-weight:850;font-size:14px}.day strong{font-size:12px;font-weight:600}
+.day:hover:not(.active){background:#f0f6f0}
+.day.active{background:#286457;box-shadow:0 5px 12px rgba(34,94,82,.19);color:#fff;border:0}
+.day.past:not(.active){opacity:.56}
+/* As in Skolesekken: big program at left, mint packing card at right. */
+.columns{grid-template-columns:minmax(0,1.15fr) minmax(315px,.85fr);gap:20px}
+.panel{border-radius:23px;border:1px solid var(--line);box-shadow:var(--shadow);padding:26px;margin-bottom:20px}
+.panel-head{margin-bottom:20px}.panel-head h2{font-size:22px;letter-spacing:-.8px;font-weight:860}
+.panel-head .eyebrow{font-size:10px;font-weight:900;letter-spacing:.16em;color:#6a9184;margin-bottom:6px}
+.section-icon{height:46px;width:46px;display:grid;place-items:center;border-radius:16px;background:#e8f4ee;font-size:24px;padding:0}
+.event{display:grid;grid-template-columns:50px 1fr;gap:14px;align-items:start;border:0;padding:10px 0;font-size:14px;line-height:1.52;font-weight:680}
+.event+.event{padding-top:17px;border-top:1px solid #eef0eb}
+.event-dot{font-size:0;width:50px;height:50px;margin:0;background:#e8f4ee;border-radius:17px;display:grid;place-items:center;color:#276355}
+.event-dot::after{content:'📚';font-size:23px}
+.event:nth-child(3n+2) .event-dot{background:#fff1e3}.event:nth-child(3n+2) .event-dot::after{content:'✏️'}
+.event:nth-child(3n) .event-dot{background:#efe8ff}.event:nth-child(3n) .event-dot::after{content:'🎨'}
+.event small{font-size:12px;font-weight:850;color:#447466;margin-bottom:3px}
+.bag{background:#eef7f2;border:1px solid #dfede4}
+.bag .section-icon{background:#d8ebe0}
+.bag .panel-head{margin-bottom:17px}
+.bag .checkrow{background:#fff;border:1px solid #e7eee8;border-radius:14px;margin:7px 0;min-height:55px;padding:12px 14px;font-weight:780}
+.bag .empty{background:#ffffffb0;border-color:#d8e9df}
+.bag .checkrow.done{opacity:.64}
+/* Homework is a light, spacious secondary section rather than another heavy card. */
+.homework{margin:2px 0 19px;padding:23px 25px;border-radius:22px}
+.homework .items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 13px}
+.checkrow{min-width:0;background:#fafbf9;border:1px solid #edf1ec;border-radius:13px;padding:13px 14px;align-items:flex-start;line-height:1.55;font-size:13px}
+.checkrow input{width:19px;height:19px;margin:1px 0 0;accent-color:#338465}
+.subject{font-size:11px;border-radius:8px;padding:3px 7px;background:#e5f1e9;color:#235e51;margin-right:6px}
+.theme{background:linear-gradient(125deg,#fff8df 0%,#fffdf3 55%,#fff 100%);border:1px solid #f2dfb3;border-radius:23px;padding:25px 27px}
+.theme .section-icon{background:#fff0bd}.theme .eyebrow{color:#98753d}
+.theme h2{color:#5d461e}.theme #theme-content{font-size:17px;font-weight:800;color:#5d461e;line-height:1.5}
+.mission{background:#fff;border:1px solid #f2e3bc;border-radius:19px;padding:19px 21px;margin-top:19px}
+.mission strong{font-size:14px;color:#936521}.mission p{font-size:15px;color:#493a22;line-height:1.5;font-weight:680}
+.mission-check{background:#e4f2e9;padding:9px 12px;border-radius:11px;color:#276348;font-weight:800}
+.mission-done{background:#e3f4e6;border-radius:13px;padding:14px 16px;color:#276348}
+.subjects{border-color:#f2e3bc}
+.details{border-color:var(--line);border-radius:20px;box-shadow:none}
+.details summary{font-weight:850;padding:19px 23px}
+.details-content{color:#728b80;padding:0 23px 16px}
+.disclaimer{color:#8ba198;font-size:12px}
+footer{border-color:var(--line);color:#92a49c}
+@media(max-width:900px){.shell{padding:0 20px 50px}.topbar{height:86px}.columns{grid-template-columns:minmax(0,1fr) 340px;gap:14px}.panel{padding:21px}}
+@media(max-width:700px){.shell{width:auto;padding:0 14px 48px}.topbar{height:73px;align-items:center}.brand-mark{height:36px;width:36px;font-size:19px;border-radius:11px}.logo strong{font-size:21px}.logo small{font-size:8px}.week-badge{font-size:12px;padding:8px 10px}.hero{grid-template-columns:1fr;gap:12px;margin-top:14px}.hero>div:first-child{padding:23px;min-height:135px}.hero-actions{margin-top:15px}.weather{min-height:130px;padding:18px 21px}.weather-main{margin:0}.columns{grid-template-columns:1fr;gap:0}.weekdays{gap:4px}.day{min-height:70px;padding:10px 3px}.day span{font-size:12px}.day strong{font-size:11px}.homework .items{grid-template-columns:1fr}.gate{padding:27px 20px;margin:25px auto 45px}.grades{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:420px){.hero h1{font-size:33px}.logo strong{font-size:19px}.header-actions{gap:6px}.ghost{padding:8px 9px;font-size:11px}.day span{font-size:10.5px}.day strong{font-size:10px}.gate h1{font-size:32px}.checkrow{overflow-wrap:anywhere}}

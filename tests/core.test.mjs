@@ -82,5 +82,5 @@ test('realistic Fagerholt-style headings keep school data in correct sections',(
  assert.deepEqual(data.subjects,['Matte Multiplikasjon']);
  assert.deepEqual(data.homework.map(x=>x.text),['Norsk: Les teksten høyt']);
  assert.ok(data.notices.some(x=>x.includes('Svømming')));
- assert.equal(data.everyday.length,0); // do not invent packing data from general reminders
+ assert.deepEqual(data.everyday.map(item=>item.label),['Gymsko']); // explicit 'Husk innesko/gymsko' is a packing instruction
 });
