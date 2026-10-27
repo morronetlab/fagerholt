@@ -1,501 +1,111 @@
 <!doctype html>
 <html lang="nb">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#f6f8f5">
-  <meta name="description" content="En enkel ukeplan for skolehverdagen, fra skolens publiserte PDF-er.">
-  <title>Ukeplanen · Skolehverdagen på ett sted</title>
-  <style>:root{--primary:#315f54;--accent:#faac72;--paper:#fff;--bg:#f6f8f5;--ink:#233b35;--muted:#71847a;--line:#e5ece6;--shadow:0 14px 38px rgba(33,70,51,.055)}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}h1,h2,h3,p{margin:0}button{font:inherit;cursor:pointer}a{color:inherit}button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid #e49a59;outline-offset:3px}button:disabled{cursor:not-allowed}.shell{max-width:1160px;margin:auto;padding:0 28px 32px}*[hidden]{display:none!important}
-.site-header{height:98px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e4ebe4;gap:16px}.brand{display:flex;align-items:center;gap:12px}.brand-symbol{width:45px;height:45px;display:grid;place-items:center;border-radius:15px;background:var(--primary);color:#fff;font-size:31px;line-height:1}.brand-words{display:flex;flex-direction:column;gap:3px}.brand-words strong{font-size:21px;letter-spacing:-.9px}.brand-words span{font-size:12px;color:var(--muted);font-weight:650}.header-right{display:flex;align-items:center;gap:16px}.date-label{font-size:12px;color:#81978c;font-weight:700}.secondary-button{border:1px solid #dbe5dc;background:white;color:#33574c;padding:11px 15px;border-radius:13px;font-size:12px;font-weight:850;min-height:43px;white-space:nowrap;transition:background .15s}.secondary-button:hover{background:#eaf3ea}.page-footer{padding:23px 0 8px;display:flex;align-items:center;justify-content:space-between;gap:12px;color:#91a399;font-size:11px}
-.onboarding{min-height:min(670px,calc(100vh - 180px));display:grid;grid-template-columns:1fr 1.03fr;align-items:center;gap:clamp(22px,5vw,75px);padding:80px 3px}.welcome-copy{max-width:505px}.eyebrow{display:flex;align-items:center;gap:9px;letter-spacing:.17em;font-size:11px;font-weight:900;color:#699180}.eyebrow-dot{width:9px;height:9px;background:#f5ad76;border-radius:50%}.welcome-copy h1{font-size:clamp(45px,5vw,69px);line-height:1.075;letter-spacing:-3px;margin:24px 0;color:#294c40}.welcome-copy h1 em{font-style:normal;color:#d58051}.welcome-copy>p{font-size:17px;color:#718478;line-height:1.75;max-width:420px}.welcome-hint{margin-top:37px;display:flex;align-items:center;gap:12px;font-size:12px;line-height:1.6;color:#728a7d;font-weight:650;max-width:380px}.welcome-hint span{background:#e9f2e9;padding:9px;border-radius:13px;font-size:17px}.choose-panel{background:var(--paper);border:1px solid #e4ebe4;border-radius:29px;padding:27px;box-shadow:0 25px 70px #3b6b3a0c}.choose-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:23px;color:#718c7d;font-size:11px;font-weight:850;letter-spacing:.075em}.choose-heading span:last-child{font-size:12px;letter-spacing:0;color:#97a99f}.grade-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.grade-option{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;aspect-ratio:.95;border:1.5px solid #e8eee8;border-radius:21px;background:#fbfcfa;color:#395b50;padding:10px;transition:transform .15s,border-color .15s,background .15s,box-shadow .15s}.grade-option:hover{transform:translateY(-3px);border-color:#9fc7ae;background:#f1f8f1;box-shadow:0 9px 21px #234a300e}.grade-option .number{font-size:32px;font-weight:870;line-height:1}.grade-option .ordinal{font-size:11px;font-weight:780;color:#708b7f}.grade-option:nth-child(7){background:#edf5ee;border-color:#d4e5d8}.choose-foot{font-size:11px;font-weight:650;color:#84988c;line-height:1.6;margin:23px 3px 0}
-.dashboard-hero{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:14px;margin:27px 0 17px}.daily-greeting{background:linear-gradient(116deg,#eaf3e8 0%,#f1f7ee 67%,#fcfaf1 100%);min-height:194px;padding:25px 30px;border-radius:24px;border:1px solid #dfebe0;position:relative;overflow:hidden}.daily-greeting::after{content:'✳';position:absolute;font-size:170px;color:#c4dac4;opacity:.25;right:11px;top:-37px;pointer-events:none}.hero-grade{position:relative;display:flex;align-items:center;gap:14px;margin:12px 0 14px}.hero-emoji{font-size:36px;display:grid;place-items:center;background:#fff8f0;border-radius:15px;min-width:58px;height:58px;box-shadow:0 5px 10px #244e2410}.hero-grade h1{font-size:clamp(24px,3.5vw,35px);letter-spacing:-1.6px;line-height:1.12}.hero-grade p{font-size:13px;line-height:1.55;margin-top:8px;color:#5b796a}.hero-tags{display:flex;gap:6px;position:relative}.hero-tags span{font-weight:900;font-size:10px;color:#426e5b;padding:6px 10px;border-radius:9px;background:#dcebdd;letter-spacing:.065em}.weather-card{background:#fff;border-radius:24px;border:1px solid #e1e9e3;padding:22px;display:flex;flex-direction:column;min-width:0}.weather-label{display:flex;align-items:center;justify-content:space-between;gap:5px;font-size:10px;color:#718b7f;font-weight:850;letter-spacing:.075em}.weather-label small{font-size:10px;color:#9aaea2;letter-spacing:0}.weather-main{display:flex;align-items:center;gap:10px;margin:17px 0 7px}.weather-main span{font-size:35px}.weather-main strong{font-size:32px;letter-spacing:-.8px}.weather-card p{font-size:12px;color:#668176;line-height:1.5}.weather-details{margin-top:auto;padding-top:12px;font-size:11px;color:#93a79a;line-height:1.5}.rain-note{padding:17px 21px;border-radius:17px;border:2px solid #e9af65;background:#fff1d7;display:flex;align-items:center;gap:15px;color:#7b4c21;margin-bottom:16px}.rain-note .rain-icon{font-size:28px}.rain-note strong{font-size:16px}.rain-note small{display:block;font-size:12px;line-height:1.5;margin-top:2px;font-weight:550}
-.days-nav{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;background:white;padding:7px;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);margin-bottom:18px}.day-button{background:transparent;border:0;border-radius:14px;padding:13px 8px;min-height:78px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:#67867a}.day-button strong{font-size:14px}.day-button span{font-size:11px;font-weight:680}.day-button.selected{background:var(--primary);color:#fff;box-shadow:0 7px 14px #2b5e4d24}.day-button:disabled{color:#b6c2b9;background:#f9faf8}.content-grid{display:grid;grid-template-columns:minmax(0,1.16fr) minmax(0,.84fr);gap:17px;align-items:start}.panel{padding:25px 27px;border-radius:23px;border:1px solid var(--line);background:white;box-shadow:var(--shadow);min-width:0}.panel-eyebrow{color:#76a18a;font-size:10px;letter-spacing:.13em;font-weight:900;margin-bottom:9px}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.panel h2{font-size:22px;letter-spacing:-.8px}.small-count,.end-badge{font-size:11px;color:#527563;font-weight:850;background:#ebf4ed;padding:7px 9px;border-radius:10px;white-space:nowrap}.event-list{margin-top:22px;display:grid;gap:15px}.event-row{display:flex;gap:14px;align-items:flex-start;padding-bottom:14px;border-bottom:1px solid #eef1ed}.event-row:last-child{border:0;padding-bottom:0}.event-icon{background:#ecf4ec;min-width:48px;height:48px;display:grid;place-items:center;border-radius:14px;font-size:21px}.event-time{font-size:11px;font-weight:900;color:#4c7e67;margin-bottom:5px}.event-title{font-size:14px;font-weight:850}.event-desc{font-size:12px;line-height:1.5;color:#7b9083;margin-top:4px}.empty{color:#8aa095;background:#f8faf8;border-radius:13px;padding:18px 16px;font-size:13px;line-height:1.6}
-.bag-panel{background:#f0f8f2}.bag-intro{color:#86a08d;font-size:12px;margin-top:11px}.progress-track{height:7px;background:#d9e9df;border-radius:10px;overflow:hidden;margin:17px 0}.progress-fill{height:100%;background:#338e68;width:0;transition:width .2s}.pack-row,.homework-row{display:flex;align-items:flex-start;gap:11px;background:#fff;border:1px solid #e1eae2;padding:13px 14px;border-radius:13px;cursor:pointer;min-height:54px;margin-bottom:8px;font-size:13px;font-weight:730;line-height:1.5}.pack-row input,.homework-row input{width:19px;height:19px;margin:1px 0 0;accent-color:var(--primary);flex:0 0 19px;cursor:pointer}.pack-row.is-done,.homework-row.is-done{background:#e7f3e8;color:#658273}.pack-row.is-done .pack-label,.homework-row.is-done .hw-text{text-decoration:line-through}.pack-label small,.hw-text small{display:block;font-weight:500;color:#91a69a;font-size:11px;margin-top:3px}.homework-panel{margin-top:17px}.homework-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.subject-button{border:1px solid #e2eae4;border-radius:11px;background:#f9fbf8;padding:9px 12px;font-weight:800;font-size:12px;color:#5d7567}.subject-button.selected{background:#dff0e5;border-color:#b9d9c1;color:#2e6751}.homework-items{margin-top:14px}.homework-row{background:#fbfcfa}.homework-row .hw-text{overflow-wrap:anywhere;font-weight:720}.homework-row .hw-text small{font-weight:670}
-.theme-panel{background:linear-gradient(120deg,#fff8e5,#fffcf4);border:1px solid #efe3ba;border-radius:22px;padding:21px 24px;margin-top:18px;box-shadow:var(--shadow)}.theme-eyebrow{font-size:10px;font-weight:900;letter-spacing:.1em;color:#9d7d41}.theme-content{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:17px;align-items:center;margin-top:10px}.theme-title{display:flex;gap:12px;align-items:center}.theme-symbol{font-size:33px}.theme-title h2{font-size:27px;overflow-wrap:anywhere}.theme-title p{font-size:12px;color:#a18153;margin-top:5px}.mission-box{border-radius:16px;padding:17px 19px;background:#fff;border:1px solid #f3e9cf}.mission-box .mission-label{font-size:11px;font-weight:900;color:#957036}.mission-box p{font-size:16px;font-weight:790;margin:10px 0 12px;line-height:1.45}.mission-button{background:var(--primary);color:#fff;border:0;border-radius:11px;padding:11px 16px;font-weight:880;min-height:43px}.mission-done{color:#29714e;font-size:13px;font-weight:850}.mission-sub{color:#a19d90;font-size:10px;margin-top:10px}.theme-panel.complete{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:15px 22px}.theme-panel.complete .theme-content{margin-top:0;display:block}.theme-panel.complete .theme-symbol{font-size:23px}.theme-panel.complete .theme-title h2{font-size:18px}.theme-panel.complete .theme-eyebrow{display:none}.theme-panel.complete .mission-box{display:none}.compact-actions{display:flex;align-items:center;gap:14px}.compact-actions strong{color:#2f7a57;font-size:12px}
-.details-card{background:#fff;border:1px solid var(--line);border-radius:19px;padding:0 21px;margin-top:14px}.details-card summary{display:flex;justify-content:space-between;align-items:center;list-style:none;padding:19px 0;cursor:pointer;font-weight:850;font-size:14px}.details-card summary::-webkit-details-marker{display:none}.details-card summary b{font-size:11px;color:#789485;background:#eff5ef;border-radius:7px;padding:3px 7px}.details-content{border-top:1px solid #edf0ec;padding:17px 0;color:#6d8778;font-size:13px;line-height:1.65}.notice-item{padding:10px 0;border-bottom:1px solid #eef1ed}.notice-item:last-child{border:0}.notice-item strong{display:block;color:#375a4b;font-size:13px}.learning-goals{margin-top:11px}.goal-list{margin:0;padding-left:22px;display:grid;gap:10px}.source-footer{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-top:19px;color:#90a398;font-size:11px}.source-footer a{color:#34705a;text-decoration:none;font-weight:800}.source-footer a:hover{text-decoration:underline}.warnings:empty{display:none}.warning{padding:12px 15px;border-radius:13px;background:#fff1df;border:1px solid #eddaaa;color:#816132;font-size:12px;line-height:1.5;margin:16px 0}.warning.danger{background:#fff0eb;border-color:#edc5b8;color:#974f38}
-@media(max-width:850px){.onboarding{grid-template-columns:1fr;min-height:0;gap:30px;padding:54px 3px}.welcome-copy h1{margin:16px 0}.welcome-hint{margin-top:23px}.choose-panel{max-width:640px;width:100%}.content-grid{grid-template-columns:1fr}.theme-content{grid-template-columns:1fr}.daily-greeting{min-height:170px}}
-@media(max-width:600px){.shell{padding:0 14px 25px}.site-header{height:79px}.brand-symbol{width:40px;height:40px;font-size:25px}.brand-words strong{font-size:19px}.brand-words span{font-size:10px}.date-label{display:none}.secondary-button{font-size:11px;padding:8px 10px;min-height:38px}.onboarding{padding:37px 0 22px;gap:27px}.welcome-copy h1{font-size:48px;letter-spacing:-2px}.welcome-copy>p{font-size:14px}.welcome-hint{font-size:11px}.choose-panel{padding:17px;border-radius:22px}.grade-grid{gap:8px}.grade-option{border-radius:14px;padding:7px;min-height:85px;aspect-ratio:auto}.grade-option .number{font-size:27px}.grade-option .ordinal{font-size:10px}.choose-heading{margin-bottom:17px}.dashboard-hero{grid-template-columns:minmax(0,1fr) 126px;gap:8px;margin:15px 0 13px}.daily-greeting{padding:16px;min-height:157px;border-radius:18px}.daily-greeting:after{font-size:88px;right:-12px;top:-12px}.hero-grade{gap:8px;margin:11px 0}.hero-emoji{font-size:23px;min-width:38px;height:38px;border-radius:11px}.hero-grade h1{font-size:21px;letter-spacing:-.6px}.hero-grade p{font-size:10px}.eyebrow{font-size:9px;letter-spacing:.08em}.hero-tags span{padding:4px 6px;font-size:9px}.weather-card{padding:12px;border-radius:18px}.weather-label{font-size:9px;display:block}.weather-label small{display:none}.weather-main{gap:3px;margin:11px 0}.weather-main span{font-size:22px}.weather-main strong{font-size:21px}.weather-card p{font-size:10px}.weather-details{font-size:9px}.rain-note{padding:12px;gap:9px}.rain-note strong{font-size:14px}.rain-note small{font-size:11px}.days-nav{padding:5px;gap:3px;border-radius:15px}.day-button{min-height:65px;padding:8px 1px;border-radius:10px;gap:4px}.day-button strong{font-size:12px}.day-button span{font-size:10px}.panel{padding:19px 17px;border-radius:19px}.panel h2{font-size:19px}.content-grid{gap:12px}.homework-panel{margin-top:12px}.theme-panel{padding:15px;margin-top:12px}.theme-title h2{font-size:22px}.mission-box{padding:15px}.mission-box p{font-size:15px}.theme-panel.complete{flex-wrap:wrap}.compact-actions{width:100%;justify-content:space-between}.source-footer{flex-direction:column;align-items:flex-start;gap:8px}.page-footer{font-size:10px}}
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f8f9f5"><meta name="description" content="Ukeplan, lekser og pakkeliste fra skolens offisielle PDF.">
+  <title>Ukeplanen – interaktiv demo med eksempeldata</title><style>:root{--brand:#215d59;--accent:#f6b64b;--ink:#243432;--muted:#6a7977;--bg:#f5f7f3;--line:#e3e9e4;--radius:22px;font:16px/1.5 system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--ink);background:var(--bg)}
+*{box-sizing:border-box}body{margin:0}button,input{font:inherit}button{cursor:pointer}a{color:var(--brand)}button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:3px}[hidden]{display:none!important}.shell{width:min(1130px,calc(100% - 48px));margin:0 auto}.topbar{display:flex;justify-content:space-between;align-items:center;padding:25px 0;border-bottom:1px solid var(--line);gap:18px}.logo{display:flex;gap:11px;text-decoration:none;align-items:center;color:var(--ink)}.brand-mark{display:grid;place-items:center;width:47px;height:47px;background:#e5f1e9;border-radius:15px;font-size:26px}.logo strong{font-size:22px;letter-spacing:-1px;display:block;line-height:1.15}.logo small{font-size:10px;letter-spacing:1.5px;font-weight:750;color:var(--muted)}.header-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.date-chip{color:var(--muted);font-size:13px;text-transform:capitalize}.week-badge{background:#e7ede8;color:var(--brand);font-size:11px;font-weight:800;letter-spacing:1px;border-radius:20px;padding:8px 12px}.ghost,.small-button{border:1px solid #cddad3;border-radius:11px;padding:9px 13px;background:white;color:var(--brand);font-size:13px;font-weight:650}.gate{text-align:center;max-width:680px;margin:8vh auto 11vh;background:white;border:1px solid var(--line);border-radius:30px;box-shadow:0 12px 36px #1c35241a;padding:45px 40px}.gate-icon{margin:auto;background:#e3f3e9;width:76px;height:76px;border-radius:24px;display:grid;place-items:center;font-size:42px}.eyebrow{font-size:11px;letter-spacing:1.7px;font-weight:800;color:var(--brand);margin:0 0 8px}.gate .eyebrow{margin:16px 0 6px}h1{font-size:clamp(30px,4.5vw,46px);letter-spacing:-2px;line-height:1.13;margin:0 0 14px}h2{font-size:21px;letter-spacing:-.65px;margin:0;line-height:1.2}.lead{font-size:16px;color:#576c66;margin:6px 0 10px}.muted{font-size:14px;color:var(--muted);margin-top:0}.grades{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin:32px 0 20px}.grade{background:#f7f9f7;border:1.5px solid #dce6df;border-radius:17px;min-height:89px;transition:background .15s,transform .15s,border .15s}.grade:hover{background:#e8f6ed;border-color:var(--brand);transform:translateY(-2px)}.grade strong{font-size:28px;display:block;color:var(--brand);line-height:1.2}.grade span{font-size:12px;color:var(--muted)}.fineprint{font-size:12px;color:var(--muted)}.hero{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:24px;margin:37px 0 20px}.hero>div:first-child{align-self:center;padding:12px 0}.hero-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:26px;font-size:13px}.hero-actions a{text-decoration:none;font-weight:600}.state-pill{display:inline-flex;align-items:center;padding:7px 11px;border-radius:20px;font-size:12px;background:#e5f4e9;color:#206344;font-weight:800}.state-warning{background:#fff0d9;color:#9f6e16}.state-error{background:#fce6e1;color:#ad4637}.weather{border-radius:23px;background:#e4f0ec;padding:22px 26px;min-height:196px}.weather .eyebrow{font-size:10px}.weather-main{display:flex;align-items:center;gap:18px;margin-top:11px}.weather-icon{font-size:53px}.weather-main strong{font-size:44px;letter-spacing:-2px}.weather-desc{font-size:14px;margin:0}.source-note{font-size:11px;color:#638077;margin:15px 0 0}.alert,.rain-alert{border-radius:14px;padding:13px 17px;margin-bottom:17px;background:#fff0d9;color:#805b1f;font-size:14px;border:1px solid #f2dfc1}.rain-alert{background:#e1edf4;color:#2a596d;border-color:#c6dde8}.weekdays{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:6px 0 26px}.day{display:flex;flex-direction:column;text-align:center;padding:14px;border:1px solid #e1e8e1;border-radius:15px;background:white;color:#697a70}.day span{font-weight:800;font-size:13px}.day strong{font-weight:550;font-size:12px}.day.active{background:var(--brand);color:white;border-color:var(--brand);box-shadow:0 6px 18px #225f593a}.day.past:not(.active){opacity:.65}.columns{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}.panel{background:white;border:1px solid var(--line);border-radius:var(--radius);padding:25px;min-width:0;margin-bottom:20px;box-shadow:0 3px 12px #1a352508}.panel-head{display:flex;justify-content:space-between;align-items:start;margin-bottom:22px;gap:10px}.section-icon{font-size:24px;background:#f2f7ed;border-radius:13px;padding:7px 10px}.bag .section-icon{background:#fff2de}.items{display:flex;flex-direction:column;gap:8px}.event{display:flex;align-items:flex-start;gap:12px;padding:13px 6px;border-bottom:1px solid #edf1ec;font-size:14px}.event:last-child{border:0}.event-dot{color:#91b4a0;font-size:11px;margin-top:5px}.event small{font-size:11px;color:var(--muted);font-weight:750;display:block}.checkrow{display:flex;gap:13px;align-items:center;padding:13px 11px;background:#f8faf8;border:1px solid #edf1ec;border-radius:11px;font-size:14px;cursor:pointer;min-height:49px}.checkrow input,.mission-check input{accent-color:var(--brand);width:19px;height:19px;flex-shrink:0;cursor:pointer}.checkrow.done .checktext{text-decoration:line-through;color:#8d9b91}.subject{font-size:11px;display:inline-block;border-radius:7px;background:#e2ede8;color:var(--brand);font-weight:800;margin-right:10px;padding:3px 8px}.empty{font-size:14px;color:var(--muted);border:1px dashed #dbe4dc;background:#fbfcfa;border-radius:11px;padding:17px;margin:0}.homework{margin-top:0}.theme{background:#fffaf0;border-color:#f4e8cf}.theme #theme-content{margin:0;color:#69563c;white-space:pre-wrap}.mission{display:flex;justify-content:space-between;align-items:center;gap:16px;border-top:1px solid #eddcba;margin-top:17px;padding-top:17px}.mission strong{font-size:14px}.mission p{font-size:14px;margin:5px 0 0}.mission-check{display:flex;gap:7px;align-items:center;font-size:13px;white-space:nowrap}.mission-done{display:block;background:#e2f1e7;color:var(--brand);border:0;border-radius:11px;padding:10px 14px;font-weight:700;font-size:13px;margin-top:15px;width:100%;text-align:left}.details{border:1px solid var(--line);border-radius:17px;background:white;margin-bottom:13px;overflow:hidden}.details summary{cursor:pointer;font-weight:750;font-size:15px;padding:18px 22px;list-style:none;display:flex;align-items:center;gap:7px}.details summary::-webkit-details-marker{display:none}.details .chevron{margin-left:auto;font-size:23px;color:#91a29a}.details[open] .chevron{transform:rotate(180deg)}.count{background:#eef3ef;color:var(--brand);border-radius:8px;font-size:11px;padding:1px 6px}.count:empty{display:none}.details-content{padding:0 22px 17px;font-size:14px;color:#56675f}.details-content p{border-top:1px solid #eff2ed;padding-top:12px}.disclaimer{color:#778780;font-size:12px;margin:25px 0 40px}footer{border-top:1px solid var(--line);padding:24px 0 42px;color:#8b9a91;font-size:12px}
+@media(max-width:770px){.shell{width:min(100% - 30px,650px)}.topbar{align-items:flex-start}.header-actions{justify-content:flex-end}.date-chip{display:none}.hero{grid-template-columns:1fr;margin-top:26px;gap:12px}.weather{min-height:165px}.columns{grid-template-columns:1fr;gap:0}.gate{margin:24px auto 45px;padding:29px 20px}.grades{grid-template-columns:repeat(4,1fr)}.hero-actions{gap:10px}.weekdays{gap:5px}.day{padding:10px 2px}.day span{font-size:11px}.day strong{font-size:11px}.panel{padding:20px}.mission{align-items:flex-start;flex-direction:column}}
+@media(max-width:430px){.logo strong{font-size:18px}.logo small{font-size:8px}.brand-mark{width:39px;height:39px;font-size:22px}.topbar{gap:9px}.header-actions{gap:6px}.ghost{font-size:11px;padding:7px}.week-badge{font-size:10px;padding:7px}.grades{grid-template-columns:repeat(4,1fr);gap:7px}.grade{min-height:74px}.grade strong{font-size:24px}.day span{font-size:10px}.day strong{font-size:10px}}
 </style>
 </head>
 <body>
-  <div class="shell">
-    <header class="site-header">
-      <div class="brand"><div class="brand-symbol" id="brand-symbol" aria-hidden="true">✳</div>
-        <div class="brand-words"><strong id="app-name">Ukeplanen</strong><span id="school-name">Skolehverdagen på ett sted</span></div></div>
-      <div class="header-right"><span class="date-label" id="today-label"></span>
-        <button id="reset-grade" class="secondary-button" type="button" hidden>↻ Bytt klassetrinn</button></div>
-    </header>
-<div style="background:#fff2d7;border:1px solid #e8d39b;padding:10px 15px;border-radius:12px;color:#865c24;font-size:12px;font-weight:750;margin-top:14px">🧪 INTERAKTIV FORHÅNDSVISNING – Her vises eksempeldata for å teste funksjonene. Publisert versjon bruker skolens faktiske PDF-er.</div>
-
-    <section class="onboarding" id="onboarding" aria-labelledby="welcome-title">
-      <div class="welcome-copy"><span class="eyebrow"><span class="eyebrow-dot"></span> DIN SKOLEHVERDAG, LITT ENKLERE</span>
-        <h1 id="welcome-title">Hvilken klasse<br><em>går du i?</em></h1>
-        <p>Velg klassetrinnet ditt én gang. Vi finner ukeplanen fra skolens nettside og viser deg det viktigste for dagen.</p>
-        <div class="welcome-hint"><span aria-hidden="true">🔒</span> Valget lagres bare på denne enheten. Du kan endre det når som helst.</div>
-      </div>
-      <div class="choose-panel"><div class="choose-heading"><span>VELG DITT TRINN</span><span>1.–7. klasse</span></div>
-        <div class="grade-grid" id="grade-grid" role="group" aria-label="Velg klassetrinn"></div>
-        <p class="choose-foot">📖 Vi henter bare ukeplanen til klassen du velger.</p></div>
+<div class="shell">
+  <header class="topbar">
+    <a class="logo" id="home-link" href="/" aria-label="Gå til forsiden"><span class="brand-mark">🎒</span><span><strong id="brand-title">Ukeplanen</strong><small id="brand-subtitle">EN ENKLERE SKOLEUKE</small></span></a>
+    <div class="header-actions"><span class="date-chip" id="today"></span><span class="week-badge" id="week-label">UKE —</span><button id="change-grade" type="button" class="ghost" hidden>Bytt klassetrinn</button></div>
+  </header>
+  <main>
+    <section id="grade-gate" class="gate" aria-labelledby="gate-title">
+      <div class="gate-icon">🎒</div><p class="eyebrow">VELKOMMEN</p><h1 id="gate-title">Hvilken klasse går barnet i?</h1>
+      <p id="gate-school" class="lead"></p><p class="muted">Velg klassetrinn for å se ukens plan. Valget huskes på denne enheten.</p>
+      <div id="grade-choices" class="grades" aria-label="Velg klassetrinn"></div>
+      <p class="fineprint">Vi henter kun opplysninger fra skolens offisielle ukeplan for valgt klassetrinn.</p>
     </section>
-
-    <main id="dashboard" hidden>
-      <div id="warnings" role="status" aria-live="polite" class="warnings"></div>
-      <section class="dashboard-hero">
-        <div class="daily-greeting"><span class="eyebrow" id="day-eyebrow">MANDAG · UKE 44</span>
-          <div class="hero-grade"><span id="grade-emoji" class="hero-emoji">🎒</span><div><h1 id="hero-title">Klar for skoledagen?</h1><p id="hero-description">Din ukeplan, uten unødvendig leting.</p></div></div>
-          <div class="hero-tags"><span id="week-chip">UKE —</span><span id="grade-chip">—. KLASSE</span></div>
+    <div id="app-view" hidden>
+      <section class="hero">
+        <div><p class="eyebrow" id="school-name"></p><h1 id="welcome-title">Morgenklar! <span aria-hidden="true">☀️</span></h1><p class="lead" id="welcome-description">Sjekk skoledagen og pakk sekken.</p>
+          <div class="hero-actions"><span id="status-pill" class="state-pill">Henter ukeplan …</span><button type="button" id="reload" class="small-button">↻ Oppdater</button><a id="school-source" href="#" target="_blank" rel="noopener noreferrer">Skolens trinnside ↗</a></div>
         </div>
-        <aside class="weather-card" aria-label="Vær på skolen"><div class="weather-label">VÆR PÅ SKOLEN <small>08–15</small></div>
-          <div class="weather-main"><span id="weather-icon">🌤️</span><strong id="weather-temp">—°</strong></div>
-          <p id="weather-text">Henter værvarsel…</p><div id="weather-details" class="weather-details"></div>
-        </aside>
+        <aside class="weather" aria-label="Vær for valgt skoledag"><p class="eyebrow">VÆR PÅ SKOLEN · 08–15</p><div class="weather-main"><span id="weather-icon" class="weather-icon">🌤️</span><strong id="weather-temp">—</strong></div><p id="weather-desc" class="weather-desc">Henter værmelding …</p><p class="source-note">Værdata: Meteorologisk institutt / Yr</p></aside>
       </section>
-      <aside class="rain-note" id="rain-note" hidden role="status"></aside>
-      <nav class="days-nav" id="weekdays" aria-label="Velg skoledag"></nav>
-      <div class="content-grid">
-        <section class="panel day-panel" aria-labelledby="day-heading"><div class="panel-eyebrow">DAGENS PROGRAM</div>
-          <div class="panel-head"><h2 id="day-heading">Dette skjer</h2><span id="end-time" class="end-badge" hidden></span></div>
-          <div id="day-events" class="event-list"></div></section>
-        <section class="panel bag-panel" aria-labelledby="bag-heading"><div class="panel-eyebrow">FØR DU GÅR HJEMMEFRA</div>
-          <div class="panel-head"><h2 id="bag-heading">🎒 Pakk sekken</h2><span id="bag-count" class="small-count"></span></div>
-          <p class="bag-intro">Kryss av når det er lagt i sekken.</p><div class="progress-track"><div class="progress-fill" id="bag-progress"></div></div>
-          <div id="bag-items"></div></section>
+      <div id="warning-area" class="alert" role="status" aria-live="polite" hidden></div>
+      <div id="rain-reminder" class="rain-alert" role="status" hidden></div>
+      <nav class="weekdays" id="day-buttons" aria-label="Velg dag"></nav>
+      <div class="columns">
+        <section class="panel" aria-labelledby="program-title"><div class="panel-head"><div><p class="eyebrow">SKOLEDAGEN</p><h2 id="program-title">Dette skjer i dag</h2></div><span class="section-icon">📚</span></div><div id="day-program" class="items"></div></section>
+        <section class="panel bag" aria-labelledby="bag-title"><div class="panel-head"><div><p class="eyebrow">FØR DU GÅR</p><h2 id="bag-title">Pakk skolesekken</h2></div><span class="section-icon">🎒</span></div><div id="bag-list" class="items"></div></section>
       </div>
-      <section class="panel homework-panel" id="homework-section"><div class="panel-eyebrow">LITT HVER DAG</div>
-        <div class="panel-head"><h2>📚 Ukens lekser</h2><span id="homework-count" class="small-count"></span></div>
-        <div class="homework-tabs" id="homework-tabs"></div><div id="homework-items"></div></section>
-      <section class="theme-panel" id="theme-section" hidden></section>
-      <details class="details-card" id="notices-details"><summary><span>📬 Beskjeder fra skolen <b id="notice-count"></b></span><span aria-hidden="true">⌄</span></summary><div id="notices" class="details-content"></div></details>
-      <details class="details-card" id="learning-goals-details" hidden><summary><span>🎯 Læringsmål <b id="goal-count"></b></span><span aria-hidden="true">⌄</span></summary><div id="learning-goals" class="details-content"></div></details>
-      <div class="source-footer"><span id="source-note">Ukeplan hentet fra skolen · kontroller original-PDF ved tvil.</span>
-        <a href="#" id="source-link" rel="noopener noreferrer" target="_blank">Se skolens ukeplan ↗</a></div>
-    </main>
-    <footer class="page-footer"><span id="footer-school">Ukeplanen</span><span>Laget for en litt enklere morgen ☀️</span></footer>
-  </div>
-  <script>/**
- * Public white-label site configuration.
- * Change this file when deploying for another school.
- * Only public information belongs here: never API keys or credentials.
- */
-const SITE = Object.freeze({
-  id: 'fagerholt',
-  schoolName: 'Fagerholt skole',
-  appName: 'Ukeplanen',
-  tagline: 'En enklere start på skoledagen.',
-  locationName: 'Kristiansand',
-  logo: '✳',
-  colors: {primary:'#315f54', accent:'#faac72'},
-  weather: {lat:58.14671, lon:7.9956, label:'Fagerholt', externalUrl:'https://pent.no/58.14671,7.9956'},
-  pdfHosts:['minskole.no','www.minskole.no'],
-  grades: {
-    '1':'https://www.minskole.no/fagerholt/seksjon/22634',
-    '2':'https://www.minskole.no/fagerholt/seksjon/22635',
-    '3':'https://www.minskole.no/fagerholt/seksjon/22636',
-    '4':'https://www.minskole.no/fagerholt/seksjon/22637',
-    '5':'https://www.minskole.no/fagerholt/seksjon/22638',
-    '6':'https://www.minskole.no/fagerholt/seksjon/22639',
-    '7':'https://www.minskole.no/fagerholt/seksjon/22640'
-  },
-  // Optional bespoke extensions. Disabled for the shared, white-label version.
-  features:{redGroupGrade3:false,afterSchool:false}
-});
-
-const GRADES = Object.freeze(Object.keys(SITE.grades));
-const choiceStorageKey = () => `ukeplan.${SITE.id}.selected-grade.v1`;
-
-// Calendar dates are ALWAYS calculated for the school's timezone, even when a device is elsewhere.
-const DAY_MS = 86400000;
-const REFRESH_INTERVAL_MS = 60 * 60 * 1000;
-
-function norwayCalendar(referenceDate = new Date()) {
-  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Europe/Oslo', year: 'numeric', month: '2-digit', day: '2-digit'
-  }).formatToParts(referenceDate).filter(p => p.type !== 'literal').map(p => [p.type, Number(p.value)]));
-  const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
-  const dow = (date.getUTCDay() + 6) % 7; // Monday 0 … Sunday 6
-  const thursday = new Date(date);
-  thursday.setUTCDate(date.getUTCDate() - dow + 3);
-  const year = thursday.getUTCFullYear(); // ISO week year, not necessarily calendar year
-  const jan4 = new Date(Date.UTC(year, 0, 4));
-  const weekOneMonday = new Date(jan4);
-  weekOneMonday.setUTCDate(jan4.getUTCDate() - (jan4.getUTCDay() + 6) % 7);
-  const week = Math.round((date.getTime() - dow * DAY_MS - weekOneMonday.getTime()) / (7 * DAY_MS)) + 1;
-  return {date, dateKey: date.toISOString().slice(0, 10), day: Math.min(dow, 4), dow, year, week};
-}
-
-function isExpiredSchoolDay(dayIndex, todayDow) {
-  return Number.isInteger(dayIndex) && dayIndex >= 0 && dayIndex <= 4 &&
-    Number.isInteger(todayDow) && todayDow >= 0 && todayDow <= 6 && dayIndex < todayDow;
-}
-
-function hasCalendarDateChanged(previous, current) {
-  return previous.dateKey !== current.dateKey || previous.year !== current.year || previous.week !== current.week;
-}
-
-function hourlyRefreshDue(openedAtMs, currentMs, intervalMs = REFRESH_INTERVAL_MS) {
-  return currentMs - openedAtMs >= intervalMs;
-}
-
-/** Fetch JSON without leaving the UI stuck in a loading state forever. */
-class DataLoadError extends Error {
-  constructor(code, message) {
-    super(message);
-    this.name = 'DataLoadError';
-    this.code = code;
-  }
-}
-
-async function fetchJsonWithTimeout(url, {timeoutMs = 12000, cache = 'default', fetchImpl = globalThis.fetch} = {}) {
-  const controller = new AbortController();
-  let timer;
-  const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => {
-      controller.abort();
-      reject(new DataLoadError('timeout', 'Tidsavbrudd ved henting'));
-    }, timeoutMs);
-  });
-  const request = (async () => {
-    let response;
-    try {
-      response = await fetchImpl(url, {cache, signal: controller.signal});
-    } catch (err) {
-      if (controller.signal.aborted) throw new DataLoadError('timeout', 'Tidsavbrudd ved henting');
-      throw new DataLoadError('offline', 'Ingen kontakt med Netlify');
-    }
-    if (response.status === 404 || response.status === 405) {
-      throw new DataLoadError('missing_api', 'Netlify-funksjonen ble ikke funnet');
-    }
-    const type = response.headers?.get?.('content-type') || '';
-    if (type && !type.includes('application/json')) {
-      throw new DataLoadError('missing_api', 'Netlify returnerte en nettside i stedet for JSON');
-    }
-    let body;
-    try { body = await response.json(); }
-    catch { throw new DataLoadError('invalid_api', 'API-et sendte ikke gyldig JSON'); }
-    if (!response.ok) {
-      throw new DataLoadError('server', body?.warning || `API-et svarte HTTP ${response.status}`);
-    }
-    return body;
-  })();
-  // Retire an abandoned request even when a mock/proxy ignores AbortSignal.
-  // Promise.race prevents a permanently pending response.json() from freezing the UI.
-  try { return await Promise.race([request, timeout]); }
-  finally { clearTimeout(timer); }
-}
-
-// The only factual theme title comes from the school's PDF (weekTheme).
-// A minioppdrag is an optional family activity suggested by Skolesekken.
-const PRESETS = [
- {rx:/alle har en stemme|bli h[oø]rt|medbestemmelse|demokrati/i,emoji:'🗣️',tone:'violet',quest:'Spør noen hva de mener om noe dere skal gjøre sammen, og lytt uten å avbryte.'},
- {rx:/solidaritet|bryr meg|omtanke|hjelp|inkluder/i,emoji:'💛',tone:'gold',quest:'Gjør én liten god gjerning for noen i dag – uten å bli bedt om det.'},
- {rx:/vennskap|venn|samarbeid|fellesskap/i,emoji:'🤝',tone:'rose',quest:'Gi en venn et oppriktig kompliment, eller inviter noen med i en lek.'},
- {rx:/respekt|toleranse|mangfold|likeverd/i,emoji:'🌈',tone:'violet',quest:'Øv på å si én hyggelig ting til noen som tenker annerledes enn deg.'},
- {rx:/natur|milj[oø]|b[æe]rekraft|gjenbruk|klima/i,emoji:'🌿',tone:'green',quest:'Finn én liten ting du kan gjøre for naturen denne uka.'},
- {rx:/lesing|b[oø]ker|litteratur|fortelling/i,emoji:'📚',tone:'violet',quest:'Del favorittordet eller en morsom setning fra noe du leser.'},
- {rx:/nettvet|digital|internett|kildekritikk/i,emoji:'💻',tone:'blue',quest:'Snakk med en voksen om ett smart valg du kan ta på nettet.'},
- {rx:/f[oø]lelser|mestring|mot|selvf[oø]lelse/i,emoji:'🚀',tone:'rose',quest:'Tenk på én ting du har blitt litt modigere til i år. Fortell om det!'},
- {rx:/trafikk|refleks|sikkerhet/i,emoji:'🚦',tone:'blue',quest:'Finn tre ting som gjør skoleveien tryggere.'},
- {rx:/kropp|helse|aktivitet|bevegelse/i,emoji:'🏃',tone:'green',quest:'Ta en liten bevegelsespause sammen med noen hjemme.'},
-];
-function themePresentation(raw){
- const theme=String(raw||'').replace(/\s+/g,' ').trim();
- if(!theme)return null;
- // Some PDFs pair a main theme with a social goal, separated by a middle dot.
- // The first part is the actual theme heading; the rest is contextual text from school.
- const [title, ...extra] = theme.split(/\s+[·•]\s+/).map(s => s.trim()).filter(Boolean);
- const subtitle = extra.join(' · ');
- const found=PRESETS.find(p=>p.rx.test(theme));
- return {theme,title,subtitle,emoji:found?.emoji||'🌟',tone:found?.tone||'blue',
-   quest:found?.quest||`Snakk sammen: Hva betyr «${title}» for deg, og hvordan kan du vise det denne uka?`};
-}
-function themeProgressKey(year,week,grade,theme){
- return `skolesekken.tema.v1.${year}.${week}.${grade}.${encodeURIComponent(String(theme).toLowerCase())}`;
-}
-
-/** Stable, separate completion state for each grade and ISO school week. */
-function homeworkStorageKey(year, week, grade) {
-  return `skolesekken.homework.v1.${year}.${week}.${grade}`;
-}
-
-/** Stable across display-order changes. Distinguishes different tasks in the same subject. */
-function homeworkItemKey(item) {
-  const normalize = value => String(value ?? '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('nb-NO');
-  return `${normalize(item?.subject)}\u241f${normalize(item?.detail)}`;
-}
-
-/** Rainy school-day weather. Never infer rain from a missing forecast. */
-function rainwearExpected(day) {
-  if (!day || typeof day !== 'object') return false;
-  if (typeof day.rainMm === 'number' && Number.isFinite(day.rainMm) && day.rainMm > 0) return true;
-  const code = typeof day.symbol === 'string' ? day.symbol.toLowerCase() : '';
-  return /rain|sleet|thunder/.test(code);
-}
-
-
-// Demonstration only: network responses are generated in this HTML file.
-// The actual app in the GitHub project does NOT include sample school data.
-const __demoRequests=[]; window.__demoRequests=__demoRequests;
-try { localStorage.setItem('__probe','1');localStorage.removeItem('__probe') }
-catch {let m=new Map();Object.defineProperty(window,'localStorage',{value:{getItem:k=>m.get(k)||null,setItem:(k,v)=>m.set(k,String(v)),removeItem:k=>m.delete(k)}})}
-window.fetch=async function(url){
- __demoRequests.push(String(url));
- const {week,year,day}=norwayCalendar();
- const WEEK=['Mandag','Tirsdag','Onsdag','Torsdag','Fredag'];
- if(String(url).startsWith('/api/plan')){
-   const grade=new URL(String(url),'https://demo.test').searchParams.get('grade');
-   const eventNames=['Lesestund','Kunst og håndverk','Eksperimenter','Matteverksted','Musikk','Samfunnsfag','Prosjektarbeid'];
-   const events={};for(const [i,name] of WEEK.entries())events[name]={end:i===4?'13:15':'14:00',events:[{time:'08:30',title:'Morgensamling',icon:'book'},{time:'10:15',title:eventNames[(Number(grade)+i-1)%7],icon:i%2?'activity':'book'},{time:'12:00',title:'Jobbe i grupper',icon:'sparkles'}],bring:[{label:i%2?'Gymtøy':'Drikkeflaske'}]};
-   const themes=['Vennskap','Nysgjerrighet','Solidaritet · Jeg bryr meg','Mestring','Respekt','Natur og miljø','Demokrati'];
-   const data={grade,year,week,status:'ok',group:null,source:SITE.grades[grade],pdf:'https://www.minskole.no/example-ukeplan.pdf',days:events,
-      everyday:[{label:'Matboks',note:'Til lunsj'}],
-      homework:[{subject:'Norsk',detail:'Les 15 minutter hjemme og fortell om det du leste.'},{subject:'Matte',detail:`Øv på oppgave ${Number(grade)+6} til ${Number(grade)+10}.`},{subject:'Engelsk',detail:'Finn fem nye engelske ord.'}],
-      weekTheme:themes[Number(grade)-1],notices:[{title:'Husk refleks',detail:'Det blir mørkere ute. Ta med refleks på skoleveien.'}],
-      learningGoals:[`Jeg kan fortelle hva jeg har lært denne uka på ${grade}. trinn.`]};
-   return new Response(JSON.stringify(data),{status:200,headers:{'content-type':'application/json'}});
- }
- if(String(url).startsWith('/api/weather')){
-  const days={};for(let i=0;i<5;i++){
-    const jan4=new Date(Date.UTC(year,0,4)),monday=new Date(jan4);monday.setUTCDate(jan4.getUTCDate()-(jan4.getUTCDay()+6)%7+(week-1)*7+i);
-    const key=monday.toISOString().slice(0,10);days[key]={temperature:7+i,icon:i%2?'🌧️':'🌤️',rainMm:i%2?1.3:0,symbol:i%2?'rain':'fair_day',description:i%2?'Regn':'Lettskyet'};
-  }
-  return new Response(JSON.stringify({days,stale:false}),{status:200,headers:{'content-type':'application/json'}});
- }
- return new Response('{}',{status:404,headers:{'content-type':'application/json'}});
+      <section class="panel homework" aria-labelledby="homework-title"><div class="panel-head"><div><p class="eyebrow">DENNE UKEN</p><h2 id="homework-title">Lekser og oppgaver</h2></div><span class="section-icon">✏️</span></div><div id="homework-list" class="items"></div></section>
+      <section class="panel theme" id="theme-panel" hidden aria-labelledby="theme-title"><div class="panel-head"><div><p class="eyebrow">LITT EKSTRA</p><h2 id="theme-title">Ukas tema</h2></div><span class="section-icon">✨</span></div><p id="theme-content"></p><div id="mission-slot"></div></section>
+      <details class="details" id="notices-panel"><summary>📬 Beskjeder fra skolen <span id="notices-count" class="count"></span><span class="chevron">⌄</span></summary><div id="notices-list" class="details-content"></div></details>
+      <details class="details" id="goals-panel" hidden><summary>🎯 Læringsmål <span id="goals-count" class="count"></span><span class="chevron">⌄</span></summary><div id="goals-list" class="details-content"></div></details>
+      <p class="disclaimer">Ukeplanen leses automatisk fra skolens PDF. Ved tvil er skolens original alltid fasit. <a id="pdf-source" href="#" target="_blank" rel="noopener noreferrer" hidden>Se original-PDF ↗</a></p>
+    </div>
+  </main>
+  <footer>Ukeplanen · <span id="footer-school"></span> · Ingen personlige elevopplysninger lagres på serveren.</footer>
+</div>
+<script>/* This script is ONLY embedded in docs/forhandsvisning.html. All data below is fictional. */
+const $ = id=>document.getElementById(id);
+const D=['Mandag','Tirsdag','Onsdag','Torsdag','Fredag'];
+let grade=null,day=1;
+const done=new Set();
+const example={
+  days:[
+    ['08:30 · Norsk – leseverksted','10:00 · Matematikk','12:00 · Kroppsøving'],
+    ['08:30 · Norsk – leseverksted','10:15 · Kunst og håndverk','12:20 · Matematikk'],
+    ['08:30 · Engelsk','10:15 · Naturfag','12:00 · Uteskole'],
+    ['08:30 · Norsk','10:00 · Samfunnsfag','12:00 · Musikk'],
+    ['08:30 · Matematikk','10:00 · Bibliotek','12:00 · Klassens time']
+  ],
+  bags:[['Matpakke','Drikkeflaske','Gymsko'],['Matpakke','Drikkeflaske','Fargeblyanter'],['Matpakke','Drikkeflaske','Klær til uteskole'],['Matpakke','Drikkeflaske'],['Matpakke','Drikkeflaske','Bibliotekbok']],
+  hw:['Les i en valgfri bok i 15 minutter','Øv på 7-gangen','Skriv tre setninger på engelsk'],
+  notices:['Foreldremøte torsdag kl. 18.00 (kun eksempel).','Husk refleks når det blir mørkt (kun eksempel).'],
+  goals:['Jeg kan forklare hva en multiplikasjon er.','Jeg kan skrive tre enkle setninger på engelsk.']
 };
-
-
-const DAYS=['Mandag','Tirsdag','Onsdag','Torsdag','Fredag'];
-const $=id=>document.getElementById(id);
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const today=norwayCalendar();
-const weekMonday=(()=>{const fourth=new Date(Date.UTC(today.year,0,4));const monday=new Date(fourth);monday.setUTCDate(fourth.getUTCDate()-(fourth.getUTCDay()+6)%7+(today.week-1)*7);return monday;})();
-const dayDate=index=>{const d=new Date(weekMonday);d.setUTCDate(d.getUTCDate()+index);return d;};
-const dayKey=index=>dayDate(index).toISOString().slice(0,10);
-const dayLabel=index=>dayDate(index).toLocaleDateString('nb-NO',{timeZone:'UTC',day:'numeric',month:'short'});
-const currentLocal={
-  get(k){try{return localStorage.getItem(k)}catch{return null}},
-  set(k,v){try{localStorage.setItem(k,v)}catch{}},
-  remove(k){try{localStorage.removeItem(k)}catch{}}
-};
-const initialGrade=currentLocal.get(choiceStorageKey());
-const state={
-  grade:GRADES.includes(initialGrade)?initialGrade:null,
-  day:today.day,plan:null,planStatus:'loading',planError:null,
-  weather:null,weatherStatus:'loading',weatherError:null,
-  fetching:false,subject:null,expandedMission:false,loadVersion:0,lastRefresh:0
-};
-
-const planCacheKey=g=>`ukeplan.${SITE.id}.week.${today.year}.${today.week}.${g}.v1`;
-const weatherCacheKey=()=>`ukeplan.${SITE.id}.weather.${today.dateKey}.v1`;
-const bagKey=(g,day)=>`ukeplan.${SITE.id}.bag.${today.year}.${today.week}.${g}.${day}.v1`;
-const hwKey=g=>`ukeplan.${SITE.id}.${homeworkStorageKey(today.year,today.week,g)}`;
-const missionKey=(g,name)=>`ukeplan.${SITE.id}.${themeProgressKey(today.year,today.week,g,name)}`;
-const readRecord=key=>{try{return JSON.parse(currentLocal.get(key)||'{}')||{}}catch{return {}}};
-const saveRecord=(key,value)=>currentLocal.set(key,JSON.stringify(value));
-const isCurrent=(plan,g)=>plan&&String(plan.grade)===g&&plan.year===today.year&&plan.week===today.week&&plan.status!=='error'&&plan.status!=='unpublished';
-
-function configureBrand(){
-  document.documentElement.style.setProperty('--primary',SITE.colors.primary);
-  document.documentElement.style.setProperty('--accent',SITE.colors.accent);
-  document.title=`${SITE.appName} · ${SITE.schoolName}`;
-  $('app-name').textContent=SITE.appName;
-  $('brand-symbol').textContent=SITE.logo;
-  $('school-name').textContent=SITE.schoolName;
-  $('footer-school').textContent=SITE.schoolName;
-  $('today-label').textContent=new Date().toLocaleDateString('nb-NO',{day:'numeric',month:'long',timeZone:'Europe/Oslo'});
-}
-function buildGradePicker(){
-  $('grade-grid').innerHTML=GRADES.map(g=>
-    `<button type="button" class="grade-option" data-grade="${g}" aria-label="Velg ${g}. klasse">`+
-    `<span class="number">${g}.</span><span class="ordinal">klasse</span></button>`).join('');
-  $('grade-grid').querySelectorAll('button[data-grade]').forEach(button=>button.addEventListener('click',()=>selectGrade(button.dataset.grade)));
-}
-function selectGrade(grade){
-  if(!GRADES.includes(grade))return;
-  state.loadVersion++;
-  state.grade=grade;state.day=today.day;state.subject=null;state.expandedMission=false;
-  state.plan=null;state.planStatus='loading';state.planError=null;state.weather=null;state.weatherStatus='loading';state.weatherError=null;
-  currentLocal.set(choiceStorageKey(),grade);
-  restoreCache();render();refreshAll();
-}
-function resetGrade(){
-  state.loadVersion++;
-  state.grade=null;state.plan=null;state.weather=null;state.planError=null;state.weatherError=null;
-  state.planStatus='loading';state.weatherStatus='loading';state.fetching=false;
-  currentLocal.remove(choiceStorageKey());render();
-  $('grade-grid').querySelector('button')?.focus();
-}
-function restoreCache(){
-  if(!state.grade)return;
-  const p=readRecord(planCacheKey(state.grade));
-  if(isCurrent(p,state.grade)){state.plan=p;state.planStatus='cached'}
-  const w=readRecord(weatherCacheKey());
-  if(w.days && typeof w.days==='object'){state.weather=w;state.weatherStatus='cached'}
-}
-function warning(message,type='warning'){
-  $('warnings').innerHTML=message?`<div class="warning ${type==='error'?'danger':''}">${esc(message)}</div>`:'';
-}
-function render(){
-  const grade=state.grade;
-  $('onboarding').hidden=!!grade;
-  $('dashboard').hidden=!grade;
-  $('reset-grade').hidden=!grade;
+function checklist(arr,category){return arr.map((text,i)=>`<label class="checkrow ${done.has(category+i)?'done':''}"><input type="checkbox" data-key="${category+i}" ${done.has(category+i)?'checked':''}><span class="checktext">${text}</span></label>`).join('');}
+function show(){
+  $('grade-gate').hidden=Boolean(grade);$('app-view').hidden=!grade;$('change-grade').hidden=!grade;
   if(!grade)return;
-  $('hero-title').textContent=`${grade}. klasse er klar!`;
-  $('hero-description').textContent=`${SITE.tagline} Her er ukens viktigste ting.`;
-  $('grade-chip').textContent=`${grade}. KLASSE`;
-  $('week-chip').textContent=`UKE ${today.week}`;
-  $('grade-emoji').textContent=Number(grade)<=3?'🎨':Number(grade)<=5?'📚':'🎒';
-  $('day-eyebrow').textContent=`${DAYS[state.day].toUpperCase()} · ${dayLabel(state.day).toUpperCase()}`;
-  renderWeather();renderDays();renderEvents();renderBag();renderHomework();renderTheme();renderNotices();renderGoals();renderSource();
-  if(state.planStatus==='error')warning('Ukeplanen kunne ikke hentes. Prøv å oppdatere eller åpne skolens trinnside.','error');
-  else if(state.planStatus==='unpublished')warning(`Skolen har ikke publisert en ukeplan for uke ${today.week} på ${grade}. trinn ennå. Vi viser ikke en plan fra en annen uke.`);
-  else if(state.planStatus==='partial'||state.planStatus==='unreadable')warning('PDF-en ble bare delvis tolket. Kontroller skolens original-PDF.');
-  else if(state.planStatus==='cached')warning('Viser lagret ukeplan for denne uken. Oppdatering pågår.');
-  else warning('');
+  $('school-name').textContent=`FAGERHOLT SKOLE · ${grade}. KLASSE · EKSEMPELDATA`;
+  $('welcome-description').textContent='Dette er en visuell demo med oppdiktede skoledager.';
+  $('school-source').textContent='Ingen live-kilde i demoen';$('school-source').href='#';
+  $('day-buttons').innerHTML=D.map((d,i)=>`<button type="button" data-day="${i}" class="day ${day===i?'active':''}"><span>${d}</span><strong>${26+i}. okt</strong></button>`).join('');
+  $('status-pill').textContent='DEMO · IKKE LIVE';
+  $('warning-area').hidden=false;
+  $('warning-area').textContent='Dette er en forhåndsvisning med FIKTIVE eksempeldata. Ingen PDF er hentet.';
+  $('rain-reminder').hidden=day!==2;
+  $('rain-reminder').textContent='☔ DEMO: Regntøy kan være lurt å pakke for denne dagen.';
+  $('day-program').innerHTML=example.days[day].map(x=>`<div class="event"><span class="event-dot">●</span>${x}</div>`).join('');
+  $('bag-list').innerHTML=checklist(example.bags[day],`bag${day}-`);
+  $('homework-list').innerHTML=checklist(example.hw,'hw-');
+  $('theme-panel').hidden=false;$('theme-content').textContent='Natur og miljø (demotema, ikke hentet fra skolen).';
+  $('mission-slot').innerHTML=done.has('mission')?'<button class="mission-done" data-undo="mission">✓ Frivillig oppdrag fullført · Vis igjen</button>':
+    '<div class="mission"><div><strong>🌟 Frivillig oppdrag</strong><p>Finn tre ulike blader på vei hjem (demooppdrag).</p></div><label class="mission-check"><input type="checkbox" data-key="mission"> Fullført</label></div>';
+  $('notices-count').textContent=example.notices.length;
+  $('notices-list').innerHTML=example.notices.map(x=>`<p>${x}</p>`).join('');
+  $('goals-panel').hidden=false;$('goals-count').textContent=example.goals.length;
+  $('goals-list').innerHTML=example.goals.map(x=>`<p>${x}</p>`).join('');
+  $('weather-icon').textContent=day===2?'🌧️':'⛅';
+  $('weather-temp').textContent=day===2?'8 °C':'11 °C';
+  $('weather-desc').textContent='Demovær · ikke faktisk prognose';
+  $('pdf-source').hidden=true;
 }
-function renderWeather(){
-  const w=state.weather?.days?.[dayKey(state.day)];
-  $('weather-icon').textContent=w?.icon||'🌤️';
-  $('weather-temp').textContent=typeof w?.temperature==='number'?Math.round(w.temperature)+'°':'—°';
-  $('weather-text').textContent=w?.description|| (state.weatherStatus==='loading'?'Henter værvarsel…':'Ingen prognose tilgjengelig');
-  $('weather-details').textContent=typeof w?.rainMm==='number' ? `💧 ${String(w.rainMm).replace('.',',')} mm · kl. 08–15` : `Værdata fra Yr · kl. 08–15`;
-  const rainy=rainwearExpected(w);
-  $('rain-note').hidden=!rainy;
-  $('rain-note').innerHTML=rainy?'<span class="rain-icon">🌧️</span><span><strong>Husk regntøy før du går ut!</strong><small>Det er meldt regn i skoletiden. Ta på regnjakke og regnbukse før du går hjemmefra.</small></span>':'';
-}
-function renderDays(){
-  $('weekdays').innerHTML=DAYS.map((name,index)=>{
-    const expired=isExpiredSchoolDay(index,today.dow);
-    return `<button type="button" class="day-button ${state.day===index?'selected':''}" data-day="${index}" ${expired?'disabled':''} aria-pressed="${state.day===index}"><strong>${name.slice(0,3)}</strong><span>${expired?'Utgått':esc(dayLabel(index))}</span></button>`;
-  }).join('');
-  $('weekdays').querySelectorAll('button[data-day]:not(:disabled)').forEach(button=>button.addEventListener('click',()=>{state.day=Number(button.dataset.day);render()}));
-}
-const icons={book:'📚',waves:'🏊',trees:'🌿',activity:'🏃',music:'🎵',sparkles:'✨',scissors:'🎨',bus:'🚌',sun:'☀️',gift:'🎁'};
-function renderEvents(){
-  const day=state.plan?.days?.[DAYS[state.day]];
-  $('end-time').hidden=!day?.end;
-  $('end-time').textContent=day?.end?`Slutt ${day.end}`:'';
-  const events=day?.events||[];
-  $('day-events').innerHTML=events.length?events.map(e=>
-    `<div class="event-row"><div class="event-icon">${icons[e.icon]||'📚'}</div><div><div class="event-time">${esc(e.time||'Skoledagen')}</div><div class="event-title">${esc(e.title||'Aktivitet')}</div>${e.detail?`<p class="event-desc">${esc(e.detail)}</p>`:''}</div></div>`
-  ).join(''):`<p class="empty">${state.plan?'Ingen detaljer for valgt dag i PDF-en. Se originalen for full oversikt.':state.planStatus==='loading'?'Henter ukens program…':'Ingen skoleplan tilgjengelig for denne uken.'}</p>`;
-}
-function bagItems(){
-  const plan=state.plan;
-  if(!plan)return [];
-  const day=plan.days?.[DAYS[state.day]];
-  const found=[...(plan.everyday||[]),...(day?.bring||[])].filter(x=>x&&typeof x.label==='string');
-  return [...new Map(found.map(x=>[x.label.toLocaleLowerCase('nb-NO').trim(),x])).values()];
-}
-function renderBag(){
-  const items=bagItems(),key=bagKey(state.grade,DAYS[state.day]),saved=readRecord(key);
-  const checked=items.filter(i=>saved[i.label]).length;
-  $('bag-count').textContent=items.length?`${checked}/${items.length} pakket`:'';
-  $('bag-progress').style.width=items.length?`${100*checked/items.length}%`:'0%';
-  $('bag-items').innerHTML=items.length?items.map((item,index)=>
-    `<label class="pack-row ${saved[item.label]?'is-done':''}"><input type="checkbox" data-pack-index="${index}" ${saved[item.label]?'checked':''}><span class="pack-label">${esc(item.label)}${item.note?`<small>${esc(item.note)}</small>`:''}</span></label>`
-  ).join(''):`<p class="empty">${state.plan?'Ingen ekstra ting å pakke i dag.':'Pakkelisten vises når ukeplanen er hentet.'}</p>`;
-  $('bag-items').querySelectorAll('input[data-pack-index]').forEach(input=>input.addEventListener('change',()=>{
-    const item=items[Number(input.dataset.packIndex)];if(!item)return;
-    const record=readRecord(key);record[item.label]=input.checked;saveRecord(key,record);renderBag();
-  }));
-}
-function renderHomework(){
-  const assignments=(state.plan?.homework||[]).filter(i=>i?.subject&&i?.detail),subjects=[...new Set(assignments.map(i=>i.subject))];
-  if(!subjects.includes(state.subject))state.subject=subjects[0]||null;
-  const key=hwKey(state.grade),done=readRecord(key),doneCount=assignments.filter(i=>done[homeworkItemKey(i)]).length;
-  $('homework-count').textContent=assignments.length?`${doneCount}/${assignments.length} gjort`:'';
-  $('homework-tabs').innerHTML=subjects.map(sub=>{
-    const group=assignments.filter(i=>i.subject===sub),n=group.filter(i=>done[homeworkItemKey(i)]).length;
-    return `<button type="button" class="subject-button ${state.subject===sub?'selected':''}" data-subject="${esc(sub)}" aria-pressed="${state.subject===sub}">${esc(sub)} · ${n}/${group.length}</button>`;
-  }).join('');
-  $('homework-tabs').querySelectorAll('button[data-subject]').forEach(b=>b.addEventListener('click',()=>{state.subject=b.dataset.subject;renderHomework()}));
-  const current=assignments.filter(i=>i.subject===state.subject);
-  $('homework-items').innerHTML=current.length?current.map((i,index)=>{
-    const checked=!!done[homeworkItemKey(i)];
-    return `<label class="homework-row ${checked?'is-done':''}"><input type="checkbox" data-hw-index="${index}" ${checked?'checked':''}><span class="hw-text">${esc(i.detail)}<small>${checked?'✓ Fullført':'Trykk når du er ferdig'}</small></span></label>`;
-  }).join(''):`<p class="empty">${state.plan?'Ingen lekser registrert i ukeplanen.':'Lekser vises når ukeplanen er hentet.'}</p>`;
-  $('homework-items').querySelectorAll('input[data-hw-index]').forEach(input=>input.addEventListener('change',()=>{
-    const item=current[Number(input.dataset.hwIndex)];if(!item)return;
-    const record=readRecord(key);record[homeworkItemKey(item)]=input.checked;saveRecord(key,record);renderHomework();
-  }));
-}
-function renderTheme(){
-  const target=$('theme-section'),theme=themePresentation(state.plan?.weekTheme);
-  target.hidden=!theme;
-  if(!theme){target.innerHTML='';return}
-  const key=missionKey(state.grade,theme.theme),done=!!readRecord(key).done;
-  if(done&&!state.expandedMission){
-    target.className='theme-panel complete';
-    target.innerHTML=`<div><div class="theme-title"><span class="theme-symbol">${esc(theme.emoji)}</span><div><h2>${esc(theme.title)}</h2>${theme.subtitle?`<p>${esc(theme.subtitle)}</p>`:''}</div></div></div>`+
-      `<div class="compact-actions"><strong>✓ Oppdrag utført</strong><button class="mission-button" id="expand-mission" type="button">Vis igjen ↓</button></div>`;
-    $('expand-mission').addEventListener('click',()=>{state.expandedMission=true;renderTheme()});return;
-  }
-  target.className='theme-panel';
-  target.innerHTML=`<div class="theme-eyebrow">✨ UKAS TEMA · ${state.grade}. KLASSE</div>`+
-    `<div class="theme-content"><div class="theme-title"><span class="theme-symbol">${esc(theme.emoji)}</span><div><h2>${esc(theme.title)}</h2>${theme.subtitle?`<p>${esc(theme.subtitle)}</p>`:''}</div></div>`+
-    `<div class="mission-box"><div class="mission-label">🎯 DITT OPPDRAG DENNE UKA</div><p>${esc(theme.quest)}</p>`+
-    (done?'<strong class="mission-done">🎉 Bra jobbet! Oppdraget er fullført.</strong><div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="mission-button" id="collapse-mission" type="button">Vis mindre ↑</button><button class="secondary-button" id="undo-mission" type="button">Angre</button></div>':
-      '<button class="mission-button" type="button" id="do-mission">✓ Jeg har gjort det!</button>')+
-    `<div class="mission-sub">Frivillig forslag fra appen – ikke en skolelekse.</div></div></div>`;
-  if(done){$('collapse-mission').addEventListener('click',()=>{state.expandedMission=false;renderTheme()});$('undo-mission').addEventListener('click',()=>{saveRecord(key,{done:false});renderTheme()})}
-  else $('do-mission').addEventListener('click',()=>{saveRecord(key,{done:true});state.expandedMission=false;renderTheme()});
-}
-function renderNotices(){
-  const notes=state.plan?.notices||[];
-  $('notice-count').textContent=notes.length||'';
-  $('notices').innerHTML=notes.length?notes.map(n=>`<div class="notice-item"><strong>${esc(n.title||'Beskjed')}</strong><span>${esc(n.detail||'')}</span></div>`).join(''):'Ingen beskjeder er hentet. Sjekk original-PDF ved tvil.';
-}
-function renderGoals(){
-  const goals=(state.plan?.learningGoals||[]).filter(g=>typeof g==='string'&&g.trim());
-  $('learning-goals-details').hidden=!goals.length;
-  if(!goals.length){$('learning-goals').innerHTML='';return}
-  $('goal-count').textContent=goals.length;
-  $('learning-goals').innerHTML=`<ul class="goal-list">${goals.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
-}
-function renderSource(){
-  const fallback=SITE.grades[state.grade];
-  let url=fallback;
-  const pdf=state.plan?.pdf;
-  if(typeof pdf==='string')try{const u=new URL(pdf);if(u.protocol==='https:'&&SITE.pdfHosts.includes(u.hostname))url=pdf}catch{}
-  $('source-link').href=url;
-  $('source-note').textContent=state.plan?.pdf?'Ukeplan fra skolens PDF · kontroller originalen ved tvil.':'Kilde: skolens offentlige trinnside.';
-}
-async function loadPlan(version,grade){
-  try{
-    const data=await fetchJsonWithTimeout(`/api/plan?grade=${encodeURIComponent(grade)}`,{timeoutMs:18000,cache:'no-store'});
-    if(state.loadVersion!==version||state.grade!==grade)return;
-    if(data.status==='unpublished') {state.plan=null;state.planStatus='unpublished'}
-    else if(isCurrent(data,grade)){state.plan=data;state.planStatus=data.status||'ok';saveRecord(planCacheKey(grade),data)}
-    else {state.plan=null;state.planStatus='error'}
-  }catch(err){
-    if(state.loadVersion!==version||state.grade!==grade)return;
-    state.planStatus=state.plan?'cached':'error';state.planError=err.code;
-  }finally{if(state.loadVersion===version&&state.grade===grade)render()}
-}
-async function loadWeather(version){
-  try{const data=await fetchJsonWithTimeout('/api/weather',{timeoutMs:9000,cache:'default'});
-    if(state.loadVersion!==version||!state.grade)return;
-    state.weather=data;state.weatherStatus=data.stale?'stale':'ok';saveRecord(weatherCacheKey(),data);
-  }catch(err){if(state.loadVersion!==version||!state.grade)return;state.weatherStatus=state.weather?'cached':'error';state.weatherError=err.code}
-  finally{if(state.loadVersion===version&&state.grade)render()}
-}
-async function refreshAll(){
-  if(!state.grade||state.fetching)return;
-  const grade=state.grade,version=++state.loadVersion;state.fetching=true;
-  state.planStatus=state.plan?'cached':'loading';state.weatherStatus=state.weather?'cached':'loading';render();
-  try{await Promise.all([loadPlan(version,grade),loadWeather(version)])}
-  finally{if(state.loadVersion===version){state.fetching=false;state.lastRefresh=Date.now();render()}}
-}
-configureBrand();buildGradePicker();
-$('reset-grade').addEventListener('click',resetGrade);
-if(state.grade){restoreCache();render();refreshAll()}else render();
-// On return to the tab, refresh if an hour has passed. Changing the school week requires a page reload.
-setInterval(()=>{if(state.grade&&state.lastRefresh&&Date.now()-state.lastRefresh>=REFRESH_INTERVAL_MS)refreshAll()},60000);
-window.__weekplanReady=true;
+$('brand-title').textContent='Ukeplanen';$('brand-subtitle').textContent='EN ENKLERE SKOLEUKE';
+$('gate-school').textContent='Fagerholt skole';$('footer-school').textContent='Forhåndsvisning (kun eksempeldata)';
+$('today').textContent='Demovisning';$('week-label').textContent='UKE 44';
+$('grade-choices').innerHTML=Array.from({length:7},(_,i)=>`<button type="button" class="grade" data-grade="${i+1}"><strong>${i+1}.</strong><span>klasse</span></button>`).join('');
+document.addEventListener('click',e=>{
+  const g=e.target.closest('[data-grade]');if(g){grade=g.dataset.grade;show();return;}
+  const d=e.target.closest('[data-day]');if(d){day=Number(d.dataset.day);show();return;}
+  if(e.target.closest('#change-grade')){grade=null;show();}
+  if(e.target.closest('[data-undo]')){done.delete('mission');show();}
+  if(e.target.closest('#reload'))show();
+});
+document.addEventListener('change',e=>{
+  const box=e.target.closest('[data-key]');if(box){if(box.checked)done.add(box.dataset.key);else done.delete(box.dataset.key);show();}
+});
+show();
 </script>
 </body>
 </html>

@@ -1,61 +1,63 @@
-import {SITE, GRADES} from '../../public/site-config.mjs';
-import {CLASS_URLS,osloCalendar,findPdfLinks,choosePdf,analyzePdfPages,pdfItemsFromTextContent} from '../../lib/plan-core.mjs';
-const MAX_PDF_BYTES = 14 * 1024 * 1024;
-const HEADERS = {'user-agent':'Mozilla/5.0 (compatible; Skolesekken/1.0; family week planner)','accept-language':'nb-NO,nb;q=0.9,en;q=0.6'};
-const respond = (data,code=200)=>new Response(JSON.stringify(data),{
- status:code,
- headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'public, max-age=60, s-maxage=900, stale-while-revalidate=600','Access-Control-Allow-Origin':'*','X-Content-Type-Options':'nosniff'}
-});
-function checkPdfUrl(value){
- const u=new URL(value);
- return u.protocol==='https:' && SITE.pdfHosts.includes(u.hostname) && /\.pdf$/i.test(u.pathname);
+import {siteConfig} from '../../public/site-config.mjs';
+import {schoolCalendar} from '../../lib/calendar.mjs';
+import {findPdfLinks,choosePdf,analyzePdfPages,pdfItemsFromTextContent} from '../../lib/plan-core.mjs';
+const MAX_PDF_BYTES=14*1024*1024;
+const HEADERS={'User-Agent':'Mozilla/5.0 (compatible; Ukeplanen/0.1; +https://github.com/morronetlab/fagerholt)','Accept-Language':'nb-NO,nb;q=0.9'};
+const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{
+  'Content-Type':'application/json; charset=utf-8','Cache-Control':status===200?'public, max-age=60, s-maxage=900':'no-store',
+  'X-Content-Type-Options':'nosniff'
+}});
+function allowedUrl(url,requirePdf=false){
+  try {const u=new URL(url);return u.protocol==='https:'&&!u.username&&!u.password&&siteConfig.allowedSourceHosts.includes(u.hostname)&&(!requirePdf||/\.pdf$/i.test(u.pathname));}
+  catch{return false;}
 }
-async function download(url,expectedPdf=false){
- const response=await fetch(url,{headers:HEADERS,signal:AbortSignal.timeout(11000)});
- if(!response.ok)throw new Error('Skolen svarte med HTTP '+response.status);
- if(expectedPdf){
-   if(!checkPdfUrl(response.url))throw new Error('Uventet PDF-adresse');
-   const length=Number(response.headers.get('content-length'));
-   if(length>MAX_PDF_BYTES)throw new Error('Ukeplanen er større enn tillatt grense');
-   const bytes=new Uint8Array(await response.arrayBuffer());
-   if(bytes.byteLength>MAX_PDF_BYTES||String.fromCharCode(...bytes.slice(0,4))!=='%PDF')throw new Error('Ugyldig eller for stor PDF');
-   return bytes;
- }
- return response.text();
+async function load(url,{pdf=false,fetchImpl=fetch}={}){
+  if(!allowedUrl(url,pdf)) throw new Error('Ikke godkjent kildeadresse');
+  const res=await fetchImpl(url,{headers:HEADERS,redirect:'follow',signal:AbortSignal.timeout(11000)});
+  if(!res.ok)throw new Error(`Skolens nettsted svarte ${res.status}`);
+  if(!allowedUrl(res.url||url,pdf))throw new Error('Uventet videresending fra skolekilden');
+  const limit=pdf?MAX_PDF_BYTES:1_000_000;
+  const len=Number(res.headers.get('content-length')||0);
+  if(len>limit)throw new Error('Kildedokument er for stort');
+  const bytes=new Uint8Array(await res.arrayBuffer());
+  if(bytes.byteLength>limit)throw new Error('Kildedokument er for stort');
+  if(pdf){if(new TextDecoder('ascii').decode(bytes.slice(0,4))!=='%PDF')throw new Error('Ikke gyldig PDF');return bytes;}
+  return new TextDecoder().decode(bytes);
 }
-async function pdfPages(bytes){
- const {getDocument}=await import('pdfjs-dist/legacy/build/pdf.mjs');
- const loading=getDocument({data:bytes,useSystemFonts:true,disableFontFace:true,isEvalSupported:false});
- const doc=await loading.promise;
- try{
-   if(doc.numPages<1||doc.numPages>12)throw new Error('Uventet antall sider i PDF-en');
-   const pages=[];
-   for(let n=1;n<=doc.numPages;n++){
-     const page=await doc.getPage(n),viewport=page.getViewport({scale:1});
-     const content=await page.getTextContent();
-     pages.push(pdfItemsFromTextContent(content,viewport.width,viewport.height));
-     page.cleanup();
-   }
-   return pages;
- }finally{await loading.destroy()}
+export async function pdfPages(bytes){
+  const {getDocument}=await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const job=getDocument({data:bytes,useSystemFonts:true,disableFontFace:true,isEvalSupported:false});
+  const document=await job.promise;
+  try {
+    if(document.numPages<1||document.numPages>16)throw new Error('Uventet antall PDF-sider');
+    const pages=[];
+    for(let n=1;n<=document.numPages;n++){
+      const page=await document.getPage(n),size=page.getViewport({scale:1});
+      pages.push(pdfItemsFromTextContent(await page.getTextContent(),size.width,size.height));
+      page.cleanup();
+    }
+    return pages;
+  }finally{await job.destroy();}
 }
-export default async (request)=>{
- const grade=new URL(request.url).searchParams.get('grade');
- if(!GRADES.includes(grade))return respond({error:'Velg et gyldig klassetrinn (1–7).'},400);
- const {year,week}=osloCalendar();
- const base={grade,week,year,source:CLASS_URLS[grade],checkedAt:new Date().toISOString()};
- try{
-   const html=await download(CLASS_URLS[grade]);
-   const links=findPdfLinks(html,CLASS_URLS[grade]);
-   const pdf=choosePdf(links,week);
-   if(!pdf){
-     return respond({...base,status:'unpublished',pdf:null,latestAvailable:links[0]||null,
-       warning:`Fant ingen publisert ukeplan for uke ${week} på skolesiden ennå. Åpne trinnsiden for å dobbeltsjekke.`});
-   }
-   const pages=await pdfPages(await download(pdf.url,true));
-   return respond({...base,...analyzePdfPages(pages,grade,pdf.url,week,year,{redGroup:grade==='3' && SITE.features.redGroupGrade3}),publishedWeek:pdf.week});
- }catch(err){
-   console.error('Week plan fetch failed',grade,err);
-   return respond({...base,status:'error',warning:'Kunne ikke hente eller lese skolens ukeplan akkurat nå.',technicalError:err?.message?.slice(0,110)},502);
- }
-};
+/** Dependency injection is used only for local tests; no sample data in live API. */
+export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()=>new Date()}={}){
+  return async function handler(request){
+    const grade=new URL(request.url).searchParams.get('grade');
+    const source=siteConfig.school.grades[grade];
+    if(!grade||!source)return reply({status:'error',error:'Velg et gyldig klassetrinn (1–7).'},400);
+    const {year,week}=schoolCalendar(now(),siteConfig.school.timezone);
+    const base={grade,week,year,source,checkedAt:new Date().toISOString()};
+    try{
+      const html=await load(source,{fetchImpl});
+      const pdf=choosePdf(findPdfLinks(html,source,siteConfig.allowedSourceHosts),week);
+      if(!pdf)return reply({...base,status:'unpublished',pdf:null,warning:`Ukeplan for uke ${week} er ikke publisert som PDF på trinnsiden.`});
+      const bytes=await load(pdf.url,{pdf:true,fetchImpl});
+      const pages=await parsePdfPages(bytes);
+      return reply({...base,...analyzePdfPages(pages,grade,pdf.url,week,year,source),publishedWeek:pdf.week});
+    }catch(error){
+      console.error('Failed to fetch published school PDF:',grade,error);
+      return reply({...base,status:'error',warning:'Klarte ikke hente eller lese skolens ukeplan. Prøv igjen, eller åpne trinnsiden.'},502);
+    }
+  };
+}
+export default createPlanHandler();

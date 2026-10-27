@@ -1,10 +1,10 @@
 {
-  "name": "ukeplan-white-label",
-  "version": "1.0.0-preview",
+  "name": "ukeplanen-white-label",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Konfigurerbar ukeplan fra PDF for barneskoletrinn 1–7.",
-  "engines": { "node": ">=20" },
-  "scripts": { "test": "node --test tests/*.test.mjs", "check": "node --check public/app.js && npm test" },
-  "dependencies": { "pdfjs-dist": "4.10.38" }
+  "description": "Konfigurerbar ukeplan for MinSkole, med ett valgt klassetrinn.",
+  "engines": {"node": ">=20"},
+  "scripts": {"test": "node --test tests/*.test.mjs", "check": "npm test"},
+  "dependencies": {"pdfjs-dist": "4.10.38"}
 }

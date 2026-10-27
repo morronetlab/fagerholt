@@ -1,55 +1,33 @@
-import {summarizeForecast,FORECAST_LOCATION,PENT_LINK} from '../../lib/weather-core.mjs';
-
-const FORECAST_URL = `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${FORECAST_LOCATION.lat}&lon=${FORECAST_LOCATION.lon}`;
-// MET requires a descriptive User-Agent and responsible caching; no scraping of Pent.no.
-const USER_AGENT = 'Ukeplanen/1.0 (https://github.com/morronetlab/fagerholt)';
-let saved = null;
-let expiresAt = 0;
-let lastModified = null;
-let pending = null;
-const reply = (data, code=200, maxAge=1800) => new Response(JSON.stringify(data), {
-  status:code,
-  headers:{'Content-Type':'application/json; charset=utf-8',
-    'Cache-Control':code===200?`public, max-age=300, s-maxage=${maxAge}, stale-while-revalidate=600`:'no-store',
-    'X-Content-Type-Options':'nosniff'}
-});
-function computeExpiry(response,now) {
-  const serverExpiry = Date.parse(response.headers.get('expires')||'');
-  // The API's Expires header is authoritative; minimum 10min cache if omitted.
-  return Number.isFinite(serverExpiry) && serverExpiry>now ? serverExpiry : now + 600_000;
-}
-async function fetchWeather() {
-  const now=Date.now();
-  if (saved && now < expiresAt) return saved;
-  const headers={'User-Agent':USER_AGENT,'Accept':'application/json'};
-  if (lastModified && saved) headers['If-Modified-Since']=lastModified;
-  const upstream=await fetch(FORECAST_URL,{headers,signal:AbortSignal.timeout(10000)});
-  if (upstream.status===304 && saved) {
-    expiresAt=computeExpiry(upstream,now);
-    return saved;
-  }
-  if (!upstream.ok) throw new Error(`MET API svarte med ${upstream.status}`);
-  const len=Number(upstream.headers.get('content-length')||0);
-  if (len > 4_000_000) throw new Error('Værdata er for store');
-  const forecast=await upstream.json();
-  const days=summarizeForecast(forecast);
-  if (!Object.keys(days).length) throw new Error('Ingen brukbare dager i værmeldingen');
-  saved={source:'Yr / Meteorologisk institutt',sourceUrl:'https://www.yr.no/',
-    pentUrl:PENT_LINK,location:FORECAST_LOCATION,updatedAt:forecast?.properties?.meta?.updated_at||new Date(now).toISOString(),days};
-  lastModified=upstream.headers.get('last-modified')||null;
-  expiresAt=computeExpiry(upstream,now);
-  return saved;
-}
-export default async function handler(){
+import {siteConfig} from '../../public/site-config.mjs';
+import {summarizeForecast} from '../../lib/weather-core.mjs';
+const {lat,lon}=siteConfig.weather;
+const endpoint=`https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`;
+const headers={'Content-Type':'application/json; charset=utf-8','X-Content-Type-Options':'nosniff'};
+const send=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{...headers,'Cache-Control':status===200?'public, max-age=300, s-maxage=1800':'no-store'}});
+let cache=null;
+let expiresAt=0;
+let lastModified=null;
+export default async function weather() {
+  if(!siteConfig.features.weather) return send({status:'disabled',days:{}},200);
+  if(cache&&Date.now()<expiresAt) return send(cache);
   try {
-    // Prevent parallel fetch storms within a warm Netlify function instance.
-    if(!pending)pending=fetchWeather().finally(()=>{pending=null});
-    const data=await pending;
-    const ttl=Math.min(3600,Math.max(300,Math.floor((expiresAt-Date.now())/1000)));
-    return reply({...data,stale:false},200,ttl);
-  } catch(err) {
-    console.error('Værmelding kunne ikke hentes:',err);
-    if (saved) return reply({...saved,stale:true,warning:'Kunne ikke hente fersk værmelding. Viser sist hentet prognose.'},200,300);
-    return reply({status:'error',warning:'Værmelding er midlertidig utilgjengelig.'},502);
+    const h={'User-Agent':'Ukeplanen/0.1 (+https://github.com/morronetlab/fagerholt)','Accept':'application/json'};
+    if(lastModified) h['If-Modified-Since']=lastModified;
+    const response=await fetch(endpoint,{headers:h,signal:AbortSignal.timeout(10000)});
+    if(response.status===304&&cache){expiresAt=Date.now()+600000;return send(cache);}
+    if(!response.ok)throw new Error(`MET HTTP ${response.status}`);
+    if(Number(response.headers.get('content-length'))>4_000_000)throw new Error('Værfil for stor');
+    const payload=await response.json();
+    const days=summarizeForecast(payload);
+    if(!Object.keys(days).length) throw new Error('Ingen værdata');
+    cache={source:siteConfig.weather.attribution,updatedAt:payload?.properties?.meta?.updated_at??new Date().toISOString(),days};
+    const upstreamExpiry=Date.parse(response.headers.get('expires')||'');
+    expiresAt=Number.isFinite(upstreamExpiry)&&upstreamExpiry>Date.now()?upstreamExpiry:Date.now()+600000;
+    lastModified=response.headers.get('last-modified');
+    return send(cache);
+  }catch(error){
+    console.error('Weather request failed:',error);
+    if(cache) return send({...cache,stale:true,warning:'Viser sist lagrede værmelding.'});
+    return send({status:'error',warning:'Værmelding midlertidig utilgjengelig.',days:{}},502);
   }
 }
