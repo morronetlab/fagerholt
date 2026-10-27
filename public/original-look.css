@@ -2,9 +2,8 @@
    The single-grade view and white-label API remain independent. */
 :root{
   --bg:#f6f7f3;--ink:#263d3a;--muted:#78918c;--line:#e7ebe5;
-  --forest:#225e52;--mint:#e4f2e9;--sun:#ffe8c8;--orange:#ed9561;
+  --forest:var(--brand,#225e52);--mint:#e4f2e9;--sun:#ffe8c8;--orange:var(--accent,#ed9561);
   --shadow:0 12px 35px rgba(37,70,58,.05);
-  --brand:var(--forest);--accent:#ed9561;
 }
 body{background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;}
 .shell{max-width:1170px;width:auto;padding:0 30px 70px;margin:auto}
