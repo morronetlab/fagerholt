@@ -1,0 +1,71 @@
+/* Skolesekken 3.0.2: UKAS TEMA */
+
+.weekstrip{grid-template-columns:minmax(0,1fr)}
+.weekstrip>.theme-card{min-height:0;order:-1}
+.theme-card{background:linear-gradient(125deg,#fff8df 0%,#fffdf3 48%,#fff 100%);border-color:#f2dfb3;padding:0;overflow:hidden}
+.theme-layout{display:grid;grid-template-columns:minmax(0,.84fr) minmax(0,1.16fr);gap:22px;padding:24px;align-items:stretch}
+.theme-heading{display:flex;flex-direction:column;gap:14px;padding:6px 5px}
+.theme-meta{display:flex;align-items:center;gap:10px;justify-content:space-between;color:#8a6428;font-size:11px;letter-spacing:.13em;font-weight:900}
+.theme-meta span:last-child{background:#f4dfad;border-radius:50px;padding:6px 10px;white-space:nowrap;letter-spacing:.04em}
+.theme-face{display:flex;align-items:center;gap:16px;min-width:0}
+.theme-emoji{height:70px;width:70px;display:grid;place-items:center;background:#fff0bd;border:1px solid #f5e4b7;border-radius:22px;font-size:35px;flex-shrink:0}
+.theme-name{font-size:clamp(28px,3.3vw,43px);line-height:1.09;letter-spacing:-1.4px;color:#5d461e;overflow-wrap:anywhere}
+.theme-subtitle{font-weight:750;font-size:17px;color:#85622e;margin-top:8px;line-height:1.3}
+.theme-school-note{font-size:13px;color:#947c53;margin-top:auto}
+.theme-mission{background:#fff;border:1px solid #f2e3bc;padding:21px 23px;border-radius:19px;display:flex;flex-direction:column;align-items:stretch;box-shadow:0 8px 22px rgba(121,91,29,.06)}
+.mission-eyebrow{font-size:12px;letter-spacing:.06em;font-weight:900;color:#936521}
+.mission-description{font-size:clamp(17px,1.85vw,22px);line-height:1.47;font-weight:800;color:#493a22;margin:11px 0 16px}
+.mission-complete{border:0;display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;width:100%;border-radius:14px;background:#286457;color:#fff;font-size:16px;font-weight:900;padding:12px 18px;box-shadow:0 5px 15px #28645730;transition:transform .15s,box-shadow .15s}
+.mission-complete:hover{transform:translateY(-2px);box-shadow:0 7px 16px #2864573c}
+.mission-celebrate{background:#e3f4e6;color:#276348;font-size:16px;font-weight:850;padding:16px;border-radius:14px;line-height:1.4}
+.mission-reset{background:none;border:0;color:#6c766a;text-decoration:underline;align-self:flex-start;font-size:12px;font-weight:700;padding:10px 0}
+.theme-mission .quest-caption{font-size:11px;color:#807b69;margin-top:11px;line-height:1.4}
+.theme-card.tone-violet{background:linear-gradient(125deg,#f1edff 0%,#fbf9ff 60%,#fff 100%);border-color:#e3d9f4}
+.theme-card.tone-violet .theme-emoji{background:#e9deff;border-color:#decdfa}
+.theme-card.tone-violet .theme-name{color:#48396d}
+.theme-card.tone-violet .theme-subtitle,.theme-card.tone-violet .theme-meta,.theme-card.tone-violet .mission-eyebrow{color:#6c4b9e}
+.theme-card.tone-violet .theme-meta span:last-child{background:#e8def9}
+.theme-card.tone-rose{background:linear-gradient(125deg,#fff0f0 0%,#fff9f8 64%,#fff 100%);border-color:#f4dddd}
+.theme-card.tone-rose .theme-emoji{background:#ffe2e5;border-color:#f8ccd1}
+.theme-card.tone-green{background:linear-gradient(125deg,#e9f7e9 0%,#f7fbf4 60%,#fff 100%);border-color:#d4e8d5}
+.theme-card.tone-blue{background:linear-gradient(125deg,#e9f3ff 0%,#f8fbff 60%,#fff 100%);border-color:#d5e4f4}
+.family-themes:empty{display:none}
+.family-themes{margin-top:23px}
+.family-themes-heading{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:11px;color:#3b5b4f;font-size:14px;font-weight:900;letter-spacing:.025em}
+.family-themes-heading small{font-size:12px;font-weight:600;color:#8a9d93;letter-spacing:0}
+.family-theme-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.family-theme{background:#fff7dc;border:1px solid #efdfb8;border-radius:20px;padding:19px 22px;display:flex;flex-direction:column;gap:9px;min-width:0}
+.family-theme.tone-violet{background:#f3effd;border-color:#e4d9f4}
+.family-theme.tone-rose{background:#fff0ef;border-color:#f3dada}
+.family-theme.tone-green{background:#edf8eb;border-color:#dcead7}
+.family-theme.tone-blue{background:#ecf5ff;border-color:#dbe9fa}
+.family-theme-label{font-weight:900;font-size:11px;letter-spacing:.06em;color:#86663c;display:flex;justify-content:space-between;gap:6px;align-items:center}
+.family-theme h3{font-size:clamp(20px,2.1vw,26px);color:#564225;overflow-wrap:anywhere}
+.family-theme-subtitle{font-size:12px;font-weight:700;color:#846b4b}
+.family-theme-quest{font-size:13px;line-height:1.55;color:#554b37;font-weight:680;margin:2px 0 4px}
+.family-theme-link{margin-top:auto;min-height:43px;align-self:flex-start;background:#286457;color:white;padding:10px 14px;border:0;border-radius:11px;font-size:13px;font-weight:850}
+.family-theme-link:hover{background:#1d5247}
+.family-theme-done{background:#d9f0df;border-radius:8px;padding:5px 8px;color:#286848;font-size:10px;white-space:nowrap}
+@media(max-width:750px){.theme-layout{grid-template-columns:1fr;gap:15px;padding:18px}.theme-heading{gap:11px}.theme-emoji{width:56px;height:56px;font-size:29px;border-radius:17px}.theme-name{font-size:clamp(25px,7vw,34px)}.theme-mission{padding:17px}.family-theme-grid{grid-template-columns:1fr}.family-themes{margin-top:16px}.family-themes-heading{display:block}.family-themes-heading small{display:block;margin-top:4px}.family-theme{padding:16px 18px}.theme-school-note{margin-top:0}}
+
+/* 3.0.5: grade-only theme between hero and day picker; compact on completion. */
+.top-theme{margin-bottom:16px;box-shadow:var(--shadow);border-radius:23px}
+.top-theme.theme-hidden{display:none}
+.theme-card.is-complete-compact{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.theme-card.is-complete-compact .theme-compact-heading{display:flex;flex-direction:column;gap:8px;min-width:0}
+.theme-card.is-complete-compact .theme-meta{font-size:9px;gap:8px;justify-content:flex-start}
+.theme-card.is-complete-compact .theme-meta span:last-child{padding:3px 7px}
+.theme-card.is-complete-compact .theme-face{gap:11px}
+.theme-card.is-complete-compact .theme-emoji{height:39px;width:39px;font-size:21px;border-radius:13px}
+.theme-card.is-complete-compact .theme-name{font-size:21px;letter-spacing:-.5px}
+.theme-card.is-complete-compact .theme-subtitle{font-size:12px;margin-top:2px}
+.theme-compact-actions{display:flex;align-items:center;gap:15px;flex-shrink:0}
+.theme-compact-actions strong{font-size:13px;color:#276b50}
+.theme-compact-actions button,.mission-done-actions button:not(.mission-reset){background:#286457;color:white;border:0;border-radius:10px;padding:10px 13px;min-height:40px;font-size:12px;font-weight:800}
+.mission-done-actions{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-top:10px;flex-wrap:wrap}
+.rain-reminder[hidden]{display:none!important}
+.rain-reminder{display:flex;align-items:center;gap:16px;padding:18px 22px;margin:-4px 0 16px;border:2px solid #d99742;background:#fff1d5;border-radius:19px;color:#76491b;box-shadow:0 5px 17px rgba(172,109,40,.1)}
+.rain-reminder .rain-symbol{font-size:35px;flex-shrink:0}
+.rain-reminder strong{display:block;font-size:18px;line-height:1.3;margin-bottom:3px}
+.rain-reminder small{display:block;font-size:13px;line-height:1.5;font-weight:620}
+@media(max-width:750px){.top-theme{margin-bottom:12px}.theme-card.is-complete-compact{padding:12px 15px;gap:9px;flex-wrap:wrap}.theme-card.is-complete-compact .theme-meta span:last-child{display:none}.theme-compact-actions{width:100%;justify-content:space-between}.theme-compact-actions strong{font-size:12px}.rain-reminder{gap:10px;padding:14px;margin:0 0 13px}.rain-reminder .rain-symbol{font-size:28px}.rain-reminder strong{font-size:16px}.rain-reminder small{font-size:12px}}

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="nb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f6f8f5">
+  <meta name="description" content="En enkel ukeplan for skolehverdagen, fra skolens publiserte PDF-er.">
+  <title>Ukeplanen · Skolehverdagen på ett sted</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="site-header">
+      <div class="brand"><div class="brand-symbol" id="brand-symbol" aria-hidden="true">✳</div>
+        <div class="brand-words"><strong id="app-name">Ukeplanen</strong><span id="school-name">Skolehverdagen på ett sted</span></div></div>
+      <div class="header-right"><span class="date-label" id="today-label"></span>
+        <button id="reset-grade" class="secondary-button" type="button" hidden>↻ Bytt klassetrinn</button></div>
+    </header>
+
+    <section class="onboarding" id="onboarding" aria-labelledby="welcome-title">
+      <div class="welcome-copy"><span class="eyebrow"><span class="eyebrow-dot"></span> DIN SKOLEHVERDAG, LITT ENKLERE</span>
+        <h1 id="welcome-title">Hvilken klasse<br><em>går du i?</em></h1>
+        <p>Velg klassetrinnet ditt én gang. Vi finner ukeplanen fra skolens nettside og viser deg det viktigste for dagen.</p>
+        <div class="welcome-hint"><span aria-hidden="true">🔒</span> Valget lagres bare på denne enheten. Du kan endre det når som helst.</div>
+      </div>
+      <div class="choose-panel"><div class="choose-heading"><span>VELG DITT TRINN</span><span>1.–7. klasse</span></div>
+        <div class="grade-grid" id="grade-grid" role="group" aria-label="Velg klassetrinn"></div>
+        <p class="choose-foot">📖 Vi henter bare ukeplanen til klassen du velger.</p></div>
+    </section>
+
+    <main id="dashboard" hidden>
+      <div id="warnings" role="status" aria-live="polite" class="warnings"></div>
+      <section class="dashboard-hero">
+        <div class="daily-greeting"><span class="eyebrow" id="day-eyebrow">MANDAG · UKE 44</span>
+          <div class="hero-grade"><span id="grade-emoji" class="hero-emoji">🎒</span><div><h1 id="hero-title">Klar for skoledagen?</h1><p id="hero-description">Din ukeplan, uten unødvendig leting.</p></div></div>
+          <div class="hero-tags"><span id="week-chip">UKE —</span><span id="grade-chip">—. KLASSE</span></div>
+        </div>
+        <aside class="weather-card" aria-label="Vær på skolen"><div class="weather-label">VÆR PÅ SKOLEN <small>08–15</small></div>
+          <div class="weather-main"><span id="weather-icon">🌤️</span><strong id="weather-temp">—°</strong></div>
+          <p id="weather-text">Henter værvarsel…</p><div id="weather-details" class="weather-details"></div>
+        </aside>
+      </section>
+      <aside class="rain-note" id="rain-note" hidden role="status"></aside>
+      <nav class="days-nav" id="weekdays" aria-label="Velg skoledag"></nav>
+      <div class="content-grid">
+        <section class="panel day-panel" aria-labelledby="day-heading"><div class="panel-eyebrow">DAGENS PROGRAM</div>
+          <div class="panel-head"><h2 id="day-heading">Dette skjer</h2><span id="end-time" class="end-badge" hidden></span></div>
+          <div id="day-events" class="event-list"></div></section>
+        <section class="panel bag-panel" aria-labelledby="bag-heading"><div class="panel-eyebrow">FØR DU GÅR HJEMMEFRA</div>
+          <div class="panel-head"><h2 id="bag-heading">🎒 Pakk sekken</h2><span id="bag-count" class="small-count"></span></div>
+          <p class="bag-intro">Kryss av når det er lagt i sekken.</p><div class="progress-track"><div class="progress-fill" id="bag-progress"></div></div>
+          <div id="bag-items"></div></section>
+      </div>
+      <section class="panel homework-panel" id="homework-section"><div class="panel-eyebrow">LITT HVER DAG</div>
+        <div class="panel-head"><h2>📚 Ukens lekser</h2><span id="homework-count" class="small-count"></span></div>
+        <div class="homework-tabs" id="homework-tabs"></div><div id="homework-items"></div></section>
+      <section class="theme-panel" id="theme-section" hidden></section>
+      <details class="details-card" id="notices-details"><summary><span>📬 Beskjeder fra skolen <b id="notice-count"></b></span><span aria-hidden="true">⌄</span></summary><div id="notices" class="details-content"></div></details>
+      <details class="details-card" id="learning-goals-details" hidden><summary><span>🎯 Læringsmål <b id="goal-count"></b></span><span aria-hidden="true">⌄</span></summary><div id="learning-goals" class="details-content"></div></details>
+      <div class="source-footer"><span id="source-note">Ukeplan hentet fra skolen · kontroller original-PDF ved tvil.</span>
+        <a href="#" id="source-link" rel="noopener noreferrer" target="_blank">Se skolens ukeplan ↗</a></div>
+    </main>
+    <footer class="page-footer"><span id="footer-school">Ukeplanen</span><span>Laget for en litt enklere morgen ☀️</span></footer>
+  </div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
