@@ -70,7 +70,7 @@ function renderContent(){
   $('homework-list').innerHTML=hw.length?checklist(hw,'homework'):empty(state.loading?'Henter lekser …':'Ingen lekser ble funnet i PDF-en.');
   const hasTheme=features.theme&&Boolean(p?.weekTheme);
   const subjects=Array.isArray(p?.subjects)?p.subjects:[];
-  const missionText=features.optionalMission?(p?.optionalMission||(hasTheme?'Fortell noen hjemme om noe du har lært om ukas tema.':'')):'';
+  const missionText=features.optionalMission?(p?.optionalMission||''):'';
   const isSuggestedMission=Boolean(missionText&&!p?.optionalMission);
   const hasMission=Boolean(missionText);
   $('theme-panel').hidden=!(hasTheme||hasMission||subjects.length);
@@ -136,6 +136,7 @@ function boot(){
   document.documentElement.style.setProperty('--brand',brand.color);
   document.documentElement.style.setProperty('--accent',brand.accent);
   $('brand-title').textContent=brand.title;
+  if (brand.title.toLocaleLowerCase('nb-NO') === 'ukeplanen') $('brand-title').innerHTML='uke<span class="logo-accent">planen.</span>';
   $('brand-subtitle').textContent=brand.subtitle.toLocaleUpperCase('nb-NO');
   $('gate-school').textContent=school.name;
   $('footer-school').textContent=school.name;
