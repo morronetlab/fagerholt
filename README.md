@@ -98,3 +98,9 @@ Appen oppdager fortsatt PDF fra riktig trinnside basert på aktuell ISO-uke.
 `tests/week44-official-links.test.mjs` kontrollerer kildevalg, eksakte URL-varianter, avvisning av eldre uker og at en PDF uten tekstlag ikke presenteres som en korrekt tolket plan. `allowedSourceHosts` inkluderer nå begge offisielle MinSkole-domenene, `minskole.no` og `minskule.no`. Store PDF-er får lengre HTTP-/klient-timeout.
 
 **Gjenstår:** Direkte nedlasting av disse to PDF-ene var ikke tilgjengelig i arbeidsmiljøet. Derfor er **innholdet i uke-44-dokumentene ennå ikke verifisert**; verken dagsprogram, lekser, beskjeder eller pakkeliste kan erklæres korrekt ut fra URL-tester alene. Hvis PDF-ene er tilgjengelige lokalt, kjør f.eks. `npm install && node scripts/inspect-pdf.mjs 4 /path/uke44.pdf 44 2026`, og sammenlign JSON-feltene med den visuelle original-PDF-en. Dersom dokumentet er skannet uten tekstlag, må OCR vurderes før innhold kan trekkes ut.
+
+## Oppdatering: tekstlinjer, leksefrister og pakkeliste
+
+Dagskolonner gjenforener tekst som fortsetter på neste PDF-linje når koordinatene viser at teksten tilhører samme aktivitet. For 4. trinn grupperes lekser per faktisk «Til ...»-frist. Utstyr utledes fra den valgte PDF-ens innhold; eventuelle generelle forslag, f.eks. ved svømming, merkes som forslag. Ingen aktiviteter er hardkodet til bestemte datoer. Gruppebegrensede eller negert formulerte beskjeder gir ikke generelle påminnelser.
+
+**Begrensning:** De automatiserte testene bruker representative PDF-tekstkoordinater. Aktuelle PDF-er fra MinSkole kunne ikke lastes ned direkte for fullstendig visuell kontroll i denne kjøringen. Validering mot original-PDF-ene kreves før produksjon.

@@ -46,7 +46,8 @@ function checklist(items,section,day='all'){
   return items.map((item,i)=>{
     const label=typeof item==='string'?item:(item?.text||item?.label||'');
     const meta=typeof item==='object'&&item?.subject?`<span class="subject">${safe(item.subject)}</span>`:'';
-    return `<label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${meta}${safe(label)}</span></label>`;
+    const hint=section==='bag'&&item?.note?`<small>${safe(item.note)}</small>`:'';
+    return `<label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${meta}${safe(label)}${hint}</span></label>`;
   }).join('');
 }
 function empty(msg){return `<p class="empty"><span aria-hidden="true">ℹ️</span> ${safe(msg)}</p>`;}
