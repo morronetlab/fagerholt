@@ -367,3 +367,28 @@ footer{border-color:var(--line);color:#92a49c}
 @media(prefers-reduced-motion:reduce){
  .weather-toggle span{transition:none}
 }
+
+/* Verified school-group badge palette: background follows the named colour. */
+.group-badge.group-yellow{background:#fff3b0;border-color:#e3c663;color:#654a03}
+.group-badge.group-orange{background:#ffdfc1;border-color:#edb57c;color:#86400b}
+.group-badge.group-purple{background:#efe1ff;border-color:#cdb5e9;color:#663d90}
+.group-badge.group-pink{background:#ffe0ef;border-color:#e7a9c7;color:#8a2c5b}
+.group-badge.group-turquoise{background:#d9f4f2;border-color:#a0d9d2;color:#145f5e}
+.group-badge.group-brown{background:#eaddcf;border-color:#c6ac91;color:#644026}
+.group-badge.group-gray{background:#ecedf1;border-color:#c6cad2;color:#39404d}
+.group-badge.group-white{background:#fff;border-color:#b8c3c0;color:#3d514a}
+.group-badge.group-black{background:#30363b;border-color:#1c2226;color:#fff}
+.group-badge.group-class{background:#eef1ff;border-color:#dcdafa;color:#4b448b}
+/* Simultaneous lessons share one timestamp but retain distinct descriptions. */
+.event-content{display:block;min-width:0;overflow-wrap:anywhere}
+.event-time{display:block!important;font-size:13px!important;font-weight:900!important;margin:0 0 6px!important;color:#275b4e!important}
+.event-subitem{display:block;line-height:1.5;min-width:0}
+.event-subitem+.event-subitem{border-top:1px dashed #e5eae6;margin-top:8px;padding-top:8px}
+.event-subitem .group-badge{margin-bottom:3px}
+/* Vaccination information must be visible within daily practical notes. */
+.day-notes p.day-note-critical{padding:15px 16px;border-radius:12px;border:2px solid #d7a33f;background:#fff6dd;color:#664614;font-weight:750;margin:12px 0}
+.day-note-critical strong{display:block;color:#71450a;font-size:15px;font-weight:900;margin-bottom:6px}
+.day-note-critical .group-badge{margin:2px 5px 5px 0}
+.footer-meta{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px}
+.footer-meta a{font-weight:750;overflow-wrap:anywhere}
+@media(max-width:700px){.event-subitem+.event-subitem{margin-top:7px;padding-top:7px}.day-notes p.day-note-critical{padding:12px}.footer-meta{display:flex;margin-top:7px}}

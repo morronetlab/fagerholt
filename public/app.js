@@ -3,10 +3,10 @@ import {schoolCalendar,dayDate,DAYS} from './shared/calendar.mjs';
 import {schoolSelectionKey,validSchool,gradeSelectionKey,validGrade,progressKey} from './shared/selection.mjs';
 import {planFeedback} from './shared/plan-feedback.mjs';
 import {normalizeVisualRegion,adjustableVisualRegion,visualCropGeometry,fullPageGeometry} from './shared/visual-region.mjs';
-import {homeworkProgress} from './shared/group-scope.mjs';
+import {homeworkProgress,groupColorClass} from './shared/group-scope.mjs';
 import {expandHomework,repeatDayLabel} from './shared/homework-view.mjs';
 import {dueDayLabel,packingText} from './shared/plan-display.mjs';
-import {uniqueDayEvents,noDayScheduleMessage} from './shared/day-view.mjs';
+import {uniqueDayEvents,groupSimultaneousEvents,notesWithImportantEvents,noDayScheduleMessage} from './shared/day-view.mjs';
 import {estimateAiSeconds,estimatedPercent} from './shared/ai-estimate.mjs';
 // This module is served from public/. Calendar and selection modules are mirrored in public/shared/.
 const $ = id=>document.getElementById(id);
@@ -77,8 +77,9 @@ function renderShell(){
 }
 function groupBadge(group){
   if(!group)return '';
-  const color=/rød/i.test(group)?'group-red':/grønn/i.test(group)?'group-green':/blå/i.test(group)?'group-blue':'group-class';
-  return `<span class="group-badge ${color}">${safe(group)}</span>`;
+  // Compound labels are rendered as separate, correctly coloured badges.
+  return String(group).split(/\s*\/\s*/).map(label=>label.trim()).filter(Boolean)
+    .map(label=>`<span class="group-badge ${groupColorClass(label)}">${safe(label)}</span>`).join('');
 }
 function checklist(items,section,day='all'){
   return items.map((item,i)=>{
@@ -158,15 +159,19 @@ function renderContent(){
   $('pdf-source').hidden=!p?.pdf;if(p?.pdf)$('pdf-source').href=p.pdf;
   if(p?.source&&state.school)$('school-source').href=p.source;
   const events=uniqueDayEvents(p?.days?.[DAYS[state.day]]?.events||[]);
-  const notes=(p?.dayNotes?.[DAYS[state.day]]||[]).filter(x=>x&&x.text);
+  const groupedEvents=groupSimultaneousEvents(events);
+  const notes=notesWithImportantEvents(events,(p?.dayNotes?.[DAYS[state.day]]||[]).filter(x=>x&&x.text));
   const groups=[...new Set([...events,...getBag()].map(x=>x.group).filter(Boolean))];
   $('day-group-summary').hidden=!groups.length;
   $('day-group-summary').innerHTML=groups.length?`<strong>Husk riktig gruppe denne dagen:</strong> ${groups.map(groupBadge).join(' ')}`:'';
   $('day-program').innerHTML=p?.status==='unpublished'?empty('Ingen ukeplan publisert for denne uken.'):
-    events.length?events.map(e=>`<div class="event"><span class="event-dot">●</span><span>${groupBadge(e.group)}${e.time?`<small>${safe(e.time)}</small>`:''}${safe(e.title)}${e.endTime?`<small class="event-endtime">${safe(e.endTime)}</small>`:''}</span></div>`).join(''):
+    groupedEvents.length?groupedEvents.map(block=>`<div class="event"><span class="event-dot">●</span><span class="event-content">
+      ${block.time?`<small class="event-time">${safe(block.time)}</small>`:''}
+      ${block.entries.map(e=>`<span class="event-subitem">${groupBadge(e.group)}${safe(e.title)}${e.endTime?`<small class="event-endtime">${safe(e.endTime)}</small>`:''}</span>`).join('')}
+    </span></div>`).join(''):
     empty(state.loading?'Henter dagsprogram …':noDayScheduleMessage({hasNotes:notes.length>0,complete:p?.status==='ok'&&p?.parser==='ai'}));
   $('day-notes').hidden=!notes.length;
-  $('day-notes-list').innerHTML=notes.map(x=>`<p>${groupBadge(x.group)}${safe(x.text)}</p>`).join('');
+  $('day-notes-list').innerHTML=notes.map(x=>`<p class="${x.important?'day-note-critical':''}">${x.important?'<strong>💉 Viktig: Vaksinasjon</strong>':''}${groupBadge(x.group)}${safe(x.text)}</p>`).join('');
   const attendance=(p?.attendance||[]).filter(x=>x.day===DAYS[state.day]&&x.group&&x.time);
   $('day-attendance').hidden=!attendance.length;
   $('day-attendance').innerHTML=attendance.length?`<div class="attendance-heading">⏰ Særskilt oppmøte for enkelte grupper</div>${attendance.map(x=>`<div class="attendance-entry">${groupBadge(x.group)}<strong>Kl. ${safe(x.time)}</strong><span>${safe(x.text)}</span></div>`).join('')}`:'';
@@ -391,7 +396,22 @@ function clearGrade(){
   cancelRequests();state.grade=null;state.plan=null;state.weather=null;state.planError=null;
   storageDrop(gradeSelectionKey(state.school.id));renderShell();
 }
+async function showBuildVersion(){
+  const node=$('git-version');
+  if(!node)return;
+  try{
+    const response=await fetch('/build-info.json',{cache:'no-store'});
+    if(!response.ok)throw new Error('Build metadata unavailable');
+    const info=await response.json();
+    if(!/^[a-f0-9]{7,40}$/i.test(info.commit||''))return;
+    const id=info.commit.toLowerCase();
+    node.textContent='Git '+id.slice(0,8);
+    node.href='https://github.com/morronetlab/fagerholt/commit/'+id;
+    node.hidden=false;
+  }catch{node.hidden=true;}
+}
 function boot(){
+  void showBuildVersion();
   document.title=`${brand.title} · Kristiansand`;
   document.documentElement.style.setProperty('--brand',brand.color);
   document.documentElement.style.setProperty('--accent',brand.accent);

@@ -1,6 +1,6 @@
 [build]
   publish = "public"
-  command = "npm test && node scripts/prepare-pdf-viewer.mjs"
+  command = "npm test && node scripts/prepare-pdf-viewer.mjs && node scripts/write-build-info.mjs"
 
 [functions]
   directory = "netlify/functions"
