@@ -59,6 +59,9 @@ function renderShell(){
   $('app-view').hidden=!chosen;
   $('change-school').hidden=!hasSchool;
   $('change-grade').hidden=!chosen;
+  $('mobile-selection-menu').hidden=!hasSchool;
+  $('mobile-change-grade').hidden=!chosen;
+  if(!hasSchool)$('mobile-selection-menu').open=false;
   $('footer-school').textContent=state.school?.name||'Kristiansand';
   if(!hasSchool)return;
   if(!chosen){
@@ -135,6 +138,9 @@ function updateAnalysisClock(){
 function renderContent(){
   if(!state.grade)return;
   const p=state.plan;
+  const waitingForPlan=state.loading||p?.aiStatus==='processing';
+  $('weather-panel').hidden=waitingForPlan||!features.weather;
+  $('app-hero').classList.toggle('is-awaiting',waitingForPlan);
   const status=state.loading?'loading':state.planError?'error':p?.status||'loading';
   $('status-pill').textContent=p?.aiStatus==='processing'?'AI analyserer · foreløpig ukeplan':p?.status==='partial'?'Ukeplan delvis tolket':p?.status==='unreadable'?'PDF kunne ikke tolkes':p?.aiStatus==='ready'?'AI-tolket ukeplan':p?.aiStatus==='failed'?'AI-feil · foreløpig ukeplan':badge(status);
   $('status-pill').className='state-pill '+(p?.aiStatus==='processing'?'state-ai-processing':p?.aiStatus==='ready'?'state-ai-ready':['error','unreadable'].includes(status)?'state-error':['partial','unpublished','unavailable'].includes(status)?'state-warning':'');
@@ -426,6 +432,12 @@ function boot(){
   });
   $('change-grade').addEventListener('click',clearGrade);
   $('change-school').addEventListener('click',clearSchool);
+  $('mobile-change-grade').addEventListener('click',()=>{$('mobile-selection-menu').open=false;clearGrade();});
+  $('mobile-change-school').addEventListener('click',()=>{$('mobile-selection-menu').open=false;clearSchool();});
+  $('weather-toggle').addEventListener('click',()=>{
+    const expanded=$('weather-panel').classList.toggle('is-expanded');
+    $('weather-toggle').setAttribute('aria-expanded',String(expanded));
+  });
   $('reload').addEventListener('click',reload);
   $('feedback-retry').addEventListener('click',()=>state.plan?.aiStatus==='processing'?reload({quiet:true,statusOnly:true}):reload());
   const savedSchool=storageRead(schoolSelectionKey());

@@ -260,3 +260,110 @@ footer{border-color:var(--line);color:#92a49c}
 .details.compact-empty .details-content .empty{border:0;background:transparent;padding:4px 0}
 .section-empty-hint{font-size:12px;color:#859b90;font-weight:500;margin-left:auto}
 @media(prefers-reduced-motion:reduce){.feedback-fetching .feedback-sheet{animation:none}}
+
+
+/* Mobile-first refinement: one final responsive layer overrides earlier legacy rules.
+   Keep desktop hero/weather layout and the existing color language unchanged. */
+.mobile-selection-menu,.weather-toggle{display:none}
+.mobile-selection-actions{display:grid;gap:4px}
+.weather-details{min-width:0}
+.hero.is-awaiting .weather{display:none!important}
+.hero.is-awaiting .hero-intro{min-height:0}
+.hero.is-awaiting .hero-intro::after{display:none}
+.hero.is-awaiting .hero-intro h1,.hero.is-awaiting .hero-intro .lead,.hero.is-awaiting .hero-actions{display:none}
+.hero.is-awaiting .hero-intro .eyebrow{margin:0}
+@media (max-width: 700px){
+ .shell{padding:0 14px 42px;max-width:100%;min-width:0}
+ .topbar{height:auto;min-height:68px;gap:8px;padding:10px 0;align-items:center}
+ .logo{min-width:0;gap:7px}
+ .brand-mark{width:34px;height:34px;min-width:34px;font-size:19px;border-radius:10px}
+ .logo strong{font-size:19px;letter-spacing:-1px}
+ .logo small{display:none}
+ .topbar .header-actions{display:flex;gap:7px;flex-wrap:nowrap;align-items:center}
+ .header-actions .date-chip,.header-actions #change-school,.header-actions #change-grade{display:none!important}
+ .week-badge{font-size:11px;padding:8px 9px;white-space:nowrap;border-radius:10px}
+ .mobile-selection-menu:not([hidden]){display:block;position:relative}
+ .mobile-selection-menu summary{display:flex;align-items:center;min-height:44px;padding:8px 10px;border-radius:11px;border:1px solid #cddad3;background:#fff;color:#225e52;font-size:12px;font-weight:850;cursor:pointer;white-space:nowrap;list-style:none}
+ .mobile-selection-menu summary::-webkit-details-marker{display:none}
+ .mobile-selection-menu[open] summary{background:#e8f5ed}
+ .mobile-selection-actions{position:absolute;z-index:20;right:0;top:calc(100% + 5px);width:190px;padding:7px;background:#fff;border:1px solid #dbe9df;box-shadow:0 12px 32px #254b3b24;border-radius:13px}
+ .mobile-selection-actions button{min-height:44px;padding:9px 12px;text-align:left;border:0;border-radius:8px;background:#fff;color:#235945;font-size:13px;font-weight:750}
+ .mobile-selection-actions button:active,.mobile-selection-actions button:hover{background:#e9f6ec}
+ .hero{grid-template-columns:minmax(0,1fr);gap:8px;margin:8px 0 12px}
+ .hero>.hero-intro{min-height:0;padding:16px 17px;border-radius:17px}
+ .hero>.hero-intro::after{font-size:110px;right:-3px;top:-32px}
+ .hero h1{font-size:clamp(26px,7vw,31px);letter-spacing:-.9px;margin:0 0 4px}
+ .hero .eyebrow{font-size:10px;line-height:1.3;margin-bottom:5px;letter-spacing:.08em;overflow-wrap:anywhere}
+ .hero .lead{font-size:13px;line-height:1.4;margin:0}
+ .hero-actions{margin-top:9px;gap:7px}
+ .hero-actions .small-button,.hero-actions .state-pill{font-size:11px;min-height:38px;padding:7px 10px}
+ .hero-actions #school-source{font-size:11px;min-height:30px;display:inline-flex;align-items:center}
+ .hero.is-awaiting{margin-bottom:8px}
+ .hero.is-awaiting>.hero-intro{padding:12px 15px;background:#f1f5ef;border-radius:13px}
+ .weather:not([hidden]){min-height:0;padding:9px 12px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 8px;align-items:center;border-radius:13px}
+ .weather>.eyebrow{display:none}
+ .weather-main{margin:0;gap:6px;white-space:nowrap}
+ .weather-icon{font-size:23px}
+ .weather-main strong{font-size:17px;letter-spacing:-.5px}
+ .weather-toggle{display:flex;align-items:center;justify-content:flex-end;gap:5px;min-height:44px;width:100%;padding:4px 6px;border:0;background:transparent;text-align:right;color:#3f6e5e;font-size:12px;font-weight:800}
+ .weather-toggle span{font-size:19px;transition:transform .2s}
+ .weather.is-expanded .weather-toggle span{transform:rotate(180deg)}
+ .weather-details{display:none;grid-column:1/-1;border-top:1px solid #e8eee8;padding:9px 0 4px}
+ .weather.is-expanded .weather-details{display:block}
+ .weather-desc{font-size:13px;margin:0;line-height:1.4}
+ .weather-details .source-note{font-size:11px;margin:7px 0 0}
+ .weekdays{margin:0 0 12px;border-radius:13px;padding:4px;gap:3px}
+ .day{min-height:54px;padding:6px 1px;border-radius:9px;gap:2px}
+ .day span{font-size:12px;line-height:1.2}
+ .day strong{font-size:11px;line-height:1.2}
+ .day.past:not(.active){opacity:.72}
+ .columns{grid-template-columns:minmax(0,1fr);gap:0}
+ .panel{padding:16px;margin-bottom:12px;border-radius:16px}
+ .panel-head{margin-bottom:13px}
+ .panel-head h2{font-size:19px;letter-spacing:-.5px}
+ .panel-head .eyebrow{font-size:10px;letter-spacing:.10em}
+ .section-icon{height:37px;width:37px;min-width:37px;border-radius:11px;font-size:19px}
+ .event{grid-template-columns:38px minmax(0,1fr);gap:10px;padding:9px 0;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+ .event+.event{padding-top:12px}
+ .event-dot{width:38px;height:38px;border-radius:11px}
+ .event-dot::after{font-size:19px}
+ .checkrow,.bag .checkrow{min-height:52px;padding:11px 12px;font-size:14px;line-height:1.5}
+ .checkrow input,.mission-check input{min-width:22px;width:22px;height:22px;margin-top:1px}
+ .homework{padding:15px}
+ .homework .items{grid-template-columns:minmax(0,1fr);gap:8px}
+ .homework-progress{padding:12px 13px;margin-bottom:12px;border-radius:13px}
+ .homework-progress-top{font-size:13px}
+ .details{border-radius:14px}
+ .details summary{min-height:48px;padding:12px 14px;font-size:14px}
+ .special-items{grid-template-columns:minmax(0,1fr);gap:12px}
+ .special-card{padding:13px;border-radius:14px}
+ .special-copy h3{font-size:17px}
+ .special-visual{padding:7px}
+ .special-visual canvas{max-width:100%;height:auto}
+ .special-crop-button,.special-expand{min-height:44px}
+ .plan-feedback{padding:17px 15px;gap:10px;margin-bottom:14px;border-radius:16px}
+ .feedback-analyzing{min-height:0}
+ .plan-feedback h2{font-size:20px}
+ .feedback-description{font-size:13px;line-height:1.5}
+ #analysis-progress:not([hidden]){margin-top:15px;padding:12px;border-radius:12px}
+ .feedback-actions{margin-top:12px}
+ .feedback-primary-link,.feedback-secondary-link,.feedback-retry{min-height:44px;font-size:13px;padding:10px 13px}
+ .subjects-panel.compact-empty{padding:10px 13px;gap:8px}
+ .subjects-panel.compact-empty .panel-head h2{font-size:14px}
+ .details.compact-empty summary{padding:10px 13px}
+ .day-notes{padding:12px}
+ .disclaimer{margin:16px 0 22px}
+}
+@media(max-width:360px){
+ .shell{padding-left:10px;padding-right:10px}
+ .logo strong{font-size:18px}
+ .week-badge{font-size:10px;padding:7px}
+ .mobile-selection-menu summary{font-size:11px;padding:7px}
+ .day span{font-size:11px}
+ .day strong{font-size:10px}
+ .hero-actions{gap:5px}
+ .panel{padding:13px}
+}
+@media(prefers-reduced-motion:reduce){
+ .weather-toggle span{transition:none}
+}
