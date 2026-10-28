@@ -159,3 +159,11 @@ Kommunens offisielle oversikt (https://www.kristiansand.kommune.no/navigasjon/ba
 - Skoler kan ha egne publiseringsmåter (ukeplan, ukebrev, separate klasseplaner) og enkelte publiserer ikke PDF for inneværende uke. Appen viser da en ærlig melding og lenke til skolen, aldri PDF fra en annen skole eller en eldre uke.
 - 61 lokale Node-tester dekker kildeoppslag, A/B-klasser, uavhengig cache, gammelt Fagerholt-API, kildevalidering og eksisterende PDF/AI-regresjoner. **Ikke alle 30 skolers live PDF-er er verifisert**. Før produksjon: test en håndfull ulike skoler og grupper i Netlify Deploy Preview, samt mobilvisning, OpenAI-tilgang og faktisk publisert dokument.
 - Denne oppdateringen introduserer `/api/grades` og endrer `/api/plan`, `/api/weather` og den signerte bakgrunnsfunksjonen. Deploy alle samtidig, aldri delvis.
+
+
+## v0.7 – tydelig analyse- og ingen-PDF-visning
+
+- Når serveren returnerer `aiStatus: processing`, viser forsiden en synlig grønn statusbrikke **«AI analyserer · foreløpig ukeplan»** med roterende indikator og et eget animert statuskort. Kortet sier at AI sorterer dagsprogram, lekser, pakkeliste og beskjeder, og at den regelbaserte visningen foreløpig kan være ufullstendig. Brukeren kan trykke **Sjekk AI-status** uten å bytte side. Animasjon reduseres når brukeren har valgt redusert bevegelse.
+- Ved `unpublished`, `unavailable`, `unreadable` eller hentefeil får brukeren et tydelig resultatkort med **Åpne skolens nettside**, eventuell trinnside/original-PDF og **Prøv igjen**. Tomme ukeplan- og pakkekort skjules så de ikke framstår som fullstendige. Manglende PDF og nettverksfeil beskrives forskjellig.
+- Dersom en skole ikke tilbyr oppdagbare trinnsider, vises en egen videre-handling til skolens hjemmeside allerede ved trinnvalget. Utgående lenker kommer fra skolekonfigurasjonen eller serverens kilde-URL, og åpnes sikkert i ny fane.
+- 69 automatiserte Node-tester, inkludert egen ren tilstandsmodell og UI-regresjonstester. CSS/layout kontrollert med statisk Chromium-rendering ved 390px/1440px uten horisontal scroll. Kjøring av appens fulle lokale HTTP-flyt var blokkert av nettlesermiljøet; test ekte Netlify Deploy Preview før merge.

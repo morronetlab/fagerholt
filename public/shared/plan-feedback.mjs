@@ -1,0 +1,37 @@
+/** Presentation decisions for an AI job, an absent weekly PDF or an unreadable document.
+ * Pure, browser-independent state logic; never guesses whether a PDF was published.
+ */
+export function planFeedback({school=null,grade=null,plan=null,error=null}={}){
+  if(!school||!grade)return null;
+  if(plan?.status==='unpublished')return {
+    kind:'missing',eyebrow:'INGEN UKEPLAN FUNNET',
+    title:'Vi fant ingen ukeplan for denne uka',
+    description:`${school.name} har ikke en ukeplan-PDF tilgjengelig ${plan.week?`for uke ${plan.week}`:`for denne uka`} på den valgte trinnsiden. Det kan hende skolen publiserer planen et annet sted.`,
+    showSchool:true,showGrade:Boolean(plan.source&&plan.source!==school.homepage),showRetry:true,hideContent:true
+  };
+  if(plan?.status==='unavailable')return {
+    kind:'missing',eyebrow:'FANT IKKE TRINNSIDEN',
+    title:'Vi fant ikke ukeplanen for dette trinnet',
+    description:`Vi fant ikke en offisiell trinnside for ${grade} ved ${school.name}. Gå til skolens nettside for å finne informasjonen direkte.`,
+    showSchool:true,showGrade:false,showRetry:true,hideContent:true
+  };
+  if(error||plan?.status==='error')return {
+    kind:'missing',eyebrow:'KUNNE IKKE HENTE UKEPLAN',
+    title:'Ukeplanen er midlertidig utilgjengelig',
+    description:`Vi klarte ikke hente informasjon fra ${school.name} akkurat nå. Du kan prøve igjen eller åpne skolens nettside.`,
+    showSchool:true,showGrade:Boolean(plan?.source&&plan.source!==school.homepage),showRetry:true,hideContent:true
+  };
+  if(plan?.status==='unreadable')return {
+    kind:'missing',eyebrow:'PDF KUNNE IKKE LESES',
+    title:'Vi fant PDF-en, men klarte ikke lese den',
+    description:'Åpne skolens originaldokument for å se dagsprogram, lekser og utstyr. Vi viser ikke en tom ukeplan som om den var komplett.',
+    showSchool:true,showGrade:Boolean(plan.pdf),showRetry:true,hideContent:true
+  };
+  if(plan?.aiStatus==='processing')return {
+    kind:'analyzing',eyebrow:'AI-ANALYSE PÅGÅR',
+    title:'AI analyserer · foreløpig ukeplan',
+    description:'Vi leser skolens PDF og sorterer dagsprogram, lekser, pakkeliste og beskjeder. Informasjonen nedenfor er foreløpig og kan endres når analysen er ferdig.',
+    showSchool:false,showGrade:false,showRetry:true,hideContent:false
+  };
+  return null;
+}

@@ -1,6 +1,7 @@
 import {siteConfig} from './site-config.mjs';
 import {schoolCalendar,dayDate,DAYS} from './shared/calendar.mjs';
 import {schoolSelectionKey,validSchool,gradeSelectionKey,validGrade,progressKey} from './shared/selection.mjs';
+import {planFeedback} from './shared/plan-feedback.mjs';
 // This module is served from public/. Calendar and selection modules are mirrored in public/shared/.
 const $ = id=>document.getElementById(id);
 const safe=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -22,7 +23,7 @@ function setChecked(section,index,day,checked){
   data[index]=checked;storageWrite(key,JSON.stringify(data));renderContent();
 }
 function badge(status){
-  return ({loading:'Henter ukeplan …',ok:'Ukeplan hentet',partial:'Delvis tolket PDF',unreadable:'PDF kunne ikke tolkes',unpublished:'Ikke publisert ennå',error:'Ukeplan utilgjengelig'})[status]||'Ukeplan';
+  return ({loading:'Henter ukeplan …',ok:'Ukeplan hentet',partial:'Delvis tolket PDF',unreadable:'PDF kunne ikke tolkes',unpublished:'Ikke publisert ennå',unavailable:'Finner ikke trinnside',error:'Ukeplan utilgjengelig'})[status]||'Ukeplan';
 }
 function getBag(){
   const p=state.plan;if(!p)return [];
@@ -42,6 +43,8 @@ function renderGradeChoices(){
   const grades=state.availableGrades||[];
   $('grade-loading-message').textContent=state.gradeError||(!state.availableGrades?'Henter klassetrinn fra skolen …':!grades.length?'Ingen publiserte trinnsider funnet. Sjekk skolens nettside.':'Velg barnets klassetrinn eller gruppe.');
   $('grade-choices').innerHTML=grades.map(g=>`<button type="button" class="grade" data-grade="${safe(g.code)}"><strong>${safe(g.code)}</strong><span>${g.code.length>1?'gruppe':'trinn'}</span></button>`).join('');
+  $('grade-missing').hidden=!state.availableGrades||grades.length>0;
+  if(state.school)$('grade-school-link').href=state.school.homepage;
 }
 function renderShell(){
   const hasSchool=Boolean(state.school),chosen=Boolean(state.grade&&hasSchool);
@@ -72,15 +75,40 @@ function checklist(items,section,day='all'){
   }).join('');
 }
 function empty(msg){return `<p class="empty"><span aria-hidden="true">ℹ️</span> ${safe(msg)}</p>`;}
+function renderFeedback(){
+  const info=planFeedback({school:state.school,grade:state.grade,plan:state.plan,error:state.planError});
+  const el=$('plan-feedback');
+  el.hidden=!info;
+  $('plan-body').hidden=Boolean(info?.hideContent);
+  if(!info)return;
+  el.className=`plan-feedback ${info.kind==='analyzing'?'feedback-analyzing':'feedback-missing'}`;
+  $('feedback-eyebrow').textContent=info.eyebrow;
+  $('feedback-title').textContent=info.title;
+  $('feedback-description').textContent=info.description;
+  $('feedback-school-link').hidden=!info.showSchool;
+  $('feedback-school-link').href=state.school.homepage;
+  $('feedback-school-link').setAttribute('aria-label',`Åpne nettsiden til ${state.school.name} i ny fane`);
+  const original=state.plan?.pdf||state.plan?.source;
+  $('feedback-grade-link').hidden=!info.showGrade||!original;
+  if(original){
+    $('feedback-grade-link').href=original;
+    $('feedback-grade-link').firstChild.textContent=state.plan?.pdf?'Se original-PDF ':'Se trinnsiden ';
+  }
+  $('feedback-retry').hidden=!info.showRetry;
+  $('feedback-retry').textContent=info.kind==='analyzing'?'↻ Sjekk AI-status':'↻ Prøv igjen';
+}
 function renderContent(){
   if(!state.grade)return;
   const p=state.plan;
   const status=state.loading?'loading':state.planError?'error':p?.status||'loading';
   $('status-pill').textContent=p?.aiStatus==='processing'?'AI analyserer · foreløpig ukeplan':p?.aiStatus==='ready'?'AI-tolket ukeplan':p?.aiStatus==='failed'?'AI-feil · foreløpig ukeplan':badge(status);
-  $('status-pill').className='state-pill '+(['error','unreadable'].includes(status)?'state-error':['partial','unpublished'].includes(status)?'state-warning':'');
+  $('status-pill').className='state-pill '+(p?.aiStatus==='processing'?'state-ai-processing':p?.aiStatus==='ready'?'state-ai-ready':['error','unreadable'].includes(status)?'state-error':['partial','unpublished','unavailable'].includes(status)?'state-warning':'');
+  renderFeedback();
   const msg=state.planError||p?.warning;
-  $('warning-area').hidden=!msg;
-  $('warning-area').textContent=msg||'';
+  // The prominent banner already explains the missing PDF or AI processing.
+  const feedbackVisible=!$('plan-feedback').hidden;
+  $('warning-area').hidden=!msg||feedbackVisible;
+  $('warning-area').textContent=!feedbackVisible?msg||'':'';
   $('pdf-source').hidden=!p?.pdf;if(p?.pdf)$('pdf-source').href=p.pdf;
   if(p?.source&&state.school)$('school-source').href=p.source;
   const events=p?.days?.[DAYS[state.day]]?.events||[];
@@ -229,6 +257,7 @@ function boot(){
   $('change-grade').addEventListener('click',clearGrade);
   $('change-school').addEventListener('click',clearSchool);
   $('reload').addEventListener('click',reload);
+  $('feedback-retry').addEventListener('click',()=>reload());
   const savedSchool=storageRead(schoolSelectionKey());
   if(validSchool(savedSchool,siteConfig.schools))selectSchool(savedSchool,{restore:true});
   else renderShell();
