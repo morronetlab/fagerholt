@@ -3,6 +3,7 @@ import {siteConfig} from '../../public/site-config.mjs';
 import {pdfPages} from './plan.mjs';
 import {interpretPdfWithAI} from '../../lib/ai-plan.mjs';
 import {aiConfigured,cacheKey,digestPdf,openAIStore,validSignature,releaseJob,failureKey} from '../../lib/ai-runtime.mjs';
+import {getSchool,validGradeCode,isSchoolSectionUrl} from '../../lib/schools.mjs';
 
 export const config={background:true};
 const fail=(code,message)=>new Response(message,{status:code});
@@ -18,11 +19,12 @@ export function createAIBackgroundHandler({fetchImpl=fetch,storeFactory=openAISt
    if(body.length>2400||!validSignature(body,request.headers.get('X-Weekplan-Signature'),env.AI_JOB_SECRET))return fail(401,'Unauthorized');
    let job;
    try{job=JSON.parse(body);}catch{return fail(400,'Invalid JSON');}
-   const {grade,week,year,source,pdf,hash}=job;
-   if(!siteConfig.school.grades[String(grade)]||source!==siteConfig.school.grades[String(grade)]||
+   const {schoolId,grade,week,year,source,pdf,hash}=job;
+   const school=getSchool(schoolId||siteConfig.school.id);
+   if(!school||!validGradeCode(String(grade))||!isSchoolSectionUrl(source,school,String(grade))||
       !Number.isInteger(week)||week<1||week>53||!Number.isInteger(year)||year<2020||year>2100||
       !safePdfUrl(pdf)||!/^[a-f0-9]{64}$/.test(hash))return fail(400,'Invalid source');
-   const key=cacheKey({school:siteConfig.school.id,grade,year,week,hash,model:env.OPENAI_MODEL||'gpt-4.1-mini'});
+   const key=cacheKey({school:school.id,grade,year,week,hash,model:env.OPENAI_MODEL||'gpt-4.1-mini'});
    let store;
    try{
      store=await storeFactory();
@@ -41,7 +43,7 @@ export function createAIBackgroundHandler({fetchImpl=fetch,storeFactory=openAISt
      const pageTexts=pages.map(p=>p.items?.map(x=>x.text).join(' ')||'');
      const normalized=await interpret(aiPdfBytes,{grade,week,year,source,pdf,pageCount:pages.length||16,pageTexts,
        fetchImpl,apiKey:env.OPENAI_API_KEY,model:env.OPENAI_MODEL||'gpt-4.1-mini'});
-     await store.setJSON(key,{...normalized,createdAt:new Date().toISOString(),model:env.OPENAI_MODEL||'gpt-4.1-mini'});
+     await store.setJSON(key,{...normalized,schoolId:school.id,schoolName:school.name,createdAt:new Date().toISOString(),model:env.OPENAI_MODEL||'gpt-4.1-mini'});
      try{await store.delete(failureKey(key));}catch{}
      return new Response(null,{status:204});
    }catch(error){

@@ -96,3 +96,20 @@ footer{border-color:var(--line);color:#92a49c}
 .subjects-panel{margin-top:19px;background:#fff}
 .subjects-panel .items{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
 .subject-item{margin:0;padding:12px 15px;border-radius:13px;background:#f4f6f2;color:#45695b;font-size:13px;line-height:1.45}
+
+/* Municipality-wide, searchable school picker. */
+.school-gate{max-width:840px;text-align:left;padding:35px 38px}
+.school-gate .gate-icon,.school-gate>h1,.school-gate>.eyebrow,.school-gate>.lead,.school-gate>.fineprint{text-align:center}
+.school-gate .gate-icon{margin-left:auto;margin-right:auto}
+.school-search-label{display:block;font-size:12px;font-weight:850;letter-spacing:.03em;color:#53786b;margin:22px 0 7px}
+.school-search{width:100%;border:1.5px solid #d2e3d8;background:#fff;border-radius:14px;padding:13px 17px;font-size:16px;min-height:50px;color:#274c40}
+.school-search:focus{outline:3px solid #d7ebe0;outline-offset:1px}
+.school-match-count{font-size:12px;color:#7f9689;font-weight:700;margin:11px 0}
+.school-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;max-height:445px;overflow:auto;padding:2px 4px 5px 0}
+.school-choice{border:1px solid #dfe9e1;border-radius:13px;background:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;padding:13px 15px;min-height:59px;color:#2b5346;font-size:14px;font-weight:800}
+.school-choice:hover,.school-choice:focus-visible{background:#e8f5ed;border-color:#75a892}
+.school-choice .school-type{font-size:10px;font-weight:750;color:#7e988b;white-space:nowrap}
+.school-choice .school-chevron{color:#82a696;font-size:17px}
+.school-empty{padding:24px;text-align:center;color:#7e988b;grid-column:1/-1}
+@media(max-width:700px){.school-gate{padding:26px 20px}.school-choices{grid-template-columns:1fr;max-height:60vh}.school-choice{min-height:56px}.topbar .header-actions{gap:5px}}
+@media(max-width:420px){.header-actions #change-school,.header-actions #change-grade{padding:6px 8px;font-size:10px}}

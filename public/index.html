@@ -9,13 +9,23 @@
 <div class="shell">
   <header class="topbar">
     <a class="logo" id="home-link" href="/" aria-label="Gå til forsiden"><span class="brand-mark">🎒</span><span><strong id="brand-title">Ukeplanen</strong><small id="brand-subtitle">EN ENKLERE SKOLEUKE</small></span></a>
-    <div class="header-actions"><span class="date-chip" id="today"></span><span class="week-badge" id="week-label">UKE —</span><button id="change-grade" type="button" class="ghost" hidden>Bytt klassetrinn</button></div>
+    <div class="header-actions"><span class="date-chip" id="today"></span><span class="week-badge" id="week-label">UKE —</span><button id="change-school" type="button" class="ghost" hidden>Bytt skole</button><button id="change-grade" type="button" class="ghost" hidden>Bytt klassetrinn</button></div>
   </header>
   <main>
-    <section id="grade-gate" class="gate" aria-labelledby="gate-title">
-      <div class="gate-icon">🎒</div><p class="eyebrow">VELKOMMEN</p><h1 id="gate-title">Hvilken klasse går barnet i?</h1>
+    <section id="school-gate" class="gate school-gate" aria-labelledby="school-gate-title">
+      <div class="gate-icon">🏫</div><p class="eyebrow">KRISTIANSAND</p>
+      <h1 id="school-gate-title">Hvilken skole går barnet på?</h1>
+      <p class="lead">Velg barneskole for å finne ukeplaner, lekser og pakkeliste.</p>
+      <label class="school-search-label" for="school-search">Finn skolen din</label>
+      <input id="school-search" class="school-search" type="search" placeholder="Søk etter skole …" autocomplete="off" aria-controls="school-choices">
+      <p id="school-match-count" class="school-match-count" aria-live="polite"></p>
+      <div id="school-choices" class="school-choices" role="group" aria-label="Velg skole"></div>
+      <p class="fineprint">Skolene kommer fra Kristiansand kommunes oversikt. Fire er kombinerte 1.–10.-skoler; vi viser bare barnetrinnene.</p>
+    </section>
+    <section id="grade-gate" class="gate" hidden aria-labelledby="gate-title">
+      <div class="gate-icon">🎒</div><p class="eyebrow">VELKOMMEN</p><h1 id="gate-title">Hvilket klassetrinn går barnet på?</h1>
       <p id="gate-school" class="lead"></p><p class="muted">Velg klassetrinn for å se ukens plan. Valget huskes på denne enheten.</p>
-      <div id="grade-choices" class="grades" aria-label="Velg klassetrinn"></div>
+      <p id="grade-loading-message" class="school-match-count" role="status" aria-live="polite"></p><div id="grade-choices" class="grades" aria-label="Velg klassetrinn"></div>
       <p class="fineprint">Vi henter kun opplysninger fra skolens offisielle ukeplan for valgt klassetrinn.</p>
     </section>
     <div id="app-view" hidden>
@@ -23,7 +33,7 @@
         <div><p class="eyebrow" id="school-name"></p><h1 id="welcome-title">Morgenklar! <span aria-hidden="true">☀️</span></h1><p class="lead" id="welcome-description">Sjekk skoledagen og pakk sekken.</p>
           <div class="hero-actions"><span id="status-pill" class="state-pill">Henter ukeplan …</span><button type="button" id="reload" class="small-button">↻ Oppdater</button><a id="school-source" href="#" target="_blank" rel="noopener noreferrer">Skolens trinnside ↗</a></div>
         </div>
-        <aside class="weather" aria-label="Vær for valgt skoledag"><p class="eyebrow">VÆR PÅ SKOLEN · 08–15</p><div class="weather-main"><span id="weather-icon" class="weather-icon">🌤️</span><strong id="weather-temp">—</strong></div><p id="weather-desc" class="weather-desc">Henter værmelding …</p><p class="source-note">Værdata: Meteorologisk institutt / Yr</p></aside>
+        <aside class="weather" aria-label="Vær for valgt skoledag"><p class="eyebrow">VÆR I OMRÅDET · 08–15</p><div class="weather-main"><span id="weather-icon" class="weather-icon">🌤️</span><strong id="weather-temp">—</strong></div><p id="weather-desc" class="weather-desc">Henter værmelding …</p><p class="source-note" id="weather-location">Værdata: Meteorologisk institutt / Yr</p></aside>
       </section>
       <div id="warning-area" class="alert" role="status" aria-live="polite" hidden></div>
       <div id="rain-reminder" class="rain-alert" role="status" hidden></div>
@@ -40,7 +50,7 @@
       <p class="disclaimer">Ukeplanen leses automatisk fra skolens PDF. Ved tvil er skolens original alltid fasit. <a id="pdf-source" href="#" target="_blank" rel="noopener noreferrer" hidden>Se original-PDF ↗</a></p>
     </div>
   </main>
-  <footer>Ukeplanen · <span id="footer-school"></span> · Ingen personlige elevopplysninger lagres på serveren.</footer>
+  <footer>Ukeplanen · <span id="footer-school">Kristiansand</span> · Skolevalg og avkrysninger lagres kun i nettleseren. <a href="https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/grunnskole/" target="_blank" rel="noopener noreferrer">Skoleoversikten ↗</a></footer>
 </div>
 <script type="module" src="/app.js"></script>
 </body>
