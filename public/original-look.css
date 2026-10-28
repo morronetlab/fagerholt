@@ -190,3 +190,24 @@ footer{border-color:var(--line);color:#92a49c}
 @keyframes homework-win{50%{transform:scale(1.14) rotate(-5deg)}}
 @media(prefers-reduced-motion:reduce){.homework-progress-fill{transition:none}.homework-progress.is-complete #homework-progress-stars{animation:none}}
 @media(max-width:550px){.homework-progress{padding:15px 13px}.homework-progress-top{font-size:13px}#homework-progress-stars{font-size:19px}}
+
+/* v0.11: actual elapsed time + honest indeterminate AI activity */
+.analysis-progress{margin-top:15px;max-width:620px}
+.analysis-progress-top{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;font-weight:800;color:#275748;margin-bottom:8px}
+.analysis-progress-top span{font-variant-numeric:tabular-nums;color:#587b6e}
+.analysis-track{height:12px;border-radius:999px;background:#b8d5c3;position:relative;overflow:hidden}
+.analysis-bar{position:absolute;top:0;bottom:0;width:38%;left:-38%;background:linear-gradient(90deg,#2b8867,#60d4a1,#2b8867);border-radius:999px;animation:analysis-run 2.5s ease-in-out infinite}
+.analysis-progress p{font-size:12px;color:#587769;margin:8px 0 0}
+@keyframes analysis-run{0%{transform:translateX(0)}100%{transform:translateX(380%)}}
+#plan-body.ai-pending{opacity:.58;filter:grayscale(.32);transition:opacity .35s ease,filter .35s ease}
+#plan-body.ai-pending .checkrow{pointer-events:none;cursor:wait}
+.homework-due{display:inline-flex;align-items:center;padding:4px 8px;margin:0 7px 6px 0;background:#fff1d6;color:#785219;border-radius:8px;font-size:11px;font-weight:900;white-space:nowrap}
+.event-endtime{display:block!important;margin:10px 0 0!important;font-size:12px!important;color:#316b5e!important;border-top:1px dashed #d5e4da;padding-top:7px}
+.day-group-summary{padding:13px 17px;margin:-8px 0 18px;border:1.5px solid #b9d8c7;background:#edf8f1;border-radius:13px;font-size:13px;color:#245741;line-height:2}
+.day-group-summary strong{margin-right:10px}
+.special-crop-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.special-crop-button{border:1px solid #b4d4c3;background:#fff;color:#245b49;font-size:12px;border-radius:9px;padding:9px 13px;font-weight:800;cursor:pointer}
+.special-crop-button:hover:not(:disabled){background:#e1f4ea}
+.special-crop-button:disabled{opacity:.4;cursor:default}
+@media(max-width:440px){.analysis-progress-top{flex-wrap:wrap}.day-group-summary{margin-top:-4px}.special-crop-button{flex:1}}
+@media(prefers-reduced-motion:reduce){.analysis-bar{animation:none;left:0;width:100%;background:#358669}}

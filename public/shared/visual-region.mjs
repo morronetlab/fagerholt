@@ -25,7 +25,10 @@ export function duplicateVisualRegion(a,b){
 
 /** Return dimensions and an affine transform for PDF.js to draw *only* the crop. */
 export function visualCropGeometry(region,pageWidth,pageHeight,boxWidth=460,deviceScale=1){
- const safe=normalizeVisualRegion(region);
+ const safe=normalizeVisualRegion(region)||(
+  region&&['x','y','width','height'].every(k=>Number.isFinite(region[k]))&&
+  region.x>=0&&region.y>=0&&region.width>=65&&region.height>=65&&
+  region.x+region.width<=1000&&region.y+region.height<=1000?region:null);
  if(!safe||pageWidth<=0||pageHeight<=0)return null;
  const pdfWidth=pageWidth*safe.width/1000;
  const pdfHeight=pageHeight*safe.height/1000;
@@ -57,4 +60,16 @@ export function fullPageGeometry(pageWidth,pageHeight,boxWidth=460,deviceScale=1
  const pixelRatio=Math.max(1,Math.min(2,deviceScale));
  return {cssWidth,cssHeight,pixelWidth:Math.ceil(cssWidth*pixelRatio),pixelHeight:Math.ceil(cssHeight*pixelRatio),viewportScale:scale,
    transform:[pixelRatio,0,0,pixelRatio,0,0]};
+}
+
+/** User-controlled width and height expansion, independent of AI's tight box. */
+export function adjustableVisualRegion(raw,{horizontal=0,vertical=0}={}){
+ const r=normalizeVisualRegion(raw);if(!r)return null;
+ const xPad=115+Math.max(0,Math.min(4,horizontal))*95;
+ const yPad=20+Math.max(0,Math.min(4,vertical))*75;
+ const x=Math.max(0,r.x-xPad),y=Math.max(0,r.y-yPad);
+ const right=Math.min(1000,r.x+r.width+xPad),bottom=Math.min(1000,r.y+r.height+yPad);
+ const wide={x,y,width:right-x,height:bottom-y};
+ if(wide.width<=0||wide.height<=0)return null;
+ return wide;
 }
