@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {AI_SCHEMA,normalizeAIPlan,interpretPdfWithAI} from '../lib/ai-plan.mjs';
-import {digestPdf,cacheKey,signJob,validSignature,queueAIJob} from '../lib/ai-runtime.mjs';
+import {digestPdf,cacheKey,signJob,validSignature,queueAIJob,failureKey} from '../lib/ai-runtime.mjs';
 import {createAIBackgroundHandler} from '../netlify/functions/ai-plan-background.mjs';
 import {createPlanHandler} from '../netlify/functions/plan.mjs';
 import {siteConfig} from '../public/site-config.mjs';
@@ -52,20 +52,57 @@ test('AI drops ungrounded evidence and unknown weekdays',()=>{
  assert.ok(!normalized.days.Torsdag.bring.some(x=>x.label==='Kostyme'));
  assert.ok(!normalized.homework.some(x=>/Oppdiktet/.test(x.text)));
 });
-test('Requests API sends PDF visually, with schema, store:false and no client API key',async()=>{
- let request;
+test('OpenAI Files API uploads a binary PDF, references file_id and deletes the temporary file',async()=>{
+ const requests=[];
  const mock=async (url,opts)=>{
-  request={url,opts,body:JSON.parse(opts.body)};
-  return {ok:true,json:async()=>({status:'completed',output:[{type:'message',content:[{type:'output_text',text:JSON.stringify(aiRaw)}]}]})};
+  requests.push({url,opts});
+  if(url==='https://api.openai.com/v1/files')return {ok:true,json:async()=>({id:'file-test-123'})};
+  if(url==='https://api.openai.com/v1/responses')return {ok:true,json:async()=>({status:'completed',output:[{type:'message',content:[{type:'output_text',text:JSON.stringify(aiRaw)}]}]})};
+  if(url==='https://api.openai.com/v1/files/file-test-123')return {ok:true,status:200};
+  throw Error('Unexpected URL '+url);
  };
  const result=await interpretPdfWithAI(pdfBytes,{...meta,fetchImpl:mock,apiKey:'test-key',model:'gpt-4.1-mini'});
  assert.equal(result.parser,'ai');
- assert.equal(request.url,'https://api.openai.com/v1/responses');
- assert.equal(request.body.store,false);
- assert.equal(request.body.input[1].content[1].type,'input_file');
- assert.equal(request.body.input[1].content[1].detail,'high');
- assert.equal(request.body.text.format.strict,true);
+ assert.deepEqual(requests.map(r=>[r.opts.method,r.url]),[
+  ['POST','https://api.openai.com/v1/files'],
+  ['POST','https://api.openai.com/v1/responses'],
+  ['DELETE','https://api.openai.com/v1/files/file-test-123']
+ ]);
+ const upload=requests[0].opts.body;
+ assert.ok(upload instanceof FormData);
+ assert.equal(upload.get('purpose'),'user_data');
+ assert.equal(upload.get('file').name,'ukeplan.pdf');
+ assert.equal(upload.get('file').type,'application/pdf');
+ assert.equal(await upload.get('file').text(),new TextDecoder().decode(pdfBytes));
+ assert.ok(!requests[0].opts.headers['Content-Type'],'Fetch must create multipart boundary');
+ const response=JSON.parse(requests[1].opts.body);
+ assert.equal(response.store,false);
+ assert.equal(response.input[1].content[1].type,'input_file');
+ assert.equal(response.input[1].content[1].file_id,'file-test-123');
+ assert.equal(response.input[1].content[1].detail,'high');
+ assert.ok(!('file_data' in response.input[1].content[1]));
+ assert.equal(response.text.format.strict,true);
  assert.equal(AI_SCHEMA.additionalProperties,false);
+});
+test('Failed OpenAI analysis deletes uploaded PDF and surfaces a readable server error',async()=>{
+ const calls=[];
+ const mock=async (url,opts)=>{
+  calls.push([opts.method,url]);
+  if(url.endsWith('/v1/files'))return {ok:true,json:async()=>({id:'file-mocked'})};
+  if(url.endsWith('/v1/responses'))return {ok:false,status:400,json:async()=>({error:{message:'Unsupported PDF format for this model'}})};
+  if(url.endsWith('/v1/files/file-mocked'))return {ok:true,status:200};
+ };
+ await assert.rejects(interpretPdfWithAI(pdfBytes,{...meta,fetchImpl:mock,apiKey:'test-key'}),/AI-analyse: OpenAI svarte 400: Unsupported PDF format/);
+ assert.equal(calls[2][0],'DELETE');
+});
+test('OpenAI PDF upload errors do not attempt cleanup without an uploaded file',async()=>{
+ const calls=[];
+ const mock=async(url,opts)=>{
+  calls.push([url,opts.method]);
+  return {ok:false,status:403,json:async()=>({error:{message:'Insufficient project permissions'}})};
+ };
+ await assert.rejects(interpretPdfWithAI(pdfBytes,{...meta,fetchImpl:mock,apiKey:'test-key'}),/Opplasting av PDF: OpenAI svarte 403/);
+ assert.equal(calls.length,1);
 });
 test('invalid signature and forged public background requests are blocked',async()=>{
  const run=createAIBackgroundHandler({env,storeFactory:async()=>{throw Error('Must not get store');}});
@@ -109,4 +146,27 @@ test('background function verifies PDF hash and saves AI JSON once',async()=>{
  assert.equal(response.status,204);
  assert.equal((await store.get(key)).parser,'ai');
  assert.equal((await store.get('locks/'+key)),null);
+});
+
+test('Failed AI attempt is shown as failed instead of dispatching again during cooldown',async()=>{
+ const store=memoryStore();let dispatches=0;
+ await store.setJSON(failureKey(key),{retryAt:1_000_000});
+ const result=await queueAIJob({request:new Request('https://preview.example/api/plan?grade=4'),job:body,key,store,env,
+   dispatchImpl:async()=>{dispatches++;return {status:202};},now:()=>900_000});
+ assert.equal(result,'failed');
+ assert.equal(dispatches,0);
+ const refreshed=await queueAIJob({request:new Request('https://preview.example/api/plan?grade=4'),job:body,key,store,env,
+   dispatchImpl:async()=>{dispatches++;return {status:202};},now:()=>1_000_001});
+ assert.equal(refreshed,'processing');
+ assert.equal(dispatches,1);
+});
+test('Plan API labels rule fallback when AI is temporarily failed',async()=>{
+ const store=memoryStore();await store.setJSON(failureKey(key),{retryAt:Date.now()+300000});
+ const handler=createPlanHandler({env,now:()=>new Date('2026-10-27T12:00:00Z'),storeFactory:async()=>store,
+  parsePdfPages:async()=>[{width:500,height:700,items:[]}],
+  fetchImpl:async url=>url===source?webResponse(`<a href="${pdf}">Ukeplan uke 44</a>`,url):webResponse('%PDF-1.7 test content',url)});
+ const result=await (await handler(new Request('https://preview.example/api/plan?grade=4'))).json();
+ assert.equal(result.aiStatus,'failed');
+ assert.equal(result.parser,'rules');
+ assert.match(result.warning,/AI-analysen feilet/);
 });
