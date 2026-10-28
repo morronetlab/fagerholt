@@ -1,10 +1,11 @@
 import {siteConfig} from '../../public/site-config.mjs';
 import {schoolCalendar} from '../../lib/calendar.mjs';
 import {findPdfLinks,choosePdf,analyzePdfPages,pdfItemsFromTextContent} from '../../lib/plan-core.mjs';
+import {aiConfigured,cacheKey,digestPdf,openAIStore,queueAIJob} from '../../lib/ai-runtime.mjs';
 const MAX_PDF_BYTES=14*1024*1024;
 const HEADERS={'User-Agent':'Mozilla/5.0 (compatible; Ukeplanen/0.1; +https://github.com/morronetlab/fagerholt)','Accept-Language':'nb-NO,nb;q=0.9'};
 const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{
-  'Content-Type':'application/json; charset=utf-8','Cache-Control':status===200?'public, max-age=60, s-maxage=900':'no-store',
+  'Content-Type':'application/json; charset=utf-8','Cache-Control':status===200&&body.aiStatus!=='processing'?'public, max-age=30, s-maxage=60':'no-store',
   'X-Content-Type-Options':'nosniff'
 }});
 function allowedUrl(url,requirePdf=false){
@@ -40,8 +41,10 @@ export async function pdfPages(bytes){
   }finally{await job.destroy();}
 }
 /** Dependency injection is used only for local tests; no sample data in live API. */
-export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()=>new Date()}={}){
+export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()=>new Date(),
+    storeFactory=openAIStore,queueJob=queueAIJob,env=process.env}={}){
   return async function handler(request){
+    if(request.method&&request.method!=='GET')return reply({error:'Kun GET støttes'},405);
     const grade=new URL(request.url).searchParams.get('grade');
     const source=siteConfig.school.grades[grade];
     if(!grade||!source)return reply({status:'error',error:'Velg et gyldig klassetrinn (1–7).'},400);
@@ -52,15 +55,37 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
       const pdf=choosePdf(findPdfLinks(html,source,siteConfig.allowedSourceHosts),week);
       if(!pdf)return reply({...base,status:'unpublished',pdf:null,warning:`Ukeplan for uke ${week} er ikke publisert som PDF på trinnsiden.`});
       const bytes=await load(pdf.url,{pdf:true,fetchImpl});
-      const pages=await parsePdfPages(bytes);
+      let aiStatus='disabled';
+      if(aiConfigured(env)){
+        try{
+          const hash=digestPdf(bytes);
+          const key=cacheKey({school:siteConfig.school.id,grade,year,week,hash,model:env.OPENAI_MODEL||'gpt-4.1-mini'});
+          const store=await storeFactory();
+          const cached=await store.get(key,{type:'json',consistency:'strong'});
+          if(cached?.parser==='ai'&&cached.grade===grade&&cached.week===week&&cached.year===year&&cached.pdf===pdf.url)
+            return reply({...base,...cached,publishedWeek:pdf.week,aiStatus:'ready'});
+          aiStatus=await queueJob({request,store,key,job:{grade,week,year,source,pdf:pdf.url,hash},env});
+        }catch(error){
+          console.error('AI job unavailable; using rule-based PDF parser:',error?.message);
+          aiStatus='unavailable';
+        }
+      }
+      let pages;
+      try{pages=await parsePdfPages(bytes);}
+      catch(error){
+        if(aiStatus==='processing')return reply({...base,pdf:pdf.url,publishedWeek:pdf.week,aiStatus,
+          status:'partial',parser:'rules',parsedFromPdf:false,days:{},homework:[],notices:[],learningGoals:[],subjects:[],everyday:[],weekTheme:null,optionalMission:null,
+          warning:'AI analyserer PDF-en. Dagsprogram og lekser blir tilgjengelig etter at analysen er klar.'});
+        throw error;
+      }
       const textChars=pages.reduce((count,page)=>count+(page.items||[]).reduce((n,item)=>n+String(item.text||'').trim().length,0),0);
       // A scanned/image-only PDF has no searchable text and cannot be trusted as a parsed plan.
       if(textChars<20){
-        return reply({...base,pdf:pdf.url,publishedWeek:pdf.week,status:'unreadable',parsedFromPdf:false,
-          warning:'Ukeplan-PDF-en har ikke et lesbart tekstlag. Åpne original-PDF-en; den kan være skannet og kreve OCR.',
+        return reply({...base,pdf:pdf.url,publishedWeek:pdf.week,aiStatus,parser:'rules',status:'unreadable',parsedFromPdf:false,
+          warning:aiStatus==='processing'?'AI analyserer PDF-en, som ikke har et lesbart tekstlag.':'Ukeplan-PDF-en har ikke et lesbart tekstlag. Åpne original-PDF-en.',
           days:{},homework:[],learningGoals:[],notices:[],subjects:[],weekTheme:null,optionalMission:null,everyday:[]});
       }
-      return reply({...base,...analyzePdfPages(pages,grade,pdf.url,week,year,source),publishedWeek:pdf.week});
+      return reply({...base,...analyzePdfPages(pages,grade,pdf.url,week,year,source),publishedWeek:pdf.week,parser:'rules',aiStatus});
     }catch(error){
       console.error('Failed to fetch published school PDF:',grade,error);
       return reply({...base,status:'error',warning:'Klarte ikke hente eller lese skolens ukeplan. Prøv igjen, eller åpne trinnsiden.'},502);
