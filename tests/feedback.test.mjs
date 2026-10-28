@@ -8,8 +8,8 @@ const mk=(plan,error=null)=>planFeedback({school,grade:'4',plan,error});
 
 test('AI processing has a prominent explanatory banner while keeping interim content',()=>{
  const x=mk({status:'ok',aiStatus:'processing',pdf:'https://www.minskole.no/week44.pdf',week:44});
- assert.equal(x.kind,'analyzing');assert.equal(x.hideContent,false);
- assert.match(x.title,/AI analyserer · foreløpig ukeplan/);
+ assert.equal(x.kind,'analyzing');assert.equal(x.hideContent,true);
+ assert.match(x.title,/AI leser og organiserer ukeplanen/);
  assert.match(x.description,/lekser, pakkeliste/);
  assert.equal(x.showSchool,false);
 });
