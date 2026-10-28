@@ -148,6 +148,31 @@ test('background function verifies PDF hash and saves AI JSON once',async()=>{
  assert.equal((await store.get('locks/'+key)),null);
 });
 
+test('Background keeps an independent PDF for AI when PDF.js detaches its input buffer',async()=>{
+ const store=memoryStore();
+ let aiReceivedValidPdf=false;
+ const handler=createAIBackgroundHandler({env,storeFactory:async()=>store,
+  parsePages:async received=>{
+   // Mirror PDF.js transferring its data into a worker, which detaches `received`.
+   const transferred=structuredClone(received.buffer,{transfer:[received.buffer]});
+   assert.equal(transferred.byteLength,pdfBytes.byteLength);
+   assert.equal(received.byteLength,0);
+   return [{items:[{text:quote}]}];
+  },
+  interpret:async input=>{
+   aiReceivedValidPdf=new TextDecoder().decode(input)===new TextDecoder().decode(pdfBytes);
+   if(!aiReceivedValidPdf)throw Error('AI received a detached/empty PDF buffer');
+   return normalizeAIPlan(aiRaw,meta);
+  },
+  fetchImpl:async()=>webResponse('%PDF-1.7 test content',pdf)});
+ const signedBody=JSON.stringify(body);
+ const response=await handler(new Request('https://preview.example/.netlify/functions/ai-plan-background',{
+  method:'POST',headers:{'X-Weekplan-Signature':signJob(signedBody,env.AI_JOB_SECRET)},body:signedBody}));
+ assert.equal(response.status,204);
+ assert.equal(aiReceivedValidPdf,true);
+ assert.equal((await store.get(key)).parser,'ai');
+});
+
 test('Failed AI attempt is shown as failed instead of dispatching again during cooldown',async()=>{
  const store=memoryStore();let dispatches=0;
  await store.setJSON(failureKey(key),{retryAt:1_000_000});

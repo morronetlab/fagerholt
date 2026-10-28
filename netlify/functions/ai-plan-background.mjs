@@ -33,10 +33,13 @@ export function createAIBackgroundHandler({fetchImpl=fetch,storeFactory=openAISt
      if(contentLength>14*1024*1024)throw new Error('PDF is too large');
      const bytes=new Uint8Array(await response.arrayBuffer());
      if(bytes.length>14*1024*1024||new TextDecoder('ascii').decode(bytes.slice(0,4))!=='%PDF'||digestPdf(bytes)!==hash)throw new Error('PDF content changed');
+     // PDF.js may transfer ownership of its Uint8Array into a worker, detaching
+     // the underlying ArrayBuffer. Keep an independent copy for the AI upload.
+     const aiPdfBytes=bytes.slice();
      let pages=[];
      try{pages=await parsePages(bytes);}catch(err){console.warn('PDF.js text extraction unavailable; model receives original PDF',err?.message);}
      const pageTexts=pages.map(p=>p.items?.map(x=>x.text).join(' ')||'');
-     const normalized=await interpret(bytes,{grade,week,year,source,pdf,pageCount:pages.length||16,pageTexts,
+     const normalized=await interpret(aiPdfBytes,{grade,week,year,source,pdf,pageCount:pages.length||16,pageTexts,
        fetchImpl,apiKey:env.OPENAI_API_KEY,model:env.OPENAI_MODEL||'gpt-4.1-mini'});
      await store.setJSON(key,{...normalized,createdAt:new Date().toISOString(),model:env.OPENAI_MODEL||'gpt-4.1-mini'});
      try{await store.delete(failureKey(key));}catch{}
