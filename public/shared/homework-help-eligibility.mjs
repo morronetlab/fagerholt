@@ -1,20 +1,20 @@
-/** Only show the homework tutor for tasks that need comprehension or problem-solving. */
-const normalize=value=>String(value||'').toLocaleLowerCase('nb-NO').replace(/\s+/g,' ').trim();
+/**
+ * Show AI help only for tasks that call for reasoning, solving problems or
+ * composing an answer. Reading, memorizing and packing do not require AI.
+ * Use task text, including all lines, rather than relying on the subject label.
+ */
+const normalized=value=>String(value??'')
+  .normalize('NFC').toLocaleLowerCase('nb-NO').replace(/\s+/g,' ').trim();
+
+// Unicode letter boundaries are necessary for Norwegian æ/ø/å.
+const reasoning=/(?<![\p{L}])(?:forklar|beskriv|begrunn|sammenlign|regn(?:e)?(?:\s+ut)?|løs(?:e)?|finn\s+ut|svar(?:e)?\s+på|fortell\s+om|drøft|diskuter|undersøk|tenk\s+over|hvorfor|hvordan|oversett|spørsmål(?:ene)?|oppgav(?:e|er|ene|a)|oppg\.\s*\d+)(?![\p{L}])/iu;
+const writing=/(?<![\p{L}])(?:skriv\s+(?:(?:minst|omtrent|ca\.?|\d+|en|ei|et|to|tre|fire|fem|seks|sju|åtte|ni|ti|noen|flere)\s+){0,3}(?:setning(?:er|ene)?|fortelling|historie|tekst|dikt|sammendrag|avsnitt)|skriv\s+(?:om|hva|hvordan|hvorfor|med\s+egne\s+ord)|lag\s+(?:en|ei|et)\s+(?:fortelling|historie|tekst|dikt|presentasjon))(?![\p{L}])/iu;
+const exploratory=/(?<![\p{L}])arbeid\s+med\s+(?:et\s+tema|en\s+tekst|oppgav(?:er|ene))(?![\p{L}])/iu;
+
 export function needsHomeworkHelp(item){
- const subject=normalize(typeof item==='object'?item?.subject:'');
- const text=normalize(typeof item==='string'?item:item?.text);
- if(!text)return false;
- // A mixed homework entry may contain several different tasks: keep tutor available.
- if(/[\n•]/.test(String(typeof item==='string'?item:item?.text||'')))return true;
- // Reflection, analysis and exercises should always remain eligible.
- if(/(?:^|[^a-zæøå])(?:forklar|beskriv|begrunn|sammenlign|regn|løs|finn ut|svar på|skriv|fortell|drøft|diskuter|undersøk|tenk over|hvorfor|hvordan|oppgaver?|spørsmål(?:ene)?|oversett)(?=$|[^a-zæøå])/i.test(text))return true;
- // Purely logistical requests.
- if(/^(?:husk(?: å)?|ta med|pakk|ha med|lever|signer|få underskrift|møt opp)\b/.test(text))return false;
- if(/\b(?:gymtøy|gymsko|badetøy|håndkle|skiftetøy|matpakke|drikkeflaske|turklær|refleksvest)\b/.test(text)&&text.length<115)return false;
- // Reading a specific page/chapter in a book needs no extra explanation.
- if(/^(?:les|lese(?:lekse)?\s*:?\s*les|leselekse\s*:?\s*les)\s+(?:side(?:ne|r)?|s\.?|kapittel|kap\.?|sidene)\s*\d+/i.test(text)&&!/[?]/.test(text))return false;
- if(/^(?:les|lese(?:lekse)?\s*:?\s*les|leselekse\s*:?\s*les)\s+(?:i\s+)?(?:boka?|boken|leseboka|leseboken|heftet)\s*(?:side(?:ne|r)?|s\.?|kapittel|kap\.?)?\s*\d+/i.test(text)&&!/[?]/.test(text))return false;
- if(/^les(?:e)?\s+(?:\d+\s*(?:minutter|min)|hver dag|i\s+(?:valgfri\s+)?bok)\b/i.test(text)&&text.length<100&&!/[?]/.test(text))return false;
- // When uncertain, keep the tutor available.
- return true;
+ const task=normalized(typeof item==='string'?item:item?.text);
+ if(!task)return false;
+ // A reading duration, a page number, or more than one instruction is NOT
+ // sufficient. A distinct reasoning or composition task must be present.
+ return reasoning.test(task)||writing.test(task)||exploratory.test(task);
 }
