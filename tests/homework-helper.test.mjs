@@ -3,6 +3,16 @@ import assert from 'node:assert/strict';
 import {createHomeworkHelperHandler,validHomeworkRequest} from '../netlify/functions/homework-helper.mjs';
 const valid={text:'Les en tekst om dyr og beskriv hovedinnholdet',subject:'Norsk',grade:'3',mode:'hint'};
 test('Reject invalid or excessive payloads',()=>{assert.ok(validHomeworkRequest(valid));assert.equal(validHomeworkRequest({...valid,grade:'9'}),false);assert.equal(validHomeworkRequest({...valid,mode:'practice'}),false);assert.equal(validHomeworkRequest({...valid,text:'x'.repeat(701)}),false);});
+test('The hourly request quota accepts up to 50 requests and rejects the 51st',async()=>{
+ let count=49;
+ const store={get:async()=>String(count),set:async(_key,value)=>{count=Number(value);}};
+ const fetchImpl=async()=>new Response(JSON.stringify({output:[{content:[{type:'output_text',text:'Begynn med å lese første avsnitt.'}]}]}),{status:200});
+ const handler=createHomeworkHelperHandler({env:{OPENAI_API_KEY:'testing'},storeFactory:()=>store,fetchImpl});
+ const req=()=>new Request('https://example.org/api/homework-helper',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(valid)});
+ assert.equal((await handler(req())).status,200);
+ assert.equal(count,50);
+ assert.equal((await handler(req())).status,429);
+});
 test('No secret configured: returns 503, not a fabricated explanation',async()=>{
  const req=new Request('https://example.org/api/homework-helper',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(valid)});
  const res=await createHomeworkHelperHandler({env:{}})(req);assert.equal(res.status,503);

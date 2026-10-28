@@ -39,7 +39,7 @@ export function createHomeworkHelperHandler({fetchImpl=fetch,env=process.env,sto
   const key=createHash('sha256').update(String(env.AI_JOB_SECRET||env.OPENAI_API_KEY)+':'+hour+':'+ip).digest('hex');
   try{
    const store=storeFactory(),count=Number(await store.get(key)||0);
-   if(count>=12)return respond({error:'Du har brukt opp antall AI-spørsmål denne timen. Prøv igjen senere.'},429);
+   if(count>=50)return respond({error:'Du har brukt opp antall AI-spørsmål denne timen. Prøv igjen senere.'},429);
    await store.set(key,String(count+1),{ttl:7200});
   }catch(error){console.error('Homework helper limit store unavailable',error);return respond({error:'Leksehjelperen er midlertidig utilgjengelig.'},503);}
   try{
