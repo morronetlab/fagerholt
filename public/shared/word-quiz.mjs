@@ -14,6 +14,7 @@ function chooseLanguage(lang){
  if(!availableLanguage(lang))return;
  stopSound();language=lang;rounds=[];index=0;score=0;
  $('word-quiz-play').hidden=true;
+ $('vocabulary-list').hidden=false;
  $('word-quiz-start').textContent=lang==='en'?'Start engelskøving':'Start norskøving';
  $('word-quiz-description').textContent=lang==='en'
   ?'Øv på betydningen av engelske ord og på å høre og stave dem. Ingen fasit vises før du svarer.'
@@ -28,6 +29,7 @@ export function renderWordQuiz(vocabulary,context){
  if(loadedKey===key)return;
  loadedKey=key;stopSound();
  items=quizItems(vocabulary);
+ $('vocabulary-list').hidden=false;
  const panel=$('word-quiz');
  panel.hidden=items.length===0;
  if(!items.length)return;
@@ -136,16 +138,17 @@ function finish(){
  $('word-quiz-progress').textContent='🏆 '+score+' av '+rounds.length+' riktige';
  $('word-quiz-kind').textContent='Ferdig!';
  $('word-quiz-question').textContent='Bra jobbet med ordene! Du kan prøve igjen når du vil.';
- $('word-quiz-feedback').textContent='Du øvde på '+items.filter(x=>x.language===language).length+' ord.';
+ $('word-quiz-feedback').textContent='Du øvde på '+new Set(rounds.map(r=>r.word)).size+' ord.';
  $('word-quiz-form').hidden=true;
  $('word-quiz-tools').hidden=true;
  $('word-quiz-next').hidden=true;
+ $('vocabulary-list').hidden=false;
 }
 export function initWordQuiz(){
  $('word-quiz-start').addEventListener('click',()=>{
   rounds=buildQuizRounds(items,language);
   index=0;score=0;
-  if(rounds.length)showQuestion();
+  if(rounds.length){$('vocabulary-list').hidden=true;showQuestion();}
  });
  $('word-quiz-next').addEventListener('click',()=>{
   if(!answered)return;
