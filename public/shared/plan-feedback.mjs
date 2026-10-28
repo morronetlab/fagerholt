@@ -25,9 +25,9 @@ export function planFeedback({school=null,grade=null,plan=null,error=null}={}){
   // Never hide an active AI job behind a premature "unreadable PDF" screen.
   if(plan?.aiStatus==='processing')return {
     kind:'analyzing',eyebrow:'AI-ANALYSE PÅGÅR',
-    title:'AI analyserer · foreløpig ukeplan',
-    description:plan?.parsedFromPdf===false?'PDF-en har ikke et lesbart tekstlag. AI analyserer originaldokumentet og prøver å hente ut lekser og beskjeder fra sidene.':'Vi leser skolens PDF og sorterer dagsprogram, lekser, pakkeliste og beskjeder. Informasjonen nedenfor er foreløpig og kan endres når analysen er ferdig.',
-    showSchool:false,showGrade:Boolean(plan?.pdf),showRetry:true,hideContent:plan?.parsedFromPdf===false
+    title:'AI leser og organiserer ukeplanen',
+    description:'Vi henter frem dagsprogram, lekser, pakkeliste og beskjeder fra original-PDF-en. Ukeplanen vises når AI er ferdig.',
+    showSchool:false,showGrade:Boolean(plan?.pdf),showRetry:true,hideContent:true
   };
   if(plan?.status==='unreadable')return {
     kind:'missing',eyebrow:'PDF KUNNE IKKE LESES',

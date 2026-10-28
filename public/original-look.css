@@ -220,3 +220,24 @@ footer{border-color:var(--line);color:#92a49c}
 .attendance-entry strong{font-size:14px;color:#1c4d5b}
 .attendance-entry .group-badge{margin:0}
 @media(max-width:430px){.day-attendance{padding:11px}.attendance-entry{align-items:flex-start}}
+
+/* Only show completed AI content; estimated progress remains visibly provisional. */
+#plan-body[hidden]{display:none!important}
+#analysis-progress:not([hidden]){max-width:none;margin-top:24px;padding:20px;border:1px solid #c1dfcf;border-radius:17px;background:rgba(255,255,255,.62)}
+.feedback-analyzing{min-height:245px;align-items:center}
+.feedback-analyzing .feedback-content{width:100%}
+.analysis-progress-top{font-size:15px}
+.analysis-progress-top #analysis-percent{font-size:22px;color:#20664d;font-weight:900;font-variant-numeric:tabular-nums}
+.analysis-elapsed{margin:5px 0 9px!important;font-weight:700}
+.analysis-track{height:17px;background:#c2dfcf}
+.analysis-track .analysis-bar{left:0;width:0;transition:width 1s linear;background:linear-gradient(95deg,#1d795a,#58c88e);animation:none}
+.columns.bag-empty{grid-template-columns:minmax(0,1fr)}
+.columns.bag-empty .bag{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:15px 19px;margin:0 0 17px;border-radius:17px;background:#f1f7f3}
+.columns.bag-empty .bag .panel-head{margin:0;align-items:center;gap:10px}
+.columns.bag-empty .bag .panel-head h2{font-size:16px;margin:0}
+.columns.bag-empty .bag .panel-head .eyebrow,.columns.bag-empty .bag .section-icon{display:none}
+.columns.bag-empty .bag .items{flex:1 1 210px}
+.columns.bag-empty .bag .empty{border:0;background:none;padding:0}
+.homework-repeat{display:inline-block;padding:4px 8px;background:#e7edf9;border-radius:8px;color:#365d90;font-size:11px;font-weight:850;margin:0 7px 5px 0}
+@media(max-width:700px){.feedback-analyzing{min-height:260px}.analysis-progress-top #analysis-percent{font-size:20px}.columns.bag-empty .bag{flex-direction:column;align-items:flex-start;gap:6px}.columns.bag-empty .bag .items{flex:none}}
+@media(prefers-reduced-motion:reduce){.analysis-track .analysis-bar{transition:none}}

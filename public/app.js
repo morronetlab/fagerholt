@@ -4,6 +4,7 @@ import {schoolSelectionKey,validSchool,gradeSelectionKey,validGrade,progressKey}
 import {planFeedback} from './shared/plan-feedback.mjs';
 import {normalizeVisualRegion,adjustableVisualRegion,visualCropGeometry,fullPageGeometry} from './shared/visual-region.mjs';
 import {homeworkProgress} from './shared/group-scope.mjs';
+import {expandHomework,repeatDayLabel} from './shared/homework-view.mjs';
 import {dueDayLabel,displayEvent,packingText} from './shared/plan-display.mjs';
 // This module is served from public/. Calendar and selection modules are mirrored in public/shared/.
 const $ = id=>document.getElementById(id);
@@ -81,8 +82,9 @@ function checklist(items,section,day='all'){
     const meta=typeof item==='object'&&item?.subject&&!(due&&item.subject.toLowerCase()===due.toLowerCase())?`<span class="subject">${safe(item.subject)}</span>`:'';
     const hint=section==='bag'&&item?.note?`<small>${safe(item.note)}</small>`:'';
     const dueBadge=due?`<span class="homework-due">📅 ${safe(due)}</span>`:'';
+    const repeatBadge=section==='homework'&&repeatDayLabel(item)?`<span class="homework-repeat">${safe(repeatDayLabel(item))}</span>`:'';
     const displayLabel=section==='bag'?packingText(label):label;
-    return `<label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${dueBadge}${meta}${safe(displayLabel)}${hint}</span></label>`;
+    return `<label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${dueBadge}${repeatBadge}${meta}${safe(displayLabel)}${hint}</span></label>`;
   }).join('');
 }
 function empty(msg){return `<p class="empty"><span aria-hidden="true">ℹ️</span> ${safe(msg)}</p>`;}
@@ -118,7 +120,12 @@ function updateAnalysisClock(){
  if(state.analysisStartedAt===null)state.analysisStartedAt=Date.now();
  const elapsed=Math.max(0,Math.floor((Date.now()-state.analysisStartedAt)/1000));
  $('analysis-elapsed').textContent=`Tid brukt: ${Math.floor(elapsed/60)}:${String(elapsed%60).padStart(2,'0')}`;
- $('analysis-time-hint').textContent=elapsed>=180?'Dette tar lenger tid enn vanlig. Du kan sjekke AI-status på nytt.':'Vi sjekker automatisk når planen er ferdig. Det kan ta et par minutter.';
+ const estimate=elapsed<=35?Math.round(elapsed/35*85):Math.min(95,85+Math.floor((elapsed-35)/7));
+ $('analysis-percent').textContent=`Ca. ${estimate} %`;
+ $('analysis-progress-track').setAttribute('aria-valuenow',String(estimate));
+ $('analysis-progress-track').setAttribute('aria-valuetext',`Estimert ${estimate} prosent; faktisk fremdrift ukjent`);
+ $('analysis-progress-fill').style.width=estimate+'%';
+ $('analysis-time-hint').textContent=elapsed>=45?'Dette tar lenger tid enn anslått. Vi sjekker fortsatt automatisk.':'Anslått 30–40 sekunder. Prosenten er estimert, ikke målt AI-fremdrift.';
  if(!state.analysisTicker)state.analysisTicker=setInterval(updateAnalysisClock,1000);
 }
 function renderContent(){
@@ -129,6 +136,7 @@ function renderContent(){
   $('status-pill').className='state-pill '+(p?.aiStatus==='processing'?'state-ai-processing':p?.aiStatus==='ready'?'state-ai-ready':['error','unreadable'].includes(status)?'state-error':['partial','unpublished','unavailable'].includes(status)?'state-warning':'');
   renderFeedback();
   const pending=p?.aiStatus==='processing';
+  $('plan-body').hidden=pending||Boolean(planFeedback({school:state.school,grade:state.grade,plan:p,error:state.planError})?.hideContent);
   $('plan-body').classList.toggle('ai-pending',pending);
   $('plan-body').setAttribute('aria-busy',String(pending));
   updateAnalysisClock();
@@ -150,8 +158,9 @@ function renderContent(){
   $('day-attendance').hidden=!attendance.length;
   $('day-attendance').innerHTML=attendance.length?`<div class="attendance-heading">⏰ Særskilt oppmøte for enkelte grupper</div>${attendance.map(x=>`<div class="attendance-entry">${groupBadge(x.group)}<strong>Kl. ${safe(x.time)}</strong><span>${safe(x.text)}</span></div>`).join('')}`:'';
   const bag=getBag();
-  $('bag-list').innerHTML=bag.length?checklist(bag,'bag',DAYS[state.day]):empty(state.loading?'Henter pakkelisten …':'Ingen spesifikk pakkeliste ble funnet i PDF-en.');
-  const hw=p?.homework||[];
+  $('bag-list').innerHTML=bag.length?checklist(bag,'bag',DAYS[state.day]):empty(state.loading?'Henter pakkelisten …':'Ingen ekstra utstyr oppgitt for denne dagen.');
+  $('plan-columns').classList.toggle('bag-empty',!bag.length&&!state.loading);
+  const hw=expandHomework(p?.homework||[]);
   $('homework-list').innerHTML=hw.length?checklist(hw,'homework'):empty(state.loading?'Henter lekser …':'Ingen lekser ble funnet i PDF-en.');
   renderHomeworkProgress(hw);
   const hasTheme=features.theme&&Boolean(p?.weekTheme);

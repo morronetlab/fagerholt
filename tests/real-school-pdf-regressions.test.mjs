@@ -45,7 +45,7 @@ test('Sjøstrand PDF without a text layer shows AI processing, not unreadable',(
   const screen=planFeedback({school,grade:'7A',plan:{status:'partial',aiStatus:'processing',parsedFromPdf:false,pdf:sjostrandPdf}});
   assert.equal(screen.kind,'analyzing');assert.equal(screen.hideContent,true);
   assert.equal(screen.showGrade,true);
-  assert.match(screen.description,/tekstlag/);
+  assert.match(screen.description,/original-PDF/);
   const failed=planFeedback({school,grade:'7A',plan:{status:'unreadable',aiStatus:'failed',parsedFromPdf:false,pdf:sjostrandPdf}});
   assert.equal(failed.kind,'missing');assert.equal(failed.showGrade,true);
 });

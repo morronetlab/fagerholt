@@ -66,8 +66,8 @@ test('Lunde named Grublis/Lunde på linja text survives if special model output 
 test('AI wait visual shows actual elapsed time, not fictional numeric percent',()=>{
  const html=file('../public/index.html'),app=file('../public/app.js'),css=file('../public/original-look.css');
  assert.match(html,/id="analysis-progress"/);assert.match(html,/id="analysis-elapsed"/);
- assert.match(html,/aria-valuetext="Arbeider/);assert.match(html,/id="day-group-summary"/);
+ assert.match(html,/id="analysis-progress-track"/);assert.match(html,/id="day-group-summary"/);
  assert.match(app,/updateAnalysisClock/);assert.match(app,/classList\.toggle\('ai-pending',pending\)/);
- assert.match(app,/state\.aiPolls<20/);assert.match(css,/analysis-run/);
+ assert.match(app,/state\.aiPolls<20/);assert.match(css,/analysis-progress/);
  assert.ok(AI_SCHEMA_VERSION>=6);
 });
