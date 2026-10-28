@@ -9,7 +9,11 @@ export function quizWords(entries){
   const text=clean(typeof item==='string'?item:item?.text);
   if(!text||forbidden.test(text))continue;
   const raw=text.replace(headings,'');
-  for(const part of raw.split(/[,;\n•|]+/)){
+  const pieces=raw.split(/[,;\n•|]+/);
+  const compact=pieces.length===1?clean(raw).split(/\s+/):[];
+  const stop=/^(?:og|eller|med|skal|kan|som|for|til|fra|den|det|dette|les|skriv|lær|tema|mål|jeg|vi|dere|på|i|en|et)$/i;
+  const parts=compact.length>=2&&compact.length<=12&&compact.every(w=>/^[a-zæøåA-ZÆØÅ]+(?:[-'][a-zæøåA-ZÆØÅ]+)*$/.test(w)&&!stop.test(w))?compact:pieces;
+  for(const part of parts){
    const candidate=clean(part).replace(/[.!]+$/,'');
    // Only single words (or short hyphenated words); never whole sentences or learning goals.
    if(!/^[a-zæøåA-ZÆØÅ]+(?:[-'][a-zæøåA-ZÆØÅ]+)*$/.test(candidate))continue;
