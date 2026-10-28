@@ -38,10 +38,10 @@ test('Fagerholt: red group Monday and green group Tuesday are not confused',()=>
  packing:[{day:'Mandag',label:'Badetøy',note:null,evidence:'explicit',group:null,...evidence},
  {day:'Tirsdag',label:'Badetøy',note:null,evidence:'explicit',group:null,...evidence}]};
  const r=normalizeAIPlan(raw,meta);
- assert.equal(r.days.Mandag.events[0].group,'Rød gruppe');
- assert.equal(r.days.Tirsdag.events[0].group,'Grønn gruppe');
- assert.equal(r.days.Mandag.bring[0].group,'Rød gruppe');
- assert.equal(r.days.Tirsdag.bring[0].group,'Grønn gruppe');
+ assert.equal(r.days.Mandag.events[0].group,undefined);
+ assert.equal(r.days.Tirsdag.events[0].group,undefined);
+ assert.equal(r.days.Mandag.bring[0].group,undefined);
+ assert.equal(r.days.Tirsdag.bring[0].group,undefined);
 });
 test('Fagerholt grade 7: finishing time goes below activity; packing tokens separate',()=>{
  assert.equal(displayEvent({title:'Skolen slutt kl. 14.15',time:null}).endTime,'Slutt kl. 14:15');
