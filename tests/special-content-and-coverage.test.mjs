@@ -13,7 +13,7 @@ const base=()=>({days:[],homework:[{subject:'Norsk',text:'Les bok i 15 minutter'
 const meta={grade:'6',year:2026,week:44,source,pdf:presteheiaPdf,pageCount:2,pageTexts:['Noe tekst på side 1',quote]};
 test('Presteheia: a complete subject-organized plan is not marked partial for missing daily columns',()=>{
  const res=normalizeAIPlan(base(),meta);
- assert.equal(AI_SCHEMA_VERSION,3);
+ assert.equal(AI_SCHEMA_VERSION,4);
  assert.equal(res.status,'ok');
  assert.equal(res.days.Mandag.events.length,0);
  assert.equal(res.homework.length,2);
@@ -21,7 +21,7 @@ test('Presteheia: a complete subject-organized plan is not marked partial for mi
 });
 test('Knowledge corner is exposed from PDF page 2 and triggers original illustration preview',()=>{
  const data=base();
- data.specialContent=[{kind:'knowledge',title:'Kunnskapshjørnet',description:'Fakta om dyrelivet i skogen',hasVisual:true,...evidence}];
+ data.specialContent=[{kind:'knowledge',title:'Kunnskapshjørnet',description:'Fakta om dyrelivet i skogen',hasVisual:true,visualRegion:{x:80,y:620,width:360,height:210},...evidence}];
  const res=normalizeAIPlan(data,meta);
  assert.equal(res.status,'ok');
  assert.deepEqual(res.specialContent,[{title:'Kunnskapshjørnet',description:'Fakta om dyrelivet i skogen',kind:'knowledge',hasVisual:true,sourcePage:2}]);
