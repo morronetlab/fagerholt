@@ -180,6 +180,12 @@ function renderContent(){
   const bag=getBag();
   $('bag-list').innerHTML=bag.length?checklist(bag,'bag',DAYS[state.day]):empty(state.loading?'Henter pakkelisten …':'Ingen ekstra utstyr oppgitt for denne dagen.');
   $('plan-columns').classList.toggle('bag-empty',!bag.length&&!state.loading);
+  const vocabulary=Array.isArray(p?.vocabulary)?p.vocabulary:[];
+  $('vocabulary-panel').hidden=!vocabulary.length;
+  $('vocabulary-list').innerHTML=vocabulary.map(v=>`<p><strong>${safe(v?.category||'Ord å øve på')}</strong> ${safe(typeof v==='string'?v:v?.text)}</p>`).join('');
+  const contacts=Array.isArray(p?.contacts)?p.contacts:[];
+  $('contacts-panel').hidden=!contacts.length;
+  $('contacts-list').innerHTML=contacts.map(c=>typeof c==='string'?`<p>${safe(c)}</p>`:`<p><strong>${safe(c.name)}</strong> ${safe(c.role)} ${c.email?`<a href="mailto:${encodeURIComponent(c.email)}">${safe(c.email)}</a>`:''} ${c.phone?`<span>${safe(c.phone)}</span>`:''}</p>`).join('');
   const hw=expandHomework(p?.homework||[]);
   $('homework-list').innerHTML=hw.length?checklist(hw,'homework'):empty(state.loading?'Henter lekser …':'Ingen lekser ble funnet i PDF-en.');
   renderHomeworkProgress(hw);
