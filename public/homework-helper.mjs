@@ -6,7 +6,7 @@ export function openHomeworkHelper({text,subject,grade}){
  if(!text)return;
  active={text:String(text).slice(0,700),subject:String(subject||'').slice(0,80),grade:String(grade||'').slice(0,3)};
  $('helper-task').textContent=active.text;
- $('helper-result').textContent='Velg hvordan du vil ha hjelp. Du skal fortsatt gjøre oppgaven selv.';
+ $('helper-result').textContent='Jeg kan forklare hva oppgaven betyr eller gi deg et lite hint. Du gjør oppgaven selv.';
  $('helper-status').textContent='';
  $('helper-modal').hidden=false;
  $('helper-modal').querySelector('[data-helper-mode]')?.focus();
@@ -22,7 +22,7 @@ export function initHomeworkHelper(){
 }
 function close(){controller?.abort();controller=null;active=null;$('helper-modal').hidden=true;$('helper-status').textContent='';}
 async function ask(mode){
- if(!active||!['explain','hint','practice'].includes(mode))return;
+ if(!active||!['explain','hint'].includes(mode))return;
  controller?.abort();
  const current=controller=new AbortController();
  const buttons=$('helper-modal').querySelectorAll('[data-helper-mode]');
