@@ -97,6 +97,7 @@ function showQuestion(){
   question.textContent='Hva heter «'+round.translation+'» på engelsk?';
   $('word-quiz-answer').placeholder='Skriv det engelske ordet';
   $('word-quiz-peek').hidden=true;
+  $('word-quiz-speak').hidden=true; // The spoken English word would reveal the translation answer.
  }else if(round.kind==='listen'){
   kind.textContent='🔊 Lytt og stav';
   question.textContent='Hør det engelske ordet og skriv det slik det staves.';
