@@ -130,3 +130,10 @@ AI er nå primær parser **når Netlify-miljøvariablene er konfigurert**. PDF-e
 ### Funksjons- og lagringskostnader
 
 Kun én AI-analyse skal normalt utføres per unik PDF-versjon. Den samme PDF-en gjenbrukes fra Netlify Blobs, men selve skolesiden/PDF-en blir fortsatt kontrollert ved en ny API-forespørsel for å oppdage kildeendringer. Kildesitat og sidereferanse ligger i den interne normaliseringen; UI viser bare kategoriserte elev-/foreldreopplysninger. Den gamle parseren beholdes som reserve og brukes mens analysen pågår.
+
+## Hotfix v0.6 – OpenAI-filopplasting og feilhåndtering (28. oktober 2026)
+
+- Feilen `Invalid file data: input[1].content[1].file_data` ved direkte Base64-PDF er håndtert ved å laste opp PDF via OpenAI Files API (`purpose=user_data`) og sende `file_id` til Responses API. Midlertidige OpenAI-filer forsøkes slettet umiddelbart etter analyse (også ved feil). Kontroller OpenAI File Storage ved eventuelle oppryddingsfeil.
+- Background-analyse med feil registrerer et fem minutters retry-vindu i Netlify Blobs; `/api/plan` returnerer `aiStatus: failed` istedenfor evig `processing`, og viser regelbaserte data så langt de kan tolkes.
+- API-nøkkel forblir bare på serversiden. Det kreves ingen nye miljøvariabler i Netlify.
+- Enhets-/integrasjonstester med simulert OpenAI Files + Responses API er ikke en live-test med reelle PDF-er. Kontroller bakgrunnslogger og `aiStatus: ready` etter deploy.
