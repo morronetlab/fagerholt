@@ -95,8 +95,8 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
       const textChars=pages.reduce((count,page)=>count+(page.items||[]).reduce((n,item)=>n+String(item.text||'').trim().length,0),0);
       // A scanned/image-only PDF has no searchable text and cannot be trusted as a parsed plan.
       if(textChars<20){
-        return reply({...base,pdf:pdf.url,publishedWeek:pdf.week,aiStatus,parser:'rules',status:'unreadable',parsedFromPdf:false,
-          warning:aiStatus==='processing'?'AI analyserer PDF-en, som ikke har et lesbart tekstlag.':aiStatus==='failed'?'AI-analysen feilet. PDF-en har heller ikke et lesbart tekstlag. Prøv igjen etter fem minutter eller åpne originalen.':'Ukeplan-PDF-en har ikke et lesbart tekstlag. Åpne original-PDF-en.',
+        return reply({...base,pdf:pdf.url,publishedWeek:pdf.week,aiStatus,parser:'rules',status:aiStatus==='processing'?'partial':'unreadable',parsedFromPdf:false,
+          warning:aiStatus==='processing'?'AI analyserer original-PDF-en selv om den mangler et lesbart tekstlag.':aiStatus==='failed'?'AI-analysen feilet. PDF-en har heller ikke et lesbart tekstlag. Prøv igjen etter fem minutter eller åpne originalen.':'Ukeplan-PDF-en har ikke et lesbart tekstlag. Åpne original-PDF-en.',
           days:{},homework:[],learningGoals:[],notices:[],subjects:[],weekTheme:null,optionalMission:null,everyday:[]});
       }
       const fallback=analyzePdfPages(pages,grade,pdf.url,week,year,source);
