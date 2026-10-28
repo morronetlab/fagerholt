@@ -2,8 +2,9 @@ import {siteConfig} from './site-config.mjs';
 import {schoolCalendar,dayDate,DAYS} from './shared/calendar.mjs';
 import {schoolSelectionKey,validSchool,gradeSelectionKey,validGrade,progressKey} from './shared/selection.mjs';
 import {planFeedback} from './shared/plan-feedback.mjs';
-import {normalizeVisualRegion,paddedVisualRegion,visualCropGeometry,fullPageGeometry} from './shared/visual-region.mjs';
+import {normalizeVisualRegion,adjustableVisualRegion,visualCropGeometry,fullPageGeometry} from './shared/visual-region.mjs';
 import {homeworkProgress} from './shared/group-scope.mjs';
+import {dueDayLabel,displayEvent,packingText} from './shared/plan-display.mjs';
 // This module is served from public/. Calendar and selection modules are mirrored in public/shared/.
 const $ = id=>document.getElementById(id);
 const safe=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -12,7 +13,7 @@ let calendar=schoolCalendar(new Date(),siteConfig.school.timezone);
 const storageRead=(key)=>{try{return localStorage.getItem(key);}catch{return null;}};
 const storageWrite=(key,value)=>{try{localStorage.setItem(key,value);}catch{}};
 const storageDrop=(key)=>{try{localStorage.removeItem(key);}catch{}};
-const state={school:null,grade:null,availableGrades:null,gradeError:null,day:calendar.weekday,plan:null,loading:false,weather:null,weatherError:null,planError:null,requestId:0,aiPolls:0,aiTimer:null,specialKey:null,specialRenderId:0,expandedSpecial:new Set()};
+const state={school:null,grade:null,availableGrades:null,gradeError:null,day:calendar.weekday,plan:null,loading:false,weather:null,weatherError:null,planError:null,requestId:0,aiPolls:0,aiTimer:null,analysisStartedAt:null,analysisTicker:null,specialKey:null,specialRenderId:0,expandedSpecial:new Set(),specialAdjustments:new Map()};
 const weekDayDate=day=>dayDate(calendar.year,calendar.week,day);
 const titleDay=day=>new Date(`${weekDayDate(day)}T12:00:00Z`).toLocaleDateString('nb-NO',{timeZone:'UTC',day:'numeric',month:'short'});
 const progress=(section,day='all')=>progressKey(state.school.id,state.grade,calendar.year,calendar.week,section,day);
@@ -76,9 +77,12 @@ function groupBadge(group){
 function checklist(items,section,day='all'){
   return items.map((item,i)=>{
     const label=typeof item==='string'?item:(item?.text||item?.label||'');
-    const meta=typeof item==='object'&&item?.subject?`<span class="subject">${safe(item.subject)}</span>`:'';
+    const due=section==='homework'?dueDayLabel(item):null;
+    const meta=typeof item==='object'&&item?.subject&&!(due&&item.subject.toLowerCase()===due.toLowerCase())?`<span class="subject">${safe(item.subject)}</span>`:'';
     const hint=section==='bag'&&item?.note?`<small>${safe(item.note)}</small>`:'';
-    return `<label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${meta}${safe(label)}${hint}</span></label>`;
+    const dueBadge=due?`<span class="homework-due">📅 ${safe(due)}</span>`:'';
+    const displayLabel=section==='bag'?packingText(label):label;
+    return `<label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${dueBadge}${meta}${safe(displayLabel)}${hint}</span></label>`;
   }).join('');
 }
 function empty(msg){return `<p class="empty"><span aria-hidden="true">ℹ️</span> ${safe(msg)}</p>`;}
@@ -101,8 +105,21 @@ function renderFeedback(){
     $('feedback-grade-link').href=original;
     $('feedback-grade-link').firstChild.textContent=state.plan?.pdf?'Se original-PDF ':'Se trinnsiden ';
   }
+  $('analysis-progress').hidden=info.kind!=='analyzing';
   $('feedback-retry').hidden=!info.showRetry;
   $('feedback-retry').textContent=info.kind==='analyzing'?'↻ Sjekk AI-status':'↻ Prøv igjen';
+}
+function updateAnalysisClock(){
+ const active=state.plan?.aiStatus==='processing';
+ if(!active){
+  if(state.analysisTicker)clearInterval(state.analysisTicker);
+  state.analysisTicker=null;state.analysisStartedAt=null;return;
+ }
+ if(state.analysisStartedAt===null)state.analysisStartedAt=Date.now();
+ const elapsed=Math.max(0,Math.floor((Date.now()-state.analysisStartedAt)/1000));
+ $('analysis-elapsed').textContent=`Tid brukt: ${Math.floor(elapsed/60)}:${String(elapsed%60).padStart(2,'0')}`;
+ $('analysis-time-hint').textContent=elapsed>=180?'Dette tar lenger tid enn vanlig. Du kan sjekke AI-status på nytt.':'Vi sjekker automatisk når planen er ferdig. Det kan ta et par minutter.';
+ if(!state.analysisTicker)state.analysisTicker=setInterval(updateAnalysisClock,1000);
 }
 function renderContent(){
   if(!state.grade)return;
@@ -111,6 +128,10 @@ function renderContent(){
   $('status-pill').textContent=p?.aiStatus==='processing'?'AI analyserer · foreløpig ukeplan':p?.status==='partial'?'Ukeplan delvis tolket':p?.status==='unreadable'?'PDF kunne ikke tolkes':p?.aiStatus==='ready'?'AI-tolket ukeplan':p?.aiStatus==='failed'?'AI-feil · foreløpig ukeplan':badge(status);
   $('status-pill').className='state-pill '+(p?.aiStatus==='processing'?'state-ai-processing':p?.aiStatus==='ready'?'state-ai-ready':['error','unreadable'].includes(status)?'state-error':['partial','unpublished','unavailable'].includes(status)?'state-warning':'');
   renderFeedback();
+  const pending=p?.aiStatus==='processing';
+  $('plan-body').classList.toggle('ai-pending',pending);
+  $('plan-body').setAttribute('aria-busy',String(pending));
+  updateAnalysisClock();
   const msg=state.planError||p?.warning;
   // The prominent banner already explains the missing PDF or AI processing.
   const feedbackVisible=!$('plan-feedback').hidden;
@@ -119,8 +140,11 @@ function renderContent(){
   $('pdf-source').hidden=!p?.pdf;if(p?.pdf)$('pdf-source').href=p.pdf;
   if(p?.source&&state.school)$('school-source').href=p.source;
   const events=p?.days?.[DAYS[state.day]]?.events||[];
+  const groups=[...new Set([...events,...getBag()].map(x=>x.group).filter(Boolean))];
+  $('day-group-summary').hidden=!groups.length;
+  $('day-group-summary').innerHTML=groups.length?`<strong>Husk riktig gruppe denne dagen:</strong> ${groups.map(groupBadge).join(' ')}`:'';
   $('day-program').innerHTML=p?.status==='unpublished'?empty('Ingen ukeplan publisert for denne uken.'):
-    events.length?events.map(x=>`<div class="event"><span class="event-dot">●</span><span>${groupBadge(x.group)}${x.time?`<small>${safe(x.time)}</small>`:''}${safe(x.title)}</span></div>`).join(''):
+    events.length?events.map(x=>{const e=displayEvent(x);return `<div class="event"><span class="event-dot">●</span><span>${groupBadge(x.group)}${e.time?`<small>${safe(e.time)}</small>`:''}${safe(e.title)}${e.endTime?`<small class="event-endtime">${safe(e.endTime)}</small>`:''}</span></div>`;}).join(''):
     empty(state.loading?'Henter dagsprogram …':(p?.status==='ok'&&p?.parser==='ai'?'Ingen dagsprogram er oppgitt for denne dagen.':'Ingen dagsprogram kunne tolkes sikkert. Sjekk original-PDF.'));
   const bag=getBag();
   $('bag-list').innerHTML=bag.length?checklist(bag,'bag',DAYS[state.day]):empty(state.loading?'Henter pakkelisten …':'Ingen spesifikk pakkeliste ble funnet i PDF-en.');
@@ -168,7 +192,7 @@ function renderSpecialContent(){
   if(!items.length){state.specialKey=null;$('special-items').replaceChildren();return;}
   const key=[state.school?.id,state.grade,p?.pdf,items.map(x=>[x.title,x.sourcePage,x.hasVisual,JSON.stringify(x.visualRegion)].join(':')).join('|')].join('::');
   if(state.specialKey===key)return;
-  state.specialKey=key;state.expandedSpecial=new Set();
+  state.specialKey=key;state.expandedSpecial=new Set();state.specialAdjustments=new Map();
   $('special-items').innerHTML=items.map((item,index)=>{
     const page=Number(item.sourcePage);
     const crop=normalizeVisualRegion(item.visualRegion);
@@ -177,7 +201,7 @@ function renderSpecialContent(){
       <div class="special-copy"><p class="special-type">${item.kind==='knowledge'?'💡 KUNNSKAPSHJØRNET':item.kind==='illustration'?'🖼️ FRA PDF-EN':'✨ EKSTRA FRA SKOLEN'}</p>
       <h3>${groupBadge(item.group)}${safe(item.title)}</h3><p>${safe(item.description)}</p>
       ${p.pdf?`<a href="${safe(pageLink)}" target="_blank" rel="noopener noreferrer">Se side ${page} i original-PDF ↗</a>`:''}</div>
-      ${item.hasVisual&&crop&&p.pdf&&Number.isInteger(page)&&page>=1&&page<=16?`<div id="special-visual-${index}" class="special-visual" data-special-page="${page}" data-special-index="${index}" role="img" aria-label="Utsnitt fra original PDF-side ${page}: ${safe(item.title)}"><span>Henter illustrasjonen fra skolens PDF …</span></div><button type="button" class="special-expand" data-special-expand="${index}" aria-controls="special-visual-${index}" aria-expanded="false">↗ Vis hele PDF-siden</button>`:''}
+      ${item.hasVisual&&crop&&p.pdf&&Number.isInteger(page)&&page>=1&&page<=16?`<div id="special-visual-${index}" class="special-visual" data-special-page="${page}" data-special-index="${index}" role="img" aria-label="Utsnitt fra original PDF-side ${page}: ${safe(item.title)}"><span>Henter illustrasjonen fra skolens PDF …</span></div><div class="special-crop-actions"><button type="button" class="special-crop-button" data-special-widen="horizontal" data-special-index="${index}">↔ Mer bredde</button><button type="button" class="special-crop-button" data-special-widen="vertical" data-special-index="${index}">↕ Mer over/under</button></div><button type="button" class="special-expand" data-special-expand="${index}" aria-controls="special-visual-${index}" aria-expanded="false">↗ Vis hele PDF-siden</button>`:''}
       </article>`;
   }).join('');
   if(p.pdf)void renderSpecialPdfPages(key);
@@ -202,8 +226,9 @@ async function renderSpecialPdfPages(key){
       const base=page.getViewport({scale:1});
       const isFull=state.expandedSpecial.has(Number(target.dataset.specialIndex));
       const availableWidth=Math.max(180,target.getBoundingClientRect().width-24||460);
+      const adjustment=state.specialAdjustments.get(Number(target.dataset.specialIndex))||{horizontal:0,vertical:0};
       const geometry=isFull?fullPageGeometry(base.width,base.height,availableWidth,window.devicePixelRatio||1):
-        visualCropGeometry(paddedVisualRegion(item?.visualRegion),base.width,base.height,availableWidth,window.devicePixelRatio||1);
+        visualCropGeometry(adjustableVisualRegion(item?.visualRegion,adjustment),base.width,base.height,availableWidth,window.devicePixelRatio||1);
       if(!geometry){target.textContent='Se illustrasjonen i original-PDF-en.';page.cleanup();continue;}
       const viewport=page.getViewport({scale:geometry.viewportScale});
       const canvas=document.createElement('canvas');
@@ -264,7 +289,7 @@ async function reload({quiet=false}={}){
   state.loading=false;
   renderContent();
   // Keep the rule-based view visible until the background AI result is ready.
-  if(state.plan?.aiStatus==='processing'&&state.aiPolls<8){
+  if(state.plan?.aiStatus==='processing'&&state.aiPolls<20){
     state.aiPolls++;
     state.aiTimer=setTimeout(()=>{
       state.aiTimer=null;
@@ -275,6 +300,8 @@ async function reload({quiet=false}={}){
 function cancelRequests(){
   if(state.aiTimer)clearTimeout(state.aiTimer);
   state.aiTimer=null;state.aiPolls=0;state.requestId++;
+  if(state.analysisTicker)clearInterval(state.analysisTicker);
+  state.analysisTicker=null;state.analysisStartedAt=null;
 }
 function selectSchool(id,{restore=false}={}){
   if(!validSchool(id,siteConfig.schools))return;
@@ -334,6 +361,15 @@ function boot(){
     const grade=e.target.closest('[data-grade]');if(grade){selectGrade(grade.dataset.grade);return;}
     const day=e.target.closest('[data-day]');if(day){state.day=Number(day.dataset.day);renderShell();return;}
     if(e.target.closest('#undo-mission'))setChecked('mission',0,'all',false);
+    const widen=e.target.closest('[data-special-widen]');if(widen){
+      const index=Number(widen.dataset.specialIndex),axis=widen.dataset.specialWiden;
+      const adjustments=state.specialAdjustments.get(index)||{horizontal:0,vertical:0};
+      if(['horizontal','vertical'].includes(axis))adjustments[axis]=Math.min(4,adjustments[axis]+1);
+      state.specialAdjustments.set(index,adjustments);
+      widen.disabled=adjustments[axis]>=4;
+      if(state.specialKey)void renderSpecialPdfPages(state.specialKey);
+      return;
+    }
     const show=e.target.closest('[data-special-expand]');if(show){
       const index=Number(show.dataset.specialExpand);
       if(state.expandedSpecial.has(index))state.expandedSpecial.delete(index);else state.expandedSpecial.add(index);

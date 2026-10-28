@@ -49,6 +49,11 @@
           <p id="feedback-eyebrow" class="feedback-eyebrow"></p>
           <h2 id="feedback-title"></h2>
           <p id="feedback-description" class="feedback-description"></p>
+          <div id="analysis-progress" class="analysis-progress" hidden>
+            <div class="analysis-progress-top"><strong>AI behandler ukeplanen</strong><span id="analysis-elapsed">Tid brukt: 0:00</span></div>
+            <div class="analysis-track" role="progressbar" aria-label="AI-analyse pågår" aria-valuetext="Arbeider – ingen nøyaktig prosent tilgjengelig"><div class="analysis-bar"></div></div>
+            <p id="analysis-time-hint">Vi sjekker automatisk når planen er ferdig. Det kan ta et par minutter.</p>
+          </div>
           <div class="feedback-actions">
             <a id="feedback-school-link" class="feedback-primary-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Åpne skolens nettside <span aria-hidden="true">↗</span></a>
             <a id="feedback-grade-link" class="feedback-secondary-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Se originalen <span aria-hidden="true">↗</span></a>
@@ -60,6 +65,7 @@
       <div id="plan-body">
       <div id="rain-reminder" class="rain-alert" role="status" hidden></div>
       <nav class="weekdays" id="day-buttons" aria-label="Velg dag"></nav>
+      <div id="day-group-summary" class="day-group-summary" hidden aria-live="polite"></div>
       <div class="columns">
         <section class="panel" aria-labelledby="program-title"><div class="panel-head"><div><p class="eyebrow">SKOLEDAGEN</p><h2 id="program-title">Dette skjer i dag</h2></div><span class="section-icon">📚</span></div><div id="day-program" class="items"></div></section>
         <section class="panel bag" aria-labelledby="bag-title"><div class="panel-head"><div><p class="eyebrow">FØR DU GÅR</p><h2 id="bag-title">Pakk skolesekken</h2></div><span class="section-icon">🎒</span></div><div id="bag-list" class="items"></div></section>

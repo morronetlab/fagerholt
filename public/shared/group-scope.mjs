@@ -1,20 +1,45 @@
-/** A group label is displayed only when its own source quote supports it. */
-const colors='rød|grønn|blå|gul|oransje|lilla|rosa';
-const groupPattern=new RegExp(`^(?:(?:[1-7]\\s*)?[A-F](?:\s*(?:/|,|og)\s*(?:[1-7]\\s*)?[A-F])?|(?:${colors})(?:\\s*(?:gruppe|gruppa))?)$`,'i');
-const normalized=s=>String(s||'').toLocaleLowerCase('nb-NO').replace(/[^a-zæøå0-9]+/g,' ').trim();
+/** Group labels must be supported by the exact source quote. */
+const colors=['rød','grønn','blå','gul','oransje','lilla','rosa'];
+const norm=s=>String(s||'').toLocaleLowerCase('nb-NO').replace(/[^a-zæøå0-9]+/g,' ').trim();
 export function groupLabel(raw,sourceQuote=''){
  if(typeof raw!=='string'||typeof sourceQuote!=='string')return null;
  const value=raw.trim().replace(/^(?:klasse|gruppe)\s+/i,'').replace(/\s+(?:klasse|gruppe)$/i,'');
- if(value.length>35||!groupPattern.test(value))return null;
- const evidence=normalized(sourceQuote);
- // Source quote must explicitly include the named group. Avoid adding group
- // labels to every schoolwide assignment on a page that also mentions groups.
- const markers=value.match(/[1-7]\s*[A-F]|\b(?:rød|grønn|blå|gul|oransje|lilla|rosa)\b|\b[A-F]\b/gi)||[];
- if(!markers.length||!markers.every(x=>evidence.includes(normalized(x))))return null;
- const colorsReg=new RegExp(`^(${colors})(?:\\s*(?:gruppe|gruppa))?$`,'i');
- const color=value.match(colorsReg);
- if(color)return color[1][0].toLocaleUpperCase('nb-NO')+color[1].slice(1).toLocaleLowerCase('nb-NO')+' gruppe';
- return value.toUpperCase().replace(/\s+/g,'');
+ if(!value||value.length>35)return null;
+ const evidence=norm(sourceQuote);
+ const color=value.match(new RegExp(`^(${colors.join('|')})(?:\\s*(?:gruppe|gruppa))?$`,'i'));
+ if(color){
+  const c=color[1];
+  if(!new RegExp(`(?:^| )${c}(?: |$)`,'i').test(evidence))return null;
+  return c[0].toLocaleUpperCase('nb-NO')+c.slice(1).toLocaleLowerCase('nb-NO')+' gruppe';
+ }
+ if(/^[A-F]\s*(?:\/|,|og)\s*[A-F]$/i.test(value)){
+  const pair=value.toUpperCase().match(/[A-F]/g);
+  if(pair.every(c=>new RegExp(`(?:^| )${c}(?: |$)`,'i').test(evidence))&&/\b(?:klasse|gruppe|trinn|a\s*\/\s*b)\b/i.test(sourceQuote))return pair.join('/');
+ }
+ const classes=value.toUpperCase().match(/[1-7]\s*[A-F]/g);
+ if(classes&&classes.length<=2&&/^(?:[1-7]\s*[A-F])(?:\s*(?:\/|,|og)\s*[1-7]\s*[A-F])?$/i.test(value)){
+  if(!classes.every(c=>new RegExp(`(?:^| )${c.replace(/\s+/g,'')}(?: |$)`,'i').test(evidence)))return null;
+  return classes.map(c=>c.replace(/\s+/g,'')).join('/');
+ }
+ if(/^[A-F]$/i.test(value)&&new RegExp(`\\b(?:klasse|gruppe|trinn)\\s*${value}\\b`,'i').test(sourceQuote))return value.toUpperCase();
+ return null;
+}
+export function scopedGroup(raw,sourceQuote='',day=null){
+ const explicit=groupLabel(raw,sourceQuote);
+ if(explicit&&!colors.some(c=>explicit.toLocaleLowerCase('nb-NO').startsWith(c)))return explicit;
+ if(!day||!sourceQuote)return explicit;
+ const dayName=norm(day),groups=[];
+ for(const part of sourceQuote.split(/[,;.]|\s+(?:mens|derimot)\s+/i)){
+  const clause=norm(part);
+  if(!new RegExp(`(?:^| )${dayName}(?: |$)`,'i').test(clause))continue;
+  groups.push(...[...clause.matchAll(new RegExp(`(?:^| )(${colors.join('|')})(?: gruppe)?(?: |$)`,'gi'))].map(x=>x[1]));
+ }
+ const found=[...new Set(groups)];
+ if(found.length===1)return groupLabel(found[0],sourceQuote);
+ if(found.length>1)return null;
+ const allColors=[...new Set([...norm(sourceQuote).matchAll(new RegExp(`(?:^| )(${colors.join('|')})(?: gruppe)?(?: |$)`,'gi'))].map(x=>x[1]))];
+ if(allColors.length>1&&explicit&&allColors.some(c=>explicit.toLowerCase().startsWith(c)))return null;
+ return explicit;
 }
 export function homeworkProgress(items,isChecked){
  const total=Array.isArray(items)?items.length:0;
