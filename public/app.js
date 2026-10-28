@@ -146,6 +146,9 @@ function renderContent(){
   $('day-program').innerHTML=p?.status==='unpublished'?empty('Ingen ukeplan publisert for denne uken.'):
     events.length?events.map(x=>{const e=displayEvent(x);return `<div class="event"><span class="event-dot">●</span><span>${groupBadge(x.group)}${e.time?`<small>${safe(e.time)}</small>`:''}${safe(e.title)}${e.endTime?`<small class="event-endtime">${safe(e.endTime)}</small>`:''}</span></div>`;}).join(''):
     empty(state.loading?'Henter dagsprogram …':(p?.status==='ok'&&p?.parser==='ai'?'Ingen dagsprogram er oppgitt for denne dagen.':'Ingen dagsprogram kunne tolkes sikkert. Sjekk original-PDF.'));
+  const attendance=(p?.attendance||[]).filter(x=>x.day===DAYS[state.day]&&x.group&&x.time);
+  $('day-attendance').hidden=!attendance.length;
+  $('day-attendance').innerHTML=attendance.length?`<div class="attendance-heading">⏰ Særskilt oppmøte for enkelte grupper</div>${attendance.map(x=>`<div class="attendance-entry">${groupBadge(x.group)}<strong>Kl. ${safe(x.time)}</strong><span>${safe(x.text)}</span></div>`).join('')}`:'';
   const bag=getBag();
   $('bag-list').innerHTML=bag.length?checklist(bag,'bag',DAYS[state.day]):empty(state.loading?'Henter pakkelisten …':'Ingen spesifikk pakkeliste ble funnet i PDF-en.');
   const hw=p?.homework||[];
