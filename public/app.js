@@ -2,7 +2,8 @@ import {siteConfig} from './site-config.mjs';
 import {schoolCalendar,dayDate,DAYS} from './shared/calendar.mjs';
 import {schoolSelectionKey,validSchool,gradeSelectionKey,validGrade,progressKey} from './shared/selection.mjs';
 import {planFeedback} from './shared/plan-feedback.mjs';
-import {normalizeVisualRegion,visualCropGeometry} from './shared/visual-region.mjs';
+import {normalizeVisualRegion,paddedVisualRegion,visualCropGeometry,fullPageGeometry} from './shared/visual-region.mjs';
+import {homeworkProgress} from './shared/group-scope.mjs';
 // This module is served from public/. Calendar and selection modules are mirrored in public/shared/.
 const $ = id=>document.getElementById(id);
 const safe=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -11,7 +12,7 @@ let calendar=schoolCalendar(new Date(),siteConfig.school.timezone);
 const storageRead=(key)=>{try{return localStorage.getItem(key);}catch{return null;}};
 const storageWrite=(key,value)=>{try{localStorage.setItem(key,value);}catch{}};
 const storageDrop=(key)=>{try{localStorage.removeItem(key);}catch{}};
-const state={school:null,grade:null,availableGrades:null,gradeError:null,day:calendar.weekday,plan:null,loading:false,weather:null,weatherError:null,planError:null,requestId:0,aiPolls:0,aiTimer:null,specialKey:null};
+const state={school:null,grade:null,availableGrades:null,gradeError:null,day:calendar.weekday,plan:null,loading:false,weather:null,weatherError:null,planError:null,requestId:0,aiPolls:0,aiTimer:null,specialKey:null,specialRenderId:0,expandedSpecial:new Set()};
 const weekDayDate=day=>dayDate(calendar.year,calendar.week,day);
 const titleDay=day=>new Date(`${weekDayDate(day)}T12:00:00Z`).toLocaleDateString('nb-NO',{timeZone:'UTC',day:'numeric',month:'short'});
 const progress=(section,day='all')=>progressKey(state.school.id,state.grade,calendar.year,calendar.week,section,day);
@@ -29,7 +30,7 @@ function badge(status){
 function getBag(){
   const p=state.plan;if(!p)return [];
   const raw=[...(p.everyday||[]),...(p.days?.[DAYS[state.day]]?.bring||[])].filter(x=>x&&typeof x.label==='string');
-  return [...new Map(raw.map(x=>[x.label.toLocaleLowerCase('nb-NO'),x])).values()];
+  return [...new Map(raw.map(x=>[(x.label+'::'+(x.group||'')).toLocaleLowerCase('nb-NO'),x])).values()];
 }
 function renderSchoolChoices(query=''){
   const normalize=t=>String(t||'').toLocaleLowerCase('nb-NO').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/ø/g,'o').replace(/æ/g,'ae');
@@ -67,12 +68,17 @@ function renderShell(){
   $('day-buttons').innerHTML=DAYS.map((d,i)=>`<button type="button" class="day ${i===state.day?'active':''} ${i<calendar.weekday?'past':''}" data-day="${i}" aria-current="${i===state.day?'date':'false'}"><span>${safe(d)}</span><strong>${titleDay(i)}</strong></button>`).join('');
   renderContent();
 }
+function groupBadge(group){
+  if(!group)return '';
+  const color=/rød/i.test(group)?'group-red':/grønn/i.test(group)?'group-green':/blå/i.test(group)?'group-blue':'group-class';
+  return `<span class="group-badge ${color}">${safe(group)}</span>`;
+}
 function checklist(items,section,day='all'){
   return items.map((item,i)=>{
     const label=typeof item==='string'?item:(item?.text||item?.label||'');
     const meta=typeof item==='object'&&item?.subject?`<span class="subject">${safe(item.subject)}</span>`:'';
     const hint=section==='bag'&&item?.note?`<small>${safe(item.note)}</small>`:'';
-    return `<label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${meta}${safe(label)}${hint}</span></label>`;
+    return `<label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${meta}${safe(label)}${hint}</span></label>`;
   }).join('');
 }
 function empty(msg){return `<p class="empty"><span aria-hidden="true">ℹ️</span> ${safe(msg)}</p>`;}
@@ -114,12 +120,13 @@ function renderContent(){
   if(p?.source&&state.school)$('school-source').href=p.source;
   const events=p?.days?.[DAYS[state.day]]?.events||[];
   $('day-program').innerHTML=p?.status==='unpublished'?empty('Ingen ukeplan publisert for denne uken.'):
-    events.length?events.map(x=>`<div class="event"><span class="event-dot">●</span><span>${x.time?`<small>${safe(x.time)}</small>`:''}${safe(x.title)}</span></div>`).join(''):
+    events.length?events.map(x=>`<div class="event"><span class="event-dot">●</span><span>${groupBadge(x.group)}${x.time?`<small>${safe(x.time)}</small>`:''}${safe(x.title)}</span></div>`).join(''):
     empty(state.loading?'Henter dagsprogram …':(p?.status==='ok'&&p?.parser==='ai'?'Ingen dagsprogram er oppgitt for denne dagen.':'Ingen dagsprogram kunne tolkes sikkert. Sjekk original-PDF.'));
   const bag=getBag();
   $('bag-list').innerHTML=bag.length?checklist(bag,'bag',DAYS[state.day]):empty(state.loading?'Henter pakkelisten …':'Ingen spesifikk pakkeliste ble funnet i PDF-en.');
   const hw=p?.homework||[];
   $('homework-list').innerHTML=hw.length?checklist(hw,'homework'):empty(state.loading?'Henter lekser …':'Ingen lekser ble funnet i PDF-en.');
+  renderHomeworkProgress(hw);
   const hasTheme=features.theme&&Boolean(p?.weekTheme);
   const subjects=Array.isArray(p?.subjects)?p.subjects:[];
   const missionText=features.optionalMission?(p?.optionalMission||''):'';
@@ -134,13 +141,25 @@ function renderContent(){
     `<div class="mission"><div><strong>🌟 Frivillig oppdrag ${isSuggestedMission?'· forslag fra Ukeplanen':''}</strong><p>${safe(missionText)}</p></div><label class="mission-check"><input type="checkbox" data-check="mission" data-index="0" data-progress-day="all"> Fullført</label></div>`);
   const notices=p?.notices||[];
   $('notices-count').textContent=notices.length?notices.length:'';
-  $('notices-list').innerHTML=notices.length?notices.map(x=>`<p>${safe(typeof x==='string'?x:x?.detail||x?.title)}</p>`).join(''):empty('Ingen beskjeder ble funnet i PDF-en.');
+  $('notices-list').innerHTML=notices.length?notices.map(x=>`<p>${groupBadge(x?.group)}${safe(typeof x==='string'?x:x?.text||x?.detail||x?.title)}</p>`).join(''):empty('Ingen beskjeder ble funnet i PDF-en.');
   const goals=features.learningGoals?p?.learningGoals||[]:[];
   $('goals-panel').hidden=!features.learningGoals||!goals.length;
   $('goals-count').textContent=goals.length;
-  $('goals-list').innerHTML=goals.map(x=>`<p>${safe(typeof x==='string'?x:x?.text||x?.detail||'')}</p>`).join('');
+  $('goals-list').innerHTML=goals.map(x=>`<p>${groupBadge(x?.group)}${safe(typeof x==='string'?x:x?.text||x?.detail||'')}</p>`).join('');
   renderSpecialContent();
   renderWeather();
+}
+function renderHomeworkProgress(homework){
+ const box=$('homework-progress');
+ const progress=homeworkProgress(homework,i=>isChecked('homework',i));
+ box.hidden=!progress.total;
+ if(!progress.total)return;
+ $('homework-progress-bar').style.width=progress.percent+'%';
+ $('homework-progress-track').setAttribute('aria-valuenow',String(progress.percent));
+ $('homework-progress-count').textContent=`${progress.done} av ${progress.total} lekser ferdig`;
+ $('homework-progress-message').textContent=progress.complete?'🏆 Alle lekser er gjort! Du klarte det!':progress.percent>=70?'🌟 Snart i mål!':progress.percent>=30?'🚀 Bra jobbet, fortsett slik!':'✨ Klar for å samle stjerner?';
+ box.classList.toggle('is-complete',progress.complete);
+ $('homework-progress-stars').textContent=progress.complete?'⭐⭐⭐':progress.percent>=70?'⭐⭐☆':progress.percent>=30?'⭐☆☆':'☆☆☆';
 }
 function renderSpecialContent(){
   const p=state.plan, items=Array.isArray(p?.specialContent)?p.specialContent.slice(0,4):[];
@@ -149,16 +168,16 @@ function renderSpecialContent(){
   if(!items.length){state.specialKey=null;$('special-items').replaceChildren();return;}
   const key=[state.school?.id,state.grade,p?.pdf,items.map(x=>[x.title,x.sourcePage,x.hasVisual,JSON.stringify(x.visualRegion)].join(':')).join('|')].join('::');
   if(state.specialKey===key)return;
-  state.specialKey=key;
+  state.specialKey=key;state.expandedSpecial=new Set();
   $('special-items').innerHTML=items.map((item,index)=>{
     const page=Number(item.sourcePage);
     const crop=normalizeVisualRegion(item.visualRegion);
     const pageLink=p.pdf&&page>0?`${p.pdf}#page=${page}`:p.pdf;
     return `<article class="special-card">
       <div class="special-copy"><p class="special-type">${item.kind==='knowledge'?'💡 KUNNSKAPSHJØRNET':item.kind==='illustration'?'🖼️ FRA PDF-EN':'✨ EKSTRA FRA SKOLEN'}</p>
-      <h3>${safe(item.title)}</h3><p>${safe(item.description)}</p>
+      <h3>${groupBadge(item.group)}${safe(item.title)}</h3><p>${safe(item.description)}</p>
       ${p.pdf?`<a href="${safe(pageLink)}" target="_blank" rel="noopener noreferrer">Se side ${page} i original-PDF ↗</a>`:''}</div>
-      ${item.hasVisual&&crop&&p.pdf&&Number.isInteger(page)&&page>=1&&page<=16?`<div class="special-visual" data-special-page="${page}" data-special-index="${index}" role="img" aria-label="Utsnitt fra original PDF-side ${page}: ${safe(item.title)}"><span>Henter illustrasjonen fra skolens PDF …</span></div>`:''}
+      ${item.hasVisual&&crop&&p.pdf&&Number.isInteger(page)&&page>=1&&page<=16?`<div id="special-visual-${index}" class="special-visual" data-special-page="${page}" data-special-index="${index}" role="img" aria-label="Utsnitt fra original PDF-side ${page}: ${safe(item.title)}"><span>Henter illustrasjonen fra skolens PDF …</span></div><button type="button" class="special-expand" data-special-expand="${index}" aria-controls="special-visual-${index}" aria-expanded="false">↗ Vis hele PDF-siden</button>`:''}
       </article>`;
   }).join('');
   if(p.pdf)void renderSpecialPdfPages(key);
@@ -166,23 +185,25 @@ function renderSpecialContent(){
 async function renderSpecialPdfPages(key){
   const targets=[...$('special-items').querySelectorAll('[data-special-page]')];
   if(!targets.length)return;
-  let pdf;
+  let pdf;const renderId=++state.specialRenderId;
   try{
     const module=await import('/vendor/pdf.mjs');
-    if(state.specialKey!==key)return;
+    if(state.specialKey!==key||state.specialRenderId!==renderId)return;
     module.GlobalWorkerOptions.workerSrc='/vendor/pdf.worker.mjs';
     const proxy=`/api/pdf-preview?school=${encodeURIComponent(state.school.id)}&grade=${encodeURIComponent(state.grade)}`;
     const task=module.getDocument({url:proxy,isEvalSupported:false});
     pdf=await task.promise;
     for(const target of targets){
-      if(state.specialKey!==key)break;
+      if(state.specialKey!==key||state.specialRenderId!==renderId)break;
       const pageNo=Number(target.dataset.specialPage);
       if(pageNo>pdf.numPages){target.textContent='Se illustrasjonen i original-PDF-en.';continue;}
       const page=await pdf.getPage(pageNo);
       const item=state.plan?.specialContent?.[Number(target.dataset.specialIndex)];
       const base=page.getViewport({scale:1});
-      const geometry=visualCropGeometry(item?.visualRegion,base.width,base.height,
-        Math.max(180,target.getBoundingClientRect().width-24||460),window.devicePixelRatio||1);
+      const isFull=state.expandedSpecial.has(Number(target.dataset.specialIndex));
+      const availableWidth=Math.max(180,target.getBoundingClientRect().width-24||460);
+      const geometry=isFull?fullPageGeometry(base.width,base.height,availableWidth,window.devicePixelRatio||1):
+        visualCropGeometry(paddedVisualRegion(item?.visualRegion),base.width,base.height,availableWidth,window.devicePixelRatio||1);
       if(!geometry){target.textContent='Se illustrasjonen i original-PDF-en.';page.cleanup();continue;}
       const viewport=page.getViewport({scale:geometry.viewportScale});
       const canvas=document.createElement('canvas');
@@ -192,13 +213,13 @@ async function renderSpecialPdfPages(key){
       canvas.style.height=`${geometry.cssHeight}px`;
       const context=canvas.getContext('2d');
       if(!context)throw new Error('Nettleseren støtter ikke PDF-lerret');
-      // Only render the relevant PDF crop, never the entire source page.
+      // PDF page remains the real source. Only the local topic bounding box is rendered.
       await page.render({canvasContext:context,viewport,transform:geometry.transform}).promise;
       page.cleanup();
-      if(state.specialKey===key){target.replaceChildren(canvas);target.classList.add('special-rendered');}
+      if(state.specialKey===key&&state.specialRenderId===renderId){target.replaceChildren(canvas);target.classList.add('special-rendered');}
     }
   }catch(error){
-    if(state.specialKey!==key)return;
+    if(state.specialKey!==key||state.specialRenderId!==renderId)return;
     for(const target of targets)if(!target.querySelector('canvas'))target.textContent='Bildet kunne ikke forhåndsvises. Åpne original-PDF-en via lenken.';
     console.warn('PDF-bildevisning utilgjengelig:',error?.message);
   }finally{if(pdf)try{await pdf.destroy();}catch{}}
@@ -313,6 +334,14 @@ function boot(){
     const grade=e.target.closest('[data-grade]');if(grade){selectGrade(grade.dataset.grade);return;}
     const day=e.target.closest('[data-day]');if(day){state.day=Number(day.dataset.day);renderShell();return;}
     if(e.target.closest('#undo-mission'))setChecked('mission',0,'all',false);
+    const show=e.target.closest('[data-special-expand]');if(show){
+      const index=Number(show.dataset.specialExpand);
+      if(state.expandedSpecial.has(index))state.expandedSpecial.delete(index);else state.expandedSpecial.add(index);
+      const expanded=state.expandedSpecial.has(index);
+      show.setAttribute('aria-expanded',String(expanded));
+      show.textContent=expanded?'↙ Vis utsnittet':'↗ Vis hele PDF-siden';
+      if(state.specialKey)void renderSpecialPdfPages(state.specialKey);
+    }
   });
   document.addEventListener('change',e=>{
     const el=e.target.closest('input[data-check]');if(el)setChecked(el.dataset.check,el.dataset.index,el.dataset.progressDay,el.checked);

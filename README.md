@@ -175,3 +175,15 @@ Kommunens offisielle oversikt (https://www.kristiansand.kommune.no/navigasjon/ba
 - Delvis status vises som en liten informasjonslinje uten å skyve ukeplanen langt ned.
 - `AI_SCHEMA_VERSION=3` gjør at tidligere lagret innhold tolkes på nytt. Netlify build kjører `scripts/prepare-pdf-viewer.mjs` etter testene for å publisere PDF.js.
 - Original-PDF-er fra skolene kunne ikke lastes ned i utviklingsmiljøet; innhold og bildebokser må kvalitetssikres i Netlify.
+
+## v0.9: Separate PDF illustration crops (Presteheia/Lunde)
+SpecialContent now includes validated per-item `visualRegion` (0–1000 top-left PDF coordinates). The browser renders only the region with a PDF.js canvas offset, rather than the full original page for every item. Overlapping/duplicate crops are de-duplicated while text and original-PDF links remain. Full-page and uncertain boxes are suppressed; the model must return distinct, tight crops. AI schema bumped to v4, so previously cached full-page visual references are regenerated. Tests cover separate Presteheia themes, Lunde's «Lunde på linja» and «Grublis», invalid crops and PDF.js transform geometry. **Original PDFs could not be downloaded in this environment; exact crop content must be checked in the Deploy Preview.**
+
+
+## v0.10 – Gruppevarsler, tryggere originalbilder og lekseprogresjon
+- AI-analysen markerer hvert kildebelagt element med `group` (for eksempel 5A, 5B, Rød gruppe eller Grønn gruppe) for aktiviteter, pakkelister, lekser, beskjeder, læringsmål og spesialstoff. Ingen gruppe skal utledes når det ikke finnes eksplisitt kildebelegg for akkurat opplysningen. Sitat og gruppe kontrolleres på server.
+- Tydelige, fargekodede gruppemerker vises ved de aktuelle elementene. Utstyr med samme navn for ulike grupper dedupliseres ikke feilaktig.
+- Bildeutsnitt har ekstra margin. Ved behov kan leseren åpne hele original-PDF-siden *i samme kort* via knappen «Vis hele PDF-siden», uten risiko for å miste bortklippet informasjon. Duplikatkontrollen er beholdt.
+- Lekser og oppgaver har nå en 0–100 % fremdriftslinje, stjerner og vennlige meldinger. Oppdateres umiddelbart når lekser krysses av, og bruker eksisterende per-skole/per-trinn/per-uke lokal lagring. Ingen konto eller serverlagring.
+- AI-cache-skjema oppgradert til v5, slik at gruppeinformasjonen reanalyseres på originale PDF-er. Dette medfører nye AI-kall for tidligere hurtiglagrede dokumenter.
+- Regresjonstester dekker grupper ved svømming/oppmøte, overlappende pakkeutstyr, gruppebevis, fullsidebilde og lekseprogresjon. Faktiske PDF-illustrasjoner bør kontrolleres visuelt i Deploy Preview: dette kan ikke verifiseres sikkert mot eksterne MinSkole-PDF-er fra utviklingsmiljøet.
