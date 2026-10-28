@@ -64,7 +64,7 @@
       <div id="warning-area" class="alert" role="status" aria-live="polite" hidden></div>
       <div id="plan-body">
       <div id="rain-reminder" class="rain-alert" role="status" hidden></div>
-      <nav class="weekdays" id="day-buttons" aria-label="Velg dag"></nav>
+      <div class="smart-week-row"><span id="smart-week" hidden></span><button id="back-this-week" type="button" hidden>← Vis denne uka</button></div><nav class="weekdays" id="day-buttons" aria-label="Velg dag"></nav>
       <div id="day-group-summary" class="day-group-summary" hidden aria-live="polite"></div>
       <div id="plan-columns" class="columns">
         <section class="panel" aria-labelledby="program-title"><div class="panel-head"><div><p class="eyebrow">SKOLEDAGEN</p><h2 id="program-title">Dette skjer i dag</h2></div><span class="section-icon">📚</span></div><div id="day-program" class="items"></div><section id="day-notes" class="day-notes" hidden aria-label="Praktisk informasjon for dagen"><h3>📌 Praktisk informasjon for dagen</h3><div id="day-notes-list"></div></section><div id="day-attendance" class="day-attendance" hidden aria-label="Særskilt oppmøte for enkelte grupper"></div></section>
@@ -75,7 +75,7 @@
           <div id="homework-progress-track" class="homework-progress-track" role="progressbar" aria-label="Lekser fullført" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="homework-progress-bar" class="homework-progress-fill"></div></div>
           <p id="homework-progress-message" aria-live="polite">✨ Klar for å samle stjerner?</p>
         </div><div id="homework-list" class="items"></div></section>
-      <section class="panel" id="vocabulary-panel" hidden><div class="panel-head"><div><p class="eyebrow">ORD Å ØVE PÅ</p><h2 id="vocabulary-title">Ukas ord</h2></div><span class="section-icon">🔤</span></div><div id="vocabulary-list" class="items"></div></section>
+      <section class="panel" id="vocabulary-panel" hidden><div class="panel-head"><div><p class="eyebrow">ORD Å ØVE PÅ</p><h2 id="vocabulary-title">Ukas ord</h2></div><span class="section-icon">🔤</span></div><div id="vocabulary-list" class="items"></div><div id="word-quiz" hidden><div class="quiz-header"><strong>🎮 Ukas ordutfordring</strong><button id="word-quiz-start" type="button">Start quiz</button></div><div id="word-quiz-play" hidden><p id="word-quiz-progress"></p><p id="word-quiz-question"></p><div id="word-quiz-options"></div><form id="word-quiz-form" hidden><label for="word-quiz-answer">Skriv riktig ord</label><input id="word-quiz-answer" autocomplete="off"><button type="submit">Sjekk svar</button></form><p id="word-quiz-feedback" role="status"></p><button id="word-quiz-next" type="button" hidden>Neste ord →</button></div></div></section>
       <section class="panel subjects-panel" id="subjects-panel" aria-labelledby="subjects-title"><div class="panel-head"><div><p class="eyebrow">SKOLEFAG</p><h2 id="subjects-title">Fag denne uka</h2></div><span class="section-icon">📖</span></div><div id="subjects-list" class="items"></div></section>
       <section class="panel theme" id="theme-panel" hidden aria-labelledby="theme-title"><div class="panel-head"><div><p class="eyebrow">LITT EKSTRA</p><h2 id="theme-title">Ukas tema</h2></div><span class="section-icon">✨</span></div><p id="theme-content"></p><div id="mission-slot"></div></section>
       <section id="special-panel" class="panel special-panel" aria-labelledby="special-title" hidden>
