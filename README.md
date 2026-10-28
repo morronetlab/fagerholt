@@ -98,3 +98,35 @@ Appen oppdager fortsatt PDF fra riktig trinnside basert på aktuell ISO-uke.
 `tests/week44-official-links.test.mjs` kontrollerer kildevalg, eksakte URL-varianter, avvisning av eldre uker og at en PDF uten tekstlag ikke presenteres som en korrekt tolket plan. `allowedSourceHosts` inkluderer nå begge offisielle MinSkole-domenene, `minskole.no` og `minskule.no`. Store PDF-er får lengre HTTP-/klient-timeout.
 
 **Gjenstår:** Direkte nedlasting av disse to PDF-ene var ikke tilgjengelig i arbeidsmiljøet. Derfor er **innholdet i uke-44-dokumentene ennå ikke verifisert**; verken dagsprogram, lekser, beskjeder eller pakkeliste kan erklæres korrekt ut fra URL-tester alene. Hvis PDF-ene er tilgjengelige lokalt, kjør f.eks. `npm install && node scripts/inspect-pdf.mjs 4 /path/uke44.pdf 44 2026`, og sammenlign JSON-feltene med den visuelle original-PDF-en. Dersom dokumentet er skannet uten tekstlag, må OCR vurderes før innhold kan trekkes ut.
+
+## PDF-tilpasninger – dagsprogram, leksefrister og pakkeliste
+
+- Tekst som visuelt fortsetter på en ny linje i en dagskolonne, samles til én aktivitet basert på PDF-koordinater. Nye fagoverskrifter og klokkeslett starter egne rader.
+- For 4. trinn grupperes lekser under PDF-ens faktiske **Til mandag/tirsdag/onsdag/torsdag/fredag**-frister; hvert trinn og hver uke er fortsatt dynamisk.
+- Pakkelisten hentes fra den valgte PDF-en. Eksplisitte instruksjoner beholdes, og generelle aktivitetsutledninger (f.eks. badetøy og håndkle ved oppført svømming) merkes som **forslag**. Dato, aktivitet og utstyr er aldri hardkodet for en bestemt uke. Gruppebegrensede og negert formulerte instruksjoner får ikke generelle pakkeforslag.
+- Regresjonstester i `tests/wrapping-deadlines-and-gear.test.mjs` bruker representative tekstkoordinater, **ikke reelle PDF-filer**. Kilden `minskole.no` har ikke vært direkte tilgjengelig for nedlasting og fullstendig visuell verifisering her. Faktiske PDF-er må kontrolleres før produksjonssetting.
+
+## AI-basert PDF-tolking (v0.5, krever konfigurasjon)
+
+AI er nå primær parser **når Netlify-miljøvariablene er konfigurert**. PDF-en sendes med sidebilder og tekst til OpenAI Responses API (`gpt-4.1-mini` som standard), med strengt JSON-skjema. JSON valideres, filtreres etter kildehenvisninger og mappes til samme API-format som frontend allerede bruker. For 4. trinn samles lekser etter frist; dagsprogram, beskjed, fagoversikt, læringsmål og pakkeliste har separate kategorier. Foreslått utstyr fra aktiviteter merkes tydelig. Opplysninger uten kildeside/sitat forkastes.
+
+### Miljøvariabler (kun server/runtime i Netlify)
+
+- `OPENAI_API_KEY`: hemmelig OpenAI API-nøkkel; må aldri ligge i GitHub, `public/` eller klientkoden.
+- `AI_JOB_SECRET`: egen tilfeldig hemmelighet med minst 24 tegn, brukt til å signere bakgrunnsjobber. Lag f.eks. med `openssl rand -hex 32`. Del den aldri med frontend.
+- `OPENAI_MODEL` (valgfri): støttet multimodal modell, standard `gpt-4.1-mini`.
+- `AI_BLOBS_REGION` (valgfri): Netlify Blobs-region; standard `eu-central-1` (må være identisk for alle deploys som deler cache).
+
+### Kjøring
+
+1. `/api/plan?grade=4` finner aktuell PDF på den offisielle trinnsiden, laster den ned og lager SHA-256 av innholdet.
+2. Dersom ferdig AI-resultat for **PDF-hash + klassetrinn + ISO-uke + modell + skjemaversjon** finnes i Netlify Blobs, returneres dette straks.
+3. Ved cache-miss startes `netlify/functions/ai-plan-background.mjs` via en server-signert intern POST. API-et svarer med regelbasert PDF-tolking mens bakgrunnsjobben kjører. Frontend prøver igjen hvert 15. sekund (maks åtte ganger), uten nye AI-kall for samme aktive lås.
+4. Bakgrunnsjobben laster ned og verifiserer den **samme** PDF-en (hash), kjører Responses API, validerer og lagrer ferdig JSON i site-wide Netlify Blobs. Ingen PDF-fil eller API-nøkkel legges i blob-lageret.
+5. Hvis API-nøkkel eller bakgrunnslager ikke er konfigurert, fortsetter dagens regelbaserte parser å virke. AI-feil har 5 minutters kjølepause før nytt forsøk.
+
+**Viktig ved første deploy:** Sett begge hemmelighetene i Netlify miljøvariabler for Functions, og deploy så med en Netlify Background Function. Ingen OpenAI-nøkkel er satt av denne kodeendringen. Ingen faktisk AI-analyse er gjennomført under utvikling; vi bruker mockede API-svar i tester. Det er derfor nødvendig å kvalitetssikre et par reelle ukeplan-PDF-er mot originalen i deploy preview. Dersom offisielle PDF-er inneholder personopplysninger, vurder personvern og leverandøravtale før de sendes til tredjepart. Responses-kallet bruker `store:false`, men dette alene innebærer ikke at ingen API-logger oppbevares.
+
+### Funksjons- og lagringskostnader
+
+Kun én AI-analyse skal normalt utføres per unik PDF-versjon. Den samme PDF-en gjenbrukes fra Netlify Blobs, men selve skolesiden/PDF-en blir fortsatt kontrollert ved en ny API-forespørsel for å oppdage kildeendringer. Kildesitat og sidereferanse ligger i den interne normaliseringen; UI viser bare kategoriserte elev-/foreldreopplysninger. Den gamle parseren beholdes som reserve og brukes mens analysen pågår.
