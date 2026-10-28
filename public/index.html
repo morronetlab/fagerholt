@@ -9,7 +9,7 @@
 <div class="shell">
   <header class="topbar">
     <a class="logo" id="home-link" href="/" aria-label="Gå til forsiden"><span class="brand-mark">🎒</span><span><strong id="brand-title">Ukeplanen</strong><small id="brand-subtitle">EN ENKLERE SKOLEUKE</small></span></a>
-    <div class="header-actions"><span class="date-chip" id="today"></span><span class="week-badge" id="week-label">UKE —</span><button id="change-school" type="button" class="ghost" hidden>Bytt skole</button><button id="change-grade" type="button" class="ghost" hidden>Bytt klassetrinn</button></div>
+    <div class="header-actions"><span class="date-chip" id="today"></span><span class="week-badge" id="week-label">UKE —</span><button id="change-school" type="button" class="ghost" hidden>Bytt skole</button><button id="change-grade" type="button" class="ghost" hidden>Bytt klassetrinn</button><details id="mobile-selection-menu" class="mobile-selection-menu" hidden><summary>⚙ Endre valg</summary><div class="mobile-selection-actions"><button id="mobile-change-grade" type="button">Bytt klassetrinn</button><button id="mobile-change-school" type="button">Bytt skole</button></div></details></div>
   </header>
   <main>
     <section id="school-gate" class="gate school-gate" aria-labelledby="school-gate-title">
@@ -34,11 +34,11 @@
       <p class="fineprint">Vi henter kun opplysninger fra skolens offisielle ukeplan for valgt klassetrinn.</p>
     </section>
     <div id="app-view" hidden>
-      <section class="hero">
-        <div><p class="eyebrow" id="school-name"></p><h1 id="welcome-title">Morgenklar! <span aria-hidden="true">☀️</span></h1><p class="lead" id="welcome-description">Sjekk skoledagen og pakk sekken.</p>
+      <section class="hero" id="app-hero">
+        <div class="hero-intro"><p class="eyebrow" id="school-name"></p><h1 id="welcome-title">Morgenklar! <span aria-hidden="true">☀️</span></h1><p class="lead" id="welcome-description">Sjekk skoledagen og pakk sekken.</p>
           <div class="hero-actions"><span id="status-pill" class="state-pill">Henter ukeplan …</span><button type="button" id="reload" class="small-button">↻ Oppdater</button><a id="school-source" href="#" target="_blank" rel="noopener noreferrer">Skolens trinnside ↗</a></div>
         </div>
-        <aside class="weather" aria-label="Vær for valgt skoledag"><p class="eyebrow">VÆR I OMRÅDET · 08–15</p><div class="weather-main"><span id="weather-icon" class="weather-icon">🌤️</span><strong id="weather-temp">—</strong></div><p id="weather-desc" class="weather-desc">Henter værmelding …</p><p class="source-note" id="weather-location">Værdata: Meteorologisk institutt / Yr</p></aside>
+        <aside id="weather-panel" class="weather" aria-label="Vær for valgt skoledag"><p class="eyebrow">VÆR I OMRÅDET · 08–15</p><div class="weather-main"><span id="weather-icon" class="weather-icon">🌤️</span><strong id="weather-temp">—</strong></div><button id="weather-toggle" class="weather-toggle" type="button" aria-expanded="false" aria-controls="weather-details">Vær for valgt dag <span aria-hidden="true">⌄</span></button><div id="weather-details" class="weather-details"><p id="weather-desc" class="weather-desc">Henter værmelding …</p><p class="source-note" id="weather-location">Værdata: Meteorologisk institutt / Yr</p></div></aside>
       </section>
       <section id="plan-feedback" class="plan-feedback" hidden role="status" aria-live="polite" aria-atomic="true" aria-labelledby="feedback-title">
         <div id="feedback-illustration" class="feedback-illustration" aria-hidden="true">
