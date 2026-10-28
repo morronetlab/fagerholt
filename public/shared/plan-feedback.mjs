@@ -30,6 +30,12 @@ export function planFeedback({school=null,grade=null,plan=null,error=null,loadin
     description:'Vi henter frem dagsprogram, lekser, pakkeliste og beskjeder fra original-PDF-en. Ukeplanen vises når AI er ferdig.',
     showSchool:false,showGrade:Boolean(plan?.pdf),showRetry:true,hideContent:true
   };
+  if(plan?.aiStatus==='failed')return {
+    kind:'missing',eyebrow:'AI-ANALYSEN BLE IKKE FULLFØRT',
+    title:'Kunne ikke fullføre AI-analysen',
+    description:'Statussjekken starter aldri analysen på nytt. Du kan åpne original-PDF-en eller velge «Prøv igjen» for å starte et nytt forsøk.',
+    showSchool:false,showGrade:Boolean(plan?.pdf),showRetry:true,hideContent:false
+  };
   if(plan?.status==='unreadable')return {
     kind:'missing',eyebrow:'PDF KUNNE IKKE LESES',
     title:'Vi fant PDF-en, men klarte ikke lese den',

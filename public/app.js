@@ -16,7 +16,7 @@ let calendar=schoolCalendar(new Date(),siteConfig.school.timezone);
 const storageRead=(key)=>{try{return localStorage.getItem(key);}catch{return null;}};
 const storageWrite=(key,value)=>{try{localStorage.setItem(key,value);}catch{}};
 const storageDrop=(key)=>{try{localStorage.removeItem(key);}catch{}};
-const state={school:null,grade:null,availableGrades:null,gradeError:null,day:calendar.weekday,plan:null,loading:false,weather:null,weatherError:null,planError:null,requestId:0,aiPolls:0,aiTimer:null,analysisStartedAt:null,analysisTicker:null,specialKey:null,specialRenderId:0,expandedSpecial:new Set(),specialAdjustments:new Map()};
+const state={school:null,grade:null,availableGrades:null,gradeError:null,day:calendar.weekday,plan:null,loading:false,weather:null,weatherError:null,planError:null,requestId:0,aiPolls:0,aiTimer:null,statusChecking:false,analysisStartedAt:null,analysisTicker:null,specialKey:null,specialRenderId:0,expandedSpecial:new Set(),specialAdjustments:new Map()};
 const weekDayDate=day=>dayDate(calendar.year,calendar.week,day);
 const titleDay=day=>new Date(`${weekDayDate(day)}T12:00:00Z`).toLocaleDateString('nb-NO',{timeZone:'UTC',day:'numeric',month:'short'});
 const progress=(section,day='all')=>progressKey(state.school.id,state.grade,calendar.year,calendar.week,section,day);
@@ -111,7 +111,8 @@ function renderFeedback(){
   }
   $('analysis-progress').hidden=info.kind!=='analyzing';
   $('feedback-retry').hidden=!info.showRetry;
-  $('feedback-retry').textContent=info.kind==='analyzing'?'↻ Sjekk AI-status':'↻ Prøv igjen';
+  $('feedback-retry').disabled=info.kind==='analyzing'&&state.statusChecking;
+  $('feedback-retry').textContent=info.kind==='analyzing'?(state.statusChecking?'Sjekker AI-status …':'↻ Sjekk AI-status'):'↻ Prøv igjen';
 }
 function updateAnalysisClock(){
  const active=state.plan?.aiStatus==='processing';
@@ -293,22 +294,38 @@ async function fetchJSON(url,timeoutMs=13000){
     return data;
   }finally{clearTimeout(t);}
 }
-async function reload({quiet=false}={}){
-  if(!state.grade)return;
+async function reload({quiet=false,statusOnly=quiet}={}){
+  if(!state.grade||(statusOnly&&state.statusChecking))return;
   if(state.aiTimer){clearTimeout(state.aiTimer);state.aiTimer=null;}
   const id=++state.requestId;
+  if(statusOnly){
+    state.statusChecking=true;
+    renderFeedback(); // Do not clear the displayed plan, status or elapsed AI time.
+  }else{
+    state.statusChecking=false;
+  }
   if(!quiet){
     state.plan=null;state.planError=null;state.weather=null;state.weatherError=null;state.loading=true;
     renderContent();
   }
   const grade=state.grade,schoolId=state.school.id;
-  // Week-plan PDFs may be several MB; do not cancel the client before the server timeout.
-  const requests=[fetchJSON(`/api/plan?school=${encodeURIComponent(schoolId)}&grade=${encodeURIComponent(grade)}`,60000)];
+  // A status check never queues another AI job or re-runs the PDF parser.
+  // Keep the regular plan URL unchanged for new loads and existing bookmarks.
+  const requests=[statusOnly
+    ?fetchJSON(`/api/plan?school=${encodeURIComponent(schoolId)}&grade=${encodeURIComponent(grade)}&statusOnly=1`,60000)
+    :fetchJSON(`/api/plan?school=${encodeURIComponent(schoolId)}&grade=${encodeURIComponent(grade)}`,60000)];
   if(features.weather&&!quiet)requests.push(fetchJSON(`/api/weather?school=${encodeURIComponent(schoolId)}`));
   const [plan,weather]=await Promise.allSettled(requests);
+  if(statusOnly)state.statusChecking=false;
   if(id!==state.requestId||state.grade!==grade||state.school?.id!==schoolId)return;
-  if(plan.status==='fulfilled')state.plan=plan.value;
-  else if(!quiet)state.planError='Kunne ikke hente ukeplan. Åpne trinnsiden, eller prøv igjen.';
+  if(plan.status==='fulfilled'){
+    const fresh=plan.value;
+    if(statusOnly&&state.plan?.aiStatus==='processing'&&fresh.aiStatus==='processing'){
+      // Preserve PDF metadata and the existing estimated progress timer.
+    }else if(statusOnly&&state.plan?.aiStatus==='processing'&&fresh.aiStatus==='failed'){
+      state.plan={...state.plan,aiStatus:'failed',warning:fresh.warning||'AI-analysen ble ikke fullført.'};
+    }else state.plan=fresh;
+  }else if(!quiet)state.planError='Kunne ikke hente ukeplan. Åpne trinnsiden, eller prøv igjen.';
   if(weather){if(weather.status==='fulfilled')state.weather=weather.value;else state.weatherError='Været er midlertidig utilgjengelig.';}
   else if(!quiet)state.weatherError='Værvisning er slått av.';
   state.loading=false;
@@ -318,13 +335,13 @@ async function reload({quiet=false}={}){
     state.aiPolls++;
     state.aiTimer=setTimeout(()=>{
       state.aiTimer=null;
-      if(state.grade===grade&&state.school?.id===schoolId&&state.requestId===id)reload({quiet:true});
+      if(state.grade===grade&&state.school?.id===schoolId&&state.requestId===id)reload({quiet:true,statusOnly:true});
     },15000);
   }else state.aiPolls=0;
 }
 function cancelRequests(){
   if(state.aiTimer)clearTimeout(state.aiTimer);
-  state.aiTimer=null;state.aiPolls=0;state.requestId++;
+  state.aiTimer=null;state.aiPolls=0;state.requestId++;state.statusChecking=false;
   if(state.analysisTicker)clearInterval(state.analysisTicker);
   state.analysisTicker=null;state.analysisStartedAt=null;
 }
@@ -410,7 +427,7 @@ function boot(){
   $('change-grade').addEventListener('click',clearGrade);
   $('change-school').addEventListener('click',clearSchool);
   $('reload').addEventListener('click',reload);
-  $('feedback-retry').addEventListener('click',()=>reload());
+  $('feedback-retry').addEventListener('click',()=>state.plan?.aiStatus==='processing'?reload({quiet:true,statusOnly:true}):reload());
   const savedSchool=storageRead(schoolSelectionKey());
   if(validSchool(savedSchool,siteConfig.schools))selectSchool(savedSchool,{restore:true});
   else renderShell();
