@@ -408,3 +408,22 @@ footer{border-color:var(--line);color:#92a49c}
 .helper-small{font-size:12px;color:#53665d;margin-top:18px}
 @media(max-width:600px){.helper-dialog{padding:20px}.helper-open{width:100%}}
 \n.smart-week-row{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:8px 0}.smart-week-row button,.quiz-header button,#word-quiz-next,#word-quiz-form button{border:1px solid #aacac1;border-radius:10px;background:#e9f5f0;padding:9px 12px;cursor:pointer;font-weight:750}#word-quiz{margin-top:16px;padding:16px;background:#f3f8f4;border-radius:15px}.quiz-header{display:flex;align-items:center;justify-content:space-between;gap:12px}#word-quiz-question{font-size:21px;font-weight:800}#word-quiz-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:9px;margin:10px 0}#word-quiz-options button{border:1px solid #b5d1c2;background:white;padding:12px;border-radius:10px;cursor:pointer}#word-quiz-options button:disabled{opacity:.7}#word-quiz-form input{padding:10px;border:1px solid #a2bbb1;border-radius:8px;max-width:100%}#word-quiz-feedback{font-weight:700}\n
+
+/* Meaning-based English quizzes and real Norwegian spelling practice. */
+#word-quiz-description{color:#4b655a;font-size:14px;line-height:1.5;margin:10px 0}
+#word-quiz-language{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+#word-quiz-language button{border-radius:20px;border:1px solid #bacdc3;padding:9px 15px;background:#fff;font-weight:750;cursor:pointer}
+#word-quiz-language button[aria-pressed="true"]{background:#255e51;color:#fff;border-color:#255e51}
+#word-quiz-progress{font-size:13px;color:#536a5f;font-weight:750}
+#word-quiz-kind{font-size:13px;font-weight:800;color:#39715d;margin:13px 0 4px}
+#word-quiz-question{font-size:19px;line-height:1.5;margin:8px 0 14px}
+#word-quiz-form{display:flex;flex-wrap:wrap;align-items:end;gap:12px}
+#word-quiz-form label{display:block;font-size:13px;font-weight:750;width:100%;margin-bottom:-5px}
+#word-quiz-answer{min-width:180px;flex:1;font-size:17px;padding:12px;border:1px solid #a2bbb1;border-radius:10px}
+#word-quiz-form button,.quiz-tools button{border:1px solid #a6c8b7;background:#fff;border-radius:10px;padding:12px 14px;font-weight:750;cursor:pointer}
+#word-quiz-form button{background:#205e50;color:white}
+#word-quiz-form button:disabled,.quiz-tools button:disabled{opacity:.6;cursor:default}
+.quiz-tools{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0}
+.quiz-preview{border-radius:12px;background:#e2f1e6;padding:16px;text-align:center;font-size:25px;font-weight:900;letter-spacing:1px}
+#word-quiz-feedback{min-height:22px;line-height:1.6}
+@media(max-width:600px){#word-quiz-form button{width:100%}#word-quiz-answer{min-width:0;width:100%}}
