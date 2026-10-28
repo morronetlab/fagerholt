@@ -15,6 +15,12 @@
   force = true
 
 [[redirects]]
+  from = "/api/ai-status"
+  to = "/.netlify/functions/ai-status"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/weather"
   to = "/.netlify/functions/weather"
   status = 200

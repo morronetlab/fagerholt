@@ -17,6 +17,9 @@ export function createAIBackgroundHandler({fetchImpl=fetch,storeFactory=openAISt
    if(!aiConfigured(env))return fail(503,'AI not configured');
    const body=await request.text();
    if(body.length>2400||!validSignature(body,request.headers.get('X-Weekplan-Signature'),env.AI_JOB_SECRET))return fail(401,'Unauthorized');
+   const started=performance.now();
+   const measurements={};
+   const mark=label=>{measurements[label]=Math.round(performance.now()-started);};
    let job;
    try{job=JSON.parse(body);}catch{return fail(400,'Invalid JSON');}
    const {schoolId,grade,week,year,source,pdf,hash}=job;
@@ -34,16 +37,21 @@ export function createAIBackgroundHandler({fetchImpl=fetch,storeFactory=openAISt
      const contentLength=Number(response.headers.get('content-length')||0);
      if(contentLength>14*1024*1024)throw new Error('PDF is too large');
      const bytes=new Uint8Array(await response.arrayBuffer());
+     mark('pdfDownloadMs');
      if(bytes.length>14*1024*1024||new TextDecoder('ascii').decode(bytes.slice(0,4))!=='%PDF'||digestPdf(bytes)!==hash)throw new Error('PDF content changed');
      // PDF.js may transfer ownership of its Uint8Array into a worker, detaching
      // the underlying ArrayBuffer. Keep an independent copy for the AI upload.
      const aiPdfBytes=bytes.slice();
      let pages=[];
      try{pages=await parsePages(bytes);}catch(err){console.warn('PDF.js text extraction unavailable; model receives original PDF',err?.message);}
+     mark('pdfTextMs');
      const pageTexts=pages.map(p=>p.items?.map(x=>x.text).join(' ')||'');
      const normalized=await interpret(aiPdfBytes,{grade,week,year,source,pdf,pageCount:pages.length||16,pageTexts,
        fetchImpl,apiKey:env.OPENAI_API_KEY,model:env.OPENAI_MODEL||'gpt-4.1-mini'});
-     await store.setJSON(key,{...normalized,schoolId:school.id,schoolName:school.name,createdAt:new Date().toISOString(),model:env.OPENAI_MODEL||'gpt-4.1-mini'});
+     mark('aiCompleteMs');
+     await store.setJSON(key,{...normalized,schoolId:school.id,schoolName:school.name,createdAt:new Date().toISOString(),model:env.OPENAI_MODEL||'gpt-4.1-mini',pdfSizeBytes:bytes.length,pdfPageCount:pages.length||null});
+     mark('totalMs');
+     console.info('ukeplan.background_timings',JSON.stringify({...measurements,school:school.id,grade,pdfBytes:bytes.length,pages:pages.length}));
      try{await store.delete(failureKey(key));}catch{}
      return new Response(null,{status:204});
    }catch(error){

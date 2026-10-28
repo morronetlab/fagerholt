@@ -1,7 +1,7 @@
 import {siteConfig} from '../../public/site-config.mjs';
 import {schoolCalendar} from '../../lib/calendar.mjs';
 import {findPdfLinks,choosePdf,analyzePdfPages,pdfItemsFromTextContent} from '../../lib/plan-core.mjs';
-import {aiConfigured,cacheKey,digestPdf,openAIStore,queueAIJob,lockKey,failureKey} from '../../lib/ai-runtime.mjs';
+import {aiConfigured,cacheKey,digestPdf,openAIStore,queueAIJob,lockKey,failureKey,createStatusToken} from '../../lib/ai-runtime.mjs';
 import {getSchool,validGradeCode,locateGradeSections,isSchoolSectionUrl} from '../../lib/schools.mjs';
 const MAX_PDF_BYTES=14*1024*1024;
 const HEADERS={'User-Agent':'Mozilla/5.0 (compatible; Ukeplanen/0.1; +https://github.com/morronetlab/fagerholt)','Accept-Language':'nb-NO,nb;q=0.9'};
@@ -46,6 +46,9 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
     storeFactory=openAIStore,queueJob=queueAIJob,env=process.env}={}){
   return async function handler(request){
     if(request.method&&request.method!=='GET')return reply({error:'Kun GET støttes'},405);
+    const started=performance.now();
+    const metrics={};
+    const mark=label=>{metrics[label]=Math.round(performance.now()-started);};
     const query=new URL(request.url).searchParams;
     const statusOnly=query.get('statusOnly')==='1';
     // Existing /api/plan?grade=4 bookmarks retain Fagerholt behavior.
@@ -67,10 +70,12 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
       if(!isSchoolSectionUrl(source,school,grade))throw new Error('Ugyldig trinnside');
       base.source=source;
       const html=await load(source,{fetchImpl});
+      mark('schoolPageMs');
       const pdf=choosePdf(findPdfLinks(html,source,siteConfig.allowedSourceHosts),week);
       if(!pdf)return reply({...base,status:'unpublished',pdf:null,warning:`Ukeplan for uke ${week} er ikke publisert som PDF på trinnsiden.`});
       const bytes=await load(pdf.url,{pdf:true,fetchImpl});
-      let aiStatus='disabled';
+      mark('pdfDownloadMs');
+      let aiStatus='disabled',jobId=null;
       if(aiConfigured(env)){
         try{
           const hash=digestPdf(bytes);
@@ -93,6 +98,8 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
               warning:failed||!running?'Ingen aktiv AI-analyse ble funnet. Velg «Prøv igjen» for å starte et nytt forsøk.':'AI-analysen kjører fortsatt.'});
           }
           aiStatus=await queueJob({request,store,key,job:{schoolId:school.id,grade,week,year,source,pdf:pdf.url,hash},env});
+          if(aiStatus==='processing')jobId=createStatusToken({school:school.id,grade,year,week,hash,model:env.OPENAI_MODEL||'gpt-4.1-mini',pdf:pdf.url},env.AI_JOB_SECRET);
+          mark('queueMs');
         }catch(error){
           console.error('AI job unavailable; using rule-based PDF parser:',error?.message);
           aiStatus='unavailable';
@@ -101,6 +108,16 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
       if(statusOnly)return reply({...base,pdf:pdf.url,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,
         status:'partial',parser:'rules',aiStatus:aiStatus==='unavailable'?'processing':'failed',
         warning:'Statusen kunne ikke kontrolleres akkurat nå. Ny statuskontroll starter ikke AI-analysen på nytt.'});
+      // The provisional rule-based plan is hidden while AI works.
+      // Avoid a redundant full PDF.js pass before returning the job handle.
+      if(aiStatus==='processing'&&!statusOnly){
+        mark('totalMs');
+        console.info('ukeplan.initial_timings',JSON.stringify({...metrics,school:school.id,grade,pdfBytes:bytes.length,aiStatus}));
+        return reply({...base,pdf:pdf.url,publishedWeek:pdf.week,pdfSizeBytes:bytes.length,
+          aiStatus,jobId,status:'partial',parser:'rules',parsedFromPdf:false,days:{},homework:[],
+          notices:[],learningGoals:[],subjects:[],everyday:[],
+          warning:'AI analyserer original-PDF-en. Innholdet vises når analysen er ferdig.'});
+      }
       let pages;
       try{pages=await parsePdfPages(bytes);}
       catch(error){
@@ -117,6 +134,8 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
           days:{},homework:[],learningGoals:[],notices:[],subjects:[],weekTheme:null,optionalMission:null,everyday:[]});
       }
       const fallback=analyzePdfPages(pages,grade,pdf.url,week,year,source);
+      mark('totalMs');
+      console.info('ukeplan.initial_timings',JSON.stringify({...metrics,school:school.id,grade,pdfBytes:bytes.length,aiStatus}));
       if(aiStatus==='failed')fallback.warning='AI-analysen feilet. Viser foreløpig regelbasert utdrag. Automatisk nytt forsøk etter fem minutter. Sjekk original-PDF-en.';
       return reply({...base,...fallback,pdfPageCount:pages.length,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,parser:'rules',aiStatus});
     }catch(error){
