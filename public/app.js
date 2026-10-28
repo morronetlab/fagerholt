@@ -2,6 +2,7 @@ import {siteConfig} from './site-config.mjs';
 import {schoolCalendar,dayDate,DAYS} from './shared/calendar.mjs';
 import {schoolSelectionKey,validSchool,gradeSelectionKey,validGrade,progressKey} from './shared/selection.mjs';
 import {planFeedback} from './shared/plan-feedback.mjs';
+import {normalizeVisualRegion,visualCropGeometry} from './shared/visual-region.mjs';
 // This module is served from public/. Calendar and selection modules are mirrored in public/shared/.
 const $ = id=>document.getElementById(id);
 const safe=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -146,17 +147,18 @@ function renderSpecialContent(){
   const panel=$('special-panel');
   panel.hidden=!items.length;
   if(!items.length){state.specialKey=null;$('special-items').replaceChildren();return;}
-  const key=[state.school?.id,state.grade,p?.pdf,items.map(x=>[x.title,x.sourcePage,x.hasVisual].join(':')).join('|')].join('::');
+  const key=[state.school?.id,state.grade,p?.pdf,items.map(x=>[x.title,x.sourcePage,x.hasVisual,JSON.stringify(x.visualRegion)].join(':')).join('|')].join('::');
   if(state.specialKey===key)return;
   state.specialKey=key;
   $('special-items').innerHTML=items.map((item,index)=>{
     const page=Number(item.sourcePage);
+    const crop=normalizeVisualRegion(item.visualRegion);
     const pageLink=p.pdf&&page>0?`${p.pdf}#page=${page}`:p.pdf;
     return `<article class="special-card">
       <div class="special-copy"><p class="special-type">${item.kind==='knowledge'?'💡 KUNNSKAPSHJØRNET':item.kind==='illustration'?'🖼️ FRA PDF-EN':'✨ EKSTRA FRA SKOLEN'}</p>
       <h3>${safe(item.title)}</h3><p>${safe(item.description)}</p>
       ${p.pdf?`<a href="${safe(pageLink)}" target="_blank" rel="noopener noreferrer">Se side ${page} i original-PDF ↗</a>`:''}</div>
-      ${item.hasVisual&&p.pdf&&Number.isInteger(page)&&page>=1&&page<=16?`<div class="special-visual" data-special-page="${page}" data-special-index="${index}" role="img" aria-label="Original PDF-side ${page} med illustrasjon"><span>Henter illustrasjonen fra skolens PDF …</span></div>`:''}
+      ${item.hasVisual&&crop&&p.pdf&&Number.isInteger(page)&&page>=1&&page<=16?`<div class="special-visual" data-special-page="${page}" data-special-index="${index}" role="img" aria-label="Utsnitt fra original PDF-side ${page}: ${safe(item.title)}"><span>Henter illustrasjonen fra skolens PDF …</span></div>`:''}
       </article>`;
   }).join('');
   if(p.pdf)void renderSpecialPdfPages(key);
@@ -177,15 +179,21 @@ async function renderSpecialPdfPages(key){
       const pageNo=Number(target.dataset.specialPage);
       if(pageNo>pdf.numPages){target.textContent='Se illustrasjonen i original-PDF-en.';continue;}
       const page=await pdf.getPage(pageNo);
-      const width=Math.min(600,Math.max(240,target.getBoundingClientRect().width||480));
-      const base=page.getViewport({scale:1}), viewport=page.getViewport({scale:width/base.width});
+      const item=state.plan?.specialContent?.[Number(target.dataset.specialIndex)];
+      const base=page.getViewport({scale:1});
+      const geometry=visualCropGeometry(item?.visualRegion,base.width,base.height,
+        Math.max(180,target.getBoundingClientRect().width-24||460),window.devicePixelRatio||1);
+      if(!geometry){target.textContent='Se illustrasjonen i original-PDF-en.';page.cleanup();continue;}
+      const viewport=page.getViewport({scale:geometry.viewportScale});
       const canvas=document.createElement('canvas');
-      canvas.width=Math.round(viewport.width*Math.min(2,window.devicePixelRatio||1));
-      canvas.height=Math.round(viewport.height* Math.min(2,window.devicePixelRatio||1));
-      canvas.style.width='100%';canvas.style.height='auto';
+      canvas.width=geometry.pixelWidth;
+      canvas.height=geometry.pixelHeight;
+      canvas.style.width=`${geometry.cssWidth}px`;
+      canvas.style.height=`${geometry.cssHeight}px`;
       const context=canvas.getContext('2d');
       if(!context)throw new Error('Nettleseren støtter ikke PDF-lerret');
-      await page.render({canvasContext:context,viewport,transform:canvas.width!==Math.round(viewport.width)?[canvas.width/viewport.width,0,0,canvas.height/viewport.height,0,0]:null}).promise;
+      // Only render the relevant PDF crop, never the entire source page.
+      await page.render({canvasContext:context,viewport,transform:geometry.transform}).promise;
       page.cleanup();
       if(state.specialKey===key){target.replaceChildren(canvas);target.classList.add('special-rendered');}
     }

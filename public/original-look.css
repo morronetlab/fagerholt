@@ -115,7 +115,7 @@ footer{border-color:var(--line);color:#92a49c}
 .special-copy>p:not(.special-type){font-size:14px;line-height:1.6;margin:0 0 10px;color:#4b685d}
 .special-copy>a{font-size:13px;font-weight:800;color:#256351}
 .special-visual{padding:12px;background:#e9efea;border-radius:12px;color:#6d857a;font-size:12px;min-height:85px;display:grid;place-items:center;overflow:hidden}
-.special-visual canvas{max-width:100%;display:block;border-radius:8px;background:white;box-shadow:0 4px 14px #24463622}
+.special-visual canvas{max-width:100%;height:auto!important;display:block;border-radius:8px;background:white;box-shadow:0 4px 14px #24463622}
 @media(max-width:700px){.plan-feedback.feedback-partial{padding:9px 11px;margin:0 0 12px}.feedback-partial .feedback-content{gap:3px 8px}.special-card{padding:14px}}
 /* Municipality-wide, searchable school picker. */
 .school-gate{max-width:840px;text-align:left;padding:35px 38px}
