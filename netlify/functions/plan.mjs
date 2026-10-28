@@ -57,7 +57,11 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
     const grade=query.get('grade');
     if(!school)return reply({status:'error',error:'Ukjent skole.'},400);
     if(!validGradeCode(grade))return reply({status:'error',error:'Velg et gyldig klassetrinn (1–7).'},400);
-    const {year,week}=schoolCalendar(now(),school.timezone);
+    // Only the current or immediately following school week can be requested.
+    const nextWeek=query.get('nextWeek')==='1';
+    const nowDate=now();
+    const targetDate=nextWeek?new Date(nowDate.getTime()+7*86400000):nowDate;
+    const {year,week}=schoolCalendar(targetDate,school.timezone);
     const base={schoolId:school.id,schoolName:school.name,grade,week,year,checkedAt:new Date().toISOString()};
     try{
       let source=school.grades?.[grade];
