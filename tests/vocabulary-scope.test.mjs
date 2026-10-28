@@ -4,7 +4,7 @@ import {normalizeAIPlan} from '../lib/ai-plan.mjs';
 import {readFileSync} from 'node:fs';
 const source='Ukas ord: sol, bok og hus. Læringsmål: Jeg kan lese en tekst. Tema: Høsten.';
 const ref=(sourceQuote)=>({sourcePage:1,sourceQuote});
-const raw={days:[],attendance:[],dayNotes:[],homework:[],packing:[],notices:[],learningGoals:[],subjects:[],contacts:[],specialContent:[],vocabulary:[
+const raw={days:[],attendance:[],dayNotes:[],homework:[],packing:[],notices:[],learningGoals:[{text:'Jeg kan lese en tekst',...ref('Læringsmål: Jeg kan lese en tekst')}],subjects:[],contacts:[],specialContent:[],vocabulary:[
  {category:'Ukas ord',text:'sol, bok, hus',...ref('Ukas ord: sol, bok og hus')},
  {category:'Læringsmål',text:'Jeg kan lese en tekst',...ref('Læringsmål: Jeg kan lese en tekst')},
  {category:'Tema',text:'Høsten',...ref('Tema: Høsten')},
