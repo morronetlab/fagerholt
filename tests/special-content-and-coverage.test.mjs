@@ -13,7 +13,7 @@ const base=()=>({days:[],homework:[{subject:'Norsk',text:'Les bok i 15 minutter'
 const meta={grade:'6',year:2026,week:44,source,pdf:presteheiaPdf,pageCount:2,pageTexts:['Noe tekst på side 1',quote]};
 test('Presteheia: a complete subject-organized plan is not marked partial for missing daily columns',()=>{
  const res=normalizeAIPlan(base(),meta);
- assert.equal(AI_SCHEMA_VERSION,4);
+ assert.equal(AI_SCHEMA_VERSION,5);
  assert.equal(res.status,'ok');
  assert.equal(res.days.Mandag.events.length,0);
  assert.equal(res.homework.length,2);
@@ -35,7 +35,7 @@ test('Lunde på linja can show original illustrated telephone anniversary page',
 });
 test('Unsupported image references are excluded and extra section can stay hidden',()=>{
  const data=base();
- data.specialContent=[{kind:'illustration',title:'Falsk',description:'Falskt bilde',hasVisual:true,sourcePage:20,sourceQuote:'Dette finnes ikke'}];
+ data.specialContent=[{kind:'illustration',title:'Falsk',description:'Falskt bilde',hasVisual:true,visualRegion:{x:80,y:620,width:360,height:210},sourcePage:20,sourceQuote:'Dette finnes ikke'}];
  const res=normalizeAIPlan(data,meta);
  assert.deepEqual(res.specialContent,[]);
  assert.equal(res.status,'ok');
