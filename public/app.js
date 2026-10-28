@@ -1,4 +1,6 @@
 import {siteConfig} from './site-config.mjs';
+import {smartDayChoice} from './shared/smart-day.mjs';
+import {initWordQuiz,renderWordQuiz} from './shared/word-quiz.mjs';
 import {openHomeworkHelper,initHomeworkHelper} from './homework-helper.mjs';
 import {schoolCalendar,dayDate,DAYS} from './shared/calendar.mjs';
 import {schoolSelectionKey,validSchool,gradeSelectionKey,validGrade,progressKey} from './shared/selection.mjs';
@@ -14,6 +16,10 @@ const $ = id=>document.getElementById(id);
 const safe=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const {brand,features}=siteConfig;
 let calendar=schoolCalendar(new Date(),siteConfig.school.timezone);
+let actualCalendar=calendar;
+let viewingNextWeek=false;
+let dayWasSelected=false;
+const currentChoice=()=>smartDayChoice(new Date(),siteConfig.school.timezone);
 const storageRead=(key)=>{try{return localStorage.getItem(key);}catch{return null;}};
 const storageWrite=(key,value)=>{try{localStorage.setItem(key,value);}catch{}};
 const storageDrop=(key)=>{try{localStorage.removeItem(key);}catch{}};
@@ -73,6 +79,10 @@ function renderShell(){
   $('school-name').textContent=`${state.school.name.toLocaleUpperCase('nb-NO')} · ${state.grade}. KLASSE`;
   $('welcome-description').textContent=`Se hva som skjer i ${state.grade}. klasse, og kryss av det du har gjort.`;
   $('school-source').href=state.plan?.source||state.school.grades?.[state.grade]||state.school.homepage;
+  $('week-label').textContent=`UKE ${calendar.week}`;
+  $('smart-week').hidden=!viewingNextWeek;
+  $('smart-week').textContent=viewingNextWeek?'Neste uke · automatisk valgt':'';
+  $('back-this-week').hidden=!viewingNextWeek;
   $('day-buttons').innerHTML=DAYS.map((d,i)=>`<button type="button" class="day ${i===state.day?'active':''} ${i<calendar.weekday?'past':''}" data-day="${i}" aria-current="${i===state.day?'date':'false'}"><span>${safe(d)}</span><strong>${titleDay(i)}</strong></button>`).join('');
   renderContent();
 }
@@ -183,6 +193,7 @@ function renderContent(){
   $('bag-list').innerHTML=bag.length?checklist(bag,'bag',DAYS[state.day]):empty(state.loading?'Henter pakkelisten …':'Ingen ekstra utstyr oppgitt for denne dagen.');
   $('plan-columns').classList.toggle('bag-empty',!bag.length&&!state.loading);
   const vocabulary=Array.isArray(p?.vocabulary)?p.vocabulary:[];
+  renderWordQuiz(vocabulary,{school:state.school?.id,grade:state.grade,week:calendar.week,year:calendar.year});
   const category=v=>typeof v==='string'?'Ukas ord':String(v?.category||'').toLocaleLowerCase('nb-NO');
   const hasEnglish=vocabulary.some(v=>/engelsk|gloser/i.test(category(v)));
   const hasNorwegian=vocabulary.some(v=>/ukas ord|ukens ord|øveord|ord å øve på/i.test(category(v)));
@@ -340,8 +351,8 @@ async function reload({quiet=false,statusOnly=quiet}={}){
   // A status check never queues another AI job or re-runs the PDF parser.
   // Keep the regular plan URL unchanged for new loads and existing bookmarks.
   const requests=[statusOnly
-    ?fetchJSON(state.plan?.jobId?`/api/ai-status?job=${encodeURIComponent(state.plan.jobId)}`:`/api/plan?school=${encodeURIComponent(schoolId)}&grade=${encodeURIComponent(grade)}&statusOnly=1`,12000)
-    :fetchJSON(`/api/plan?school=${encodeURIComponent(schoolId)}&grade=${encodeURIComponent(grade)}`,60000)];
+    ?fetchJSON(state.plan?.jobId?`/api/ai-status?job=${encodeURIComponent(state.plan.jobId)}`:`/api/plan?school=${encodeURIComponent(schoolId)}&grade=${encodeURIComponent(grade)}&statusOnly=1${viewingNextWeek?'&nextWeek=1':''}`,12000)
+    :fetchJSON(`/api/plan?school=${encodeURIComponent(schoolId)}&grade=${encodeURIComponent(grade)}${viewingNextWeek?'&nextWeek=1':''}`,60000)];
   if(features.weather&&!quiet)requests.push(fetchJSON(`/api/weather?school=${encodeURIComponent(schoolId)}`));
   const [plan,weather]=await Promise.allSettled(requests);
   if(statusOnly)state.statusChecking=false;
@@ -357,6 +368,16 @@ async function reload({quiet=false,statusOnly=quiet}={}){
   if(weather){if(weather.status==='fulfilled')state.weather=weather.value;else state.weatherError='Været er midlertidig utilgjengelig.';}
   else if(!quiet)state.weatherError='Værvisning er slått av.';
   state.loading=false;
+  if(!quiet && !viewingNextWeek && !dayWasSelected && currentChoice().tryNextWeek && state.plan?.status!=='error'){
+    // In weekends show next week only when an actual next-week PDF is published.
+    const next=await fetchJSON(`/api/plan?school=${encodeURIComponent(schoolId)}&grade=${encodeURIComponent(grade)}&nextWeek=1`,60000).catch(()=>null);
+    if(id!==state.requestId||state.grade!==grade||state.school?.id!==schoolId)return;
+    if(next?.pdf && next.status!=='unpublished' && next.status!=='unavailable'){
+      viewingNextWeek=true;calendar=schoolCalendar(new Date(Date.now()+7*86400000),siteConfig.school.timezone);
+      state.day=0;state.plan=next;
+      renderShell();
+    }
+  }
   renderContent();
   // Keep the rule-based view visible until the background AI result is ready.
   if(state.plan?.aiStatus==='processing'&&state.aiPolls<240){
@@ -407,7 +428,9 @@ function clearSchool(){
 function selectGrade(grade){
   if(!state.school||!state.availableGrades?.some(g=>g.code===grade))return;
   storageWrite(gradeSelectionKey(state.school.id),grade);
-  state.aiPolls=0;state.grade=grade;state.day=calendar.weekday;renderShell();reload();
+  const choice=currentChoice();
+  viewingNextWeek=false;dayWasSelected=false;calendar=schoolCalendar(new Date(),siteConfig.school.timezone);
+  state.aiPolls=0;state.grade=grade;state.day=choice.day;renderShell();reload();
 }
 function clearGrade(){
   cancelRequests();state.grade=null;state.plan=null;state.weather=null;state.planError=null;
@@ -429,6 +452,8 @@ async function showBuildVersion(){
 }
 function boot(){
   initHomeworkHelper();
+  initWordQuiz();
+  $('back-this-week').addEventListener('click',()=>{viewingNextWeek=false;dayWasSelected=true;calendar=schoolCalendar(new Date(),siteConfig.school.timezone);state.day=calendar.weekday;renderShell();reload();});
   void showBuildVersion();
   document.title=`${brand.title} · Kristiansand`;
   document.documentElement.style.setProperty('--brand',brand.color);
@@ -445,7 +470,7 @@ function boot(){
   document.addEventListener('click',e=>{
     const selectedSchool=e.target.closest('[data-school]');if(selectedSchool){selectSchool(selectedSchool.dataset.school);return;}
     const grade=e.target.closest('[data-grade]');if(grade){selectGrade(grade.dataset.grade);return;}
-    const day=e.target.closest('[data-day]');if(day){state.day=Number(day.dataset.day);renderShell();return;}
+    const day=e.target.closest('[data-day]');if(day){dayWasSelected=true;state.day=Number(day.dataset.day);renderShell();return;}
     const tutor=e.target.closest('[data-helper-task]');if(tutor){
       const item=expandHomework(state.plan?.homework||[])[Number(tutor.dataset.helperTask)];
       if(item)openHomeworkHelper({text:item.text,subject:item.subject,grade:state.grade});
@@ -490,7 +515,7 @@ function boot(){
   setInterval(()=>{
     const next=schoolCalendar(new Date(),siteConfig.school.timezone);
     if(next.today!==calendar.today||next.week!==calendar.week||next.year!==calendar.year){
-      calendar=next;state.day=next.weekday;
+      calendar=next;viewingNextWeek=false;dayWasSelected=false;state.day=currentChoice().day;
       $('week-label').textContent=`UKE ${next.week}`;
       $('today').textContent=new Date().toLocaleDateString('nb-NO',{timeZone:siteConfig.school.timezone,weekday:'long',day:'numeric',month:'long'});
       if(state.grade){renderShell();reload();}
