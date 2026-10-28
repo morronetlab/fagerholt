@@ -55,21 +55,58 @@ export function groupSimultaneousEvents(events){
 export function isVaccineNotice(value){
  return /\bvaksin[a-zæøå]*/i.test(String(value||''));
 }
+/** Deduplicate one day's vaccine references without discarding different
+ * source facts such as timing, consent instructions or location.
+ * A single highlighted note is rendered, even if PDF repeats the notice.
+ */
 export function notesWithImportantEvents(events,notes=[]){
- const out=[],seen=new Set();
- const add=(entry,important=false)=>{
+ const out=[],seen=new Set(),vaccines=[];
+ const keyOf=(text)=>String(text||'').toLocaleLowerCase('nb-NO')
+   .replace(/\bvaksinasjon(?:en)?\b/g,'vaksine')
+   .replace(/\bvaksinering\b/g,'vaksine')
+   .replace(/\bkl(?:okka|okken)?\.?\s*/g,' ')
+   .replace(/\b0(\d[:.])/g,'$1')
+   .replace(/[.:]/g,':')
+   .replace(/[^a-zæøå0-9]+/g,' ').trim();
+ const add=(entry)=>{
   const text=String(entry?.text||'').trim();
   if(!text)return;
-  const key=text.toLocaleLowerCase('nb-NO').replace(/\s+/g,' ')+'|'+(entry?.group||'');
+  if(isVaccineNotice(text)){
+   vaccines.push({text,group:entry?.group||null});return;
+  }
+  const key=keyOf(text)+'|'+(entry?.group||'');
   if(seen.has(key))return;
   seen.add(key);
-  out.push({...entry,text,important:important||isVaccineNotice(text)});
+  out.push({...entry,text,important:Boolean(entry?.important)});
  };
  for(const note of notes)add(note);
  for(const event of uniqueDayEvents(events)){
   if(!isVaccineNotice(event.title))continue;
-  const text=[event.time?'Kl. '+event.time:null,event.title,event.endTime].filter(Boolean).join(' · ');
-  add({text,group:event.group},true);
+  add({text:[event.time?'Kl. '+event.time:null,event.title,event.endTime]
+    .filter(Boolean).join(' · '),group:event.group||null});
  }
- return out.sort((a,b)=>Number(Boolean(b.important))-Number(Boolean(a.important)));
+ if(vaccines.length){
+  // Prefer the longest, most informative source wording; add only genuinely
+  // different details instead of repeating synonymous announcements.
+  vaccines.sort((a,b)=>b.text.length-a.text.length);
+  const unique=[];
+  for(const item of vaccines){
+   const canonical=keyOf(item.text);
+   const duplicate=unique.some(previous=>{
+    const other=keyOf(previous.text);
+    if(canonical===other||other.includes(canonical)||canonical.includes(other))return true;
+    const time=t=>(t.match(/\b(?:[01]?\d|2[0-3])[:.][0-5]\d\b/g)||[]).map(x=>x.replace('.',':')).join(',');
+    const a=time(item.text),b=time(previous.text);
+    // "Vaksine kl 10" and "Vaksinasjon kl 10" are the same bare notice.
+    return a&&a===b&&canonical.split(' ').length<=4&&other.split(' ').length<=7;
+   });
+   if(!duplicate)unique.push(item);
+  }
+  const groups=[...new Set(unique.map(x=>x.group||''))];
+  const sharedGroup=groups.length===1?groups[0]:null;
+  const text=unique.map(item=>groups.length>1&&item.group
+    ?item.group+': '+item.text:item.text).join('\n');
+  out.unshift({text,important:true,...(sharedGroup?{group:sharedGroup}:{})});
+ }
+ return out;
 }
