@@ -1,6 +1,6 @@
 # Ukeplanen – white-label prototype
 
-Ukeplanen er et eget prototypeprosjekt for `morronetlab/fagerholt`. `morronetlab/skolesekken` er kun en referanse og endres ikke. Endringer utvikles i GitHub-grenen `prototype/ukeplanen-white-label`; ingen Netlify-side er opprettet.
+Ukeplanen er kildekodeprosjektet `morronetlab/fagerholt`, publisert på Netlify som `skolesekken.netlify.app`. `morronetlab/skolesekken` er kun en referanse og endres ikke. Større funksjoner utvikles i egne feature-grener og må gjennomgås før merge til `main`.
 
 ## Test forhåndsvisningen
 
@@ -137,3 +137,25 @@ Kun én AI-analyse skal normalt utføres per unik PDF-versjon. Den samme PDF-en 
 - Background-analyse med feil registrerer et fem minutters retry-vindu i Netlify Blobs; `/api/plan` returnerer `aiStatus: failed` istedenfor evig `processing`, og viser regelbaserte data så langt de kan tolkes.
 - API-nøkkel forblir bare på serversiden. Det kreves ingen nye miljøvariabler i Netlify.
 - Enhets-/integrasjonstester med simulert OpenAI Files + Responses API er ikke en live-test med reelle PDF-er. Kontroller bakgrunnslogger og `aiStatus: ready` etter deploy.
+
+
+## v0.6 – Alle kommunale barneskoler i Kristiansand
+
+Kommunens offisielle oversikt (https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/grunnskole/) gir **26 barneskoler og 4 kombinerte 1.–10.-skoler**. Disse 30 er registrert med faktiske MinSkole-forsider i `public/site-config.mjs`. Ungdomsskoler uten barnetrinn, privatskoler og Kristiansand International School inngår ikke i kommunens barneskoleliste.
+
+### Brukerflyt
+
+1. Første visning viser **søkbar skoleliste**. Velg skole.
+2. `/api/grades?school=<id>` oppdager skolens offisielle trinnsider fra navigasjonen på MinSkole. Om skolen ikke viser lenkene på forsiden brukes `/nettstedskart` som reserve. Ingen URL-er til seksjons-ID-er gjettes.
+3. Trinnvelgeren viser bare publiserte lenker. Skoler som deler et trinn i flere egne klasser, f.eks. Sjøstrand 3A/3B, viser disse som separate valg i trinnvelgeren. Velg trinn/gruppe.
+4. `/api/plan?school=<id>&grade=<code>` henter valgt trinns PDF for aktuell uke og gjenbruker AI-basert PDF-tolking. Eldre klienter med kun `?grade=4` fortsetter å bruke Fagerholt for kompatibilitet.
+5. Skole-ID lagres som `ukeplanen.selectedSchool` og trinn lagres i `ukeplanen.grade.<schoolId>`. Avkrysning og AI-cache har også skole-ID, så data fra forskjellige skoler ikke blandes. **Bytt skole** og **Bytt klassetrinn** i toppmenyen.
+
+### Sikkerhet, kildebegrensninger og drift
+
+- API aksepterer bare skole-ID-er i konfigurasjonen, og bare trinnsider med `/skoleslug/seksjon/<id>` under den valgte skolens egen adresse og offisielle MinSkole-domener. PDF-lenker kan bare komme fra den valgte trinnsiden. Ingen vilkårlig HTTP-adresse fra klienten hentes.
+- AI-bakgrunnsjobber er signert; mottakeren verifiserer skole-ID, klassetrinn og kildeside. SHA-256 cache-nøkkelen inneholder **skole-ID, trinn, uke og PDF-hash**. Gamle Fagerholt-only lenker og mellomlagrede AI-resultater støttes.
+- Vær vises ved Fagerholt når de tidligere konfigurerte koordinatene brukes. For andre skoler er det foreløpig et **merket områdevarsel for Kristiansand**, ikke påstått vær nøyaktig ved skolen. Skolespesifikke koordinater kan legges inn etter verifisering.
+- Skoler kan ha egne publiseringsmåter (ukeplan, ukebrev, separate klasseplaner) og enkelte publiserer ikke PDF for inneværende uke. Appen viser da en ærlig melding og lenke til skolen, aldri PDF fra en annen skole eller en eldre uke.
+- 61 lokale Node-tester dekker kildeoppslag, A/B-klasser, uavhengig cache, gammelt Fagerholt-API, kildevalidering og eksisterende PDF/AI-regresjoner. **Ikke alle 30 skolers live PDF-er er verifisert**. Før produksjon: test en håndfull ulike skoler og grupper i Netlify Deploy Preview, samt mobilvisning, OpenAI-tilgang og faktisk publisert dokument.
+- Denne oppdateringen introduserer `/api/grades` og endrer `/api/plan`, `/api/weather` og den signerte bakgrunnsfunksjonen. Deploy alle samtidig, aldri delvis.

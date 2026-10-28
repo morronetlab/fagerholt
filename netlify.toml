@@ -19,3 +19,9 @@
   to = "/.netlify/functions/weather"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/grades"
+  to = "/.netlify/functions/grades"
+  status = 200
+  force = true

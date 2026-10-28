@@ -2,6 +2,7 @@ import {siteConfig} from '../../public/site-config.mjs';
 import {schoolCalendar} from '../../lib/calendar.mjs';
 import {findPdfLinks,choosePdf,analyzePdfPages,pdfItemsFromTextContent} from '../../lib/plan-core.mjs';
 import {aiConfigured,cacheKey,digestPdf,openAIStore,queueAIJob} from '../../lib/ai-runtime.mjs';
+import {getSchool,validGradeCode,locateGradeSections,isSchoolSectionUrl} from '../../lib/schools.mjs';
 const MAX_PDF_BYTES=14*1024*1024;
 const HEADERS={'User-Agent':'Mozilla/5.0 (compatible; Ukeplanen/0.1; +https://github.com/morronetlab/fagerholt)','Accept-Language':'nb-NO,nb;q=0.9'};
 const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{
@@ -45,12 +46,25 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
     storeFactory=openAIStore,queueJob=queueAIJob,env=process.env}={}){
   return async function handler(request){
     if(request.method&&request.method!=='GET')return reply({error:'Kun GET støttes'},405);
-    const grade=new URL(request.url).searchParams.get('grade');
-    const source=siteConfig.school.grades[grade];
-    if(!grade||!source)return reply({status:'error',error:'Velg et gyldig klassetrinn (1–7).'},400);
-    const {year,week}=schoolCalendar(now(),siteConfig.school.timezone);
-    const base={grade,week,year,source,checkedAt:new Date().toISOString()};
+    const query=new URL(request.url).searchParams;
+    // Existing /api/plan?grade=4 bookmarks retain Fagerholt behavior.
+    const schoolId=query.get('school')||siteConfig.school.id;
+    const school=getSchool(schoolId);
+    const grade=query.get('grade');
+    if(!school)return reply({status:'error',error:'Ukjent skole.'},400);
+    if(!validGradeCode(grade))return reply({status:'error',error:'Velg et gyldig klassetrinn (1–7).'},400);
+    const {year,week}=schoolCalendar(now(),school.timezone);
+    const base={schoolId:school.id,schoolName:school.name,grade,week,year,checkedAt:new Date().toISOString()};
     try{
+      let source=school.grades?.[grade];
+      if(!source){
+        const found=await locateGradeSections(school,url=>load(url,{fetchImpl}));
+        source=found[grade];
+        if(!source)return reply({...base,source:school.homepage,pdf:null,status:'unavailable',
+          warning:'Fant ikke en offisiell trinnside for dette klassetrinnet. Åpne skolens nettside for å kontrollere om trinnet har en ukeplan.'});
+      }
+      if(!isSchoolSectionUrl(source,school,grade))throw new Error('Ugyldig trinnside');
+      base.source=source;
       const html=await load(source,{fetchImpl});
       const pdf=choosePdf(findPdfLinks(html,source,siteConfig.allowedSourceHosts),week);
       if(!pdf)return reply({...base,status:'unpublished',pdf:null,warning:`Ukeplan for uke ${week} er ikke publisert som PDF på trinnsiden.`});
@@ -59,12 +73,12 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
       if(aiConfigured(env)){
         try{
           const hash=digestPdf(bytes);
-          const key=cacheKey({school:siteConfig.school.id,grade,year,week,hash,model:env.OPENAI_MODEL||'gpt-4.1-mini'});
+          const key=cacheKey({school:school.id,grade,year,week,hash,model:env.OPENAI_MODEL||'gpt-4.1-mini'});
           const store=await storeFactory();
           const cached=await store.get(key,{type:'json',consistency:'strong'});
-          if(cached?.parser==='ai'&&cached.grade===grade&&cached.week===week&&cached.year===year&&cached.pdf===pdf.url)
+          if(cached?.parser==='ai'&&(cached.schoolId===school.id||(school.id==='fagerholt'&&!cached.schoolId))&&cached.grade===grade&&cached.week===week&&cached.year===year&&cached.pdf===pdf.url)
             return reply({...base,...cached,publishedWeek:pdf.week,aiStatus:'ready'});
-          aiStatus=await queueJob({request,store,key,job:{grade,week,year,source,pdf:pdf.url,hash},env});
+          aiStatus=await queueJob({request,store,key,job:{schoolId:school.id,grade,week,year,source,pdf:pdf.url,hash},env});
         }catch(error){
           console.error('AI job unavailable; using rule-based PDF parser:',error?.message);
           aiStatus='unavailable';
