@@ -15,7 +15,7 @@ const raw={days:[{day:'Mandag',events:[ev('Svømming','Rød gruppe')]},{day:'Tir
  coverage:{state:'complete',reason:''}};
 test('Common swimming remains for all; specific arrival at 08.05 only applies to verified groups',()=>{
  const result=normalizeAIPlan(raw,meta);
- assert.equal(AI_SCHEMA_VERSION,12);
+ assert.equal(AI_SCHEMA_VERSION,13);
  assert.ok(AI_SCHEMA.required.includes('attendance'));
  assert.ok(SYSTEM_PROMPT.includes('særskilte oppmøtetider'));
  assert.deepEqual(result.days.Mandag.events.map(e=>e.group),[undefined]);
