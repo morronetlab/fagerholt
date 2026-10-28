@@ -1,6 +1,6 @@
 /** Small, local word challenge. No AI guesses and no made-up translations. */
 const $=id=>document.getElementById(id);
-const clean=s=>String(s??'').replace(/\s+/g,' ').trim();
+const clean=s=>String(s??'').replace(/[ \t]+/g,' ').trim();
 const headings=/^(?:ukas ord|ukens ord|engelske ord|engelske gloser|gloser|øveord|ord å øve på)\s*:?\s*/i;
 const forbidden=/\b(?:læringsmål|læringsmal|tema|kompetansemål|beskjeder|arbeidsmål)\b/i;
 export function quizWords(entries){
@@ -9,7 +9,7 @@ export function quizWords(entries){
   const text=clean(typeof item==='string'?item:item?.text);
   if(!text||forbidden.test(text))continue;
   const raw=text.replace(headings,'');
-  for(const part of raw.split(/[,;\n•]+/)){
+  for(const part of raw.split(/[,;\n•|]+/)){
    const candidate=clean(part).replace(/[.!]+$/,'');
    // Only single words (or short hyphenated words); never whole sentences or learning goals.
    if(!/^[a-zæøåA-ZÆØÅ]+(?:[-'][a-zæøåA-ZÆØÅ]+)*$/.test(candidate))continue;
