@@ -82,3 +82,11 @@ test('Accessible progress and the per-image full-page escape route exist in the 
  assert.match(script,/homeworkProgress\(homework/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 });
+
+test('Identical weekday notices are not merged when assigned to different classes',()=>{
+ const x={...base,notices:[{day:'Mandag',text:'Møt ved inngangen',group:'5A',...e},
+ {day:'Mandag',text:'Møt ved inngangen',group:'5B',...e}]};
+ const res=normalizeAIPlan(x,{...meta,grade:'5'});
+ assert.equal(res.days.Mandag.events.length,2);
+ assert.deepEqual(res.days.Mandag.events.map(x=>x.group),['5A','5B']);
+});
