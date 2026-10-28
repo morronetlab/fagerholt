@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {smartDayChoice} from '../public/shared/smart-day.mjs';
 import {quizWords} from '../public/shared/word-quiz.mjs';
-const date=(day,hour)=>new Date(day+'T'+hour+':00:00Z');
+const date=(day,hour)=>new Date(`${day}T${hour}:00Z`);
 test('Before school ends keeps current day',()=>assert.deepEqual(smartDayChoice(date('2026-10-28','12:00'),'Europe/Oslo'),{day:2,tryNextWeek:false}));
 test('After school switches to next school day',()=>assert.deepEqual(smartDayChoice(date('2026-10-28','15:00'),'Europe/Oslo'),{day:3,tryNextWeek:false}));
 test('Friday afternoon and weekend request next week preview',()=>{
