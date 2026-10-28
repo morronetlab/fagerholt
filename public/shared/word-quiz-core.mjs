@@ -62,19 +62,20 @@ export function quizItems(entries){
 export const quizWords=entries=>quizItems(entries).map(x=>x.word);
 export function buildQuizRounds(items,language){
  const selected=(items||[]).filter(i=>i.language===language).slice(0,12);
- return selected.flatMap(item=>{
-  if(language==='en')return [
-   ...(item.translation?[{kind:'meaning',word:item.word,translation:item.translation,language}]:[]),
-   {kind:'listen',word:item.word,translation:null,language}
-  ];
-  return [{kind:'memory',word:item.word,language},{kind:'vowels',word:item.word,language}];
- });
+ if(language==='en')return [
+  ...selected.filter(i=>i.translation).map(i=>({kind:'meaning',word:i.word,translation:i.translation,language})),
+  ...selected.map(i=>({kind:'listen',word:i.word,language}))
+ ];
+ return [
+  ...selected.map(i=>({kind:'memory',word:i.word,language})),
+  ...selected.map(i=>({kind:'vowels',word:i.word,language}))
+ ];
 }
 export function quizExpected(round){
  return round?.kind==='vowels'?[...round.word.toLocaleLowerCase('nb-NO')].filter(c=>'aeiouyæøå'.includes(c)).join(''):round?.word||'';
 }
 export function isQuizAnswerCorrect(round,answer){
  const expected=quizExpected(round);
- const normalized=s=>key(s).replace(round?.kind==='vowels'?/[\s,.-]/g:/\s+/g,'');
+ const normalized=s=>round?.kind==='vowels'?key(s).replace(/[\s,.-]/g,''):key(s);
  return Boolean(expected)&&normalized(answer)===normalized(expected);
 }
