@@ -77,7 +77,7 @@ function groupBadge(group){
 function checklist(items,section,day='all'){
   return items.map((item,i)=>{
     const label=typeof item==='string'?item:(item?.text||item?.label||'');
-    const due=section==='homework'?dueDayLabel(item):null;
+    const due=section==='homework'?dueDayLabel(item,{allowTextFallback:state.plan?.parser!=='ai'}):null;
     const meta=typeof item==='object'&&item?.subject&&!(due&&item.subject.toLowerCase()===due.toLowerCase())?`<span class="subject">${safe(item.subject)}</span>`:'';
     const hint=section==='bag'&&item?.note?`<small>${safe(item.note)}</small>`:'';
     const dueBadge=due?`<span class="homework-due">📅 ${safe(due)}</span>`:'';

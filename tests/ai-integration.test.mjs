@@ -32,7 +32,8 @@ function webResponse(contents,url){const data=new TextEncoder().encode(contents)
 
 // Validator ensures model output is never directly trusted by the browser.
 test('AI output preserves complete day events, 4th grade due dates and source-specific gear',()=>{
- const normalized=normalizeAIPlan(aiRaw,meta);
+ const homeworkEvidence=aiRaw.homework.map(x=>({...x,sourceQuote:'Lekser til torsdag: Norsk: Les kapittel 3. Matematikk: Gjør oppgave 4'}));
+ const normalized=normalizeAIPlan({...aiRaw,homework:homeworkEvidence},{...meta,pageTexts:[quote+' Lekser til torsdag: Norsk: Les kapittel 3. Matematikk: Gjør oppgave 4']});
  assert.equal(normalized.parser,'ai');
  assert.equal(normalized.days.Torsdag.events.length,2);
  assert.deepEqual(normalized.homework.map(x=>x.subject),['Til torsdag']);

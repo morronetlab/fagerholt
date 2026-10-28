@@ -22,9 +22,9 @@ test('Dvergsnes grade 6: title Ukeplan 6. trinn uke 44 means week 44, not week 6
  assert.equal(links[0]?.week,44);assert.equal(choosePdf(links,44)?.url,pdf);
 });
 test('Finsland grade 6: lesson deadlines survive even when their subject is present',()=>{
- const raw={...base,homework:[{dueDay:'Tirsdag',subject:'Norsk',text:'Les 10 minutter',group:null,...evidence},
- {dueDay:'Onsdag',subject:'Matematikk',text:'Gjør side 5',group:null,...evidence}]};
- const r=normalizeAIPlan(raw,{...meta,grade:'6'});
+ const raw={...base,homework:[{dueDay:'Tirsdag',subject:'Norsk',text:'Les 10 minutter',group:null,sourcePage:1,sourceQuote:'Norsk: Les 10 minutter, lekse til tirsdag'},
+ {dueDay:'Onsdag',subject:'Matematikk',text:'Gjør side 5',group:null,sourcePage:1,sourceQuote:'Matematikk: Gjør side 5, lekse til onsdag'}]};
+ const r=normalizeAIPlan(raw,{...meta,grade:'6',pageTexts:['Norsk: Les 10 minutter, lekse til tirsdag. Matematikk: Gjør side 5, lekse til onsdag']});
  assert.deepEqual(r.homework.map(x=>x.subject),['Norsk','Matematikk']);
  assert.deepEqual(r.homework.map(dueDayLabel),['Til tirsdag','Til onsdag']);
 });

@@ -9,7 +9,8 @@ export function groupLabel(raw,sourceQuote=''){
  const color=value.match(new RegExp(`^(${colors.join('|')})(?:\\s*(?:gruppe|gruppa))?$`,'i'));
  if(color){
   const c=color[1];
-  if(!new RegExp(`(?:^| )${c}(?: |$)`,'i').test(evidence))return null;
+  // The word "grønn" alone is not evidence of a school group.
+  if(!new RegExp(`(?:^| )${c} (?:gruppe|gruppa)(?: |$)`,'i').test(evidence))return null;
   return c[0].toLocaleUpperCase('nb-NO')+c.slice(1).toLocaleLowerCase('nb-NO')+' gruppe';
  }
  if(/^[A-F]\s*(?:\/|,|og)\s*[A-F]$/i.test(value)){
@@ -32,12 +33,12 @@ export function scopedGroup(raw,sourceQuote='',day=null){
  for(const part of sourceQuote.split(/[,;.]|\s+(?:mens|derimot)\s+/i)){
   const clause=norm(part);
   if(!new RegExp(`(?:^| )${dayName}(?: |$)`,'i').test(clause))continue;
-  groups.push(...[...clause.matchAll(new RegExp(`(?:^| )(${colors.join('|')})(?: gruppe)?(?: |$)`,'gi'))].map(x=>x[1]));
+  groups.push(...[...clause.matchAll(new RegExp(`(?:^| )(${colors.join('|')}) (?:gruppe|gruppa)(?: |$)`,'gi'))].map(x=>x[1]));
  }
  const found=[...new Set(groups)];
  if(found.length===1)return groupLabel(found[0],sourceQuote);
  if(found.length>1)return null;
- const allColors=[...new Set([...norm(sourceQuote).matchAll(new RegExp(`(?:^| )(${colors.join('|')})(?: gruppe)?(?: |$)`,'gi'))].map(x=>x[1]))];
+ const allColors=[...new Set([...norm(sourceQuote).matchAll(new RegExp(`(?:^| )(${colors.join('|')}) (?:gruppe|gruppa)(?: |$)`,'gi'))].map(x=>x[1]))];
  if(allColors.length>1&&explicit&&allColors.some(c=>explicit.toLowerCase().startsWith(c)))return null;
  return explicit;
 }
@@ -45,4 +46,17 @@ export function homeworkProgress(items,isChecked){
  const total=Array.isArray(items)?items.length:0;
  const done=total?items.reduce((n,_,i)=>n+(isChecked(i)?1:0),0):0;
  return {total,done,percent:total?Math.round(done/total*100):0,complete:total>0&&done===total};
+}
+
+/** Validate group label against the PDF text, independent of the AI quote. */
+export function sourcedGroup(raw,quote='',day=null,pageText=''){
+ const group=scopedGroup(raw,quote,day);
+ if(!group||!pageText)return null;
+ const source=norm(pageText);
+ const color=group.match(/^(rød|grønn|blå|gul|oransje|lilla|rosa) gruppe$/i);
+ if(color){
+  const word=color[1].toLocaleLowerCase('nb-NO');
+  return new RegExp('(?:^| )'+word+' (?:gruppe|gruppa)(?: |$)','i').test(source)?group:null;
+ }
+ return group.toLocaleLowerCase('nb-NO').split('/').every(part=>new RegExp('(?:^| )'+part+'(?: |$)','i').test(source))?group:null;
 }
