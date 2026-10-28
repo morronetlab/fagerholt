@@ -1,5 +1,35 @@
 /** Group labels must be supported by the exact source quote. */
-const colors=['rød','grønn','blå','gul','oransje','lilla','rosa'];
+/** Named colour groups, including compact lists such as «rosa og blå gruppe».
+ * A bare colour adjective (e.g. «grønn natur») is never a school group.
+ */
+export function groupNamesInText(value){
+ const text=String(value||'').toLocaleLowerCase('nb-NO');
+ const color=groupColors.join('|');
+ const names=new Set();
+ const consecutive=new RegExp('\\b(?:'+color+')(?:\\s+(?:gruppe|gruppa))?(?:\\s*(?:,|\\/|\\+|&|og)\\s*(?:'+color+')(?:\\s+(?:gruppe|gruppa))?)+','gi');
+ for(const m of text.matchAll(consecutive)){
+  if(!/\b(?:gruppe|gruppa)\b/i.test(m[0]))continue;
+  for(const n of m[0].matchAll(new RegExp('\\b('+color+')\\b','gi'))){
+   const word=n[1];names.add(word[0].toUpperCase()+word.slice(1)+' gruppe');
+  }
+ }
+ for(const m of text.matchAll(new RegExp('\\b('+color+')\\s+(?:gruppe|gruppa)\\b','gi'))){
+  const word=m[1];names.add(word[0].toUpperCase()+word.slice(1)+' gruppe');
+ }
+ return [...names];
+}
+/** CSS class for one verified colour-group badge; other class labels are neutral. */
+export function groupColorClass(value){
+ const group=String(value||'').toLocaleLowerCase('nb-NO').trim();
+ const pair=[['rød','group-red'],['grønn','group-green'],['blå','group-blue'],
+  ['gul','group-yellow'],['oransje','group-orange'],['lilla','group-purple'],
+  ['rosa','group-pink'],['turkis','group-turquoise'],['brun','group-brown'],
+  ['grå','group-gray'],['hvit','group-white'],['svart','group-black']];
+ return pair.find(([color])=>group===color+' gruppe')?.[1]||'group-class';
+}
+
+export const groupColors=['rød','grønn','blå','gul','oransje','lilla','rosa','turkis','brun','grå','hvit','svart'];
+const colors=groupColors;
 const norm=s=>String(s||'').toLocaleLowerCase('nb-NO').replace(/[^a-zæøå0-9]+/g,' ').trim();
 export function groupLabel(raw,sourceQuote=''){
  if(typeof raw!=='string'||typeof sourceQuote!=='string')return null;

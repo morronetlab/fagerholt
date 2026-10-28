@@ -36,3 +36,40 @@ export function noDayScheduleMessage({hasNotes=false,complete=false}={}){
  if(hasNotes)return 'Ingen egen timeplan er oppgitt for denne dagen. Se praktisk informasjon nedenfor.';
  return complete?'Skolen har ikke oppgitt et eget dagsprogram for denne dagen. Se ukens øvrige informasjon.':'Dagsprogrammet er ikke tolket sikkert. Kontroller skolens original-PDF.';
 }
+
+/** Group consecutive simultaneous rows under one visible time label.
+ * Preserve every description, end time and group label in its own sub-row.
+ */
+export function groupSimultaneousEvents(events){
+ const grouped=[];
+ for(const event of uniqueDayEvents(events)){
+  const previous=grouped.at(-1);
+  if(event.time&&previous?.time===event.time)previous.entries.push(event);
+  else grouped.push({time:event.time||null,entries:[event]});
+ }
+ return grouped;
+}
+/** Highlight important vaccination details already present in the selected
+ * day's schedule/notes; never invent dates, locations or medical advice.
+ */
+export function isVaccineNotice(value){
+ return /\bvaksin[a-zæøå]*/i.test(String(value||''));
+}
+export function notesWithImportantEvents(events,notes=[]){
+ const out=[],seen=new Set();
+ const add=(entry,important=false)=>{
+  const text=String(entry?.text||'').trim();
+  if(!text)return;
+  const key=text.toLocaleLowerCase('nb-NO').replace(/\s+/g,' ')+'|'+(entry?.group||'');
+  if(seen.has(key))return;
+  seen.add(key);
+  out.push({...entry,text,important:important||isVaccineNotice(text)});
+ };
+ for(const note of notes)add(note);
+ for(const event of uniqueDayEvents(events)){
+  if(!isVaccineNotice(event.title))continue;
+  const text=[event.time?'Kl. '+event.time:null,event.title,event.endTime].filter(Boolean).join(' · ');
+  add({text,group:event.group},true);
+ }
+ return out.sort((a,b)=>Number(Boolean(b.important))-Number(Boolean(a.important)));
+}
