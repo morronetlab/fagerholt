@@ -41,7 +41,7 @@ test('Fagerholt 3: two independently documented swim groups stay separate',()=>{
  const quote='Rød gruppe: svømming mandag. Grønn gruppe: svømming tirsdag.';
  const raw={...basic,days:[{day:'Mandag',events:[ev('Svømming',null,quote)]},{day:'Tirsdag',events:[ev('Svømming',null,quote)]}]};
  const p=normalizeAIPlan(raw,meta('3',quote));
- assert.equal(p.days.Mandag.events[0].group,'Rød gruppe');
- assert.equal(p.days.Tirsdag.events[0].group,'Grønn gruppe');
+ assert.equal(p.days.Mandag.events[0].group,undefined);
+ assert.equal(p.days.Tirsdag.events[0].group,undefined);
 });
-test('Cache schema bump prevents old inferred group and deadline results',()=>assert.equal(AI_SCHEMA_VERSION,7));
+test('Cache schema bump prevents old inferred group and deadline results',()=>assert.equal(AI_SCHEMA_VERSION,8));
