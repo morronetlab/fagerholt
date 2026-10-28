@@ -52,6 +52,6 @@ test('Sjøstrand PDF without a text layer shows AI processing, not unreadable',(
 test('Incomplete Lunde-like AI results offer original PDF, not a full-plan badge',()=>{
   const school={name:'Lunde skole',homepage:'https://www.minskole.no/lundeskole'};
   const screen=planFeedback({school,grade:'6',plan:{status:'partial',aiStatus:'ready',pdf:lundePdf}});
-  assert.equal(screen.kind,'missing');assert.equal(screen.showGrade,true);
+  assert.equal(screen.kind,'partial');assert.equal(screen.showGrade,true);
   assert.equal(screen.hideContent,false);
 });

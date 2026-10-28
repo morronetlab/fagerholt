@@ -36,10 +36,10 @@ export function planFeedback({school=null,grade=null,plan=null,error=null}={}){
     showSchool:true,showGrade:Boolean(plan.pdf),showRetry:true,hideContent:true
   };
   if(plan?.status==='partial')return {
-    kind:'missing',eyebrow:'UKEPLANEN ER IKKE KOMPLETT',
+    kind:'partial',eyebrow:'DELVIS TOLKET',
     title:'Vi fant bare deler av ukeplanen',
-    description:'Skolen har publisert en PDF, men vi klarte ikke hente ut en komplett dagsplan. Sjekk originaldokumentet for riktig informasjon.',
-    showSchool:true,showGrade:Boolean(plan?.pdf),showRetry:true,hideContent:false
+    description:'Sjekk original-PDF-en for informasjon som kan mangle.',
+    showSchool:false,showGrade:Boolean(plan?.pdf),showRetry:false,hideContent:false
   };
   return null;
 }
