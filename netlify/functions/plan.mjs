@@ -1,7 +1,7 @@
 import {siteConfig} from '../../public/site-config.mjs';
 import {schoolCalendar} from '../../lib/calendar.mjs';
 import {findPdfLinks,choosePdf,analyzePdfPages,pdfItemsFromTextContent} from '../../lib/plan-core.mjs';
-import {aiConfigured,cacheKey,digestPdf,openAIStore,queueAIJob} from '../../lib/ai-runtime.mjs';
+import {aiConfigured,cacheKey,digestPdf,openAIStore,queueAIJob,lockKey,failureKey} from '../../lib/ai-runtime.mjs';
 import {getSchool,validGradeCode,locateGradeSections,isSchoolSectionUrl} from '../../lib/schools.mjs';
 const MAX_PDF_BYTES=14*1024*1024;
 const HEADERS={'User-Agent':'Mozilla/5.0 (compatible; Ukeplanen/0.1; +https://github.com/morronetlab/fagerholt)','Accept-Language':'nb-NO,nb;q=0.9'};
@@ -47,6 +47,7 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
   return async function handler(request){
     if(request.method&&request.method!=='GET')return reply({error:'Kun GET støttes'},405);
     const query=new URL(request.url).searchParams;
+    const statusOnly=query.get('statusOnly')==='1';
     // Existing /api/plan?grade=4 bookmarks retain Fagerholt behavior.
     const schoolId=query.get('school')||siteConfig.school.id;
     const school=getSchool(schoolId);
@@ -78,12 +79,28 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
           const cached=await store.get(key,{type:'json',consistency:'strong'});
           if(cached?.parser==='ai'&&(cached.schoolId===school.id||(school.id==='fagerholt'&&!cached.schoolId))&&cached.grade===grade&&cached.week===week&&cached.year===year&&cached.pdf===pdf.url)
             return reply({...base,...cached,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,aiStatus:'ready'});
+          if(statusOnly){
+            // Read-only job inspection: never dispatch another background job.
+            // This also avoids parsing the PDF again on every polling request.
+            const [lock,failure]=await Promise.all([
+              store.get(lockKey(key),{type:'json',consistency:'strong'}),
+              store.get(failureKey(key),{type:'json',consistency:'strong'})
+            ]);
+            const running=Number(lock?.expiresAt)>Date.now();
+            const failed=Number(failure?.retryAt)>Date.now();
+            return reply({...base,pdf:pdf.url,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,status:'partial',parser:'rules',
+              aiStatus:failed||!running?'failed':'processing',
+              warning:failed||!running?'Ingen aktiv AI-analyse ble funnet. Velg «Prøv igjen» for å starte et nytt forsøk.':'AI-analysen kjører fortsatt.'});
+          }
           aiStatus=await queueJob({request,store,key,job:{schoolId:school.id,grade,week,year,source,pdf:pdf.url,hash},env});
         }catch(error){
           console.error('AI job unavailable; using rule-based PDF parser:',error?.message);
           aiStatus='unavailable';
         }
       }
+      if(statusOnly)return reply({...base,pdf:pdf.url,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,
+        status:'partial',parser:'rules',aiStatus:aiStatus==='unavailable'?'processing':'failed',
+        warning:'Statusen kunne ikke kontrolleres akkurat nå. Ny statuskontroll starter ikke AI-analysen på nytt.'});
       let pages;
       try{pages=await parsePdfPages(bytes);}
       catch(error){
