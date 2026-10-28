@@ -51,7 +51,7 @@ function submit(value){
  $('word-quiz-options').querySelectorAll('button').forEach(b=>b.disabled=true);
 }
 export function renderWordQuiz(vocabulary,context){
- const key=[context?.school,context?.grade,context?.year,context?.week].join(':');
+ const key=[context?.school,context?.grade,context?.year,context?.week,JSON.stringify(vocabulary||[])].join(':');
  if($('word-quiz').dataset.key===key)return;
  $('word-quiz').dataset.key=key;
  words=quizWords(vocabulary);index=0;score=0;
