@@ -7,7 +7,7 @@ export function needsHomeworkHelp(item){
  // A mixed homework entry may contain several different tasks: keep tutor available.
  if(/[\n•]/.test(String(typeof item==='string'?item:item?.text||'')))return true;
  // Reflection, analysis and exercises should always remain eligible.
- if(/\b(?:forklar|beskriv|begrunn|sammenlign|regn|løs|finn ut|svar på|skriv|fortell|drøft|diskuter|undersøk|tenk over|hvorfor|hvordan|oppgaver?|spørsmål|oversett)\b/i.test(text))return true;
+ if(/(?:^|[^a-zæøå])(?:forklar|beskriv|begrunn|sammenlign|regn|løs|finn ut|svar på|skriv|fortell|drøft|diskuter|undersøk|tenk over|hvorfor|hvordan|oppgaver?|spørsmål(?:ene)?|oversett)(?=$|[^a-zæøå])/i.test(text))return true;
  // Purely logistical requests.
  if(/^(?:husk(?: å)?|ta med|pakk|ha med|lever|signer|få underskrift|møt opp)\b/.test(text))return false;
  if(/\b(?:gymtøy|gymsko|badetøy|håndkle|skiftetøy|matpakke|drikkeflaske|turklær|refleksvest)\b/.test(text)&&text.length<115)return false;
