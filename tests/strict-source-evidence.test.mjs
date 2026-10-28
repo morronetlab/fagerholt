@@ -44,4 +44,4 @@ test('Fagerholt 3: two independently documented swim groups stay separate',()=>{
  assert.equal(p.days.Mandag.events[0].group,undefined);
  assert.equal(p.days.Tirsdag.events[0].group,undefined);
 });
-test('Cache schema bump prevents old inferred group and deadline results',()=>assert.equal(AI_SCHEMA_VERSION,12));
+test('Cache schema bump prevents old inferred group and deadline results',()=>assert.equal(AI_SCHEMA_VERSION,13));

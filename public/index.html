@@ -70,11 +70,19 @@
         <section class="panel" aria-labelledby="program-title"><div class="panel-head"><div><p class="eyebrow">SKOLEDAGEN</p><h2 id="program-title">Dette skjer i dag</h2></div><span class="section-icon">📚</span></div><div id="day-program" class="items"></div><section id="day-notes" class="day-notes" hidden aria-label="Praktisk informasjon for dagen"><h3>📌 Praktisk informasjon for dagen</h3><div id="day-notes-list"></div></section><div id="day-attendance" class="day-attendance" hidden aria-label="Særskilt oppmøte for enkelte grupper"></div></section>
         <section class="panel bag" aria-labelledby="bag-title"><div class="panel-head"><div><p class="eyebrow">FØR DU GÅR</p><h2 id="bag-title">Pakk skolesekken</h2></div><span class="section-icon">🎒</span></div><div id="bag-list" class="items"></div></section>
       </div>
+      <section id="week-info-panel" class="panel weekly-info-panel" aria-labelledby="week-info-title" hidden>
+        <div class="panel-head"><div><p class="eyebrow">FOR HELE UKA</p><h2 id="week-info-title">Dette gjelder denne uka</h2></div><span class="section-icon">🗓️</span></div>
+        <div id="week-info-list" class="weekly-info-list"></div>
+      </section>
       <section class="panel homework" aria-labelledby="homework-title"><div class="panel-head"><div><p class="eyebrow">DENNE UKEN</p><h2 id="homework-title">Lekser og oppgaver</h2></div><span class="section-icon">✏️</span></div><div id="homework-progress" class="homework-progress" hidden aria-label="Lekseprogresjon">
           <div class="homework-progress-top"><strong id="homework-progress-count">0 av 0 lekser ferdig</strong><span id="homework-progress-stars" aria-hidden="true">☆☆☆</span></div>
           <div id="homework-progress-track" class="homework-progress-track" role="progressbar" aria-label="Lekser fullført" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="homework-progress-bar" class="homework-progress-fill"></div></div>
           <p id="homework-progress-message" aria-live="polite">✨ Klar for å samle stjerner?</p>
         </div><div id="homework-list" class="items"></div></section>
+      <section id="word-lists-panel" class="panel word-lists-panel" aria-labelledby="word-lists-title" hidden>
+        <div class="panel-head"><div><p class="eyebrow">ØV PÅ ORDENE</p><h2 id="word-lists-title">Ukas ord og gloser</h2></div><span class="section-icon">🔤</span></div>
+        <div id="word-lists-content" class="word-lists-content"></div>
+      </section>
       <section class="panel subjects-panel" id="subjects-panel" aria-labelledby="subjects-title"><div class="panel-head"><div><p class="eyebrow">SKOLEFAG</p><h2 id="subjects-title">Fag denne uka</h2></div><span class="section-icon">📖</span></div><div id="subjects-list" class="items"></div></section>
       <section class="panel theme" id="theme-panel" hidden aria-labelledby="theme-title"><div class="panel-head"><div><p class="eyebrow">LITT EKSTRA</p><h2 id="theme-title">Ukas tema</h2></div><span class="section-icon">✨</span></div><p id="theme-content"></p><div id="mission-slot"></div></section>
       <section id="special-panel" class="panel special-panel" aria-labelledby="special-title" hidden>
@@ -83,6 +91,10 @@
       </section>
       <details class="details" id="notices-panel"><summary>📬 Beskjeder fra skolen <span id="notices-count" class="count"></span><span id="notices-empty-hint" class="section-empty-hint" hidden>Ingen egne beskjeder denne uka</span><span class="chevron">⌄</span></summary><div id="notices-list" class="details-content"></div></details>
       <details class="details" id="goals-panel"><summary>🎯 Læringsmål <span id="goals-count" class="count"></span><span id="goals-empty-hint" class="section-empty-hint" hidden>Ingen egne læringsmål denne uka</span><span class="chevron">⌄</span></summary><div id="goals-list" class="details-content"></div></details>
+      <section id="teachers-panel" class="panel teachers-panel" aria-labelledby="teachers-title" hidden>
+        <div class="panel-head"><div><p class="eyebrow">KONTAKT MED SKOLEN</p><h2 id="teachers-title">Kontaktlærere</h2></div><span class="section-icon">👩‍🏫</span></div>
+        <div id="teachers-list" class="teachers-list"></div>
+      </section>
       <p class="disclaimer">Ukeplanen leses automatisk fra skolens PDF. Ved tvil er skolens original alltid fasit. <a id="pdf-source" href="#" target="_blank" rel="noopener noreferrer" hidden>Se original-PDF ↗</a></p>
       </div>
     </div>

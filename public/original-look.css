@@ -392,3 +392,27 @@ footer{border-color:var(--line);color:#92a49c}
 .footer-meta{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px}
 .footer-meta a{font-weight:750;overflow-wrap:anywhere}
 @media(max-width:700px){.event-subitem+.event-subitem{margin-top:7px;padding-top:7px}.day-notes p.day-note-critical{padding:12px}.footer-meta{display:flex;margin-top:7px}}
+
+/* Structured PDF sections, shared across schools: whole-week information,
+   word lists and verified teacher contact information. */
+.weekly-info-panel{background:linear-gradient(120deg,#f2f7ff,#fff);border-color:#d6e3f3}
+.weekly-info-list{display:grid;gap:10px}
+.weekly-info-list p{margin:0;padding:12px 14px;border-left:3px solid #85a4d6;border-radius:8px;background:#fff;line-height:1.65;white-space:pre-line;overflow-wrap:anywhere}
+.word-lists-content{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,255px),1fr));gap:13px}
+.word-list-block{border:1px solid #cde6da;background:#f7fcf8;padding:16px 18px;border-radius:14px;min-width:0}
+.word-list-block h3{margin:0 0 9px;color:#26654a;font-size:16px}
+.word-list-block p{margin:0;font-size:14px;color:#355847;line-height:1.7;white-space:pre-line;overflow-wrap:anywhere}
+.teachers-panel{margin-top:22px;background:#fafcfb}
+.teachers-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:12px}
+.teacher-card{display:flex;flex-direction:column;gap:11px;min-width:0;padding:15px 17px;border:1px solid #d6e5db;border-radius:14px;background:#fff}
+.teacher-card strong{display:block;font-size:16px;color:#254f3f}
+.teacher-role{display:block;font-size:12px;color:#617b6e;margin-top:3px}
+.teacher-links{display:flex;flex-direction:column;gap:8px}
+.teacher-links a{color:#235f50;font-size:13px;font-weight:750;overflow-wrap:anywhere;text-decoration:underline;text-underline-offset:3px;min-height:30px}
+@media(max-width:700px){
+ .weekly-info-list p{padding:11px 12px;font-size:13px}
+ .word-list-block{padding:13px 14px}
+ .teachers-panel{margin-top:14px}
+ .teacher-card{padding:13px 14px}
+ .teacher-links a{min-height:40px;display:inline-flex;align-items:center}
+}

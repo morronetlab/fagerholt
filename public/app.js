@@ -180,9 +180,16 @@ function renderContent(){
   const bag=getBag();
   $('bag-list').innerHTML=bag.length?checklist(bag,'bag',DAYS[state.day]):empty(state.loading?'Henter pakkelisten …':'Ingen ekstra utstyr oppgitt for denne dagen.');
   $('plan-columns').classList.toggle('bag-empty',!bag.length&&!state.loading);
+  const weekly=Array.isArray(p?.weekInfo)?p.weekInfo.filter(x=>typeof x==='string'&&x.trim()):[];
+  $('week-info-panel').hidden=!weekly.length;
+  $('week-info-list').innerHTML=weekly.map(x=>`<p>${safe(x)}</p>`).join('');
   const hw=expandHomework(p?.homework||[]);
   $('homework-list').innerHTML=hw.length?checklist(hw,'homework'):empty(state.loading?'Henter lekser …':'Ingen lekser ble funnet i PDF-en.');
   renderHomeworkProgress(hw);
+  const wordLists=Array.isArray(p?.wordLists)?p.wordLists.filter(x=>x?.title&&x?.text):[];
+  $('word-lists-panel').hidden=!wordLists.length;
+  $('word-lists-content').innerHTML=wordLists.map(x=>`<section class="word-list-block">
+      <h3>${safe(x.title)}</h3><p>${safe(x.text)}</p></section>`).join('');
   const hasTheme=features.theme&&Boolean(p?.weekTheme);
   // Older cached AI plans can also misclassify vaccination as a school subject.
   const subjects=(Array.isArray(p?.subjects)?p.subjects:[])
@@ -213,6 +220,16 @@ function renderContent(){
   $('goals-count').textContent=goals.length;
   $('goals-list').innerHTML=goals.length?goals.map(x=>`<p>${groupBadge(x?.group)}${safe(typeof x==='string'?x:x?.text||x?.detail||'')}</p>`).join(''):empty('Ingen egne læringsmål oppgitt for denne uka.');
   renderSpecialContent();
+  const teachers=Array.isArray(p?.teachers)?p.teachers.filter(x=>x?.name):[];
+  $('teachers-panel').hidden=!teachers.length;
+  $('teachers-list').innerHTML=teachers.map(x=>{
+    const email=typeof x.email==='string'&&/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(x.email)?x.email:null;
+    const phone=typeof x.phone==='string'&&/^(?:\+47)?\d{8}$/.test(x.phone.replace(/\s+/g,''))?x.phone.replace(/\s+/g,''):null;
+    return `<article class="teacher-card"><div><strong>${safe(x.name)}</strong>
+      <span class="teacher-role">${safe(x.role||'Kontaktlærer')}</span></div>
+      <div class="teacher-links">${email?`<a href="mailto:${safe(email)}">✉ ${safe(email)}</a>`:''}
+      ${phone?`<a href="tel:${safe(phone)}">☎ ${safe(phone)}</a>`:''}</div></article>`;
+  }).join('');
   renderWeather();
 }
 function renderHomeworkProgress(homework){
