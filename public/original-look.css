@@ -431,3 +431,10 @@ footer{border-color:var(--line);color:#92a49c}
 #word-quiz [hidden]{display:none!important}
 
 #vocabulary-list[hidden]{display:none!important}
+
+/* Second English stage: select a Norwegian translation from known PDF meanings. */
+.quiz-meaning-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:14px 0}
+.quiz-meaning-options button{padding:13px 14px;border-radius:12px;border:1px solid #bad2c6;background:#fff;color:#1d4e42;font-weight:750;cursor:pointer;text-align:center;min-height:48px}
+.quiz-meaning-options button:hover:not(:disabled),.quiz-meaning-options button:focus-visible{background:#e6f4ed;border-color:#477967}
+.quiz-meaning-options button:disabled{opacity:.65;cursor:default}
+#word-quiz-options[hidden]{display:none!important}

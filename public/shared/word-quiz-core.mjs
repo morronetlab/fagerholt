@@ -62,17 +62,33 @@ export function quizItems(entries){
 export const quizWords=entries=>quizItems(entries).map(x=>x.word);
 export function buildQuizRounds(items,language){
  const selected=(items||[]).filter(i=>i.language===language).slice(0,12);
- if(language==='en')return [
-  ...selected.filter(i=>i.translation).map(i=>({kind:'meaning',word:i.word,translation:i.translation,language})),
-  ...selected.map(i=>({kind:'listen',word:i.word,language}))
- ];
+ if(language==='en'){
+  const translated=selected.filter(i=>i.translation);
+  const meanings=[...new Map(translated.map(i=>[key(i.translation),i.translation])).values()];
+  const translate=translated.map(i=>({kind:'meaning',word:i.word,translation:i.translation,language}));
+  // Only use real Norwegian translations from this week's source words as choices.
+  // The child first recalls the meaning, then recognizes it among similar answers.
+  const recognize=meanings.length>=3?translated.map((i,index)=>{
+   const distractors=meanings.filter(t=>key(t)!==key(i.translation));
+   const rotated=distractors.slice(index%distractors.length).concat(distractors.slice(0,index%distractors.length));
+   const options=[i.translation,...rotated.slice(0,3)];
+   const shift=(index+1)%options.length;
+   return {kind:'recognize',word:i.word,translation:i.translation,language,
+    choices:options.slice(shift).concat(options.slice(0,shift))};
+  }):[];
+  // If no trustworthy translation exists, offer a separate English listening/
+  // spelling exercise; never invent a Norwegian meaning.
+  const listen=selected.filter(i=>!i.translation).map(i=>({kind:'listen',word:i.word,language}));
+  return [...translate,...recognize,...listen];
+ }
  return [
   ...selected.map(i=>({kind:'memory',word:i.word,language})),
   ...selected.map(i=>({kind:'vowels',word:i.word,language}))
  ];
 }
 export function quizExpected(round){
- return round?.kind==='vowels'?[...round.word.toLocaleLowerCase('nb-NO')].filter(c=>'aeiouyæøå'.includes(c)).join(''):round?.word||'';
+ return round?.kind==='vowels'?[...round.word.toLocaleLowerCase('nb-NO')].filter(c=>'aeiouyæøå'.includes(c)).join(''):
+  ['meaning','recognize'].includes(round?.kind)?round?.translation||'':round?.word||'';
 }
 export function isQuizAnswerCorrect(round,answer){
  const expected=quizExpected(round);
