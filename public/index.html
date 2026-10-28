@@ -26,6 +26,11 @@
       <div class="gate-icon">🎒</div><p class="eyebrow">VELKOMMEN</p><h1 id="gate-title">Hvilket klassetrinn går barnet på?</h1>
       <p id="gate-school" class="lead"></p><p class="muted">Velg klassetrinn for å se ukens plan. Valget huskes på denne enheten.</p>
       <p id="grade-loading-message" class="school-match-count" role="status" aria-live="polite"></p><div id="grade-choices" class="grades" aria-label="Velg klassetrinn"></div>
+      <div id="grade-missing" class="grade-missing" hidden>
+        <strong>Finner du ikke klassetrinnet?</strong>
+        <p>Skolen kan ha lagt informasjonen et annet sted. Åpne skolens offisielle nettsted for å se trinn og ukeplaner.</p>
+        <a id="grade-school-link" class="feedback-primary-link" href="#" target="_blank" rel="noopener noreferrer">Åpne skolens nettside <span aria-hidden="true">↗</span></a>
+      </div>
       <p class="fineprint">Vi henter kun opplysninger fra skolens offisielle ukeplan for valgt klassetrinn.</p>
     </section>
     <div id="app-view" hidden>
@@ -35,7 +40,24 @@
         </div>
         <aside class="weather" aria-label="Vær for valgt skoledag"><p class="eyebrow">VÆR I OMRÅDET · 08–15</p><div class="weather-main"><span id="weather-icon" class="weather-icon">🌤️</span><strong id="weather-temp">—</strong></div><p id="weather-desc" class="weather-desc">Henter værmelding …</p><p class="source-note" id="weather-location">Værdata: Meteorologisk institutt / Yr</p></aside>
       </section>
+      <section id="plan-feedback" class="plan-feedback" hidden role="status" aria-live="polite" aria-atomic="true" aria-labelledby="feedback-title">
+        <div id="feedback-illustration" class="feedback-illustration" aria-hidden="true">
+          <span class="feedback-sheet"><i></i><i></i><i></i><b></b></span>
+          <span class="feedback-symbol">!</span>
+        </div>
+        <div class="feedback-content">
+          <p id="feedback-eyebrow" class="feedback-eyebrow"></p>
+          <h2 id="feedback-title"></h2>
+          <p id="feedback-description" class="feedback-description"></p>
+          <div class="feedback-actions">
+            <a id="feedback-school-link" class="feedback-primary-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Åpne skolens nettside <span aria-hidden="true">↗</span></a>
+            <a id="feedback-grade-link" class="feedback-secondary-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Se originalen <span aria-hidden="true">↗</span></a>
+            <button id="feedback-retry" class="feedback-retry" type="button">↻ Sjekk på nytt</button>
+          </div>
+        </div>
+      </section>
       <div id="warning-area" class="alert" role="status" aria-live="polite" hidden></div>
+      <div id="plan-body">
       <div id="rain-reminder" class="rain-alert" role="status" hidden></div>
       <nav class="weekdays" id="day-buttons" aria-label="Velg dag"></nav>
       <div class="columns">
@@ -48,6 +70,7 @@
       <details class="details" id="notices-panel"><summary>📬 Beskjeder fra skolen <span id="notices-count" class="count"></span><span class="chevron">⌄</span></summary><div id="notices-list" class="details-content"></div></details>
       <details class="details" id="goals-panel" hidden><summary>🎯 Læringsmål <span id="goals-count" class="count"></span><span class="chevron">⌄</span></summary><div id="goals-list" class="details-content"></div></details>
       <p class="disclaimer">Ukeplanen leses automatisk fra skolens PDF. Ved tvil er skolens original alltid fasit. <a id="pdf-source" href="#" target="_blank" rel="noopener noreferrer" hidden>Se original-PDF ↗</a></p>
+      </div>
     </div>
   </main>
   <footer>Ukeplanen · <span id="footer-school">Kristiansand</span> · Skolevalg og avkrysninger lagres kun i nettleseren. <a href="https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/grunnskole/" target="_blank" rel="noopener noreferrer">Skoleoversikten ↗</a></footer>
