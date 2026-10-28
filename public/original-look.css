@@ -241,3 +241,22 @@ footer{border-color:var(--line);color:#92a49c}
 .homework-repeat{display:inline-block;padding:4px 8px;background:#e7edf9;border-radius:8px;color:#365d90;font-size:11px;font-weight:850;margin:0 7px 5px 0}
 @media(max-width:700px){.feedback-analyzing{min-height:260px}.analysis-progress-top #analysis-percent{font-size:20px}.columns.bag-empty .bag{flex-direction:column;align-items:flex-start;gap:6px}.columns.bag-empty .bag .items{flex:none}}
 @media(prefers-reduced-motion:reduce){.analysis-track .analysis-bar{transition:none}}
+
+.feedback-fetching{background:linear-gradient(120deg,#e8f2fc,#eff6fb);border:1.5px solid #c7deeb;color:#28536a;min-height:150px}
+.feedback-fetching .feedback-sheet{border-color:#86b8d1;animation:feedback-sheet-float 1.6s ease-in-out infinite}
+@keyframes feedback-sheet-float{50%{transform:translateY(-6px) rotate(-5deg)}}
+.day-notes{background:#f4f8fd;border:1px solid #dbe9f4;border-radius:15px;margin-top:19px;padding:16px 18px}
+.day-notes h3{font-size:15px;color:#365d78;margin:0 0 9px}
+.day-notes p{font-size:14px;line-height:1.6;white-space:pre-wrap;margin:8px 0;color:#36556b}
+.subjects-panel.compact-empty{padding:13px 19px;margin-bottom:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.subjects-panel.compact-empty .panel-head{margin:0;flex:0 0 auto}
+.subjects-panel.compact-empty .panel-head h2{font-size:15px}
+.subjects-panel.compact-empty .panel-head .eyebrow,.subjects-panel.compact-empty .section-icon{display:none}
+.subjects-panel.compact-empty #subjects-list{flex:1}
+.subjects-panel.compact-empty .empty{padding:0;border:0;background:transparent}
+.details.compact-empty{margin-bottom:9px;box-shadow:none;background:#f8faf8;border-color:#e9eeea}
+.details.compact-empty summary{font-size:13px;padding:12px 16px;color:#72887a}
+.details.compact-empty summary .chevron{display:none}
+.details.compact-empty .details-content .empty{border:0;background:transparent;padding:4px 0}
+.section-empty-hint{font-size:12px;color:#859b90;font-weight:500;margin-left:auto}
+@media(prefers-reduced-motion:reduce){.feedback-fetching .feedback-sheet{animation:none}}

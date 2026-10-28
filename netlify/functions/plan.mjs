@@ -77,7 +77,7 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
           const store=await storeFactory();
           const cached=await store.get(key,{type:'json',consistency:'strong'});
           if(cached?.parser==='ai'&&(cached.schoolId===school.id||(school.id==='fagerholt'&&!cached.schoolId))&&cached.grade===grade&&cached.week===week&&cached.year===year&&cached.pdf===pdf.url)
-            return reply({...base,...cached,publishedWeek:pdf.week,aiStatus:'ready'});
+            return reply({...base,...cached,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,aiStatus:'ready'});
           aiStatus=await queueJob({request,store,key,job:{schoolId:school.id,grade,week,year,source,pdf:pdf.url,hash},env});
         }catch(error){
           console.error('AI job unavailable; using rule-based PDF parser:',error?.message);
@@ -101,7 +101,7 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
       }
       const fallback=analyzePdfPages(pages,grade,pdf.url,week,year,source);
       if(aiStatus==='failed')fallback.warning='AI-analysen feilet. Viser foreløpig regelbasert utdrag. Automatisk nytt forsøk etter fem minutter. Sjekk original-PDF-en.';
-      return reply({...base,...fallback,publishedWeek:pdf.week,parser:'rules',aiStatus});
+      return reply({...base,...fallback,pdfPageCount:pages.length,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,parser:'rules',aiStatus});
     }catch(error){
       console.error('Failed to fetch published school PDF:',grade,error);
       return reply({...base,status:'error',warning:'Klarte ikke hente eller lese skolens ukeplan. Prøv igjen, eller åpne trinnsiden.'},502);

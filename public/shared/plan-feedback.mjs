@@ -1,8 +1,9 @@
 /** Presentation decisions for an AI job, an absent weekly PDF or an unreadable document.
  * Pure, browser-independent state logic; never guesses whether a PDF was published.
  */
-export function planFeedback({school=null,grade=null,plan=null,error=null}={}){
+export function planFeedback({school=null,grade=null,plan=null,error=null,loading=false}={}){
   if(!school||!grade)return null;
+  if(loading&&!plan)return {kind:'fetching',eyebrow:'HENTER DOKUMENT',title:'Henter PDF fra skolen',description:'Vi finner denne ukens originale PDF før AI begynner å lese og organisere innholdet.',showSchool:false,showGrade:false,showRetry:false,hideContent:true};
   if(plan?.status==='unpublished')return {
     kind:'missing',eyebrow:'INGEN UKEPLAN FUNNET',
     title:'Vi fant ingen ukeplan for denne uka',

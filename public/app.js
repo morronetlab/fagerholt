@@ -5,7 +5,9 @@ import {planFeedback} from './shared/plan-feedback.mjs';
 import {normalizeVisualRegion,adjustableVisualRegion,visualCropGeometry,fullPageGeometry} from './shared/visual-region.mjs';
 import {homeworkProgress} from './shared/group-scope.mjs';
 import {expandHomework,repeatDayLabel} from './shared/homework-view.mjs';
-import {dueDayLabel,displayEvent,packingText} from './shared/plan-display.mjs';
+import {dueDayLabel,packingText} from './shared/plan-display.mjs';
+import {uniqueDayEvents,noDayScheduleMessage} from './shared/day-view.mjs';
+import {estimateAiSeconds,estimatedPercent} from './shared/ai-estimate.mjs';
 // This module is served from public/. Calendar and selection modules are mirrored in public/shared/.
 const $ = id=>document.getElementById(id);
 const safe=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -89,12 +91,12 @@ function checklist(items,section,day='all'){
 }
 function empty(msg){return `<p class="empty"><span aria-hidden="true">ℹ️</span> ${safe(msg)}</p>`;}
 function renderFeedback(){
-  const info=planFeedback({school:state.school,grade:state.grade,plan:state.plan,error:state.planError});
+  const info=planFeedback({school:state.school,grade:state.grade,plan:state.plan,error:state.planError,loading:state.loading});
   const el=$('plan-feedback');
   el.hidden=!info;
   $('plan-body').hidden=Boolean(info?.hideContent);
   if(!info)return;
-  el.className=`plan-feedback ${info.kind==='analyzing'?'feedback-analyzing':info.kind==='partial'?'feedback-partial':'feedback-missing'}`;
+  el.className=`plan-feedback ${info.kind==='analyzing'?'feedback-analyzing':info.kind==='fetching'?'feedback-fetching':info.kind==='partial'?'feedback-partial':'feedback-missing'}`;
   $('feedback-eyebrow').textContent=info.eyebrow;
   $('feedback-title').textContent=info.title;
   $('feedback-description').textContent=info.description;
@@ -120,12 +122,13 @@ function updateAnalysisClock(){
  if(state.analysisStartedAt===null)state.analysisStartedAt=Date.now();
  const elapsed=Math.max(0,Math.floor((Date.now()-state.analysisStartedAt)/1000));
  $('analysis-elapsed').textContent=`Tid brukt: ${Math.floor(elapsed/60)}:${String(elapsed%60).padStart(2,'0')}`;
- const estimate=elapsed<=35?Math.round(elapsed/35*85):Math.min(95,85+Math.floor((elapsed-35)/7));
+ const seconds=estimateAiSeconds({pages:state.plan?.pdfPageCount,bytes:state.plan?.pdfSizeBytes});
+ const estimate=estimatedPercent(elapsed,seconds);
  $('analysis-percent').textContent=`Ca. ${estimate} %`;
  $('analysis-progress-track').setAttribute('aria-valuenow',String(estimate));
  $('analysis-progress-track').setAttribute('aria-valuetext',`Estimert ${estimate} prosent; faktisk fremdrift ukjent`);
  $('analysis-progress-fill').style.width=estimate+'%';
- $('analysis-time-hint').textContent=elapsed>=45?'Dette tar lenger tid enn anslått. Vi sjekker fortsatt automatisk.':'Anslått 30–40 sekunder. Prosenten er estimert, ikke målt AI-fremdrift.';
+ $('analysis-time-hint').textContent=elapsed>seconds?`Analysen tar lenger tid enn forventet. Beregnet tid var ca. ${seconds} sekunder; vi sjekker fortsatt automatisk.`:`Anslått ca. ${seconds} sekunder basert på PDF-ens størrelse og sidetall. Prosenten er estimert.`;
  if(!state.analysisTicker)state.analysisTicker=setInterval(updateAnalysisClock,1000);
 }
 function renderContent(){
@@ -136,7 +139,7 @@ function renderContent(){
   $('status-pill').className='state-pill '+(p?.aiStatus==='processing'?'state-ai-processing':p?.aiStatus==='ready'?'state-ai-ready':['error','unreadable'].includes(status)?'state-error':['partial','unpublished','unavailable'].includes(status)?'state-warning':'');
   renderFeedback();
   const pending=p?.aiStatus==='processing';
-  $('plan-body').hidden=pending||Boolean(planFeedback({school:state.school,grade:state.grade,plan:p,error:state.planError})?.hideContent);
+  $('plan-body').hidden=state.loading||pending||Boolean(planFeedback({school:state.school,grade:state.grade,plan:p,error:state.planError})?.hideContent);
   $('plan-body').classList.toggle('ai-pending',pending);
   $('plan-body').setAttribute('aria-busy',String(pending));
   updateAnalysisClock();
@@ -147,13 +150,16 @@ function renderContent(){
   $('warning-area').textContent=!feedbackVisible?msg||'':'';
   $('pdf-source').hidden=!p?.pdf;if(p?.pdf)$('pdf-source').href=p.pdf;
   if(p?.source&&state.school)$('school-source').href=p.source;
-  const events=p?.days?.[DAYS[state.day]]?.events||[];
+  const events=uniqueDayEvents(p?.days?.[DAYS[state.day]]?.events||[]);
+  const notes=(p?.dayNotes?.[DAYS[state.day]]||[]).filter(x=>x&&x.text);
   const groups=[...new Set([...events,...getBag()].map(x=>x.group).filter(Boolean))];
   $('day-group-summary').hidden=!groups.length;
   $('day-group-summary').innerHTML=groups.length?`<strong>Husk riktig gruppe denne dagen:</strong> ${groups.map(groupBadge).join(' ')}`:'';
   $('day-program').innerHTML=p?.status==='unpublished'?empty('Ingen ukeplan publisert for denne uken.'):
-    events.length?events.map(x=>{const e=displayEvent(x);return `<div class="event"><span class="event-dot">●</span><span>${groupBadge(x.group)}${e.time?`<small>${safe(e.time)}</small>`:''}${safe(e.title)}${e.endTime?`<small class="event-endtime">${safe(e.endTime)}</small>`:''}</span></div>`;}).join(''):
-    empty(state.loading?'Henter dagsprogram …':(p?.status==='ok'&&p?.parser==='ai'?'Ingen dagsprogram er oppgitt for denne dagen.':'Ingen dagsprogram kunne tolkes sikkert. Sjekk original-PDF.'));
+    events.length?events.map(e=>`<div class="event"><span class="event-dot">●</span><span>${groupBadge(e.group)}${e.time?`<small>${safe(e.time)}</small>`:''}${safe(e.title)}${e.endTime?`<small class="event-endtime">${safe(e.endTime)}</small>`:''}</span></div>`).join(''):
+    empty(state.loading?'Henter dagsprogram …':noDayScheduleMessage({hasNotes:notes.length>0,complete:p?.status==='ok'&&p?.parser==='ai'}));
+  $('day-notes').hidden=!notes.length;
+  $('day-notes-list').innerHTML=notes.map(x=>`<p>${groupBadge(x.group)}${safe(x.text)}</p>`).join('');
   const attendance=(p?.attendance||[]).filter(x=>x.day===DAYS[state.day]&&x.group&&x.time);
   $('day-attendance').hidden=!attendance.length;
   $('day-attendance').innerHTML=attendance.length?`<div class="attendance-heading">⏰ Særskilt oppmøte for enkelte grupper</div>${attendance.map(x=>`<div class="attendance-entry">${groupBadge(x.group)}<strong>Kl. ${safe(x.time)}</strong><span>${safe(x.text)}</span></div>`).join('')}`:'';
@@ -169,19 +175,26 @@ function renderContent(){
   const isSuggestedMission=Boolean(missionText&&!p?.optionalMission);
   const hasMission=Boolean(missionText);
   $('theme-panel').hidden=!(hasTheme||hasMission);
-  $('subjects-panel').hidden=!subjects.length;
-  $('subjects-list').innerHTML=subjects.map(x=>`<p class="subject-item">${safe(x)}</p>`).join('');
+  $('subjects-panel').hidden=false;
+  $('subjects-panel').classList.toggle('compact-empty',!subjects.length);
+  $('subjects-list').innerHTML=subjects.length?subjects.map(x=>`<p class="subject-item">${safe(x)}</p>`).join(''):empty('Ingen egne fagoversikter oppgitt i denne ukeplanen.');
   $('theme-content').hidden=!hasTheme;$('theme-content').textContent=p?.weekTheme||'';
   $('mission-slot').innerHTML=(!hasMission?'':
     isChecked('mission',0)?`<button type="button" class="mission-done" id="undo-mission">✓ Frivillig oppdrag fullført · Vis igjen</button>`:
     `<div class="mission"><div><strong>🌟 Frivillig oppdrag ${isSuggestedMission?'· forslag fra Ukeplanen':''}</strong><p>${safe(missionText)}</p></div><label class="mission-check"><input type="checkbox" data-check="mission" data-index="0" data-progress-day="all"> Fullført</label></div>`);
   const notices=p?.notices||[];
   $('notices-count').textContent=notices.length?notices.length:'';
+  $('notices-panel').classList.toggle('compact-empty',!notices.length);
+  $('notices-empty-hint').hidden=Boolean(notices.length);
+  if(!notices.length)$('notices-panel').open=false;
   $('notices-list').innerHTML=notices.length?notices.map(x=>`<p>${groupBadge(x?.group)}${safe(typeof x==='string'?x:x?.text||x?.detail||x?.title)}</p>`).join(''):empty('Ingen beskjeder ble funnet i PDF-en.');
   const goals=features.learningGoals?p?.learningGoals||[]:[];
-  $('goals-panel').hidden=!features.learningGoals||!goals.length;
+  $('goals-panel').hidden=!features.learningGoals;
+  $('goals-panel').classList.toggle('compact-empty',!goals.length);
+  $('goals-empty-hint').hidden=Boolean(goals.length);
+  if(!goals.length)$('goals-panel').open=false;
   $('goals-count').textContent=goals.length;
-  $('goals-list').innerHTML=goals.map(x=>`<p>${groupBadge(x?.group)}${safe(typeof x==='string'?x:x?.text||x?.detail||'')}</p>`).join('');
+  $('goals-list').innerHTML=goals.length?goals.map(x=>`<p>${groupBadge(x?.group)}${safe(typeof x==='string'?x:x?.text||x?.detail||'')}</p>`).join(''):empty('Ingen egne læringsmål oppgitt for denne uka.');
   renderSpecialContent();
   renderWeather();
 }

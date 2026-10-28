@@ -13,7 +13,7 @@ const base=()=>({days:[],homework:[{subject:'Norsk',text:'Les bok i 15 minutter'
 const meta={grade:'6',year:2026,week:44,source,pdf:presteheiaPdf,pageCount:2,pageTexts:['Noe tekst på side 1',quote]};
 test('Presteheia: a complete subject-organized plan is not marked partial for missing daily columns',()=>{
  const res=normalizeAIPlan(base(),meta);
- assert.equal(AI_SCHEMA_VERSION,9);
+ assert.equal(AI_SCHEMA_VERSION,10);
  assert.equal(res.status,'ok');
  assert.equal(res.days.Mandag.events.length,0);
  assert.equal(res.homework.length,2);
