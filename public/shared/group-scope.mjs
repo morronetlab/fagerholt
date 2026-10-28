@@ -3,7 +3,11 @@
  * A bare colour adjective (e.g. «grønn natur») is never a school group.
  */
 export function groupNamesInText(value){
- const text=String(value||'').toLocaleLowerCase('nb-NO');
+ const colorRx=groupColors.join('|');
+ const text=String(value||'').toLocaleLowerCase('nb-NO')
+  // School PDFs often write «blå- og rosa-gruppa» or «blå-gruppe».
+  .replace(new RegExp('\\b('+colorRx+')-\\s*(?=og|,|\\/|&|\\+)','gi'),'$1 ')
+  .replace(new RegExp('\\b('+colorRx+')-\\s*(?=gruppe|gruppa)','gi'),'$1 ');
  const color=groupColors.join('|');
  const names=new Set();
  const consecutive=new RegExp('\\b(?:'+color+')(?:\\s+(?:gruppe|gruppa))?(?:\\s*(?:,|\\/|\\+|&|og)\\s*(?:'+color+')(?:\\s+(?:gruppe|gruppa))?)+','gi');

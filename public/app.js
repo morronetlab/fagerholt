@@ -6,7 +6,7 @@ import {normalizeVisualRegion,adjustableVisualRegion,visualCropGeometry,fullPage
 import {homeworkProgress,groupColorClass} from './shared/group-scope.mjs';
 import {expandHomework,repeatDayLabel} from './shared/homework-view.mjs';
 import {dueDayLabel,packingText} from './shared/plan-display.mjs';
-import {uniqueDayEvents,groupSimultaneousEvents,notesWithImportantEvents,noDayScheduleMessage} from './shared/day-view.mjs';
+import {uniqueDayEvents,groupSimultaneousEvents,notesWithImportantEvents,isVaccineNotice,noDayScheduleMessage} from './shared/day-view.mjs';
 import {estimateAiSeconds,estimatedPercent} from './shared/ai-estimate.mjs';
 // This module is served from public/. Calendar and selection modules are mirrored in public/shared/.
 const $ = id=>document.getElementById(id);
@@ -158,9 +158,11 @@ function renderContent(){
   $('warning-area').textContent=!feedbackVisible?msg||'':'';
   $('pdf-source').hidden=!p?.pdf;if(p?.pdf)$('pdf-source').href=p.pdf;
   if(p?.source&&state.school)$('school-source').href=p.source;
-  const events=uniqueDayEvents(p?.days?.[DAYS[state.day]]?.events||[]);
+  const allEvents=uniqueDayEvents(p?.days?.[DAYS[state.day]]?.events||[]);
+  // A vaccination is a practical notice, not an additional timetable row.
+  const events=allEvents.filter(x=>!isVaccineNotice(x.title));
   const groupedEvents=groupSimultaneousEvents(events);
-  const notes=notesWithImportantEvents(events,(p?.dayNotes?.[DAYS[state.day]]||[]).filter(x=>x&&x.text));
+  const notes=notesWithImportantEvents(allEvents,(p?.dayNotes?.[DAYS[state.day]]||[]).filter(x=>x&&x.text));
   const groups=[...new Set([...events,...getBag()].map(x=>x.group).filter(Boolean))];
   $('day-group-summary').hidden=!groups.length;
   $('day-group-summary').innerHTML=groups.length?`<strong>Husk riktig gruppe denne dagen:</strong> ${groups.map(groupBadge).join(' ')}`:'';
@@ -182,7 +184,10 @@ function renderContent(){
   $('homework-list').innerHTML=hw.length?checklist(hw,'homework'):empty(state.loading?'Henter lekser …':'Ingen lekser ble funnet i PDF-en.');
   renderHomeworkProgress(hw);
   const hasTheme=features.theme&&Boolean(p?.weekTheme);
-  const subjects=Array.isArray(p?.subjects)?p.subjects:[];
+  // Older cached AI plans can also misclassify vaccination as a school subject.
+  const subjects=(Array.isArray(p?.subjects)?p.subjects:[])
+    .flatMap(x=>String(x||'').split(/[\n;•]+/))
+    .map(x=>x.trim()).filter(x=>x&&!isVaccineNotice(x));
   const missionText=features.optionalMission?(p?.optionalMission||''):'';
   const isSuggestedMission=Boolean(missionText&&!p?.optionalMission);
   const hasMission=Boolean(missionText);

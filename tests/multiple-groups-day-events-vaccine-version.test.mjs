@@ -21,7 +21,7 @@ test('Felles oppmøte for rosa og blå gruppe blir til to kildebelagte oppmøter
  const plan=normalizeAIPlan({...base,attendance:[entry]},meta(text));
  assert.deepEqual(plan.attendance.map(x=>[x.day,x.group,x.time]),[
   ['Mandag','Rosa gruppe','08:05'],['Mandag','Blå gruppe','08:05']]);
- assert.equal(AI_SCHEMA_VERSION,11);
+ assert.equal(AI_SCHEMA_VERSION,12);
  assert.match(SYSTEM_PROMPT,/FLERE grupper/);
 });
 
