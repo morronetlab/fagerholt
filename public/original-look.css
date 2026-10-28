@@ -429,3 +429,5 @@ footer{border-color:var(--line);color:#92a49c}
 @media(max-width:600px){#word-quiz-form button{width:100%}#word-quiz-answer{min-width:0;width:100%}}
 
 #word-quiz [hidden]{display:none!important}
+
+#vocabulary-list[hidden]{display:none!important}
