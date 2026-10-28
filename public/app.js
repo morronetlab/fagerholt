@@ -181,8 +181,12 @@ function renderContent(){
   $('bag-list').innerHTML=bag.length?checklist(bag,'bag',DAYS[state.day]):empty(state.loading?'Henter pakkelisten …':'Ingen ekstra utstyr oppgitt for denne dagen.');
   $('plan-columns').classList.toggle('bag-empty',!bag.length&&!state.loading);
   const vocabulary=Array.isArray(p?.vocabulary)?p.vocabulary:[];
+  const category=v=>typeof v==='string'?'Ukas ord':String(v?.category||'').toLocaleLowerCase('nb-NO');
+  const hasEnglish=vocabulary.some(v=>/engelsk|gloser/i.test(category(v)));
+  const hasNorwegian=vocabulary.some(v=>/ukas ord|ukens ord|øveord|ord å øve på/i.test(category(v)));
+  $('vocabulary-title').textContent=hasEnglish&&hasNorwegian?'Ukas ord og engelske ord':hasEnglish?'Engelske ord':'Ukas ord';
   $('vocabulary-panel').hidden=!vocabulary.length;
-  $('vocabulary-list').innerHTML=vocabulary.map(v=>`<p><strong>${safe(v?.category||'Ord å øve på')}</strong> ${safe(typeof v==='string'?v:v?.text)}</p>`).join('');
+  $('vocabulary-list').innerHTML=vocabulary.map(v=>`<p><strong>${safe(typeof v==='string'?'Ukas ord':v?.category||'Ord å øve på')}</strong> ${safe(typeof v==='string'?v:v?.text)}</p>`).join('');
   const contacts=Array.isArray(p?.contacts)?p.contacts:[];
   $('contacts-panel').hidden=!contacts.length;
   $('contacts-list').innerHTML=contacts.map(c=>typeof c==='string'?`<p>${safe(c)}</p>`:`<p><strong>${safe(c.name)}</strong> ${safe(c.role)} ${c.email?`<a href="mailto:${encodeURIComponent(c.email)}">${safe(c.email)}</a>`:''} ${c.phone?`<span>${safe(c.phone)}</span>`:''}</p>`).join('');
