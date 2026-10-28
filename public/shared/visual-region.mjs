@@ -65,8 +65,8 @@ export function fullPageGeometry(pageWidth,pageHeight,boxWidth=460,deviceScale=1
 /** User-controlled width and height expansion, independent of AI's tight box. */
 export function adjustableVisualRegion(raw,{horizontal=0,vertical=0}={}){
  const r=normalizeVisualRegion(raw);if(!r)return null;
- const xPad=40+Math.max(0,Math.min(4,horizontal))*95;
- const yPad=35+Math.max(0,Math.min(4,vertical))*75;
+ const xPad=115+Math.max(0,Math.min(4,horizontal))*95;
+ const yPad=20+Math.max(0,Math.min(4,vertical))*75;
  const x=Math.max(0,r.x-xPad),y=Math.max(0,r.y-yPad);
  const right=Math.min(1000,r.x+r.width+xPad),bottom=Math.min(1000,r.y+r.height+yPad);
  const wide={x,y,width:right-x,height:bottom-y};
