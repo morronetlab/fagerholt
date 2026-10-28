@@ -6,7 +6,8 @@ test('Tutor is linked to homework without removing packing checkboxes',()=>{
  assert.match(js,/return \`<label class="checkrow/);
  assert.match(js,/initHomeworkHelper\(\)/);
 });
-test('Dialog has close button, labelled title and three actions',()=>{
+test('Dialog has close button, labelled title and only explanation and hint actions',()=>{
  const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
- for(const x of ['id="helper-modal"','aria-modal="true"','data-helper-close','data-helper-mode="explain"','data-helper-mode="hint"','data-helper-mode="practice"'])assert.ok(html.includes(x));
+ for(const x of ['id="helper-modal"','aria-modal="true"','data-helper-close','data-helper-mode="explain"','data-helper-mode="hint"'])assert.ok(html.includes(x));
+ assert.ok(!html.includes('data-helper-mode="practice"'));
 });
