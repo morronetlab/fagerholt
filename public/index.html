@@ -75,7 +75,30 @@
           <div id="homework-progress-track" class="homework-progress-track" role="progressbar" aria-label="Lekser fullført" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="homework-progress-bar" class="homework-progress-fill"></div></div>
           <p id="homework-progress-message" aria-live="polite">✨ Klar for å samle stjerner?</p>
         </div><div id="homework-list" class="items"></div></section>
-      <section class="panel" id="vocabulary-panel" hidden><div class="panel-head"><div><p class="eyebrow">ORD Å ØVE PÅ</p><h2 id="vocabulary-title">Ukas ord</h2></div><span class="section-icon">🔤</span></div><div id="vocabulary-list" class="items"></div><div id="word-quiz" hidden><div class="quiz-header"><strong>🎮 Ukas ordutfordring</strong><button id="word-quiz-start" type="button">Start quiz</button></div><div id="word-quiz-play" hidden><p id="word-quiz-progress"></p><p id="word-quiz-question"></p><div id="word-quiz-options"></div><form id="word-quiz-form" hidden><label for="word-quiz-answer">Skriv riktig ord</label><input id="word-quiz-answer" autocomplete="off"><button type="submit">Sjekk svar</button></form><p id="word-quiz-feedback" role="status"></p><button id="word-quiz-next" type="button" hidden>Neste ord →</button></div></div></section>
+      <section class="panel" id="vocabulary-panel" hidden><div class="panel-head"><div><p class="eyebrow">ORD Å ØVE PÅ</p><h2 id="vocabulary-title">Ukas ord</h2></div><span class="section-icon">🔤</span></div><div id="vocabulary-list" class="items"></div><div id="word-quiz" hidden>
+ <div class="quiz-header"><strong>🎮 Ukas ordutfordring</strong><button id="word-quiz-start" type="button">Start ordøving</button></div>
+ <div id="word-quiz-language" role="group" aria-label="Velg språk">
+  <button type="button" data-quiz-language="en" aria-pressed="false">🇬🇧 Engelsk</button>
+  <button type="button" data-quiz-language="nb" aria-pressed="false">🇳🇴 Norsk</button>
+ </div>
+ <p id="word-quiz-description"></p>
+ <div id="word-quiz-play" hidden>
+  <p id="word-quiz-progress" aria-live="polite"></p><p id="word-quiz-kind"></p>
+  <p id="word-quiz-question"></p>
+  <div id="word-quiz-tools" class="quiz-tools">
+   <button id="word-quiz-speak" type="button">🔊 Hør ordet</button>
+   <button id="word-quiz-peek" type="button">👀 Se ordet i 4 sekunder</button>
+  </div>
+  <p id="word-quiz-preview" class="quiz-preview" hidden></p>
+  <form id="word-quiz-form" hidden>
+   <label for="word-quiz-answer">Ditt svar</label>
+   <input id="word-quiz-answer" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="45" required>
+   <button type="submit">Sjekk svaret</button>
+  </form>
+  <p id="word-quiz-feedback" role="status" aria-live="polite"></p>
+  <button id="word-quiz-next" type="button" hidden>Neste oppgave →</button>
+ </div>
+</div></section>
       <section class="panel subjects-panel" id="subjects-panel" aria-labelledby="subjects-title"><div class="panel-head"><div><p class="eyebrow">SKOLEFAG</p><h2 id="subjects-title">Fag denne uka</h2></div><span class="section-icon">📖</span></div><div id="subjects-list" class="items"></div></section>
       <section class="panel theme" id="theme-panel" hidden aria-labelledby="theme-title"><div class="panel-head"><div><p class="eyebrow">LITT EKSTRA</p><h2 id="theme-title">Ukas tema</h2></div><span class="section-icon">✨</span></div><p id="theme-content"></p><div id="mission-slot"></div></section>
       <section id="special-panel" class="panel special-panel" aria-labelledby="special-title" hidden>
