@@ -167,3 +167,11 @@ Kommunens offisielle oversikt (https://www.kristiansand.kommune.no/navigasjon/ba
 - Ved `unpublished`, `unavailable`, `unreadable` eller hentefeil får brukeren et tydelig resultatkort med **Åpne skolens nettside**, eventuell trinnside/original-PDF og **Prøv igjen**. Tomme ukeplan- og pakkekort skjules så de ikke framstår som fullstendige. Manglende PDF og nettverksfeil beskrives forskjellig.
 - Dersom en skole ikke tilbyr oppdagbare trinnsider, vises en egen videre-handling til skolens hjemmeside allerede ved trinnvalget. Utgående lenker kommer fra skolekonfigurasjonen eller serverens kilde-URL, og åpnes sikkert i ny fane.
 - 69 automatiserte Node-tester, inkludert egen ren tilstandsmodell og UI-regresjonstester. CSS/layout kontrollert med statisk Chromium-rendering ved 390px/1440px uten horisontal scroll. Kjøring av appens fulle lokale HTTP-flyt var blokkert av nettlesermiljøet; test ekte Netlify Deploy Preview før merge.
+
+## v0.8 – Illustrasjoner og kompaktnotiser
+- AI returnerer `specialContent` for konkrete spesialelementer (eksempel: «Lunde på linja» og «Kunnskapshjørnet») med kilde, sidenummer og flagg for ekte illustrasjon. Ingen spesialelementer -> ingen ekstra seksjon.
+- Klienten viser original-PDF-siden for visuelle elementer med PDF.js fra samme origin. `/api/pdf-preview` er en sikret proxy som kun henter valgt skoles PDF for inneværende uke; den tar **aldri** en fritt angitt PDF-URL. Hvis rendering feiler, vises lenken til PDF.
+- AI spørres eksplisitt om dokumentet er komplett. Antall ukedager alene avgjør ikke status, slik at en fagorganisert plan kan markeres komplett.
+- Delvis status vises som en liten informasjonslinje uten å skyve ukeplanen langt ned.
+- `AI_SCHEMA_VERSION=3` gjør at tidligere lagret innhold tolkes på nytt. Netlify build kjører `scripts/prepare-pdf-viewer.mjs` etter testene for å publisere PDF.js.
+- Original-PDF-er fra skolene kunne ikke lastes ned i utviklingsmiljøet; innhold og bildebokser må kvalitetssikres i Netlify.

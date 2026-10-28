@@ -10,7 +10,7 @@ let calendar=schoolCalendar(new Date(),siteConfig.school.timezone);
 const storageRead=(key)=>{try{return localStorage.getItem(key);}catch{return null;}};
 const storageWrite=(key,value)=>{try{localStorage.setItem(key,value);}catch{}};
 const storageDrop=(key)=>{try{localStorage.removeItem(key);}catch{}};
-const state={school:null,grade:null,availableGrades:null,gradeError:null,day:calendar.weekday,plan:null,loading:false,weather:null,weatherError:null,planError:null,requestId:0,aiPolls:0,aiTimer:null};
+const state={school:null,grade:null,availableGrades:null,gradeError:null,day:calendar.weekday,plan:null,loading:false,weather:null,weatherError:null,planError:null,requestId:0,aiPolls:0,aiTimer:null,specialKey:null};
 const weekDayDate=day=>dayDate(calendar.year,calendar.week,day);
 const titleDay=day=>new Date(`${weekDayDate(day)}T12:00:00Z`).toLocaleDateString('nb-NO',{timeZone:'UTC',day:'numeric',month:'short'});
 const progress=(section,day='all')=>progressKey(state.school.id,state.grade,calendar.year,calendar.week,section,day);
@@ -81,7 +81,7 @@ function renderFeedback(){
   el.hidden=!info;
   $('plan-body').hidden=Boolean(info?.hideContent);
   if(!info)return;
-  el.className=`plan-feedback ${info.kind==='analyzing'?'feedback-analyzing':'feedback-missing'}`;
+  el.className=`plan-feedback ${info.kind==='analyzing'?'feedback-analyzing':info.kind==='partial'?'feedback-partial':'feedback-missing'}`;
   $('feedback-eyebrow').textContent=info.eyebrow;
   $('feedback-title').textContent=info.title;
   $('feedback-description').textContent=info.description;
@@ -114,7 +114,7 @@ function renderContent(){
   const events=p?.days?.[DAYS[state.day]]?.events||[];
   $('day-program').innerHTML=p?.status==='unpublished'?empty('Ingen ukeplan publisert for denne uken.'):
     events.length?events.map(x=>`<div class="event"><span class="event-dot">●</span><span>${x.time?`<small>${safe(x.time)}</small>`:''}${safe(x.title)}</span></div>`).join(''):
-    empty(state.loading?'Henter dagsprogram …':'Ingen dagsprogram kunne tolkes sikkert. Sjekk original-PDF.');
+    empty(state.loading?'Henter dagsprogram …':(p?.status==='ok'&&p?.parser==='ai'?'Ingen dagsprogram er oppgitt for denne dagen.':'Ingen dagsprogram kunne tolkes sikkert. Sjekk original-PDF.'));
   const bag=getBag();
   $('bag-list').innerHTML=bag.length?checklist(bag,'bag',DAYS[state.day]):empty(state.loading?'Henter pakkelisten …':'Ingen spesifikk pakkeliste ble funnet i PDF-en.');
   const hw=p?.homework||[];
@@ -138,7 +138,62 @@ function renderContent(){
   $('goals-panel').hidden=!features.learningGoals||!goals.length;
   $('goals-count').textContent=goals.length;
   $('goals-list').innerHTML=goals.map(x=>`<p>${safe(typeof x==='string'?x:x?.text||x?.detail||'')}</p>`).join('');
+  renderSpecialContent();
   renderWeather();
+}
+function renderSpecialContent(){
+  const p=state.plan, items=Array.isArray(p?.specialContent)?p.specialContent.slice(0,4):[];
+  const panel=$('special-panel');
+  panel.hidden=!items.length;
+  if(!items.length){state.specialKey=null;$('special-items').replaceChildren();return;}
+  const key=[state.school?.id,state.grade,p?.pdf,items.map(x=>[x.title,x.sourcePage,x.hasVisual].join(':')).join('|')].join('::');
+  if(state.specialKey===key)return;
+  state.specialKey=key;
+  $('special-items').innerHTML=items.map((item,index)=>{
+    const page=Number(item.sourcePage);
+    const pageLink=p.pdf&&page>0?`${p.pdf}#page=${page}`:p.pdf;
+    return `<article class="special-card">
+      <div class="special-copy"><p class="special-type">${item.kind==='knowledge'?'💡 KUNNSKAPSHJØRNET':item.kind==='illustration'?'🖼️ FRA PDF-EN':'✨ EKSTRA FRA SKOLEN'}</p>
+      <h3>${safe(item.title)}</h3><p>${safe(item.description)}</p>
+      ${p.pdf?`<a href="${safe(pageLink)}" target="_blank" rel="noopener noreferrer">Se side ${page} i original-PDF ↗</a>`:''}</div>
+      ${item.hasVisual&&p.pdf&&Number.isInteger(page)&&page>=1&&page<=16?`<div class="special-visual" data-special-page="${page}" data-special-index="${index}" role="img" aria-label="Original PDF-side ${page} med illustrasjon"><span>Henter illustrasjonen fra skolens PDF …</span></div>`:''}
+      </article>`;
+  }).join('');
+  if(p.pdf)void renderSpecialPdfPages(key);
+}
+async function renderSpecialPdfPages(key){
+  const targets=[...$('special-items').querySelectorAll('[data-special-page]')];
+  if(!targets.length)return;
+  let pdf;
+  try{
+    const module=await import('/vendor/pdf.mjs');
+    if(state.specialKey!==key)return;
+    module.GlobalWorkerOptions.workerSrc='/vendor/pdf.worker.mjs';
+    const proxy=`/api/pdf-preview?school=${encodeURIComponent(state.school.id)}&grade=${encodeURIComponent(state.grade)}`;
+    const task=module.getDocument({url:proxy,isEvalSupported:false});
+    pdf=await task.promise;
+    for(const target of targets){
+      if(state.specialKey!==key)break;
+      const pageNo=Number(target.dataset.specialPage);
+      if(pageNo>pdf.numPages){target.textContent='Se illustrasjonen i original-PDF-en.';continue;}
+      const page=await pdf.getPage(pageNo);
+      const width=Math.min(600,Math.max(240,target.getBoundingClientRect().width||480));
+      const base=page.getViewport({scale:1}), viewport=page.getViewport({scale:width/base.width});
+      const canvas=document.createElement('canvas');
+      canvas.width=Math.round(viewport.width*Math.min(2,window.devicePixelRatio||1));
+      canvas.height=Math.round(viewport.height* Math.min(2,window.devicePixelRatio||1));
+      canvas.style.width='100%';canvas.style.height='auto';
+      const context=canvas.getContext('2d');
+      if(!context)throw new Error('Nettleseren støtter ikke PDF-lerret');
+      await page.render({canvasContext:context,viewport,transform:canvas.width!==Math.round(viewport.width)?[canvas.width/viewport.width,0,0,canvas.height/viewport.height,0,0]:null}).promise;
+      page.cleanup();
+      if(state.specialKey===key){target.replaceChildren(canvas);target.classList.add('special-rendered');}
+    }
+  }catch(error){
+    if(state.specialKey!==key)return;
+    for(const target of targets)if(!target.querySelector('canvas'))target.textContent='Bildet kunne ikke forhåndsvises. Åpne original-PDF-en via lenken.';
+    console.warn('PDF-bildevisning utilgjengelig:',error?.message);
+  }finally{if(pdf)try{await pdf.destroy();}catch{}}
 }
 function renderWeather(){
   const weatherDay=state.weather?.days?.[weekDayDate(state.day)];

@@ -1,6 +1,6 @@
 [build]
   publish = "public"
-  command = "npm test"
+  command = "npm test && node scripts/prepare-pdf-viewer.mjs"
 
 [functions]
   directory = "netlify/functions"
@@ -17,6 +17,12 @@
 [[redirects]]
   from = "/api/weather"
   to = "/.netlify/functions/weather"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/pdf-preview"
+  to = "/.netlify/functions/pdf-preview"
   status = 200
   force = true
 
