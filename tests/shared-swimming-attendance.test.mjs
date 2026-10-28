@@ -26,7 +26,9 @@ test('Generic swim instruction with no separate arrival remains unscoped',()=>{
  const x=structuredClone(raw);x.attendance=[];x.days[0].events[0].group=null;
  const p=normalizeAIPlan(x,meta);
  assert.equal(p.days.Mandag.events[0].group,undefined);
- assert.deepEqual(p.attendance,[]);
+ assert.deepEqual(p.attendance.map(x=>[x.day,x.group,x.time]),[
+  ['Mandag','Rød gruppe','08:05'],['Tirsdag','Grønn gruppe','08:05']
+ ]); // Explicit PDF appointments are recovered even if AI omits attendance.
 });
 test('A group name and time somewhere on a page is not enough to fabricate a meeting',()=>{
  const bad=[
@@ -38,7 +40,9 @@ test('A group name and time somewhere on a page is not enough to fabricate a mee
  ];
  const x=structuredClone(raw);x.attendance=bad;
  const p=normalizeAIPlan(x,meta);
- assert.deepEqual(p.attendance,[]);
+ assert.deepEqual(p.attendance.map(x=>[x.day,x.group,x.time]),[
+  ['Mandag','Rød gruppe','08:05'],['Tirsdag','Grønn gruppe','08:05']
+ ]); // Explicit PDF appointments are recovered even if AI omits attendance.
 });
 test('Group, time and weekday must be associated, not taken from unrelated lesson',()=>{
  const quoted='Rød gruppe møtes på mandag. Elevene møter kl 08.05 fredag.';
