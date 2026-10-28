@@ -8,7 +8,7 @@ export function groupNamesInText(value){
  const names=new Set();
  const consecutive=new RegExp('\\b(?:'+color+')(?:\\s+(?:gruppe|gruppa))?(?:\\s*(?:,|\\/|\\+|&|og)\\s*(?:'+color+')(?:\\s+(?:gruppe|gruppa))?)+','gi');
  for(const m of text.matchAll(consecutive)){
-  if(!/\\b(?:gruppe|gruppa)\\b/i.test(m[0]))continue;
+  if(!/\b(?:gruppe|gruppa)\b/i.test(m[0]))continue;
   for(const n of m[0].matchAll(new RegExp('\\b('+color+')\\b','gi'))){
    const word=n[1];names.add(word[0].toUpperCase()+word.slice(1)+' gruppe');
   }
