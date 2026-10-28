@@ -101,7 +101,7 @@ function renderContent(){
   if(!state.grade)return;
   const p=state.plan;
   const status=state.loading?'loading':state.planError?'error':p?.status||'loading';
-  $('status-pill').textContent=p?.aiStatus==='processing'?'AI analyserer · foreløpig ukeplan':p?.aiStatus==='ready'?'AI-tolket ukeplan':p?.aiStatus==='failed'?'AI-feil · foreløpig ukeplan':badge(status);
+  $('status-pill').textContent=p?.aiStatus==='processing'?'AI analyserer · foreløpig ukeplan':p?.status==='partial'?'Ukeplan delvis tolket':p?.status==='unreadable'?'PDF kunne ikke tolkes':p?.aiStatus==='ready'?'AI-tolket ukeplan':p?.aiStatus==='failed'?'AI-feil · foreløpig ukeplan':badge(status);
   $('status-pill').className='state-pill '+(p?.aiStatus==='processing'?'state-ai-processing':p?.aiStatus==='ready'?'state-ai-ready':['error','unreadable'].includes(status)?'state-error':['partial','unpublished','unavailable'].includes(status)?'state-warning':'');
   renderFeedback();
   const msg=state.planError||p?.warning;

@@ -21,17 +21,25 @@ export function planFeedback({school=null,grade=null,plan=null,error=null}={}){
     description:`Vi klarte ikke hente informasjon fra ${school.name} akkurat nå. Du kan prøve igjen eller åpne skolens nettside.`,
     showSchool:true,showGrade:Boolean(plan?.source&&plan.source!==school.homepage),showRetry:true,hideContent:true
   };
+  // AI can read scanned PDF images even when PDF.js cannot extract any text.
+  // Never hide an active AI job behind a premature "unreadable PDF" screen.
+  if(plan?.aiStatus==='processing')return {
+    kind:'analyzing',eyebrow:'AI-ANALYSE PÅGÅR',
+    title:'AI analyserer · foreløpig ukeplan',
+    description:plan?.parsedFromPdf===false?'PDF-en har ikke et lesbart tekstlag. AI analyserer originaldokumentet og prøver å hente ut lekser og beskjeder fra sidene.':'Vi leser skolens PDF og sorterer dagsprogram, lekser, pakkeliste og beskjeder. Informasjonen nedenfor er foreløpig og kan endres når analysen er ferdig.',
+    showSchool:false,showGrade:Boolean(plan?.pdf),showRetry:true,hideContent:plan?.parsedFromPdf===false
+  };
   if(plan?.status==='unreadable')return {
     kind:'missing',eyebrow:'PDF KUNNE IKKE LESES',
     title:'Vi fant PDF-en, men klarte ikke lese den',
     description:'Åpne skolens originaldokument for å se dagsprogram, lekser og utstyr. Vi viser ikke en tom ukeplan som om den var komplett.',
     showSchool:true,showGrade:Boolean(plan.pdf),showRetry:true,hideContent:true
   };
-  if(plan?.aiStatus==='processing')return {
-    kind:'analyzing',eyebrow:'AI-ANALYSE PÅGÅR',
-    title:'AI analyserer · foreløpig ukeplan',
-    description:'Vi leser skolens PDF og sorterer dagsprogram, lekser, pakkeliste og beskjeder. Informasjonen nedenfor er foreløpig og kan endres når analysen er ferdig.',
-    showSchool:false,showGrade:false,showRetry:true,hideContent:false
+  if(plan?.status==='partial')return {
+    kind:'missing',eyebrow:'UKEPLANEN ER IKKE KOMPLETT',
+    title:'Vi fant bare deler av ukeplanen',
+    description:'Skolen har publisert en PDF, men vi klarte ikke hente ut en komplett dagsplan. Sjekk originaldokumentet for riktig informasjon.',
+    showSchool:true,showGrade:Boolean(plan?.pdf),showRetry:true,hideContent:false
   };
   return null;
 }
