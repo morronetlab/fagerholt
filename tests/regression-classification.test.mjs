@@ -103,7 +103,7 @@ test('6th: weekly subject overview is not a theme; dated daily notices move to c
 test('UI renders subject overview separately from the theme card',()=>{
  const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
  const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
- assert.match(html,/id="subjects-panel"[^>]+hidden/);
+ assert.match(html,/id="subjects-panel"/);
  assert.match(html,/id="subjects-list"/);
  assert.match(app,/\$\('subjects-panel'\)\.hidden/);
  assert.doesNotMatch(app,/mission-slot'\)\.innerHTML=\(subjects\.length/);

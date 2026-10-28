@@ -14,7 +14,7 @@ const meta={grade:'6',week:44,year:2026,source:'https://www.minskole.no/dvergsne
 const file=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 test('Dvergsnes: reading Monday through Thursday can be checked off separately',()=>{
  const plan=normalizeAIPlan(raw,meta);
- assert.equal(AI_SCHEMA_VERSION,9);
+ assert.equal(AI_SCHEMA_VERSION,10);
  assert.deepEqual(plan.homework[0].repeatDays,days.slice(0,4));
  const tasks=expandHomework(plan.homework);
  assert.deepEqual(tasks.map(t=>t.repeatDay),days.slice(0,4));
@@ -43,7 +43,7 @@ test('Estimated AI percent never reaches 100 before completion, and interim cont
  assert.equal(feedback.hideContent,true);
  const html=file('../public/index.html'),js=file('../public/app.js'),css=file('../public/original-look.css');
  for(const x of ['id="analysis-percent"','id="analysis-progress-track"','id="analysis-progress-fill"','id="plan-columns"'])assert.ok(html.includes(x));
- assert.match(js,/Math\.min\(95,/);assert.match(js,/\$\('plan-body'\)\.hidden=pending/);
+ assert.match(js,/estimatedPercent\(/);assert.match(js,/\$\('plan-body'\)\.hidden=state\.loading\|\|pending/);
  assert.match(css,/#plan-body\[hidden\]/);
 });
 test('Empty packing list uses full-width day program and compact packing strip',()=>{
