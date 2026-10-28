@@ -37,3 +37,9 @@
   to = "/.netlify/functions/grades"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/homework-helper"
+  to = "/.netlify/functions/homework-helper"
+  status = 200
+  force = true

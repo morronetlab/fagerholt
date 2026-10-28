@@ -91,6 +91,21 @@
   </main>
   <footer>Ukeplanen · <span id="footer-school">Kristiansand</span> · Skolevalg og avkrysninger lagres kun i nettleseren. <span class="footer-meta"><a href="https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/grunnskole/" target="_blank" rel="noopener noreferrer">Skoleoversikten ↗</a> · <a href="mailto:mortenronn@gmail.com?subject=Feilrapport%20Ukeplanen">Rapporter feil: mortenronn@gmail.com</a> · <a id="git-version" href="#" target="_blank" rel="noopener noreferrer" hidden>Git-versjon</a></span></footer>
 </div>
+<div id="helper-modal" class="helper-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="helper-title">
+  <section class="helper-dialog">
+    <button type="button" data-helper-close class="helper-close" aria-label="Lukk leksehjelper">✕</button>
+    <p class="eyebrow">✨ LEKSEHJELPER</p><h2 id="helper-title">Vi finner ut av det sammen!</h2>
+    <p id="helper-task" class="helper-task"></p>
+    <div class="helper-actions">
+      <button type="button" data-helper-mode="explain">💡 Forklar oppgaven</button>
+      <button type="button" data-helper-mode="hint">🧩 Gi meg et hint</button>
+      <button type="button" data-helper-mode="practice">✏️ Lag øvingsoppgaver</button>
+    </div>
+    <p id="helper-status" role="status" aria-live="polite"></p>
+    <div id="helper-result" class="helper-result" aria-live="polite">Velg hvordan du vil ha hjelp.</div>
+    <p class="helper-small">AI kan ta feil. Ikke skriv inn personopplysninger. Leksehjelperen skal hjelpe deg å lære, ikke gjøre leksen for deg.</p>
+  </section>
+</div>
 <script type="module" src="/app.js"></script>
 </body>
 </html>

@@ -1,4 +1,5 @@
 import {siteConfig} from './site-config.mjs';
+import {openHomeworkHelper,initHomeworkHelper} from './homework-helper.mjs';
 import {schoolCalendar,dayDate,DAYS} from './shared/calendar.mjs';
 import {schoolSelectionKey,validSchool,gradeSelectionKey,validGrade,progressKey} from './shared/selection.mjs';
 import {planFeedback} from './shared/plan-feedback.mjs';
@@ -90,6 +91,7 @@ function checklist(items,section,day='all'){
     const dueBadge=due?`<span class="homework-due">📅 ${safe(due)}</span>`:'';
     const repeatBadge=section==='homework'&&repeatDayLabel(item)?`<span class="homework-repeat">${safe(repeatDayLabel(item))}</span>`:'';
     const displayLabel=section==='bag'?packingText(label):label;
+    if(section==='homework')return `<div class="homework-assist-row"><label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${dueBadge}${repeatBadge}${meta}${safe(displayLabel)}${hint}</span></label><button type="button" class="helper-open" data-helper-task="${i}" aria-label="Få hjelp til denne leksen">✨ Få hjelp</button></div>`;
     return `<label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${dueBadge}${repeatBadge}${meta}${safe(displayLabel)}${hint}</span></label>`;
   }).join('');
 }
@@ -426,6 +428,7 @@ async function showBuildVersion(){
   }catch{node.hidden=true;}
 }
 function boot(){
+  initHomeworkHelper();
   void showBuildVersion();
   document.title=`${brand.title} · Kristiansand`;
   document.documentElement.style.setProperty('--brand',brand.color);
@@ -443,6 +446,11 @@ function boot(){
     const selectedSchool=e.target.closest('[data-school]');if(selectedSchool){selectSchool(selectedSchool.dataset.school);return;}
     const grade=e.target.closest('[data-grade]');if(grade){selectGrade(grade.dataset.grade);return;}
     const day=e.target.closest('[data-day]');if(day){state.day=Number(day.dataset.day);renderShell();return;}
+    const tutor=e.target.closest('[data-helper-task]');if(tutor){
+      const item=expandHomework(state.plan?.homework||[])[Number(tutor.dataset.helperTask)];
+      if(item)openHomeworkHelper({text:item.text,subject:item.subject,grade:state.grade});
+      return;
+    }
     if(e.target.closest('#undo-mission'))setChecked('mission',0,'all',false);
     const widen=e.target.closest('[data-special-widen]');if(widen){
       const index=Number(widen.dataset.specialIndex),axis=widen.dataset.specialWiden;
