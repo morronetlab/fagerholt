@@ -33,7 +33,7 @@ export function quizItems(entries){
   const category=typeof entry==='string'?'ukas ord':key(entry?.category);
   const language=/(?:engelsk|gloser)/.test(category)?'en':/(?:ukas ord|ukens ord|øveord|ord å øve på)/.test(category)?'nb':null;
   if(!language)continue;
-  const raw=normalize(typeof entry==='string'?entry:entry?.text).replace(headings,'');
+  const raw=String(typeof entry==='string'?entry:entry?.text||'').normalize('NFC').replace(/[ \t]+/g,' ').trim().replace(headings,'');
   if(!raw||invalid.test(raw))continue;
   const pieces=raw.split(/[,;\n•|]+/).map(normalize).filter(Boolean);
   const compact=pieces.length===1?raw.split(/\s+/):[];
