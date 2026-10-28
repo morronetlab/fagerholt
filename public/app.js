@@ -318,7 +318,7 @@ async function reload({quiet=false,statusOnly=quiet}={}){
   // A status check never queues another AI job or re-runs the PDF parser.
   // Keep the regular plan URL unchanged for new loads and existing bookmarks.
   const requests=[statusOnly
-    ?fetchJSON(`/api/plan?school=${encodeURIComponent(schoolId)}&grade=${encodeURIComponent(grade)}&statusOnly=1`,60000)
+    ?fetchJSON(state.plan?.jobId?`/api/ai-status?job=${encodeURIComponent(state.plan.jobId)}`:`/api/plan?school=${encodeURIComponent(schoolId)}&grade=${encodeURIComponent(grade)}&statusOnly=1`,12000)
     :fetchJSON(`/api/plan?school=${encodeURIComponent(schoolId)}&grade=${encodeURIComponent(grade)}`,60000)];
   if(features.weather&&!quiet)requests.push(fetchJSON(`/api/weather?school=${encodeURIComponent(schoolId)}`));
   const [plan,weather]=await Promise.allSettled(requests);
@@ -337,12 +337,12 @@ async function reload({quiet=false,statusOnly=quiet}={}){
   state.loading=false;
   renderContent();
   // Keep the rule-based view visible until the background AI result is ready.
-  if(state.plan?.aiStatus==='processing'&&state.aiPolls<20){
+  if(state.plan?.aiStatus==='processing'&&state.aiPolls<240){
     state.aiPolls++;
     state.aiTimer=setTimeout(()=>{
       state.aiTimer=null;
       if(state.grade===grade&&state.school?.id===schoolId&&state.requestId===id)reload({quiet:true,statusOnly:true});
-    },15000);
+    },3000);
   }else state.aiPolls=0;
 }
 function cancelRequests(){

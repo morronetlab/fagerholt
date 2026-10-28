@@ -68,6 +68,6 @@ test('AI wait visual shows actual elapsed time, not fictional numeric percent',(
  assert.match(html,/id="analysis-progress"/);assert.match(html,/id="analysis-elapsed"/);
  assert.match(html,/id="analysis-progress-track"/);assert.match(html,/id="day-group-summary"/);
  assert.match(app,/updateAnalysisClock/);assert.match(app,/classList\.toggle\('ai-pending',pending\)/);
- assert.match(app,/state\.aiPolls<20/);assert.match(css,/analysis-progress/);
+ assert.match(app,/state\.aiPolls<240/);assert.match(css,/analysis-progress/);
  assert.ok(AI_SCHEMA_VERSION>=6);
 });
