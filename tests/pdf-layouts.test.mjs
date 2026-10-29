@@ -62,3 +62,29 @@ test('No guessed gymtøy based on gym subject alone',()=>{
  assert.deepEqual(data.days.Tirsdag.bring,[]);
  assert.deepEqual(data.days.Onsdag.bring.map(x=>x.label),['Gymtøy']);
 });
+
+test('Fagerholt 4, weeks 35–36: Til torsdag applies to the English homework cell only',()=>{
+ // Actual school PDFs have a separate "Til torsdag:" line above "ENGELSK:"
+ // in the Thursday homework cell. Coordinates below model that source layout.
+ const words=[item('Dag',20,80),item('På skolen',150,80),item('I lekse',540,80)];
+ for(let i=0;i<5;i++){
+   const y=130+i*140;
+   words.push(item(DAYS[i],20,y),item('Norsk: Verb',150,y+12));
+ }
+ words.push(item('NORSK:',540,147),item('Les teksten i Zeppelin lesebok',540,165));
+ words.push(item('Til torsdag:',540,565),item('ENGELSK:',540,583),
+   item('Les 10 minutter i den engelske boka',540,600));
+ // Synthetic guard: a later homework cell must not inherit Thursday.
+ words.push(item('Matte: Selvstendig fredagsoppgave',540,708));
+ const plan=parse(words,'4');
+ assert.equal(plan.layout,'day-rows');
+ const english=plan.homework.find(x=>/10 minutter i den engelske boka/i.test(x.text));
+ assert.ok(english,'English homework from Thursday should be retained');
+ assert.equal(english.dueDay,'Torsdag');
+ const norwegian=plan.homework.find(x=>/Zeppelin lesebok/i.test(x.text));
+ assert.ok(norwegian);
+ assert.equal(norwegian.dueDay,null,'Do not infer the deadline from another cell');
+ const friday=plan.homework.find(x=>/Selvstendig fredagsoppgave/i.test(x.text));
+ assert.ok(friday);
+ assert.equal(friday.dueDay,null,'The next row must not inherit Thursday');
+});
