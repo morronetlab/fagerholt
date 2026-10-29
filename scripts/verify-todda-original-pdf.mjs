@@ -16,7 +16,7 @@ assert.ok(pages.length>=1,'Original PDF has a readable text layer');
 const cells=extractHomeworkDeadlineCells(pages);
 console.log('Official source PDF cells:',JSON.stringify(cells.map(({subject,dueDay,text,sourcePage,cell})=>
  ({subject,dueDay,text:text.slice(0,130),sourcePage,cell})),null,2));
-for(const [subject,day] of [['Naturfag','Torsdag'],['Engelsk','Torsdag'],['Matte','Torsdag'],['Norsk','Fredag']]){
+for(const [subject,day] of [['Naturfag','Tirsdag'],['Engelsk','Tirsdag'],['Matte','Torsdag'],['Norsk','Fredag']]){
  const matching=cells.filter(t=>t.subject?.toLocaleLowerCase('nb-NO')===subject.toLocaleLowerCase('nb-NO'));
  assert.equal(matching.length,1,'Original PDF must contain one '+subject+' assignment');
  assert.equal(matching[0].dueDay,day,'Original PDF column date for '+subject);

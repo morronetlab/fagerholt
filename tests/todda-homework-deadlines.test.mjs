@@ -6,12 +6,12 @@ import {analyzePdfPages} from '../lib/plan-core.mjs';
 
 // The original official PDF is "UKEPLAN 6.TRINN - UKE 44", page 1:
 // https://www.minskole.no/DynamicContent//Documents/863-todda-Uke-44-.-c350c815-359d.pdf
-// Its four columns actually say: Til torsdag | Til onsdag | Til torsdag | Til fredag.
+// Its four columns actually say: Til tirsdag | Til onsdag | Til torsdag | Til fredag.
 // These de-identified coordinates reproduce the real visual layout (not a binary PDF).
 const tok=(text,x,y)=>({text,x,y,width:text.length*5});
 const page=()=>({width:1000,height:1450,items:[
  tok('LEKSER UKE 44',110,780),
- tok('Til torsdag',115,810),tok('Til onsdag',315,810),tok('Til torsdag',515,810),tok('Til fredag',715,810),
+ tok('Til tirsdag',115,810),tok('Til onsdag',315,810),tok('Til torsdag',515,810),tok('Til fredag',715,810),
  tok('Naturfag',120,850),tok('Les teksten du har fått',120,885),
  tok('utdelt og svar på',120,905),tok('spørsmålene.',120,925),tok('Skriv svarene i lekseboka.',120,960),
  tok('Engelsk:',120,1010),tok('Les arket du har fått utdelt.',120,1040),
@@ -36,7 +36,7 @@ test('Todda: duplicate Til torsdag columns remain separate, Wednesday is homewor
  const cells=extractHomeworkDeadlineCells([page()]);
  assert.equal(cells.length,4);
  assert.deepEqual(cells.map(c=>[c.subject,c.dueDay]),[
-  ['Naturfag','Torsdag'],['Engelsk','Torsdag'],['Matte','Torsdag'],['Norsk','Fredag']]);
+  ['Naturfag','Tirsdag'],['Engelsk','Tirsdag'],['Matte','Torsdag'],['Norsk','Fredag']]);
  assert.deepEqual(cells.map(c=>c.cell),[0,0,2,3]);
  assert.doesNotMatch(cells.map(c=>c.text).join(' '),/leksefri|halloween|ukelekse/i);
  const weekly=extractUndatedWeeklyHomework([page()]);
@@ -44,7 +44,7 @@ test('Todda: duplicate Til torsdag columns remain separate, Wednesday is homewor
 });
 test('Fallback uses physical cell deadlines and never dates a weekly homework task',()=>{
  const plan=analyzePdfPages([page()],'6',meta().pdf,44,2026,meta().source);
- for(const [subject,day] of [['Naturfag','Torsdag'],['Engelsk','Torsdag'],['Matte','Torsdag'],['Norsk','Fredag'],['Sosialt',null]]){
+ for(const [subject,day] of [['Naturfag','Tirsdag'],['Engelsk','Tirsdag'],['Matte','Torsdag'],['Norsk','Fredag'],['Sosialt',null]]){
   const task=plan.homework.find(t=>t.subject===subject);
   assert.ok(task,'Missing '+subject+' homework');
   assert.equal(task.dueDay,day,'Incorrect due date for '+subject);
@@ -61,7 +61,7 @@ test('AI loses or invents due dates: column evidence recovers and corrects them'
   assignment('Norsk','Les minimum 20 minutter i selvvalgt bok. Skriv et kort sammendrag av det du har lest','Torsdag')
  ];
  const plan=normalizeAIPlan(raw,meta());
- for(const [subject,expected] of [['Naturfag','Torsdag'],['Engelsk','Torsdag'],['Matte','Torsdag'],['Norsk','Fredag']]){
+ for(const [subject,expected] of [['Naturfag','Tirsdag'],['Engelsk','Tirsdag'],['Matte','Torsdag'],['Norsk','Fredag']]){
   const homework=plan.homework.filter(t=>t.subject===subject);
   assert.equal(homework.length,1,'No duplicates for '+subject);
   assert.equal(homework[0].dueDay,expected);
@@ -73,7 +73,7 @@ test('Missing AI tasks are restored from source cells instead of silently disapp
   assignment('Norsk','Les minimum 20 minutter i selvvalgt bok. Skriv et kort sammendrag av det du har lest',null)
  ]},meta());
  assert.deepEqual(['Naturfag','Engelsk','Matte','Norsk'].map(subject=>
-  plan.homework.find(x=>x.subject===subject)?.dueDay),['Torsdag','Torsdag','Torsdag','Fredag']);
+  plan.homework.find(x=>x.subject===subject)?.dueDay),['Tirsdag','Tirsdag','Torsdag','Fredag']);
 });
 test('A weekday elsewhere on the PDF never assigns a due date to an unrelated task',()=>{
  const cells=extractHomeworkDeadlineCells([page()]);
@@ -99,4 +99,18 @@ test('Weekly homework with null dueDay is not mistaken for an already-matched da
  assert.equal(source.length,1);
  const plan=normalizeAIPlan(empty(),meta());
  assert.equal(plan.homework.filter(t=>t.subject==='Sosialt'&&t.dueDay===null).length,1);
+});
+
+test('Repeated due-date labels remain independent physical columns',()=>{
+ const modified=page();
+ modified.items=modified.items.map(t=>t.text==='Til tirsdag'&&t.x===115?{...t,text:'Til torsdag'}:t);
+ const cells=extractHomeworkDeadlineCells([modified]);
+ assert.equal(cells.length,4);
+ assert.deepEqual(cells.map(x=>x.dueDay),['Torsdag','Torsdag','Torsdag','Fredag']);
+});
+test('Split PDF.js glyphs form actual subject headings',()=>{
+ const modified=page();
+ modified.items=modified.items.filter(x=>!(x.text==='Matte'&&x.x===520));
+ modified.items.push(tok('M',520,850),tok('atte',525,850));
+ assert.equal(extractHomeworkDeadlineCells([modified]).find(x=>x.cell===2)?.subject,'Matte');
 });
