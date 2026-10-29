@@ -95,6 +95,19 @@ test('English words remain preferred whenever both source languages exist',()=>{
  assert.equal(items.filter(x=>x.language==='nb').length,4);
 });
 
+test('Exact fragmented text structure observed in original PDF.js source is recovered',()=>{
+ const p=page();
+ p.items=p.items.filter(x=>x.text!=='Ukas øveord:'&&x.text!=='skjegg');
+ p.items.push(
+  {text:'Ukas',x:453,y:91,width:31},
+  {text:'øve',x:489,y:91,width:22},
+  {text:'ord:',x:513,y:91,width:24},
+  {text:'s',x:453,y:138,width:8},
+  {text:'kjegg',x:461,y:138,width:31}
+ );
+ assert.deepEqual(quizItems(extractNorwegianWordLists([p])).map(x=>x.word),expected);
+});
+
 test('Split heading across adjacent PDF tokens is recognized',()=>{
  const p=page();p.items=p.items.filter(x=>x.text!=='Ukas øveord:');
  p.items.push(token('Ukas',482,91),token('øveord:',528,91));
