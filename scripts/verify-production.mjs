@@ -25,6 +25,27 @@ async function inspect(school,candidates){
  let plan;
  try{
   plan=await getJson('/api/plan?school='+school+'&grade='+grade);
+  // Poll only the signed read-only status endpoint; no repeated PDF parsing
+  // and no extra AI-job dispatches.
+  if(plan.aiStatus==='processing'&&plan.jobId){
+   for(let attempt=0;attempt<3;attempt++){
+    await new Promise(resolve=>setTimeout(resolve,8000));
+    const status=await getJson('/api/ai-status?job='+encodeURIComponent(plan.jobId));
+    if(status.aiStatus==='ready'){plan=status;break;}
+    if(status.aiStatus==='failed'){plan.aiStatus='failed';break;}
+   }
+  }
+  if(school==='sjostrand'&&grade==='2'){
+   const homework=(plan.homework||[]).map(x=>x.text||'').join(' ');
+   const wednesday=(plan.dayNotes?.Onsdag||[]).map(x=>x.text||'').join(' ');
+   const friday=(plan.days?.Fredag?.bring||[]).map(x=>x.label||'').join(' ');
+   const vaccineOk=/vaksin/i.test(wednesday);
+   const shoesOk=/gymsko/i.test(friday);
+   const homeworkClean=!/vaksin|gymsko/i.test(homework);
+   checks.push({type:'practical-classification',school,grade,vaccineOnWednesday:vaccineOk,shoesOnFriday:shoesOk,notInHomework:homeworkClean});
+   if(plan.aiStatus==='ready'&&(!vaccineOk||!shoesOk||!homeworkClean))
+    errors.push('sjostrand 2: practical vaccine/gymsko information placed incorrectly');
+  }
   checks.push({type:'plan',school,grade,status:plan.status,ai:plan.aiStatus||null,
    week:plan.week,year:plan.year,homework:plan.homework?.length||0,vocabulary:plan.vocabulary?.length||0});
   if(plan.week!==current.week||plan.year!==current.year)errors.push(school+' '+grade+': wrong requested school week');
@@ -39,6 +60,12 @@ async function inspect(school,candidates){
   if(String.fromCharCode(...bytes.slice(0,4))!=='%PDF')throw Error('Original source is not a PDF');
   const pages=await pdfPages(bytes);
   const sourceWords=quizItems(extractEnglishGlossaries(pages)).filter(x=>x.language==='en');
+  const sourceText=pages.flatMap(p=>p.items.map(x=>x.text)).join(' ');
+  if(school==='sjostrand'&&grade==='2'&&/(?:ukas ord|ukens ord|øveord)/i.test(sourceText)){
+   const hasNorwegian=(plan.vocabulary||[]).some(x=>/ukas ord|ukens ord|øveord/i.test(x.category||''));
+   checks.push({type:'norwegian-wordlist',school,grade,pdfHasHeading:true,planHasWords:hasNorwegian});
+   if(!hasNorwegian)warnings.push('Sjøstrand 2: original PDF contains a Norwegian word-list heading, but live plan has no such vocabulary');
+  }
   checks.push({type:'source',school,grade,pages:pages.length,textTokens:pages.reduce((n,p)=>n+p.items.length,0),englishPairs:sourceWords.length});
   if(sourceWords.length){
    if(plan.aiStatus==='processing'||plan.aiStatus==='failed'){
