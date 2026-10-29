@@ -8,7 +8,7 @@ const base={days:[],homework:[],packing:[],notices:[{day:null,text:'Husk markeri
 const meta={grade:'6',week:44,year:2026,source:'https://www.minskole.no/presteheia/seksjon/1234',pdf:'https://www.minskole.no/DynamicContent/Documents/860-presteheia-Ukeplan-44-Dyreheia-(1)-de95fb1b-bbf7.pdf',pageTexts:[quote],pageCount:1};
 const item=(title,visualRegion)=>({title,description:'Innhold fra spesialelement',kind:'knowledge',hasVisual:true,visualRegion,...source});
 test('Only narrow bounded crops may be displayed, never the entire original PDF page',()=>{
- assert.equal(AI_SCHEMA_VERSION,15);
+ assert.equal(AI_SCHEMA_VERSION,16);
  assert.ok(AI_SCHEMA.properties.specialContent.items.properties.visualRegion);
  assert.deepEqual(normalizeVisualRegion({x:50,y:120,width:400,height:260}),{x:50,y:120,width:400,height:260});
  for(const x of [null,{x:0,y:0,width:1000,height:1000},{x:-1,y:0,width:400,height:200},{x:700,y:500,width:400,height:600},{x:50.5,y:20,width:250,height:200},{x:0,y:0,width:80,height:900}])assert.equal(normalizeVisualRegion(x),null);
