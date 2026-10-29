@@ -88,6 +88,9 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
           const store=await storeFactory();
           const cached=await store.get(key,{type:'json',consistency:'strong'});
           if(cached?.parser==='ai'&&(cached.schoolId===school.id||(school.id==='fagerholt'&&!cached.schoolId))&&cached.grade===grade&&cached.week===week&&cached.year===year&&cached.pdf===pdf.url){
+            // A read-only status check never parses the PDF; when the browser
+            // receives ready without source verification, it reloads /api/plan.
+            if(statusOnly)return reply({...base,...cached,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,aiStatus:'ready'});
             let ready=cached;
             // AI results cached before source-verified deadlines are still
             // repairable. Validate once against the original PDF coordinates,
