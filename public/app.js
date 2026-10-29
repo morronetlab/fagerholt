@@ -1,4 +1,6 @@
 import {siteConfig} from './site-config.mjs';
+import {initFamilyUI} from './family-ui.mjs';
+import {childProgressKey} from './shared/family-core.mjs';
 import {smartDayChoice} from './shared/smart-day.mjs';
 import {initWordQuiz,renderWordQuiz,quizItems} from './shared/word-quiz.mjs';
 import {openHomeworkHelper,initHomeworkHelper} from './homework-helper.mjs';
@@ -16,6 +18,7 @@ import {estimateAiSeconds,estimatedPercent} from './shared/ai-estimate.mjs';
 const $ = id=>document.getElementById(id);
 const safe=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const {brand,features}=siteConfig;
+let familyUI=null;
 let calendar=schoolCalendar(new Date(),siteConfig.school.timezone);
 let actualCalendar=calendar;
 let viewingNextWeek=false;
@@ -24,10 +27,10 @@ const currentChoice=()=>smartDayChoice(new Date(),siteConfig.school.timezone);
 const storageRead=(key)=>{try{return localStorage.getItem(key);}catch{return null;}};
 const storageWrite=(key,value)=>{try{localStorage.setItem(key,value);}catch{}};
 const storageDrop=(key)=>{try{localStorage.removeItem(key);}catch{}};
-const state={school:null,grade:null,availableGrades:null,gradeError:null,day:calendar.weekday,plan:null,loading:false,weather:null,weatherError:null,planError:null,requestId:0,aiPolls:0,aiTimer:null,statusChecking:false,analysisStartedAt:null,analysisTicker:null,specialKey:null,specialRenderId:0,expandedSpecial:new Set(),specialAdjustments:new Map()};
+const state={profileId:null,school:null,grade:null,availableGrades:null,gradeError:null,day:calendar.weekday,plan:null,loading:false,weather:null,weatherError:null,planError:null,requestId:0,aiPolls:0,aiTimer:null,statusChecking:false,analysisStartedAt:null,analysisTicker:null,specialKey:null,specialRenderId:0,expandedSpecial:new Set(),specialAdjustments:new Map()};
 const weekDayDate=day=>dayDate(calendar.year,calendar.week,day);
 const titleDay=day=>new Date(`${weekDayDate(day)}T12:00:00Z`).toLocaleDateString('nb-NO',{timeZone:'UTC',day:'numeric',month:'short'});
-const progress=(section,day='all')=>progressKey(state.school.id,state.grade,calendar.year,calendar.week,section,day);
+const progress=(section,day='all')=>state.profileId?childProgressKey({id:state.profileId,school:state.school.id,grade:state.grade},calendar.year,calendar.week,section,day):progressKey(state.school.id,state.grade,calendar.year,calendar.week,section,day);
 function isChecked(section,index,day='all'){
   try{return Boolean(JSON.parse(storageRead(progress(section,day))||'{}')[index]);}catch{return false;}
 }
@@ -61,17 +64,20 @@ function renderGradeChoices(){
   if(state.school)$('grade-school-link').href=state.school.homepage;
 }
 function renderShell(){
-  const hasSchool=Boolean(state.school),chosen=Boolean(state.grade&&hasSchool);
-  $('school-gate').hidden=hasSchool;
-  $('grade-gate').hidden=!hasSchool||chosen;
-  $('app-view').hidden=!chosen;
-  $('change-school').hidden=!hasSchool;
-  $('change-grade').hidden=!chosen;
-  $('mobile-selection-menu').hidden=!hasSchool;
-  $('mobile-change-grade').hidden=!chosen;
-  if(!hasSchool)$('mobile-selection-menu').open=false;
-  $('footer-school').textContent=state.school?.name||'Kristiansand';
-  if(!hasSchool)return;
+  const hasSchool=Boolean(state.school),chosen=Boolean(state.grade&&hasSchool),inFamily=Boolean(familyUI?.isActive());
+  $('family-view').hidden=!inFamily;
+  $('family-toggle').setAttribute('aria-pressed',String(inFamily));
+  $('family-toggle').textContent=inFamily?'← Min klasse':'⌂ Familien';
+  $('school-gate').hidden=inFamily||hasSchool;
+  $('grade-gate').hidden=inFamily||!hasSchool||chosen;
+  $('app-view').hidden=inFamily||!chosen;
+  $('change-school').hidden=inFamily||!hasSchool;
+  $('change-grade').hidden=inFamily||!chosen;
+  $('mobile-selection-menu').hidden=inFamily||!hasSchool;
+  $('mobile-change-grade').hidden=inFamily||!chosen;
+  if(inFamily||!hasSchool)$('mobile-selection-menu').open=false;
+  $('footer-school').textContent=inFamily?'Familieoversikt':state.school?.name||'Kristiansand';
+  if(inFamily||!hasSchool)return;
   if(!chosen){
     $('gate-school').textContent=state.school.name;
     renderGradeChoices();
@@ -194,7 +200,7 @@ function renderContent(){
   $('bag-list').innerHTML=bag.length?checklist(bag,'bag',DAYS[state.day]):empty(state.loading?'Henter pakkelisten …':'Ingen ekstra utstyr oppgitt for denne dagen.');
   $('plan-columns').classList.toggle('bag-empty',!bag.length&&!state.loading);
   const vocabulary=Array.isArray(p?.vocabulary)?p.vocabulary:[];
-  renderWordQuiz(vocabulary,{school:state.school?.id,grade:state.grade,week:calendar.week,year:calendar.year});
+  renderWordQuiz(vocabulary,{school:state.school?.id,grade:state.grade,week:calendar.week,year:calendar.year,...(state.profileId?{childId:state.profileId}:{})});
   const quizVocabulary=quizItems(vocabulary);
   const englishWords=quizVocabulary.filter(x=>x.language==='en');
   const norwegianWords=quizVocabulary.filter(x=>x.language==='nb');
@@ -414,7 +420,7 @@ function cancelRequests(){
 }
 function selectSchool(id,{restore=false}={}){
   if(!validSchool(id,siteConfig.schools))return;
-  cancelRequests();state.school=siteConfig.schools[id];state.grade=null;
+  cancelRequests();state.profileId=null;state.school=siteConfig.schools[id];state.grade=null;
   state.availableGrades=null;state.gradeError=null;
   state.plan=null;state.planError=null;state.weather=null;state.weatherError=null;
   storageWrite(schoolSelectionKey(),id);
@@ -438,7 +444,7 @@ async function loadSchoolGrades(schoolId,restore=false){
   renderShell();
 }
 function clearSchool(){
-  cancelRequests();state.school=null;state.grade=null;state.availableGrades=null;state.gradeError=null;
+  cancelRequests();state.profileId=null;state.school=null;state.grade=null;state.availableGrades=null;state.gradeError=null;
   state.plan=null;state.planError=null;state.weather=null;state.weatherError=null;
   storageDrop(schoolSelectionKey());
   $('school-search').value='';renderSchoolChoices();renderShell();
@@ -448,10 +454,10 @@ function selectGrade(grade){
   storageWrite(gradeSelectionKey(state.school.id),grade);
   const choice=currentChoice();
   viewingNextWeek=false;dayWasSelected=false;calendar=schoolCalendar(new Date(),siteConfig.school.timezone);
-  state.aiPolls=0;state.grade=grade;state.day=choice.day;renderShell();reload();
+  state.aiPolls=0;state.profileId=null;state.grade=grade;state.day=choice.day;renderShell();reload();
 }
 function clearGrade(){
-  cancelRequests();state.grade=null;state.plan=null;state.weather=null;state.planError=null;
+  cancelRequests();state.profileId=null;state.grade=null;state.plan=null;state.weather=null;state.planError=null;
   storageDrop(gradeSelectionKey(state.school.id));renderShell();
 }
 async function showBuildVersion(){
@@ -468,7 +474,27 @@ async function showBuildVersion(){
     node.hidden=false;
   }catch{node.hidden=true;}
 }
+function openFamilyProfile(profile){
+  const school=siteConfig.schools[profile.school];
+  if(!school)return;
+  cancelRequests();
+  state.school=school;state.grade=profile.grade;state.profileId=profile.id;
+  state.availableGrades=[{code:profile.grade}];state.gradeError=null;
+  state.plan=null;state.loading=true;state.planError=null;state.weather=null;state.weatherError=null;
+  viewingNextWeek=false;dayWasSelected=false;
+  calendar=schoolCalendar(new Date(),school.timezone);
+  state.day=currentChoice().day;state.aiPolls=0;
+  storageWrite(schoolSelectionKey(),profile.school);
+  storageWrite(gradeSelectionKey(profile.school),profile.grade);
+  familyUI.leave();
+  renderShell();reload();
+}
 function boot(){
+  familyUI=initFamilyUI({onModeChange:renderShell,onOpenProfile:openFamilyProfile,onOpenSingle:renderShell});
+  $('family-toggle').addEventListener('click',()=>{
+    if(familyUI.isActive())familyUI.leave();
+    else {cancelRequests();familyUI.enter();}
+  });
   initHomeworkHelper();
   initWordQuiz();
   $('back-this-week').addEventListener('click',()=>{viewingNextWeek=false;dayWasSelected=true;calendar=schoolCalendar(new Date(),siteConfig.school.timezone);state.day=calendar.weekday;renderShell();reload();});
@@ -527,7 +553,8 @@ function boot(){
   $('reload').addEventListener('click',reload);
   $('feedback-retry').addEventListener('click',()=>state.plan?.aiStatus==='processing'?reload({quiet:true,statusOnly:true}):reload());
   const savedSchool=storageRead(schoolSelectionKey());
-  if(validSchool(savedSchool,siteConfig.schools))selectSchool(savedSchool,{restore:true});
+  if(familyUI.hasProfiles())familyUI.enter();
+  else if(validSchool(savedSchool,siteConfig.schools))selectSchool(savedSchool,{restore:true});
   else renderShell();
   // If a tablet or fridge display stays open, refresh on week/date rollover.
   setInterval(()=>{
@@ -536,8 +563,10 @@ function boot(){
       calendar=next;viewingNextWeek=false;dayWasSelected=false;state.day=currentChoice().day;
       $('week-label').textContent=`UKE ${next.week}`;
       $('today').textContent=new Date().toLocaleDateString('nb-NO',{timeZone:siteConfig.school.timezone,weekday:'long',day:'numeric',month:'long'});
-      if(state.grade){renderShell();reload();}
-    }else if(state.grade)reload();
+      if(familyUI?.isActive()){renderShell();familyUI.refresh();}
+      else if(state.grade){renderShell();reload();}
+    }else if(familyUI?.isActive())familyUI.refresh();
+    else if(state.grade)reload();
   },60*60*1000);
 }
 boot();

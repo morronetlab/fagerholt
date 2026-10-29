@@ -2,7 +2,7 @@
 const norm=s=>String(s??'').normalize('NFC').toLocaleLowerCase('nb-NO').trim();
 export const practiceRoundId=r=>JSON.stringify([r?.language,r?.kind,norm(r?.word),norm(r?.translation)]);
 export function practiceKey(context,language,items){
- const scope=[context?.school,context?.grade,context?.year,context?.week,language].map(x=>encodeURIComponent(String(x??'')));
+ const scope=[context?.school,context?.grade,context?.year,context?.week,language,...(context?.childId?['child',context.childId]:[])].map(x=>encodeURIComponent(String(x??'')));
  const content=JSON.stringify((items||[]).filter(x=>x.language===language).map(x=>[norm(x.word),norm(x.translation),!!x.fromPdf]));
  let hash=2166136261;
  for(let i=0;i<content.length;i++)hash=Math.imul(hash^content.charCodeAt(i),16777619)>>>0;
