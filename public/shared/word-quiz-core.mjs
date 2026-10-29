@@ -1,5 +1,5 @@
 /** PDF-grounded Norwegian and English word exercises. No AI or invented definitions. */
-const headings=/^(?:ukas ord|ukens ord|engelske ord|engelske gloser|gloser|øveord|ord å øve på)\s*:?\s*/i;
+const headings=/^(?:ukas ord|ukens ord|ukas øveord|ukens øveord|engelske ord|engelske gloser|gloser|øveord|ord å øve på)\s*:?\s*/i;
 const invalid=/\b(?:læringsmål|læringsmal|tema|kompetansemål|beskjeder|arbeidsmål)\b/i;
 const word=/^[\p{L}]+(?:['-][\p{L}]+)*(?: [\p{L}]+(?:['-][\p{L}]+)*){0,2}$/u;
 const shortWord=/^[\p{L}]+(?:['-][\p{L}]+)*$/u;

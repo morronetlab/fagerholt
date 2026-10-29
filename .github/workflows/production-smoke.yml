@@ -5,6 +5,9 @@ on:
     paths:
       - 'scripts/verify-production.mjs'
       - '.github/workflows/production-smoke.yml'
+      - 'lib/norwegian-word-lists.mjs'
+      - 'lib/ai-plan.mjs'
+      - 'lib/plan-core.mjs'
 jobs:
   smoke:
     runs-on: ubuntu-latest
