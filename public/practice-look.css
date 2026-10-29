@@ -1,0 +1,49 @@
+/* Øvestudio · warm playful visuals layered on the existing white-label UI. */
+.logo .brand-mark{width:52px;height:52px;border-radius:17px;display:grid;place-items:center;background:linear-gradient(135deg,#367763,#195545);box-shadow:0 7px 0 #e3eddf,0 13px 22px #255e502d;transform:rotate(-5deg);transition:transform .2s}
+.logo:hover .brand-mark{transform:rotate(0deg) translateY(-2px)}
+.brand-symbol{display:block;width:44px;height:44px}
+.practice-panel{padding:0;overflow:hidden;border:1px solid #e6ebe0;border-radius:27px}
+.practice-head{display:flex;position:relative;align-items:center;justify-content:space-between;gap:22px;padding:27px 32px 25px;background:linear-gradient(116deg,#e8f6e8,#f3f9eb 60%,#fff3e0);overflow:hidden}
+.practice-head::before{content:'';position:absolute;width:260px;height:260px;border:2px solid #a5d3ae42;border-radius:50%;right:-48px;top:-108px;box-shadow:0 0 0 25px #a5d3ae14,0 0 0 65px #ffdfad25}
+.practice-head>div{position:relative;z-index:1}
+.practice-head .eyebrow{display:inline-block;border-radius:22px;background:#fff8;padding:6px 12px;font-size:10px;color:#396e59}
+.practice-head h2{font-size:clamp(28px,4vw,36px);line-height:1.14;margin:10px 0;letter-spacing:-1px;color:#265b4a}
+.practice-lead{color:#587b6a;font-size:14px;line-height:1.55;max-width:460px;margin:0}
+.practice-art{flex:0 0 150px;height:130px;display:grid;place-items:center}
+.practice-art b{background:white;border-radius:18px 18px 18px 5px;display:grid;place-items:center;width:95px;height:102px;font-size:37px;color:#36745e;transform:rotate(12deg);box-shadow:10px 9px #ffbf7c,-7px 12px #bad9c0,0 16px 21px #27614922}
+.practice-art span{position:absolute;right:18px;top:-5px;color:#efa84a;font-size:45px}.practice-art em{position:absolute;left:12px;bottom:2px;font-style:normal;color:#806abb;font-size:33px}
+.practice-panel #word-quiz{margin:0;background:#fff;border-radius:0;padding:25px 31px}
+.practice-panel .quiz-header{gap:8px;flex-wrap:wrap}.practice-panel .quiz-header strong{font-size:18px;color:#294f42}
+.practice-local{font-size:11px;font-weight:750;color:#789081}
+.practice-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}
+.practice-stats>div{display:grid;gap:3px;padding:15px 17px;background:#f5f8f4;border:1px solid #e7eee5;border-radius:17px}
+.practice-stats>div:nth-child(2){background:#fff8ed;border-color:#f6ead8}.practice-stats>div:nth-child(3){background:#f5f2fc;border-color:#e9e4f4}
+.practice-stats strong{font-size:25px;color:#275a49;font-weight:900}.practice-stats small{font-size:11px;color:#738a7d;font-weight:800}
+#word-quiz-language button{min-height:43px;border-radius:13px}
+#word-quiz-description{max-width:680px}
+.practice-home{display:flex;justify-content:space-between;align-items:center;gap:14px;background:linear-gradient(110deg,#eff8ec,#fff6e9);border:1px solid #e1ecdf;padding:19px 21px;border-radius:18px}
+.practice-home strong{font-size:17px;color:#285746}.practice-home p{font-size:13px;color:#718c7b;margin:5px 0}
+.practice-home-actions{display:flex;gap:8px;flex-wrap:wrap}
+#word-quiz-start,#word-quiz-review{border-radius:13px;min-height:47px;padding:12px 17px;cursor:pointer;font-weight:850}
+#word-quiz-start{background:#255f50;color:#fff;border-color:#255f50;box-shadow:0 4px 12px #255f5028}
+#word-quiz-review{background:#fff;color:#316e59;border:1px solid #a6c9b6}
+.practice-progress-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#word-quiz-pause{border:0;background:transparent;color:#648072;text-decoration:underline;text-underline-offset:3px;font-size:12px;font-weight:800;cursor:pointer;padding:9px 0}
+.practice-track{height:12px;border-radius:20px;background:#e5eee7;overflow:hidden;margin:6px 0 22px}
+.practice-track span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#75bb95,#2ea78c,#ffb767);transition:width .25s}
+.practice-question{background:linear-gradient(120deg,#fdfdfb,#fff9f0);border:1.5px solid #ece8de;padding:25px 27px;border-radius:22px}
+#word-quiz-question{font-size:clamp(20px,3vw,28px);font-weight:900;color:#284e44}
+#word-quiz-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+#word-quiz-options button{font-weight:820;font-size:16px;border:2px solid #d9e7dc;padding:16px}
+#word-quiz-options button:hover:not(:disabled){border-color:#68b28a}
+#word-quiz-answer{min-height:51px;background:#fff;border:2px solid #b9d1c3}
+#word-quiz-form button{min-height:51px;background:#245e50;color:#fff}
+#word-quiz-feedback{line-height:1.55}
+#vocabulary-list{margin:15px 0 0;white-space:pre-wrap}
+@media(max-width:700px){.logo .brand-mark{width:39px;height:39px;border-radius:12px}.brand-symbol{width:33px;height:33px}
+.practice-head{padding:21px 19px}.practice-art{flex-basis:95px;height:100px}.practice-art b{width:66px;height:75px;font-size:27px}.practice-art span{font-size:30px;right:0}
+.practice-panel #word-quiz{padding:19px 17px}.practice-home{flex-direction:column;align-items:stretch;padding:16px}.practice-home-actions{flex-direction:column}
+#word-quiz-start,#word-quiz-review{width:100%}.practice-stats{gap:7px}.practice-stats>div{padding:12px 9px}.practice-stats strong{font-size:19px}.practice-stats small{font-size:10px}
+.practice-question{padding:20px 16px}}
+@media(max-width:440px){.practice-art{display:none}#word-quiz-options{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.logo .brand-mark,.practice-track span{transition:none}}
