@@ -46,7 +46,7 @@ export function createAIBackgroundHandler({fetchImpl=fetch,storeFactory=openAISt
      try{pages=await parsePages(bytes);}catch(err){console.warn('PDF.js text extraction unavailable; model receives original PDF',err?.message);}
      mark('pdfTextMs');
      const pageTexts=pages.map(p=>p.items?.map(x=>x.text).join(' ')||'');
-     const normalized=await interpret(aiPdfBytes,{grade,week,year,source,pdf,pageCount:pages.length||16,pageTexts,
+     const normalized=await interpret(aiPdfBytes,{grade,week,year,source,pdf,pageCount:pages.length||16,pageTexts,pageLayouts:pages,
        fetchImpl,apiKey:env.OPENAI_API_KEY,model:env.OPENAI_MODEL||'gpt-4.1-mini'});
      mark('aiCompleteMs');
      await store.setJSON(key,{...normalized,schoolId:school.id,schoolName:school.name,createdAt:new Date().toISOString(),model:env.OPENAI_MODEL||'gpt-4.1-mini',pdfSizeBytes:bytes.length,pdfPageCount:pages.length||null});
