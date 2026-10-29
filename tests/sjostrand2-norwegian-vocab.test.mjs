@@ -55,7 +55,7 @@ test('Sjøstrand 2: read four words from actual Norwegian word-list column, not 
 
 test('AI omitting source word list still produces a trustworthy Norwegian quiz',()=>{
  const plan=normalizeAIPlan(empty(),metadata);
- assert.equal(AI_SCHEMA_VERSION,18);
+ assert.equal(AI_SCHEMA_VERSION,19);
  assert.deepEqual(quizItems(plan.vocabulary).map(x=>x.word),expected);
 });
 
@@ -112,4 +112,30 @@ test('Split heading across adjacent PDF tokens is recognized',()=>{
  const p=page();p.items=p.items.filter(x=>x.text!=='Ukas øveord:');
  p.items.push(token('Ukas',482,91),token('øveord:',528,91));
  assert.deepEqual(quizItems(extractNorwegianWordLists([p])).map(x=>x.word),expected);
+});
+
+test('Nygård 5 week 44: Norwegian words are separated from English and themes',()=>{
+ // Representative PDF.js coordinates verified against the school PDF page 2:
+ // https://minskole.no/DynamicContent//Documents/882-nygaard-Uke-44-96453e1f-6cf1.pdf
+ const words=['overskrift','lykkelig','trist','illustrasjon','respons','avsnitt','problem'];
+ const p={width:1024,height:1450,items:[
+  token('UKAS TEMA',95,910),token('NORSKE ØVEORD',390,910),token('ENGELSKE GLOSER',706,910),
+  token('NORSK: Vi jobber med fortelling.',95,962),
+  ...words.map((text,i)=>token(text,480,956+i*51)),
+  token('team',711,962),token('lag',836,962),
+  token('midfielder',711,1013),token('midtbanespiller',836,1013)
+ ]};
+ const norwegian=extractNorwegianWordLists([p]);
+ assert.deepEqual(norwegian,[{category:'Norske øveord',text:words.join('\n')}]);
+ const items=quizItems([...norwegian,{category:'Engelske gloser',text:'team - lag\nmidfielder - midtbanespiller'}]);
+ assert.deepEqual(items.filter(x=>x.language==='nb').map(x=>x.word),words);
+ assert.deepEqual(items.filter(x=>x.language==='en').map(x=>x.word),['team','midfielder']);
+ const plan=normalizeAIPlan(empty(),{...metadata,grade:'5',pageLayouts:[p],pageTexts:[p.items.map(x=>x.text).join(' ')]});
+ assert.deepEqual(quizItems(plan.vocabulary).filter(x=>x.language==='nb').map(x=>x.word),words);
+});
+test('Nygård word-list headings must be explicit, not adjacent learning goals',()=>{
+ const p={width:1024,height:1450,items:[token('UKAS TEMA',95,910),token('Jeg kan snakke om fotball.',95,962),
+  token('ENGELSKE GLOSER',706,910),token('team',711,962),token('lag',836,962)]};
+ assert.deepEqual(extractNorwegianWordLists([p]),[]);
+ assert.deepEqual(quizItems([{category:'Norske gloser',text:'overskrift\nlykkelig'}]).map(x=>x.language),['nb','nb']);
 });

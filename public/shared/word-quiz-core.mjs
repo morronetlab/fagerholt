@@ -1,5 +1,5 @@
 /** PDF-grounded Norwegian and English word exercises. No AI or invented definitions. */
-const headings=/^(?:ukas ord|ukens ord|ukas øveord|ukens øveord|engelske ord|engelske gloser|gloser|øveord|ord å øve på)\s*:?\s*/i;
+const headings=/^(?:ukas ord|ukens ord|ukas øveord|ukens øveord|norske øveord|norske gloser|norsk øveord|engelske ord|engelske gloser|gloser|øveord|ord å øve på)\s*:?\s*/i;
 const invalid=/\b(?:læringsmål|læringsmal|tema|kompetansemål|beskjeder|arbeidsmål)\b/i;
 const word=/^[\p{L}]+(?:['-][\p{L}]+)*(?: [\p{L}]+(?:['-][\p{L}]+)*){0,2}$/u;
 const shortWord=/^[\p{L}]+(?:['-][\p{L}]+)*$/u;
@@ -31,7 +31,7 @@ export function quizItems(entries){
  const found=new Map();
  for(const entry of Array.isArray(entries)?entries:[]){
   const category=typeof entry==='string'?'ukas ord':key(entry?.category);
-  const language=/(?:engelsk|gloser)/.test(category)?'en':/(?:ukas ord|ukens ord|øveord|ord å øve på)/.test(category)?'nb':null;
+  const language=/(?:norsk|ukas ord|ukens ord|øveord|ord å øve på)/.test(category)?'nb':/(?:engelsk|gloser)/.test(category)?'en':null;
   if(!language)continue;
   const raw=String(typeof entry==='string'?entry:entry?.text||'').normalize('NFC').replace(/[ \t]+/g,' ').trim().replace(headings,'');
   if(!raw||invalid.test(raw))continue;

@@ -1,6 +1,6 @@
 import {siteConfig} from './site-config.mjs';
 import {smartDayChoice} from './shared/smart-day.mjs';
-import {initWordQuiz,renderWordQuiz} from './shared/word-quiz.mjs';
+import {initWordQuiz,renderWordQuiz,quizItems} from './shared/word-quiz.mjs';
 import {openHomeworkHelper,initHomeworkHelper} from './homework-helper.mjs';
 import {needsHomeworkHelp} from './shared/homework-help-eligibility.mjs';
 import {schoolCalendar,dayDate,DAYS} from './shared/calendar.mjs';
@@ -195,12 +195,18 @@ function renderContent(){
   $('plan-columns').classList.toggle('bag-empty',!bag.length&&!state.loading);
   const vocabulary=Array.isArray(p?.vocabulary)?p.vocabulary:[];
   renderWordQuiz(vocabulary,{school:state.school?.id,grade:state.grade,week:calendar.week,year:calendar.year});
-  const category=v=>typeof v==='string'?'Ukas ord':String(v?.category||'').toLocaleLowerCase('nb-NO');
-  const hasEnglish=vocabulary.some(v=>/engelsk|gloser/i.test(category(v)));
-  const hasNorwegian=vocabulary.some(v=>/ukas ord|ukens ord|øveord|ord å øve på/i.test(category(v)));
-  $('vocabulary-title').textContent=hasEnglish&&hasNorwegian?'Ukas ord og engelske ord':hasEnglish?'Engelske ord':'Ukas ord';
-  $('vocabulary-panel').hidden=!vocabulary.length;
-  $('vocabulary-list').innerHTML=vocabulary.map(v=>`<p><strong>${safe(typeof v==='string'?'Ukas ord':v?.category||'Ord å øve på')}</strong> ${safe(typeof v==='string'?v:v?.text)}</p>`).join('');
+  const quizVocabulary=quizItems(vocabulary);
+  const englishWords=quizVocabulary.filter(x=>x.language==='en');
+  const norwegianWords=quizVocabulary.filter(x=>x.language==='nb');
+  $('vocabulary-panel').hidden=!englishWords.length;
+  $('vocabulary-panel-nb').hidden=!norwegianWords.length;
+  $('vocabulary-title').textContent='Engelske gloser';
+  $('vocabulary-list').innerHTML=englishWords.length?
+    '<div class="practice-words-label">GLOSER FRA UKAS PDF</div><ul class="practice-word-list">'+
+    englishWords.map(x=>`<li><strong>${safe(x.word)}</strong><span>${safe(x.translation||'Øv på uttale og staving')}</span></li>`).join('')+'</ul>':'';
+  $('vocabulary-list-nb').innerHTML=norwegianWords.length?
+    '<div class="practice-words-label">ØVEORD FRA UKAS PDF</div><ul class="practice-word-list practice-word-list-nb">'+
+    norwegianWords.map(x=>`<li><strong>${safe(x.word)}</strong></li>`).join('')+'</ul>':'';
   const contacts=Array.isArray(p?.contacts)?p.contacts:[];
   $('contacts-panel').hidden=!contacts.length;
   $('contacts-list').innerHTML=contacts.map(c=>typeof c==='string'?`<p>${safe(c)}</p>`:`<p><strong>${safe(c.name)}</strong> ${safe(c.role)} ${c.email?`<a href="mailto:${encodeURIComponent(c.email)}">${safe(c.email)}</a>`:''} ${c.phone?`<span>${safe(c.phone)}</span>`:''}</p>`).join('');
