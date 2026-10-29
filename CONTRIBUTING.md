@@ -10,8 +10,8 @@ Vi skal redusere unødvendige CI-kjøringer og varsler uten å miste testdekning
 4. Kjør hele testen lokalt i en sjekket ut kopi av prosjektet:
 
    ```bash
-   npm install --no-audit --no-fund
-   npm test
+   npm ci --no-audit --no-fund
+   npm run check
    ```
 
 5. Rett feil lokalt, og send helst én samlet commit før PR opprettes eller oppdateres.
@@ -28,3 +28,10 @@ Når lokal kjøring ikke er mulig (for eksempel ved bruk av GitHub-verktøy uten
 - `concurrency`: Eldre pågående jobber for samme PR avbrytes når nyere endringer kommer.
 
 Ferdige feilede kjøringer kan fremdeles ha sendt varsler. Netlify sine bygg og varsler styres separat; behold Netlify Deploy Preview som sluttkontroll.
+ 
+## Regresjonstester
+
+- Representative PDF-utdrag er låst som syntetiske, persondatafrie fixtures i `tests/fixtures/`.
+- De første scenarioene sikrer riktig lekse-/pakkekategorisering, dagtabeller, kildebelagte engelskgloser og riktig ukevalg.
+- Tester må fortsatt sjekkes mot originale skole-PDF-er ved funksjonelle endringer; disse baselinene alene er ikke en nettleser-/E2E-test.
+- `package-lock.json` er generert med npm 10 / Node 22 og skal oppdateres ved bevisste avhengighetsendringer.
