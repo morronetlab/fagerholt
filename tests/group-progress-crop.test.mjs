@@ -42,7 +42,7 @@ test('Group labels are refused when the individual source quote does not mention
  assert.equal(groupLabel('Alle elever','Alle elever har lekse'),null);
 });
 test('AI schema has required group fields and invalidates old cache schema',()=>{
- assert.equal(AI_SCHEMA_VERSION,15);
+ assert.equal(AI_SCHEMA_VERSION,16);
  for(const item of [AI_SCHEMA.properties.days.items.properties.events.items,
   AI_SCHEMA.properties.homework.items,AI_SCHEMA.properties.packing.items,
   AI_SCHEMA.properties.notices.items,AI_SCHEMA.properties.learningGoals.items,
