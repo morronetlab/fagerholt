@@ -105,3 +105,23 @@ test('AI processing displays a transparent loading state rather than pretending 
  assert.match(await page.locator('#status-pill').textContent(),/AI analyserer/);
  assert.deepEqual(errors,[]);
 });
+
+test('Practice remembers wrong answers, resumes on reload and pauses on mobile',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await chooseSchoolGrade(page,'5A');
+ await page.locator('#word-quiz-start').click();
+ await page.locator('#word-quiz-answer').fill('banan');
+ await page.locator('#word-quiz-form button[type=submit]').click();
+ assert.match(await page.locator('#word-quiz-feedback').textContent(),/øver mer/);
+ await page.reload();
+ await page.locator('#word-quiz-start').waitFor({state:'visible'});
+ assert.match(await page.locator('#word-quiz-start').textContent(),/Fortsett/);
+ await page.locator('#word-quiz-start').click();
+ assert.match(await page.locator('#word-quiz-feedback').textContent(),/øver mer/);
+ await page.locator('#word-quiz-next').click();
+ assert.match(await page.locator('#word-quiz-question').textContent(),/banana/);
+ await page.locator('#word-quiz-pause').click();
+ assert.match(await page.locator('#word-quiz-start').textContent(),/Fortsett/);
+ assert.equal(await page.locator('#word-quiz-stat-weak').textContent(),'1');
+ assert.deepEqual(errors,[]);
+});

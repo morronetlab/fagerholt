@@ -1,8 +1,22 @@
 /** Interactive word practice: comprehension first for English, active spelling for Norwegian. */
 import {quizItems,quizWords,buildQuizRounds,quizExpected,isQuizAnswerCorrect} from './word-quiz-core.mjs';
 export {quizItems,quizWords,buildQuizRounds,quizExpected,isQuizAnswerCorrect} from './word-quiz-core.mjs';
+import {practiceRoundId,practiceKey,newPractice,restorePractice,practiceAnswer,practiceNext,practiceSummary} from './word-practice-core.mjs';
 const $=id=>document.getElementById(id);
-let items=[],language='en',rounds=[],index=0,score=0,answered=false,peekTimer=null,loadedKey='';
+let items=[],language='en',rounds=[],index=0,score=0,answered=false,peekTimer=null,loadedKey='',scope={},session=null,storeKey='',allRounds=[]; 
+function persist(){try{if(session&&storeKey)localStorage.setItem(storeKey,JSON.stringify(session));}catch{/* private browsing: transient only */}}
+function saved(){try{return restorePractice(localStorage.getItem(storeKey),allRounds);}catch{return null;}}
+function applySession(s){session=s;rounds=s?s.queue.map(id=>allRounds.find(r=>practiceRoundId(r)===id)):[];index=s?.index||0;answered=s?.phase==='answered';score=s?.answers.filter(a=>a.ok).length||0;}
+function summary(){const p=practiceSummary(session,allRounds);
+ $('word-quiz-stat-correct').textContent=p.correct;$('word-quiz-stat-progress').textContent=p.done+' / '+(session?.queue.length||p.total);
+ $('word-quiz-stat-weak').textContent=p.weak;
+ const button=$('word-quiz-start');
+ button.textContent=session&&session.phase!=='done'?'Fortsett øvingen':session?'Start ny øving':'Start øvingen';
+ $('word-quiz-welcome').textContent=session&&session.phase!=='done'?'Du har en økt å fortsette med!':session?.phase==='done'?'Flott jobbet! Klar igjen?':'Klar for ordutfordringen?';
+ $('word-quiz-review').hidden=!(session?.phase==='done'&&session.weak.length);
+}
+function pause(){stopSound();$('word-quiz-play').hidden=true;$('word-quiz-home').hidden=false;
+ $('vocabulary-list').hidden=false;summary();}
 const canSpeak=()=>typeof window!=='undefined'&&'speechSynthesis' in window&&typeof SpeechSynthesisUtterance==='function';
 function stopSound(){
  if(peekTimer){clearTimeout(peekTimer);peekTimer=null;}
@@ -12,11 +26,13 @@ function stopSound(){
 function availableLanguage(lang){return items.some(x=>x.language===lang);}
 function chooseLanguage(lang){
  if(!availableLanguage(lang))return;
- stopSound();language=lang;rounds=[];index=0;score=0;
- $('word-quiz-play').hidden=true;
+ stopSound();language=lang;allRounds=buildQuizRounds(items,lang);
+ storeKey=practiceKey(scope,lang,items);applySession(saved());
+ $('word-quiz-play').hidden=true;$('word-quiz-home').hidden=false;
+ summary();
  $('word-quiz-options').hidden=true;
  $('vocabulary-list').hidden=false;
- $('word-quiz-start').textContent=lang==='en'?'Start engelskøving':'Start norskøving';
+ /* The start button is controlled by saved progress, not the chosen language. */
  const untranslated=items.filter(i=>i.language==='en'&&!i.translation).length;
  $('word-quiz-description').textContent=lang==='en'
   ?'Oversett engelske ord til norsk. Deretter øver du på å kjenne igjen den riktige norske betydningen.'+
@@ -30,7 +46,7 @@ function chooseLanguage(lang){
 export function renderWordQuiz(vocabulary,context){
  const key=[context?.school,context?.grade,context?.year,context?.week,JSON.stringify(vocabulary||[])].join(':');
  if(loadedKey===key)return;
- loadedKey=key;stopSound();
+ loadedKey=key;scope={...context};stopSound();
  items=quizItems(vocabulary);
  $('vocabulary-list').hidden=false;
  const panel=$('word-quiz');
@@ -79,9 +95,15 @@ function showQuestion(){
  stopSound();
  const round=rounds[index];
  if(!round)return;
- answered=false;
+ answered=session?.phase==='answered'; 
+ $('word-quiz-home').hidden=true;
  $('word-quiz-play').hidden=false;
- $('word-quiz-progress').textContent='Oppgave '+(index+1)+' av '+rounds.length+' · ⭐ '+score+' riktige';
+ const percent=Math.round(100*(index+(answered?1:0))/rounds.length);
+ $('word-quiz-track').setAttribute('aria-valuenow',String(percent));
+ $('word-quiz-track-fill').style.width=percent+'%';
+ $('word-quiz-pause').textContent='Lagre og fortsett senere';
+ summary();
+ $('word-quiz-progress').textContent=(session?.mode==='review'||index>=session?.baseCount?'↻ Repetisjon · ':'✨ Øving · ')+(index+1)+' av '+rounds.length+' · ⭐ '+score+' riktige';
  $('word-quiz-feedback').textContent='';
  $('word-quiz-next').hidden=true;
  $('word-quiz-start').textContent='Start på nytt';
@@ -133,22 +155,34 @@ function showQuestion(){
   $('word-quiz-answer').disabled=true;
   $('word-quiz-feedback').textContent='Trykk «Se ordet kort» først, og skriv når ordet er skjult.';
  }
- if(!$('word-quiz-form').hidden)$('word-quiz-answer').focus();
+ if(answered){
+  const ok=session.answers[index].ok;
+  $('word-quiz-feedback').textContent=feedbackText(round,ok);
+  $('word-quiz-answer').disabled=true;
+  $('word-quiz-options').querySelectorAll('button').forEach(b=>b.disabled=true);
+  $('word-quiz-form').querySelector('[type=submit]').disabled=true;
+  $('word-quiz-tools').hidden=true;$('word-quiz-next').hidden=false;
+ }else if(!$('word-quiz-form').hidden)$('word-quiz-answer').focus();
+}
+function feedbackText(round,correct){
+ const expected=quizExpected(round);
+ return correct?'🎉 Riktig! Bra jobbet.':(round.kind==='vowels'?'Vokalene er «'+expected+'».':
+ ['meaning','recognize'].includes(round.kind)?'«'+round.word+'» betyr «'+expected+'» på norsk.':
+ 'Riktig ord er «'+expected+'».')+' Vi øver mer på dette ordet senere.';
 }
 function submit(chosen){
  if(answered||index>=rounds.length)return;
  const round=rounds[index],input=$('word-quiz-answer');
  const answer=String(chosen??input.value);
  if(!answer.trim())return;
- answered=true;
  stopSound();
  const correct=isQuizAnswerCorrect(round,answer);
- if(correct)score++;
- const expected=quizExpected(round);
- $('word-quiz-feedback').textContent=correct?'🎉 Riktig! Bra jobbet.':
-  (round.kind==='vowels'?'Vokalene er «'+expected+'».':
-    ['meaning','recognize'].includes(round.kind)?'«'+round.word+'» betyr «'+expected+'» på norsk.':
-      'Riktig ord er «'+expected+'».')+' Prøv igjen senere.';
+ applySession(practiceAnswer(session,correct));persist();
+ $('word-quiz-feedback').textContent=feedbackText(round,correct);
+ summary();
+ const pct=Math.round(100*(index+1)/rounds.length);
+ $('word-quiz-track').setAttribute('aria-valuenow',String(pct));
+ $('word-quiz-track-fill').style.width=pct+'%';
  input.disabled=true;
  $('word-quiz-options').querySelectorAll('button').forEach(button=>button.disabled=true);
  $('word-quiz-form').querySelector('[type=submit]').disabled=true;
@@ -157,26 +191,33 @@ function submit(chosen){
 }
 function finish(){
  stopSound();
- $('word-quiz-progress').textContent='🏆 '+score+' av '+rounds.length+' riktige';
+ $('word-quiz-progress').textContent='🏆 '+score+' av '+session.answers.length+' riktige';
+ $('word-quiz-track').setAttribute('aria-valuenow','100');
+ $('word-quiz-track-fill').style.width='100%';summary();
  $('word-quiz-kind').textContent='Ferdig!';
- $('word-quiz-question').textContent='Bra jobbet med ordene! Du kan prøve igjen når du vil.';
+ $('word-quiz-question').textContent=session.weak.length?'Bra jobbet! Noen ord trenger mer øving – prøv en ny repetisjonsrunde.':'Flott jobbet! Alle øvelsene er fullført.';
  $('word-quiz-feedback').textContent='Du øvde på '+new Set(rounds.map(r=>r.word)).size+' ord.';
  $('word-quiz-form').hidden=true;
  $('word-quiz-options').hidden=true;
  $('word-quiz-tools').hidden=true;
  $('word-quiz-next').hidden=true;
  $('vocabulary-list').hidden=false;
+ $('word-quiz-pause').textContent='Tilbake til øvestudio';
 }
 export function initWordQuiz(){
  $('word-quiz-start').addEventListener('click',()=>{
-  rounds=buildQuizRounds(items,language);
-  index=0;score=0;
+  if(!session||session.phase==='done'){applySession(newPractice(allRounds,session?.weak||[]));persist();}
   if(rounds.length){$('vocabulary-list').hidden=true;showQuestion();}
  });
+ $('word-quiz-review').addEventListener('click',()=>{
+  applySession(newPractice(allRounds,session?.weak||[],'review'));persist();
+  if(rounds.length){$('vocabulary-list').hidden=true;showQuestion();}
+ });
+ $('word-quiz-pause').addEventListener('click',pause);
  $('word-quiz-next').addEventListener('click',()=>{
   if(!answered)return;
-  index++;
-  if(index>=rounds.length)finish();else showQuestion();
+  applySession(practiceNext(session));persist();
+  if(session.phase==='done')finish();else showQuestion();
  });
  $('word-quiz-form').addEventListener('submit',event=>{event.preventDefault();submit();});
  $('word-quiz-peek').addEventListener('click',peek);
