@@ -3,6 +3,7 @@ import test,{before,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {startStaticServer} from './static-server.mjs';
+import {schoolCalendar} from '../../public/shared/calendar.mjs';
 
 const DAYS=['Mandag','Tirsdag','Onsdag','Torsdag','Fredag'];
 let browser,server;
@@ -162,5 +163,57 @@ test('Homework help dialog is clear and restores focus after closing',async t=>{
  await page.keyboard.press('Escape');
  assert.equal(await page.locator('#helper-modal').isVisible(),false);
  assert.equal(await button.evaluate(el=>document.activeElement===el),true);
+ assert.deepEqual(errors,[]);
+});
+
+async function addFamilyChild(page,name,grade='2'){
+ await page.locator('#family-add').click();
+ await page.locator('#family-name').fill(name);
+ await page.locator('#family-school').selectOption('sjostrand');
+ await page.locator('#family-grade option[value="'+grade+'"]').waitFor();
+ await page.locator('#family-grade').selectOption(grade);
+ await page.locator('#family-save').click();
+ await page.locator('#family-cards .family-child').filter({hasText:name}).waitFor();
+}
+test('V2 family overview combines two children and keeps completion independently',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ const current=schoolCalendar(new Date(),'Europe/Oslo');
+ await page.route('**/api/plan?**',route=>{
+  const grade=new URL(route.request().url()).searchParams.get('grade');
+  const plan=basePlan(grade);
+  plan.week=current.week;plan.year=current.year;
+  plan.homework=[{text:'Les en bok fra skolen',subject:'Norsk',dueDay:'Fredag'},
+   {text:'Skriv et sammendrag',subject:'Norsk',dueDay:'Torsdag'}];
+  plan.days.Fredag.bring=[{label:'Gymtøy'}];
+  return reply(route,plan);
+ });
+ await page.locator('#family-toggle').click();
+ assert.equal(await page.locator('#family-view').isVisible(),true);
+ await addFamilyChild(page,'Barn A');
+ await addFamilyChild(page,'Barn B');
+ assert.equal(await page.locator('#family-cards .family-child').count(),2);
+ await page.locator('#family-cards [data-family-open]').first().click();
+ await page.locator('#homework-list input[type=checkbox]').first().waitFor();
+ await page.locator('#homework-list input[type=checkbox]').first().check();
+ await page.locator('#family-toggle').click();
+ await page.locator('#family-cards .family-child').first().locator('.family-child-progress').waitFor();
+ assert.match(await page.locator('#family-cards .family-child').first().locator('.family-child-progress').innerText(),/1 \/ 2/);
+ assert.match(await page.locator('#family-cards .family-child').nth(1).locator('.family-child-progress').innerText(),/0 \/ 2/);
+ await page.reload();
+ await page.locator('#family-cards .family-child').nth(1).waitFor();
+ assert.equal(await page.locator('#family-cards .family-child').count(),2);
+ assert.deepEqual(errors,[]);
+});
+test('Family grade selection, edited profiles and single-class navigation survive mobile screens',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.locator('#family-toggle').click();
+ await addFamilyChild(page,'Min profil','5A');
+ await page.locator('[data-family-edit]').click();
+ await page.locator('#family-name').fill('Oppdatert profil');
+ await page.locator('#family-save').click();
+ assert.match(await page.locator('#family-cards').innerText(),/Oppdatert profil/);
+ await page.locator('#family-return').click();
+ assert.equal(await page.locator('#family-view').isVisible(),false);
+ assert.equal(await page.locator('#school-gate').isVisible(),true);
  assert.deepEqual(errors,[]);
 });

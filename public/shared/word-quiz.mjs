@@ -45,7 +45,7 @@ function chooseLanguage(lang){
  }
 }
 function renderWordQuiz(vocabulary,context){
- const key=[context?.school,context?.grade,context?.year,context?.week,JSON.stringify(vocabulary||[])].join(':');
+ const key=[context?.school,context?.grade,context?.year,context?.week,context?.childId||'',JSON.stringify(vocabulary||[])].join(':');
  if(loadedKey===key)return;
  loadedKey=key;scope={...context};stopSound();
  items=quizItems(vocabulary).filter(item=>item.language===fixedLanguage);

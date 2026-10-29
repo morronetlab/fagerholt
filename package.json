@@ -1,9 +1,9 @@
 {
   "name": "ukeplanen-white-label",
-  "version": "0.11.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "Konfigurerbar ukeplan for MinSkole, med ett valgt klassetrinn.",
+  "description": "Konfigurerbar ukeplan for MinSkole, med familieoversikt og enkeltklassetrinn.",
   "engines": {
     "node": ">=20"
   },
