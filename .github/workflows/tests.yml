@@ -23,3 +23,11 @@ jobs:
           node-version: '22'
       - run: npm install --no-audit --no-fund
       - run: npm test
+      # Temporary PR-only step to produce a reproducible lockfile from npm 10.
+      - name: Snapshot resolved dependencies
+        run: |
+          test -s package-lock.json
+          echo __LOCK_B64_START__
+          base64 -w0 package-lock.json
+          echo
+          echo __LOCK_B64_END__
