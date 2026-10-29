@@ -105,3 +105,10 @@ test('SQL migration gates every family table behind RLS and scopes children and 
  assert.match(sql,/invitee_email=email and used_at is null and expires_at>now\(\)/);
  assert.doesNotMatch(sql,/grant (select|insert|update).*family_invitations.*to authenticated/i);
 });
+
+test('A service_role JWT is never accepted as a browser publishable key',()=>{
+ const token=role=>'eyJhbGciOiJub25lIn0.'+Buffer.from(JSON.stringify({role})).toString('base64url')+'.signature';
+ assert.equal(validSupabaseConfig({...config,publishableKey:token('service_role')}),false);
+ assert.equal(validSupabaseConfig({...config,publishableKey:token('anon')}),true);
+ assert.equal(validSupabaseConfig({...config,publishableKey:'sb_secret_do_not_publish'}),false);
+});

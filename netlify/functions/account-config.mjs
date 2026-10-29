@@ -7,8 +7,14 @@ export default async function handler(){
  let enabled=false;
  try{
   const u=new URL(url);
-  enabled=u.protocol==='https:'&&/^[a-z0-9-]+\.supabase\.co$/.test(u.hostname)&&u.pathname==='/'&&
-   (key.startsWith('sb_publishable_')||key.startsWith('eyJ'))&&key.length>20;
+  let publicKey=key.startsWith('sb_publishable_')&&key.length>20;
+  if(!publicKey&&key.startsWith('eyJ')){
+   try{
+    const payload=JSON.parse(Buffer.from(key.split('.')[1],'base64url').toString('utf8'));
+    publicKey=payload?.role==='anon';
+   }catch{}
+  }
+  enabled=u.protocol==='https:'&&/^[a-z0-9-]+\.supabase\.co$/.test(u.hostname)&&u.pathname==='/'&&publicKey;
  }catch{}
  return new Response(JSON.stringify(enabled?{enabled:true,url,publishableKey:key}:{enabled:false}),{
   status:200,headers:{'Content-Type':'application/json; charset=utf-8',

@@ -184,3 +184,29 @@ grant execute on function public.accept_guardian_invite(text) to authenticated;
 
 -- IMPORTANT: Verify RLS using two real test users in different families before launch.
 -- Do not place a service_role key in Netlify client assets or client env vars.
+
+-- Parents may leave a family; only the owner can delete all its child data.
+create or replace function public.leave_family(p_family uuid)
+returns void language plpgsql security definer set search_path='' as $$
+begin
+ if auth.uid() is null or not exists(
+   select 1 from public.family_members
+   where family_id=p_family and user_id=auth.uid() and role='parent'
+ ) then raise exception 'Not authorized or owner cannot leave'; end if;
+ delete from public.family_members
+ where family_id=p_family and user_id=auth.uid() and role='parent';
+end;$$;
+revoke all on function public.leave_family(uuid) from public,anon;
+grant execute on function public.leave_family(uuid) to authenticated;
+
+create or replace function public.delete_family(p_family uuid)
+returns void language plpgsql security definer set search_path='' as $$
+begin
+ if auth.uid() is null or not exists(
+  select 1 from public.family_members
+  where family_id=p_family and user_id=auth.uid() and role='owner'
+ ) then raise exception 'Only the family owner may delete the family'; end if;
+ delete from public.families where id=p_family;
+end;$$;
+revoke all on function public.delete_family(uuid) from public,anon;
+grant execute on function public.delete_family(uuid) to authenticated;

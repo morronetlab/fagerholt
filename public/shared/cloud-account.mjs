@@ -5,9 +5,15 @@ export const SESSION_KEY='ukeplanen.cloud.session.v1';
 export function validSupabaseConfig(config){
  try {
   const u=new URL(config?.url);
-  return u.protocol==='https:' && /^[a-z0-9-]+\.supabase\.co$/.test(u.hostname) &&
-   u.pathname==='/' && typeof config?.publishableKey==='string' &&
-   config.publishableKey.length>=20 && !/service_role/i.test(config.publishableKey);
+  const key=config?.publishableKey;
+  if(u.protocol!=='https:'||! /^[a-z0-9-]+\.supabase\.co$/.test(u.hostname)||
+     u.pathname!=='/'||typeof key!=='string'||key.length<20)return false;
+  if(key.startsWith('sb_publishable_'))return true;
+  if(!key.startsWith('eyJ'))return false;
+  try{
+   const payload=JSON.parse(atob(key.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+   return payload?.role==='anon';
+  }catch{return false;}
  }catch{return false;}
 }
 export function taskFingerprint({school,grade,year,week,task,day}){
@@ -116,7 +122,7 @@ export class CloudAccount {
   return this.request('/rest/v1/'+table+'?'+where,{method:'DELETE',auth:true,headers:{Prefer:'return=representation'}});
  }
  async rpc(name,body){return this.request('/rest/v1/rpc/'+name,{method:'POST',auth:true,body});}
- families(){return this.rows('families','select=id,name,created_at&order=created_at.asc');}
+ families(){return this.rows('families','select=id,name,created_by,created_at&order=created_at.asc');}
  createFamily(name){return this.rpc('create_family',{p_name:name});}
  children(familyId){return this.rows('children','select=id,family_id,nickname,school_id,grade,group_name&family_id=eq.'+encodeURIComponent(familyId)+'&order=created_at.asc');}
  createChild(data){return this.insert('children',data);}
@@ -132,4 +138,6 @@ export class CloudAccount {
  }
  inviteParent(familyId,email){return this.rpc('invite_guardian',{p_family:familyId,p_email:email});}
  acceptInvite(code){return this.rpc('accept_guardian_invite',{p_token:code});}
+ deleteFamily(id){return this.rpc('delete_family',{p_family:id});}
+ leaveFamily(id){return this.rpc('leave_family',{p_family:id});}
 }

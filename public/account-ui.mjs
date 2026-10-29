@@ -41,6 +41,9 @@ export function initAccountUI({familyUI}){
   $('account-empty-family').hidden=Boolean(familyId);
   $('account-family-tools').hidden=!familyId;
   $('account-invite-accept').hidden=!invitation;
+  const owner=familyId&&families.find(f=>f.id===familyId)?.created_by===client.session?.user?.id;
+  $('account-delete-family').hidden=!owner;
+  $('account-leave-family').hidden=!familyId||Boolean(owner);
   if(familyId){
    const children=await client.children(familyId);
    await familyUI.setCloud(client,familyId,children);
@@ -157,6 +160,18 @@ export function initAccountUI({familyUI}){
     ' fullførte oppgaver fra denne uka.'+(result.notes.length?' '+result.notes.join(' '):''));
   }catch(error){status('Importen ble avbrutt: '+error.message+' Du kan prøve på nytt uten å miste lokale data.',true);}
   finally{button.disabled=false;}
+ });
+ $('account-delete-family').addEventListener('click',async()=>{
+  const f=families.find(x=>x.id===familyId);if(!f)return;
+  const typed=prompt('Dette sletter familien, barneprofiler og alle avkrysninger permanent. Skriv familienavnet "'+f.name+'" for å bekrefte.');
+  if(typed!==f.name)return;
+  try{await client.deleteFamily(familyId);familyId=null;await syncFamilies();status('Familien og tilhørende data er slettet.');}
+  catch(error){status('Kunne ikke slette familien: '+error.message,true);}
+ });
+ $('account-leave-family').addEventListener('click',async()=>{
+  if(!familyId||!confirm('Vil du forlate denne familien?'))return;
+  try{await client.leaveFamily(familyId);familyId=null;await syncFamilies();status('Du har forlatt familien.');}
+  catch(error){status('Kunne ikke forlate familien: '+error.message,true);}
  });
  $('account-signout').addEventListener('click',async()=>{
   try{await client.signOut();}
