@@ -170,7 +170,7 @@ async function addFamilyChild(page,name,grade='2'){
  await page.locator('#family-add').click();
  await page.locator('#family-name').fill(name);
  await page.locator('#family-school').selectOption('sjostrand');
- await page.locator('#family-grade option[value="'+grade+'"]').waitFor();
+ await page.locator('#family-grade option[value="'+grade+'"]').waitFor({state:'attached'});
  await page.locator('#family-grade').selectOption(grade);
  await page.locator('#family-save').click();
  await page.locator('#family-cards .family-child').filter({hasText:name}).waitFor();
