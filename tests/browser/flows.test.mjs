@@ -254,6 +254,9 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  await page.locator('#account-button').click();
  await page.locator('#account-email').fill('parent@example.no');
  await page.locator('#account-send-code').click();
+ await page.waitForTimeout(400);
+ assert.match(await page.locator('#account-message').textContent(),/sendt/i,
+   'OTP response missing. Account mode: '+await page.locator('#account-panel').innerText());
  await page.locator('#account-code').fill('123456');
  await page.locator('#account-verify').click();
  await page.locator('#account-family-name').fill('Min familie');
