@@ -28,7 +28,7 @@ export const sampleEnglishAI=()=>({
  days:[],attendance:[],dayNotes:[],homework:[],packing:[],
  notices:[{day:null,text:'Husk skoleboka',...evidence('Beskjed: Husk skoleboka')}],
  learningGoals:[],subjects:[],contacts:[],specialContent:[],
- vocabulary:[{category:'Engelske ord',text:'apple - eple\nbanana - banan',...evidence(englishEvidence)}],
+ vocabulary:[{category:'Engelske ord',text:'apple - eple, banana - banan',...evidence(englishEvidence)}],
  weekTheme:{text:null,sourcePage:null,sourceQuote:''},
  optionalMission:{text:null,sourcePage:null,sourceQuote:''},
  coverage:{state:'complete',reason:''}
