@@ -44,7 +44,9 @@ export function quizItems(entries){
    let original=normalize(paired?paired[1]:piece).replace(/[.!]+$/,'');
    let translation=normalize(paired?paired[2]:'').replace(/[.!]+$/,'');
    if(!word.test(original)||original.length>36||original.length<2)continue;
-   if(translation&&(!word.test(translation)||translation.length>40))continue;
+   // A glossary row may give several correct Norwegian forms, such as
+  // «kostskole / internatskole». Both must be accepted as answers.
+  if(translation&&(!translation.split(/\s*\/\s*/).every(part=>word.test(part))||translation.length>70))continue;
    // A source pair may use Norwegian first; recognize known reversed entries.
    if(translation&&meaning.get(key(translation))===key(original)){
     [original,translation]=[translation,original];
@@ -93,5 +95,9 @@ export function quizExpected(round){
 export function isQuizAnswerCorrect(round,answer){
  const expected=quizExpected(round);
  const normalized=s=>round?.kind==='vowels'?key(s).replace(/[\s,.-]/g,''):key(s);
+ if(['meaning','recognize'].includes(round?.kind)&&expected.includes('/')){
+  const allowed=[expected,...expected.split(/\s*\/\s*/).map(s=>s.trim())];
+  return allowed.some(value=>normalized(answer)===normalized(value));
+ }
  return Boolean(expected)&&normalized(answer)===normalized(expected);
 }
