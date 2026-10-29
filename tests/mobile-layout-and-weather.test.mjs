@@ -9,8 +9,8 @@ test('Mobile selection keeps school switching available before selecting a grade
  assert.match(html,/id="mobile-selection-menu"/);
  assert.match(html,/id="mobile-change-grade"/);
  assert.match(html,/id="mobile-change-school"/);
- assert.match(app,/\$\('mobile-selection-menu'\)\.hidden=!hasSchool/);
- assert.match(app,/\$\('mobile-change-grade'\)\.hidden=!chosen/);
+ assert.match(app,/\$\('mobile-selection-menu'\)\.hidden=inFamily\|\|!hasSchool/);
+ assert.match(app,/\$\('mobile-change-grade'\)\.hidden=inFamily\|\|!chosen/);
  assert.match(app,/mobile-change-school'\)\.addEventListener\('click'/);
  assert.match(app,/mobile-change-grade'\)\.addEventListener\('click'/);
 });
