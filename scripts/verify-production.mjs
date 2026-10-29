@@ -63,12 +63,6 @@ async function inspect(school,candidates){
   const sourceWords=quizItems(extractEnglishGlossaries(pages)).filter(x=>x.language==='en');
   if(school==='sjostrand'&&grade==='2'){
    const words=quizItems(extractNorwegianWordLists(pages)).filter(x=>x.language==='nb');
-   const diag=pages.flatMap(p=>(p.items||[]).filter(x=>/øveord|skjorte|skjegg|skjell|skjære/i.test(x.text))
-    .map(x=>({text:x.text,x:Math.round(x.x),y:Math.round(x.y),pageWidth:Math.round(p.width),pageHeight:Math.round(p.height)})));
-   console.log('PDF WORD COORDINATES',JSON.stringify(diag));
-   console.log('PDF MIDDLE COL TOKENS',JSON.stringify(pages.flatMap(p=>(p.items||[])
-     .filter(x=>x.x>=420&&x.x<625&&x.y>=60&&x.y<235)
-     .map(x=>({text:x.text,x:Math.round(x.x),y:Math.round(x.y)})))));
    checks.push({type:'source-norwegian-words',school,grade,sourceWords:words.length});
    if(current.week===44&&current.year===2026&&
       words.map(x=>x.word).join('|')!=='skjorte|skjegg|skjell|skjære')
