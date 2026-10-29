@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {AI_SCHEMA,normalizeAIPlan,interpretPdfWithAI} from '../lib/ai-plan.mjs';
-import {digestPdf,cacheKey,signJob,validSignature,queueAIJob,failureKey} from '../lib/ai-runtime.mjs';
+import {digestPdf,cacheKey,signJob,validSignature,queueAIJob,failureKey,jobOrigin} from '../lib/ai-runtime.mjs';
 import {createAIBackgroundHandler} from '../netlify/functions/ai-plan-background.mjs';
 import {createPlanHandler} from '../netlify/functions/plan.mjs';
 import {siteConfig} from '../public/site-config.mjs';
@@ -105,6 +105,22 @@ test('OpenAI PDF upload errors do not attempt cleanup without an uploaded file',
  await assert.rejects(interpretPdfWithAI(pdfBytes,{...meta,fetchImpl:mock,apiKey:'test-key'}),/Opplasting av PDF: OpenAI svarte 403/);
  assert.equal(calls.length,1);
 });
+test('Netlify Deploy Preview AI job calls stay on the preview host, never production',async()=>{
+ const previewEnv={...env,DEPLOY_URL:undefined,URL:'https://skolesekken.netlify.app',SITE_NAME:'skolesekken'};
+ const preview='https://deploy-preview-9--skolesekken.netlify.app';
+ assert.equal(jobOrigin(new Request(`${preview}/api/plan?grade=4`),previewEnv),preview);
+ assert.equal(jobOrigin(new Request('https://skolesekken.netlify.app/api/plan?grade=4'),previewEnv),
+   'https://skolesekken.netlify.app');
+ // Do not trust caller-supplied hosts from another Netlify site.
+ assert.equal(jobOrigin(new Request('https://deploy-preview-9--other.netlify.app/api/plan'),previewEnv),
+   'https://skolesekken.netlify.app');
+ const store=memoryStore();const calls=[];
+ const result=await queueAIJob({request:new Request(`${preview}/api/plan?grade=4`),
+  job:body,key,store,env:previewEnv,dispatchImpl:async url=>{calls.push(url);return {status:202};}});
+ assert.equal(result,'processing');
+ assert.deepEqual(calls,[`${preview}/.netlify/functions/ai-plan-background`]);
+});
+
 test('invalid signature and forged public background requests are blocked',async()=>{
  const run=createAIBackgroundHandler({env,storeFactory:async()=>{throw Error('Must not get store');}});
  const invalid=await run(new Request('https://preview.example/.netlify/functions/ai-plan-background',{method:'POST',headers:{'X-Weekplan-Signature':'false'},body:JSON.stringify(body)}));
