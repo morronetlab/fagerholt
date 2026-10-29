@@ -93,3 +93,10 @@ test('Ambiguous matches against two different due columns are never guessed',()=
   {dueDay:'Fredag',text:'Les teksten og gjør oppgavene',subject:null,sourcePage:1}];
  assert.equal(dueDayFromHomeworkCells({text:'Les teksten og gjør oppgavene',sourcePage:1},cells),null);
 });
+
+test('Weekly homework with null dueDay is not mistaken for an already-matched dated cell',()=>{
+ const source=extractUndatedWeeklyHomework([page()]);
+ assert.equal(source.length,1);
+ const plan=normalizeAIPlan(empty(),meta());
+ assert.equal(plan.homework.filter(t=>t.subject==='Sosialt'&&t.dueDay===null).length,1);
+});

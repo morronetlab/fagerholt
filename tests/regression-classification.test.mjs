@@ -116,7 +116,7 @@ test('4th: homework due-date grid without separate title extracts assignments, n
    token('Læringsmål',20,250),token('Jeg kan lese',20,280)
  ]);
  const data=result([pageData],'4');
- assert.ok(data.homework.some(x=>/Til torsdag: Gjør oppgave 12/i.test(x.text)));
+ assert.ok(data.homework.some(x=>x.dueDay==='Torsdag'&&/Gjør oppgave 12/i.test(x.text)));
  assert.ok(data.homework.every(x=>!/^Til\s+\w+:\s*$/.test(x.text)));
  assert.deepEqual(data.learningGoals,['Jeg kan lese']);
 });
