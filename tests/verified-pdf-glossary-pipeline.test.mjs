@@ -26,7 +26,7 @@ const empty=()=>({
 test('Sjøstrand 5A: preserve five PDF-backed English entries from AI through to Norwegian quiz',()=>{
  const raw={...empty(),vocabulary:[{category:'Engelske gloser',text:sjoestrand5AGlossaryText,...quote}]};
  const plan=normalizeAIPlan(raw,meta);
- assert.equal(AI_SCHEMA_VERSION,19);
+ assert.equal(AI_SCHEMA_VERSION,20);
  assert.equal(plan.vocabulary.length,1);
  assert.match(plan.vocabulary[0].text,/subject - fag\nlesson - time/);
  const actual=quizItems(plan.vocabulary);

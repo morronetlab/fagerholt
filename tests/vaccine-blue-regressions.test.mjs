@@ -43,7 +43,7 @@ test('Vaksinasjon under Fag denne uka filtreres fra AI-normalisering',()=>{
    {text:'Matematikk; Vaksine kl 10',...src(text)}]};
  const plan=normalizeAIPlan(raw,meta([text]));
  assert.deepEqual(plan.subjects,['Norsk','Matematikk']);
- assert.equal(AI_SCHEMA_VERSION,19);
+ assert.equal(AI_SCHEMA_VERSION,20);
  assert.match(SYSTEM_PROMPT,/ikke skolefag/);
  const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
  assert.match(app,/allEvents\.filter\(x=>!isVaccineNotice\(x\.title\)\)/);

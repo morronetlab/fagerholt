@@ -55,7 +55,7 @@ test('Sjøstrand 2: read four words from actual Norwegian word-list column, not 
 
 test('AI omitting source word list still produces a trustworthy Norwegian quiz',()=>{
  const plan=normalizeAIPlan(empty(),metadata);
- assert.equal(AI_SCHEMA_VERSION,19);
+ assert.equal(AI_SCHEMA_VERSION,20);
  assert.deepEqual(quizItems(plan.vocabulary).map(x=>x.word),expected);
 });
 

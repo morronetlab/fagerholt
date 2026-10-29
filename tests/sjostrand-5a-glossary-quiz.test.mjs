@@ -48,7 +48,7 @@ test('Sjøstrand 5A week 44 recovers all English/Norwegian column pairs',()=>{
 
 test('AI output missing vocabulary still gets PDF-grounded Sjøstrand 5A quiz',()=>{
  const normalized=normalizeAIPlan(empty,meta);
- assert.equal(AI_SCHEMA_VERSION,19);
+ assert.equal(AI_SCHEMA_VERSION,20);
  assert.equal(normalized.vocabulary.length,1);
  assert.deepEqual(quizItems(normalized.vocabulary).map(i=>i.word),
   expected.map(([english])=>english));
