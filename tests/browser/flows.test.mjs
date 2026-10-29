@@ -53,7 +53,7 @@ test('English-to-Norwegian quiz appears for Sjøstrand 5A and validates meaning 
  const {page,errors}=await openPage(t);
  await chooseSchoolGrade(page,'5A');
  await page.locator('#word-quiz').waitFor({state:'visible'});
- assert.match(await page.locator('#vocabulary-title').textContent(),/Engelske ord/);
+ assert.match(await page.locator('#vocabulary-title').textContent(),/Engelske gloser/);
  await page.locator('#word-quiz-start').click();
  assert.match(await page.locator('#word-quiz-question').textContent(),/apple/);
  assert.equal(await page.locator('#vocabulary-list').isVisible(),false);
