@@ -14,7 +14,7 @@ const meta={grade:'6',week:44,year:2026,source:'https://www.minskole.no/dvergsne
 const file=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 test('Dvergsnes: reading Monday through Thursday can be checked off separately',()=>{
  const plan=normalizeAIPlan(raw,meta);
- assert.equal(AI_SCHEMA_VERSION,17);
+ assert.equal(AI_SCHEMA_VERSION,18);
  assert.deepEqual(plan.homework[0].repeatDays,days.slice(0,4));
  const tasks=expandHomework(plan.homework);
  assert.deepEqual(tasks.map(t=>t.repeatDay),days.slice(0,4));

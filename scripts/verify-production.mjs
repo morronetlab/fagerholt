@@ -2,6 +2,7 @@
 import {schoolCalendar} from '../lib/calendar.mjs';
 import {pdfPages} from '../netlify/functions/plan.mjs';
 import {extractEnglishGlossaries} from '../lib/english-glossaries.mjs';
+import {extractNorwegianWordLists} from '../lib/norwegian-word-lists.mjs';
 import {quizItems,buildQuizRounds} from '../public/shared/word-quiz-core.mjs';
 
 const base=(process.env.PRODUCTION_URL||'https://ukeplanen.netlify.app').replace(/\/$/,'');
@@ -60,6 +61,13 @@ async function inspect(school,candidates){
   if(String.fromCharCode(...bytes.slice(0,4))!=='%PDF')throw Error('Original source is not a PDF');
   const pages=await pdfPages(bytes);
   const sourceWords=quizItems(extractEnglishGlossaries(pages)).filter(x=>x.language==='en');
+  if(school==='sjostrand'&&grade==='2'){
+   const words=quizItems(extractNorwegianWordLists(pages)).filter(x=>x.language==='nb');
+   checks.push({type:'source-norwegian-words',school,grade,sourceWords:words.length});
+   if(current.week===44&&current.year===2026&&
+      words.map(x=>x.word).join('|')!=='skjorte|skjegg|skjell|skjære')
+    errors.push('Sjøstrand 2: direct source PDF extraction failed for the four documented exercise words');
+  }
   const sourceText=pages.flatMap(p=>p.items.map(x=>x.text)).join(' ');
   if(school==='sjostrand'&&grade==='2'&&/(?:ukas ord|ukens ord|øveord)/i.test(sourceText)){
    const hasNorwegian=(plan.vocabulary||[]).some(x=>/ukas ord|ukens ord|øveord/i.test(x.category||''));
