@@ -112,12 +112,12 @@ test('Practice remembers wrong answers, resumes on reload and pauses on mobile',
  await page.locator('#word-quiz-start').click();
  await page.locator('#word-quiz-answer').fill('banan');
  await page.locator('#word-quiz-form button[type=submit]').click();
- assert.match(await page.locator('#word-quiz-feedback').textContent(),/øve mer/);
+ assert.match(await page.locator('#word-quiz-feedback').textContent(),/øver mer/);
  await page.reload();
  await page.locator('#word-quiz-start').waitFor({state:'visible'});
  assert.match(await page.locator('#word-quiz-start').textContent(),/Fortsett/);
  await page.locator('#word-quiz-start').click();
- assert.match(await page.locator('#word-quiz-feedback').textContent(),/øve mer/);
+ assert.match(await page.locator('#word-quiz-feedback').textContent(),/øver mer/);
  await page.locator('#word-quiz-next').click();
  assert.match(await page.locator('#word-quiz-question').textContent(),/banana/);
  await page.locator('#word-quiz-pause').click();
