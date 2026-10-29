@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {extractHomeworkDeadlineCells,extractUndatedWeeklyHomework,dueDayFromHomeworkCells} from '../lib/homework-grid.mjs';
 import {normalizeAIPlan} from '../lib/ai-plan.mjs';
 import {analyzePdfPages} from '../lib/plan-core.mjs';
+import {reconcileHomeworkWithPdf,HOMEWORK_SOURCE_VERSION} from '../lib/homework-source-truth.mjs';
 
 // The original official PDF is "UKEPLAN 6.TRINN - UKE 44", page 1:
 // https://www.minskole.no/DynamicContent//Documents/863-todda-Uke-44-.-c350c815-359d.pdf
@@ -113,4 +114,34 @@ test('Split PDF.js glyphs form actual subject headings',()=>{
  modified.items=modified.items.filter(x=>!(x.text==='Matte'&&x.x===520));
  modified.items.push(tok('M',520,850),tok('atte',525,850));
  assert.equal(extractHomeworkDeadlineCells([modified]).find(x=>x.cell===2)?.subject,'Matte');
+});
+
+test('Actual production cache response is corrected: no null due dates or fake Halloween homework',()=>{
+ const cached=[
+  {subject:'Naturfag',dueDay:null,text:'Les teksten du har fått utdelt og svar på spørsmålene. Skriv svarene i lekseboka.'},
+  {subject:'Engelsk',dueDay:null,text:'Les arket du har fått utdelt. Skriv svaret på spørsmålene i lekseboka.'},
+  {subject:'Naturfag',dueDay:null,text:'Leksefri pga. halloween-arrangementet på Tangen vgs.'},
+  {subject:'Matte',dueDay:null,text:'Jobb med arket du har fått utdelt. Skriv svarene i innføringsboka.'},
+  {subject:'Norsk',dueDay:null,text:'Les minimum 20 minutter i selvvalgt bok. Skriv et kort sammendrag av det du har lest (i lekseboka).'},
+  {subject:'Sosialt',dueDay:null,text:'Vi øver på å lytte til hverandre og ikke avbryte når andre snakker.'}
+ ];
+ const result=reconcileHomeworkWithPdf(cached,[page()]);
+ assert.equal(result.verified,true);
+ assert.deepEqual(result.homework.map(x=>[x.subject,x.dueDay]),[
+  ['Naturfag','Tirsdag'],['Engelsk','Tirsdag'],['Matte','Torsdag'],['Norsk','Fredag'],['Sosialt',null]]);
+ assert.equal(result.homework.length,5);
+ assert.equal(result.homework.some(x=>/leksefri|halloween/i.test(x.text)),false);
+ assert.equal(HOMEWORK_SOURCE_VERSION,1);
+});
+test('Other valid homework outside an explicit source matrix is preserved',()=>{
+ const extra={subject:'KRLE',text:'Les kapittel 7 om vennskap.',dueDay:null,repeatDays:[]};
+ const r=reconcileHomeworkWithPdf([extra],[page()]);
+ assert.equal(r.homework.at(-1).text,extra.text);
+ assert.equal(r.homework.length,6);
+});
+test('Without an explicit source matrix, no homework is fabricated or removed',()=>{
+ const homework=[{subject:'Norsk',text:'Les boka',dueDay:null}];
+ const result=reconcileHomeworkWithPdf(homework,[{width:800,height:600,items:[tok('Norsk på skolen',100,60)]}]);
+ assert.equal(result.verified,false);
+ assert.deepEqual(result.homework,homework);
 });
