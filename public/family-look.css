@@ -92,3 +92,10 @@
  .family-child-actions{flex-wrap:wrap}.family-open{flex-basis:100%}
 }
 @media(prefers-reduced-motion:reduce){.family-progress-track span{transition:none}}
+
+.family-checklist{list-style:none!important;padding:0!important}
+.family-checklist li{margin:0 0 9px!important}
+.family-checklist label{display:flex;align-items:flex-start;gap:8px;cursor:pointer}
+.family-checklist input{accent-color:#348764;min-width:18px;width:18px;height:18px;margin:1px 0 0;flex-shrink:0}
+.family-checklist input:checked+span{text-decoration:line-through;opacity:.65}
+.family-checklist span{min-width:0;overflow-wrap:anywhere}

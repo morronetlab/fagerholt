@@ -2,7 +2,7 @@
 import {siteConfig} from './site-config.mjs';
 import {schoolCalendar,DAYS} from './shared/calendar.mjs';
 import {FAMILY_STORAGE_KEY,FAMILY_MAX_PROFILES,readFamily,familyDocument,putProfile,profileSummary,
- familyHighlights,schoolDayIndices} from './shared/family-core.mjs';
+ familyHighlights,schoolDayIndices,childProgressKey} from './shared/family-core.mjs';
 import {quizItems,buildQuizRounds} from './shared/word-quiz-core.mjs';
 import {practiceKey,restorePractice,practiceSummary} from './shared/word-practice-core.mjs';
 
@@ -47,8 +47,11 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   for(const p of profiles)summaries.set(p.id,profileSummary(p,plans.get(p.id),now,read));
   return {now,summaries};
  }
- const taskList=(items,message)=>items.length?
-  '<ul>'+items.slice(0,2).map(x=>'<li>'+escape((x.subject?x.subject+': ':'')+x.text)+'</li>').join('')+'</ul>':
+ const taskList=(p,items,message)=>items.length?
+  '<ul class="family-checklist">'+items.slice(0,2).map(x=>
+    '<li><label><input type="checkbox" data-family-check="'+escape(p.id)+'" data-family-index="'+x.index+'" '+
+    (x.checked?'checked ':'')+'aria-label="Marker lekse ferdig for '+escape(p.name)+'"><span>'+
+    escape((x.subject?x.subject+': ':'')+x.text)+'</span></label></li>').join('')+'</ul>':
   '<p class="family-muted">'+escape(message)+'</p>';
  function childCard(p,s,now){
   const school=siteConfig.schools[p.school];
@@ -57,8 +60,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   const details=s.ready?[
    '<div class="family-child-progress"><div><span>Lekser denne uka</span><b>'+s.done+' / '+s.total+' fullført</b></div>',
    '<div class="family-progress-track" role="progressbar" aria-label="Fullført for '+escape(p.name)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><span style="width:'+pct+'%"></span></div></div>',
-   '<div class="family-child-columns"><div><h4>📚 I dag</h4>'+taskList(s.today,'Ingen lekser med frist i dag')+'</div>',
-   '<div><h4>🎒 Neste skoledag</h4>'+taskList(s.next,s.nextIndex==null?'Neste uke er ikke hentet ennå':'Ingen lekser med frist')+'</div></div>',
+   '<div class="family-child-columns"><div><h4>📚 I dag</h4>'+taskList(p,s.today,'Ingen lekser med frist i dag')+'</div>',
+   '<div><h4>🎒 Neste skoledag</h4>'+taskList(p,s.next,s.nextIndex==null?'Neste uke er ikke hentet ennå':'Ingen lekser med frist')+'</div></div>',
    '<p class="family-word-state">'+(practice?'✦ Ordøving: '+practice.attempted+' / '+practice.total+(practice.weak?', '+practice.weak+' trenger øving':''):'✦ Ingen ordøving i denne ukeplanen')+'</p>'
   ].join(''):'<div class="family-not-ready" role="status">'+escape(errors.get(p.id)||s.reason||'Henter ukeplan …')+'</div>';
   return '<article class="family-child"><div class="family-child-heading">'+
@@ -168,6 +171,17 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
    school:el('family-school').value,grade:el('family-grade').value,group:el('family-group').value};
   try{profiles=putProfile(profiles,p,siteConfig.schools);persist();closeForm();render();void fetchPlans();}
   catch(error){setStatus(error.message);}
+ });
+ el('family-cards').addEventListener('change',e=>{
+  const input=e.target.closest('input[data-family-check]');
+  if(!input)return;
+  const p=byId(input.dataset.familyCheck),index=Number(input.dataset.familyIndex);
+  if(!p||!Number.isInteger(index)||index<0)return;
+  const now=calendar(),key=childProgressKey(p,now.year,now.week,'homework');
+  let checked={};try{checked=JSON.parse(read(key)||'{}')||{};}catch{}
+  checked[index]=input.checked;
+  if(!write(key,JSON.stringify(checked)))el('family-load-status').textContent='Kunne ikke lagre avkrysning lokalt.';
+  render();
  });
  el('family-cards').addEventListener('click',e=>{
   const open=e.target.closest('[data-family-open]');

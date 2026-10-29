@@ -199,6 +199,11 @@ test('V2 family overview combines two children and keeps completion independentl
  await page.locator('#family-cards .family-child').first().locator('.family-child-progress').waitFor();
  assert.match(await page.locator('#family-cards .family-child').first().locator('.family-child-progress').innerText(),/1 \/ 2/);
  assert.match(await page.locator('#family-cards .family-child').nth(1).locator('.family-child-progress').innerText(),/0 \/ 2/);
+ await page.locator('#family-cards .family-child').nth(1).locator('input[data-family-check]').first().check();
+ assert.match(await page.locator('#family-cards .family-child').nth(1).locator('.family-child-progress').innerText(),/1 \/ 2/);
+ await page.locator('#family-cards .family-child').first().locator('input[data-family-check]').first().uncheck();
+ assert.match(await page.locator('#family-cards .family-child').first().locator('.family-child-progress').innerText(),/0 \/ 2/);
+ assert.match(await page.locator('#family-cards .family-child').nth(1).locator('.family-child-progress').innerText(),/1 \/ 2/);
  await page.reload();
  await page.locator('#family-cards .family-child').nth(1).waitFor();
  assert.equal(await page.locator('#family-cards .family-child').count(),2);
