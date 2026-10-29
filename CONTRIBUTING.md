@@ -33,5 +33,9 @@ Ferdige feilede kjøringer kan fremdeles ha sendt varsler. Netlify sine bygg og 
 
 - Representative PDF-utdrag er låst som syntetiske, persondatafrie fixtures i `tests/fixtures/`.
 - De første scenarioene sikrer riktig lekse-/pakkekategorisering, dagtabeller, kildebelagte engelskgloser og riktig ukevalg.
-- Tester må fortsatt sjekkes mot originale skole-PDF-er ved funksjonelle endringer; disse baselinene alene er ikke en nettleser-/E2E-test.
+- Tester må fortsatt sjekkes mot originale skole-PDF-er ved funksjonelle endringer; kilde-fixtures verifiserer parserne, mens separate Chromium-tester verifiserer faktisk UI.
 - `package-lock.json` er generert med npm 10 / Node 22 og skal oppdateres ved bevisste avhengighetsendringer.
+
+## Nettlesertester
+
+Kjør `npm ci`, `npx playwright install chromium` og `npm run test:browser` for automatiske nettlesertester. GitHub Actions kjører Chromium separat fra Node-testene. API-ene mockes slik at tester ikke er avhengige av skolens nettsted, værdata eller AI-kostnader. Se `docs/test-audit.md` for begrunnelsen for hvilke tester som beholdes og fjernes.

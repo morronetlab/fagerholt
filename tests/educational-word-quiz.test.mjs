@@ -67,3 +67,7 @@ test('English-only words without trustworthy translation do not invent a meaning
  const items=quizItems([{category:'Engelske ord',text:'obscureword, dog'}]);
  assert.deepEqual(buildQuizRounds(items,'en').map(r=>r.kind),['meaning','listen']);
 });
+
+test('AI-collapsed Norwegian word list remains supported',()=>{
+ assert.deepEqual(quizWords([{category:'Ukas ord',text:'sol hus bok'}]),['sol','hus','bok']);
+});
