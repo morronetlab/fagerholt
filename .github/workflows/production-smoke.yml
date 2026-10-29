@@ -1,0 +1,22 @@
+name: Production smoke test
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/verify-production.mjs'
+      - '.github/workflows/production-smoke.yml'
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - name: Check live production and original school PDFs
+        env:
+          PRODUCTION_URL: https://ukeplanen.netlify.app
+          EXPECTED_COMMIT: ${{ github.event.pull_request.base.sha || github.sha }}
+        run: node scripts/verify-production.mjs

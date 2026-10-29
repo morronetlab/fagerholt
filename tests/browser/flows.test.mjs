@@ -98,8 +98,10 @@ test('AI processing displays a transparent loading state rather than pretending 
  const {page,errors}=await openPage(t,{processing:true});
  await chooseSchoolGrade(page,'5A');
  await page.locator('#plan-feedback').waitFor({state:'visible'});
+ // Feedback becomes visible before its asynchronous AI progress panel; wait
+ // for the actual processing state instead of racing the browser render.
+ await page.locator('#analysis-progress').waitFor({state:'visible'});
  assert.equal(await page.locator('#plan-body').isVisible(),false);
- assert.equal(await page.locator('#analysis-progress').isVisible(),true);
  assert.match(await page.locator('#status-pill').textContent(),/AI analyserer/);
  assert.deepEqual(errors,[]);
 });
