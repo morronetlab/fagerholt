@@ -11,3 +11,14 @@ test('Dialog has close button, labelled title and only explanation and hint acti
  for(const x of ['id="helper-modal"','aria-modal="true"','data-helper-close','data-helper-mode="explain"','data-helper-mode="hint"'])assert.ok(html.includes(x));
  assert.ok(!html.includes('data-helper-mode="practice"'));
 });
+
+test('Helper refresh keeps hint-only policy and accessible controls',()=>{
+ const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
+ const js=readFileSync(new URL('../public/homework-helper.mjs',import.meta.url),'utf8');
+ assert.match(html,/DITT LEKSEHJØRNE/);
+ assert.match(html,/Forstå hva du skal gjøre/);
+ assert.match(html,/Få hjelp uten fasit/);
+ assert.match(js,/returnFocus/);
+ assert.match(js,/AbortController/);
+ assert.match(js,/aria-busy/);
+});

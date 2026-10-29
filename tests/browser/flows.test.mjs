@@ -53,7 +53,7 @@ test('English-to-Norwegian quiz appears for Sjøstrand 5A and validates meaning 
  const {page,errors}=await openPage(t);
  await chooseSchoolGrade(page,'5A');
  await page.locator('#word-quiz').waitFor({state:'visible'});
- assert.match(await page.locator('#vocabulary-title').textContent(),/Engelske ord/);
+ assert.match(await page.locator('#vocabulary-title').textContent(),/Engelske gloser/);
  await page.locator('#word-quiz-start').click();
  assert.match(await page.locator('#word-quiz-question').textContent(),/apple/);
  assert.equal(await page.locator('#vocabulary-list').isVisible(),false);
@@ -123,5 +123,44 @@ test('Practice remembers wrong answers, resumes on reload and pauses on mobile',
  await page.locator('#word-quiz-pause').click();
  assert.match(await page.locator('#word-quiz-start').textContent(),/Fortsett/);
  assert.equal(await page.locator('#word-quiz-stat-weak').textContent(),'1');
+ assert.deepEqual(errors,[]);
+});
+
+test('English and Norwegian words get separate responsive quiz cards',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.route('**/api/plan?**',route=>{
+  const grade=new URL(route.request().url()).searchParams.get('grade');
+  const plan=basePlan(grade);
+  plan.vocabulary=[{category:'Engelske gloser',text:'team - lag\nforward - spiss\nmanager - trener'},
+   {category:'Norske øveord',text:'overskrift\nlykkelig\ntrist'}];
+  return reply(route,plan);
+ });
+ await chooseSchoolGrade(page,'5A');
+ await page.locator('#vocabulary-panel').waitFor({state:'visible'});
+ await page.locator('#vocabulary-panel-nb').waitFor({state:'visible'});
+ assert.match(await page.locator('#vocabulary-list').innerText(),/team/);
+ assert.doesNotMatch(await page.locator('#vocabulary-list').innerText(),/overskrift/);
+ assert.match(await page.locator('#vocabulary-list-nb').innerText(),/overskrift/);
+ assert.doesNotMatch(await page.locator('#vocabulary-list-nb').innerText(),/team/);
+ const padding=await page.locator('#vocabulary-list-nb').evaluate(el=>parseFloat(getComputedStyle(el).paddingLeft));
+ assert.ok(padding>=16,'Word list has a visible left margin');
+ await page.locator('#word-quiz-start-nb').click();
+ assert.match(await page.locator('#word-quiz-question-nb').textContent(),/fire sekunder/);
+ await page.locator('#word-quiz-pause-nb').click();
+ await page.locator('#word-quiz-start').click();
+ assert.match(await page.locator('#word-quiz-question').textContent(),/team/);
+ assert.deepEqual(errors,[]);
+});
+test('Homework help dialog is clear and restores focus after closing',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await chooseSchoolGrade(page,'2');
+ const button=page.locator('#homework-list .helper-open').first();
+ await button.click();
+ assert.equal(await page.locator('#helper-modal').isVisible(),true);
+ assert.match(await page.locator('#helper-title').textContent(),/Du klarer dette/);
+ assert.equal(await page.locator('[data-helper-mode]').count(),2);
+ await page.keyboard.press('Escape');
+ assert.equal(await page.locator('#helper-modal').isVisible(),false);
+ assert.equal(await button.evaluate(el=>document.activeElement===el),true);
  assert.deepEqual(errors,[]);
 });

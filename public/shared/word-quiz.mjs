@@ -2,7 +2,8 @@
 import {quizItems,quizWords,buildQuizRounds,quizExpected,isQuizAnswerCorrect} from './word-quiz-core.mjs';
 export {quizItems,quizWords,buildQuizRounds,quizExpected,isQuizAnswerCorrect} from './word-quiz-core.mjs';
 import {practiceRoundId,practiceKey,newPractice,restorePractice,practiceAnswer,practiceNext,practiceSummary} from './word-practice-core.mjs';
-const $=id=>document.getElementById(id);
+function createQuizController(fixedLanguage,suffix){
+const $=id=>document.getElementById(id+suffix);
 let items=[],language='en',rounds=[],index=0,score=0,answered=false,peekTimer=null,loadedKey='',scope={},session=null,storeKey='',allRounds=[]; 
 function persist(){try{if(session&&storeKey)localStorage.setItem(storeKey,JSON.stringify(session));}catch{/* private browsing: transient only */}}
 function saved(){try{return restorePractice(localStorage.getItem(storeKey),allRounds);}catch{return null;}}
@@ -38,26 +39,26 @@ function chooseLanguage(lang){
   ?'Oversett engelske ord til norsk. Deretter øver du på å kjenne igjen den riktige norske betydningen.'+
    (untranslated?' '+untranslated+' ord mangler sikker oversettelse og får kun lytte-/staveøvelse.':'')
   :'Øv på rettskriving: se og husk ordene, lytt til dem og finn vokalene.';
- for(const button of document.querySelectorAll('[data-quiz-language]')){
+ for(const button of []){
   const selected=button.dataset.quizLanguage===lang;
   button.setAttribute('aria-pressed',String(selected));
  }
 }
-export function renderWordQuiz(vocabulary,context){
+function renderWordQuiz(vocabulary,context){
  const key=[context?.school,context?.grade,context?.year,context?.week,JSON.stringify(vocabulary||[])].join(':');
  if(loadedKey===key)return;
  loadedKey=key;scope={...context};stopSound();
- items=quizItems(vocabulary);
+ items=quizItems(vocabulary).filter(item=>item.language===fixedLanguage);
  $('vocabulary-list').hidden=false;
  const panel=$('word-quiz');
  panel.hidden=items.length===0;
  if(!items.length)return;
- const hasEnglish=availableLanguage('en'),hasNorwegian=availableLanguage('nb');
- $('word-quiz-language').hidden=!(hasEnglish&&hasNorwegian);
- for(const button of document.querySelectorAll('[data-quiz-language]')){
+ /* Separate language cards. */
+ $('word-quiz-language').hidden=true;
+ for(const button of []){
   button.hidden=!availableLanguage(button.dataset.quizLanguage);
  }
- chooseLanguage(hasEnglish?'en':'nb');
+ chooseLanguage(fixedLanguage);
 }
 function speak(){
  if(!canSpeak())return;
@@ -204,7 +205,7 @@ function finish(){
  $('vocabulary-list').hidden=false;
  $('word-quiz-pause').textContent='Tilbake til øvestudio';
 }
-export function initWordQuiz(){
+function initWordQuiz(){
  $('word-quiz-start').addEventListener('click',()=>{
   if(!session||session.phase==='done'){applySession(newPractice(allRounds,session?.weak||[]));persist();}
   if(rounds.length){$('vocabulary-list').hidden=true;showQuestion();}
@@ -222,7 +223,27 @@ export function initWordQuiz(){
  $('word-quiz-form').addEventListener('submit',event=>{event.preventDefault();submit();});
  $('word-quiz-peek').addEventListener('click',peek);
  $('word-quiz-speak').addEventListener('click',speak);
- document.querySelectorAll('[data-quiz-language]').forEach(button=>{
+ [].forEach(button=>{
   button.addEventListener('click',()=>chooseLanguage(button.dataset.quizLanguage));
  });
+}
+
+ return {renderWordQuiz,initWordQuiz};
+}
+const englishQuiz=createQuizController('en','');
+const norwegianQuiz=createQuizController('nb','-nb');
+export function initWordQuiz(){
+ // Unique IDs and independent event handlers prevent language state collisions.
+ const source=document.getElementById('word-quiz');
+ const destination=document.getElementById('word-quiz-nb');
+ const replica=source.cloneNode(true);
+ replica.id='word-quiz-nb';
+ for(const node of replica.querySelectorAll('[id]'))node.id+='-nb';
+ for(const node of replica.querySelectorAll('[for]'))node.htmlFor+='-nb';
+ destination.replaceWith(replica);
+ englishQuiz.initWordQuiz();norwegianQuiz.initWordQuiz();
+}
+export function renderWordQuiz(vocabulary,context){
+ englishQuiz.renderWordQuiz(vocabulary,context);
+ norwegianQuiz.renderWordQuiz(vocabulary,context);
 }

@@ -70,12 +70,13 @@
         <section class="panel" aria-labelledby="program-title"><div class="panel-head"><div><p class="eyebrow">SKOLEDAGEN</p><h2 id="program-title">Dette skjer i dag</h2></div><span class="section-icon">📚</span></div><div id="day-program" class="items"></div><section id="day-notes" class="day-notes" hidden aria-label="Praktisk informasjon for dagen"><h3>📌 Praktisk informasjon for dagen</h3><div id="day-notes-list"></div></section><div id="day-attendance" class="day-attendance" hidden aria-label="Særskilt oppmøte for enkelte grupper"></div></section>
         <section class="panel bag" aria-labelledby="bag-title"><div class="panel-head"><div><p class="eyebrow">FØR DU GÅR</p><h2 id="bag-title">Pakk skolesekken</h2></div><span class="section-icon">🎒</span></div><div id="bag-list" class="items"></div></section>
       </div>
-      <section class="panel homework" aria-labelledby="homework-title"><div class="panel-head"><div><p class="eyebrow">DENNE UKEN</p><h2 id="homework-title">Lekser og oppgaver</h2></div><span class="section-icon">✏️</span></div><div id="homework-progress" class="homework-progress" hidden aria-label="Lekseprogresjon">
+      <section class="panel homework homework-studio" aria-labelledby="homework-title"><div class="panel-head"><div><p class="eyebrow">✦ DITT LEKSEHJØRNE</p><h2 id="homework-title">Lekser og oppgaver</h2>
+ <p class="homework-studio-lead">Kryss av når du er ferdig. Trenger du et lite dytt? Leksehjelperen kan forklare og gi hint.</p></div><span class="section-icon" aria-hidden="true">✏️</span></div><div id="homework-progress" class="homework-progress" hidden aria-label="Lekseprogresjon">
           <div class="homework-progress-top"><strong id="homework-progress-count">0 av 0 lekser ferdig</strong><span id="homework-progress-stars" aria-hidden="true">☆☆☆</span></div>
           <div id="homework-progress-track" class="homework-progress-track" role="progressbar" aria-label="Lekser fullført" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="homework-progress-bar" class="homework-progress-fill"></div></div>
           <p id="homework-progress-message" aria-live="polite">✨ Klar for å samle stjerner?</p>
         </div><div id="homework-list" class="items"></div></section>
-      <section class="panel practice-panel" id="vocabulary-panel" hidden><div class="practice-head"><div><p class="eyebrow">✦ DITT ØVESTUDIO</p><h2 id="vocabulary-title">Ukas ord</h2><p class="practice-lead">Små steg. Store ord. Lær i ditt tempo – vi husker hvor langt du kom.</p></div><div class="practice-art" aria-hidden="true"><span>✦</span><b>Aa</b><em>✳</em></div></div><div id="vocabulary-list" class="items"></div><div id="word-quiz" hidden>
+      <section class="panel practice-panel" id="vocabulary-panel" hidden><div class="practice-head"><div><p class="eyebrow">✦ DITT ØVESTUDIO</p><h2 id="vocabulary-title">Engelske gloser</h2><p class="practice-lead">Små steg. Store ord. Lær i ditt tempo – vi husker hvor langt du kom.</p></div><div class="practice-art" aria-hidden="true"><span>✦</span><b>Aa</b><em>✳</em></div></div><div id="vocabulary-list" class="items practice-words"></div><div id="word-quiz" hidden>
  <div class="quiz-header"><strong>🎮 Ordutfordringen</strong><span class="practice-local">🔒 Fremdrift lagres kun på denne enheten</span></div>
  <div class="practice-stats" aria-label="Fremdrift i øvingen"><div><strong id="word-quiz-stat-correct">0</strong><small>Riktige svar</small></div><div><strong id="word-quiz-stat-progress">0 / 0</strong><small>Gjennomgått</small></div><div><strong id="word-quiz-stat-weak">0</strong><small>Trenger mer øving</small></div></div>
  <div id="word-quiz-language" role="group" aria-label="Velg språk">
@@ -101,6 +102,13 @@
   <button id="word-quiz-next" type="button" hidden>Neste oppgave →</button>
  </div></div>
 </div></section>
+      <section class="panel practice-panel practice-panel-nb" id="vocabulary-panel-nb" hidden aria-labelledby="vocabulary-title-nb">
+       <div class="practice-head"><div><p class="eyebrow">✦ NORSK ØVING</p><h2 id="vocabulary-title-nb">Norske øveord</h2>
+       <p class="practice-lead">Lær ordene, øv på staving og finn vokalene – helt i ditt tempo.</p></div>
+       <div class="practice-art" aria-hidden="true"><span>✦</span><b>Æø</b><em>✳</em></div></div>
+       <div id="vocabulary-list-nb" class="items practice-words"></div>
+       <div id="word-quiz-nb" hidden></div>
+      </section>
       <section class="panel subjects-panel" id="subjects-panel" aria-labelledby="subjects-title"><div class="panel-head"><div><p class="eyebrow">SKOLEFAG</p><h2 id="subjects-title">Fag denne uka</h2></div><span class="section-icon">📖</span></div><div id="subjects-list" class="items"></div></section>
       <section class="panel theme" id="theme-panel" hidden aria-labelledby="theme-title"><div class="panel-head"><div><p class="eyebrow">LITT EKSTRA</p><h2 id="theme-title">Ukas tema</h2></div><span class="section-icon">✨</span></div><p id="theme-content"></p><div id="mission-slot"></div></section>
       <section id="special-panel" class="panel special-panel" aria-labelledby="special-title" hidden>
@@ -119,15 +127,16 @@
 <div id="helper-modal" class="helper-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="helper-title">
   <section class="helper-dialog">
     <button type="button" data-helper-close class="helper-close" aria-label="Lukk leksehjelper">✕</button>
-    <p class="eyebrow">✨ LEKSEHJELPER</p><h2 id="helper-title">Vi finner ut av det sammen!</h2>
-    <p id="helper-task" class="helper-task"></p>
-    <div class="helper-actions">
-      <button type="button" data-helper-mode="explain">💡 Forklar oppgaven</button>
-      <button type="button" data-helper-mode="hint">🧩 Gi meg et hint</button>
-      
-    </div>
-    <p id="helper-status" role="status" aria-live="polite"></p>
-    <div id="helper-result" class="helper-result" aria-live="polite">Velg hvordan du vil ha hjelp.</div>
+    <div class="helper-hero"><div class="helper-hero-icon" aria-hidden="true">✦</div><div><p class="eyebrow">DITT LEKSEHJØRNE</p>
+ <h2 id="helper-title">Du klarer dette!</h2><p class="helper-intro">Velg om du vil ha en forklaring eller et hint. Du løser oppgaven selv.</p></div></div>
+ <div class="helper-task-card"><span class="helper-overline">DIN OPPGAVE</span><p id="helper-task" class="helper-task"></p></div>
+ <div class="helper-actions" role="group" aria-label="Velg type leksehjelp">
+ <button type="button" data-helper-mode="explain"><span aria-hidden="true">💡</span><span><strong>Forklar oppgaven</strong><small>Forstå hva du skal gjøre</small></span></button>
+ <button type="button" data-helper-mode="hint"><span aria-hidden="true">🧩</span><span><strong>Gi meg et hint</strong><small>Få hjelp uten fasit</small></span></button>
+ </div>
+ <p id="helper-status" class="helper-status" role="status" aria-live="polite"></p>
+ <div class="helper-result-card"><div class="helper-result-head"><span aria-hidden="true">✨</span><strong>Din læringshjelp</strong></div>
+ <div id="helper-result" class="helper-result" aria-live="polite">Velg hvordan du vil ha hjelp.</div></div>
     <p class="helper-small">AI kan ta feil. Ikke skriv inn personopplysninger. Du skal finne svarene og gjøre leksene selv.</p>
   </section>
 </div>

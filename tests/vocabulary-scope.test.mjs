@@ -14,10 +14,13 @@ test('Wilds Minne-style learning goals and themes never become word lists',()=>{
  const p=normalizeAIPlan(raw,{grade:'2',week:44,year:2026,source:'https://www.minskole.no/test',pdf:'https://www.minskole.no/file.pdf',pageTexts:[source],pageCount:1});
  assert.deepEqual(p.vocabulary,[{category:'Ukas ord',text:'sol, bok, hus'}]);
 });
-test('Vocabulary heading is dynamically updated from actual available categories',()=>{
+test('English and Norwegian headings and word lists are independently displayed',()=>{
  const js=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
  const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
  assert.match(html,/id="vocabulary-title"/);
- assert.match(js,/hasEnglish&&hasNorwegian/);
- assert.match(js,/hasEnglish\?'Engelske ord':'Ukas ord'/);
+ assert.match(html,/id="vocabulary-title-nb"/);
+ assert.match(html,/id="vocabulary-panel-nb"/);
+ assert.match(js,/const englishWords=/);
+ assert.match(js,/const norwegianWords=/);
+ assert.match(js,/vocabulary-panel-nb/);
 });
