@@ -23,6 +23,10 @@ jobs:
           node-version: '22'
       - run: npm ci --no-audit --no-fund
       - run: npm run check
+      # Targeted source-integrity check for the real PDF implicated in PR #53.
+      - name: Verify original Tordenskjolds gate PDF
+        if: ${{ github.event.pull_request.number == 53 }}
+        run: node scripts/verify-todda-original-pdf.mjs
 
   browser:
     runs-on: ubuntu-latest
