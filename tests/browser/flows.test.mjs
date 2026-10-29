@@ -222,3 +222,44 @@ test('Family grade selection, edited profiles and single-class navigation surviv
  assert.equal(await page.locator('#school-gate').isVisible(),true);
  assert.deepEqual(errors,[]);
 });
+
+test('2.1 parent email OTP, create family and cloud-mode dashboard work with mocked Supabase',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ const endpoint='https://testprojectabc.supabase.co';
+ let families=[];
+ const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,PATCH,DELETE,OPTIONS',
+  'Access-Control-Allow-Headers':'apikey,authorization,content-type,prefer'};
+ await page.route('**/api/account-config*',route=>reply(route,{
+   enabled:true,url:endpoint+'/',publishableKey:'sb_publishable_test_not_a_real_key'
+ }));
+ await page.route(endpoint+'/**',route=>{
+  const req=route.request(),url=req.url(),verb=req.method();
+  const respond=(data,status=200)=>route.fulfill({status,headers:{...cors,'Content-Type':'application/json'},
+    body:JSON.stringify(data)});
+  if(verb==='OPTIONS')return route.fulfill({status:204,headers:cors,body:''});
+  if(url.includes('/auth/v1/otp'))return respond({});
+  if(url.includes('/auth/v1/verify'))return respond({access_token:'access-token',
+    refresh_token:'refresh-token',expires_in:3600,user:{id:'guardian-one',email:'parent@example.no'}});
+  if(url.includes('/rest/v1/rpc/create_family')){
+   families=[{id:'family-1',name:'Min familie',created_by:'guardian-one'}];
+   return respond('family-1');
+  }
+  if(url.includes('/rest/v1/families'))return respond(families);
+  if(url.includes('/rest/v1/children'))return respond([]);
+  if(url.includes('/rest/v1/homework_progress'))return respond([]);
+  if(url.includes('/auth/v1/user'))return respond({id:'guardian-one',email:'parent@example.no'});
+  return respond({message:'Unexpected test API '+url},404);
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#account-button').click();
+ await page.locator('#account-email').fill('parent@example.no');
+ await page.locator('#account-send-code').click();
+ await page.locator('#account-code').fill('123456');
+ await page.locator('#account-verify').click();
+ await page.locator('#account-family-name').fill('Min familie');
+ await page.locator('#account-create').click();
+ await page.locator('#family-view').waitFor({state:'visible'});
+ assert.equal(await page.locator('#account-current-family').textContent(),'Min familie');
+ assert.match(await page.locator('#family-storage-label').textContent(),/Synkronisert familie/);
+ assert.deepEqual(errors,[]);
+});
