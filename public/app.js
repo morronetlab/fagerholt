@@ -365,7 +365,18 @@ async function reload({quiet=false,statusOnly=quiet}={}){
   if(statusOnly)state.statusChecking=false;
   if(id!==state.requestId||state.grade!==grade||state.school?.id!==schoolId)return;
   if(plan.status==='fulfilled'){
-    const fresh=plan.value;
+    let fresh=plan.value;
+    // A ready AI-status response can hold older, unverified homework data.
+    // Read the canonical cached plan through /api/plan, which validates PDF
+    // columns and repairs any stale source deadlines before displaying it.
+    if(statusOnly&&fresh.aiStatus==='ready'&&fresh.homeworkSourceVersion!==1){
+      try{
+        fresh=await fetchJSON(`/api/plan?school=${encodeURIComponent(schoolId)}&grade=${encodeURIComponent(grade)}${viewingNextWeek?'&nextWeek=1':''}`,60000);
+      }catch(error){
+        fresh={...fresh,homework:[],warning:'Leksefristene kunne ikke kontrolleres mot original-PDF-en. Åpne PDF-en for å se riktige frister.'};
+      }
+      if(id!==state.requestId||state.grade!==grade||state.school?.id!==schoolId)return;
+    }
     if(statusOnly&&state.plan?.aiStatus==='processing'&&fresh.aiStatus==='processing'){
       // Preserve PDF metadata and the existing estimated progress timer.
     }else if(statusOnly&&state.plan?.aiStatus==='processing'&&fresh.aiStatus==='failed'){

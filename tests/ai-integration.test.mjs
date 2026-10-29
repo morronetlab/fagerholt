@@ -128,7 +128,7 @@ test('invalid signature and forged public background requests are blocked',async
  assert.equal(validSignature(JSON.stringify(body),signJob(JSON.stringify(body),env.AI_JOB_SECRET),env.AI_JOB_SECRET),true);
 });
 test('cached AI result is served without PDF.js and without re-dispatch',async()=>{
- const store=memoryStore();store.map.set(key,{...normalizeAIPlan(aiRaw,meta),model:'gpt-4.1-mini'});
+ const store=memoryStore();store.map.set(key,{...normalizeAIPlan(aiRaw,meta),model:'gpt-4.1-mini',homeworkSourceVersion:1});
  let parseCount=0,queueCount=0;
  const handler=createPlanHandler({env,now:()=>new Date('2026-10-27T12:00:00Z'),storeFactory:async()=>store,
   parsePdfPages:async()=>{parseCount++;return [];},queueJob:async()=>{queueCount++;},
@@ -211,4 +211,42 @@ test('Plan API labels rule fallback when AI is temporarily failed',async()=>{
  assert.equal(result.aiStatus,'failed');
  assert.equal(result.parser,'rules');
  assert.match(result.warning,/AI-analysen feilet/);
+});
+
+test('Pre-existing cached AI homework is repaired from PDF columns once, persisted and served correctly',async()=>{
+ const store=memoryStore(),tokens=(text,x,y)=>({text,x,y,width:text.length*5});
+ const page={width:600,height:750,items:[
+  tokens('LEKSER UKE 44',100,105),
+  tokens('Til tirsdag',125,148),tokens('Til torsdag',330,148),
+  tokens('Norsk: Les teksten i norskboka.',128,196),
+  tokens('Matte: Gjør oppgavene på arket.',333,196),
+  tokens('Ukelekse',110,323),
+  tokens('Sosialt: Vi øver på å høre etter.',115,350)
+ ]};
+ const broken={...normalizeAIPlan(aiRaw,meta),schoolId:'fagerholt',model:'gpt-4.1-mini',
+  homework:[{subject:'Norsk',text:'Les teksten i norskboka.',dueDay:null,repeatDays:[]},
+   {subject:'Matte',text:'Gjør oppgavene på arket.',dueDay:null,repeatDays:[]},
+   {subject:'Norsk',text:'Leksefri på onsdag',dueDay:null,repeatDays:[]}],
+  homeworkSourceVersion:undefined};
+ store.map.set(key,broken);
+ let parses=0,dispatches=0;
+ const handler=createPlanHandler({env,now:()=>new Date('2026-10-27T12:00:00Z'),
+  storeFactory:async()=>store,
+  parsePdfPages:async()=>{parses++;return [page];},
+  queueJob:async()=>{dispatches++;},
+  fetchImpl:async url=>url===source?
+    webResponse('<a href="'+pdf+'">Ukeplan uke 44</a>',url):
+    webResponse('%PDF-1.7 test content',url)});
+ const url='https://preview.example/api/plan?school=fagerholt&grade=4';
+ const first=await (await handler(new Request(url))).json();
+ assert.equal(first.parser,'ai');assert.equal(first.aiStatus,'ready');
+ assert.deepEqual(first.homework.map(x=>[x.subject,x.dueDay]),[
+  ['Norsk','Tirsdag'],['Matte','Torsdag'],['Sosialt',null]]);
+ assert.equal(first.homeworkSourceVerified,true);
+ assert.equal(first.homeworkSourceVersion,1);
+ const second=await (await handler(new Request(url))).json();
+ assert.deepEqual(second.homework,first.homework);
+ assert.equal(parses,1,'The PDF should be parsed only once per cached document/version');
+ assert.equal(dispatches,0,'No model re-run is necessary');
+ assert.equal((await store.get(key)).homeworkSourceVersion,1,'Corrected cached result persists');
 });

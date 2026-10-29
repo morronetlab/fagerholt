@@ -3,6 +3,7 @@ import {schoolCalendar} from '../../lib/calendar.mjs';
 import {findPdfLinks,choosePdf,analyzePdfPages,pdfItemsFromTextContent} from '../../lib/plan-core.mjs';
 import {aiConfigured,cacheKey,digestPdf,openAIStore,queueAIJob,lockKey,failureKey,createStatusToken} from '../../lib/ai-runtime.mjs';
 import {getSchool,validGradeCode,locateGradeSections,isSchoolSectionUrl} from '../../lib/schools.mjs';
+import {reconcileHomeworkWithPdf,HOMEWORK_SOURCE_VERSION} from '../../lib/homework-source-truth.mjs';
 const MAX_PDF_BYTES=14*1024*1024;
 const HEADERS={'User-Agent':'Mozilla/5.0 (compatible; Ukeplanen/0.1; +https://github.com/morronetlab/fagerholt)','Accept-Language':'nb-NO,nb;q=0.9'};
 const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{
@@ -86,8 +87,25 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
           const key=cacheKey({school:school.id,grade,year,week,hash,model:env.OPENAI_MODEL||'gpt-4.1-mini'});
           const store=await storeFactory();
           const cached=await store.get(key,{type:'json',consistency:'strong'});
-          if(cached?.parser==='ai'&&(cached.schoolId===school.id||(school.id==='fagerholt'&&!cached.schoolId))&&cached.grade===grade&&cached.week===week&&cached.year===year&&cached.pdf===pdf.url)
-            return reply({...base,...cached,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,aiStatus:'ready'});
+          if(cached?.parser==='ai'&&(cached.schoolId===school.id||(school.id==='fagerholt'&&!cached.schoolId))&&cached.grade===grade&&cached.week===week&&cached.year===year&&cached.pdf===pdf.url){
+            let ready=cached;
+            // AI results cached before source-verified deadlines are still
+            // repairable. Validate once against the original PDF coordinates,
+            // then persist the corrected plan without re-running the model.
+            if(cached.homeworkSourceVersion!==HOMEWORK_SOURCE_VERSION){
+              try{
+                const pageLayouts=await parsePdfPages(bytes.slice());
+                if(pageLayouts.length){
+                  const checked=reconcileHomeworkWithPdf(cached.homework,pageLayouts);
+                  ready={...cached,homework:checked.homework,homeworkSourceVersion:HOMEWORK_SOURCE_VERSION,
+                    homeworkSourceVerified:checked.verified};
+                  try{await store.setJSON(key,ready);}
+                  catch(error){console.warn('Could not persist corrected homework cache:',error?.message);}
+                }
+              }catch(error){console.warn('Could not verify cached homework source:',error?.message);}
+            }
+            return reply({...base,...ready,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,aiStatus:'ready'});
+          }
           if(statusOnly){
             // Read-only job inspection: never dispatch another background job.
             // This also avoids parsing the PDF again on every polling request.
