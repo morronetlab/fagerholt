@@ -23,11 +23,15 @@ jobs:
           node-version: '22'
       - run: npm ci --no-audit --no-fund
       - run: npm run check
-      # Temporary one-off snapshot for pinned Chromium test dependency.
-      - name: Generate browser dependency lock snapshot
-        run: |
-          npm install --package-lock-only --ignore-scripts --save-dev --save-exact playwright@1.56.1 --no-audit --no-fund
-          echo __BROWSER_LOCK_START__
-          base64 -w0 package-lock.json
-          echo
-          echo __BROWSER_LOCK_END__
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
