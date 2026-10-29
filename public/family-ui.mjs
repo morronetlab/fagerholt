@@ -5,6 +5,8 @@ import {FAMILY_STORAGE_KEY,FAMILY_MAX_PROFILES,readFamily,familyDocument,putProf
  familyHighlights,schoolDayIndices,childProgressKey} from './shared/family-core.mjs';
 import {quizItems,buildQuizRounds} from './shared/word-quiz-core.mjs';
 import {practiceKey,restorePractice,practiceSummary} from './shared/word-practice-core.mjs';
+import {taskFingerprint} from './shared/cloud-account.mjs';
+import {expandHomework} from './shared/homework-view.mjs';
 
 const el=id=>document.getElementById(id);
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -33,18 +35,52 @@ function wordStatus(profile,plan,calendar){
 }
 export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
  let active=false,profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
+ let cloud=null,cloudChecks=new Map();
  const plans=new Map(),loading=new Set(),errors=new Map();
  let run=0,editing=null,gradeRun=0;
  const calendar=()=>schoolCalendar(new Date(),'Europe/Oslo');
  const byId=id=>profiles.find(p=>p.id===id);
  const setStatus=message=>{el('family-form-status').textContent=message||'';};
  const persist=()=>{
+  if(cloud)return;
   if(!write(FAMILY_STORAGE_KEY,familyDocument(profiles)))
    setStatus('Lagring er blokkert i nettleseren. Endringene kan forsvinne.');
  };
+ const cloudKey=(p,task,now)=>taskFingerprint({school:p.school,grade:p.grade,
+   year:now.year,week:now.week,task});
+ const cloudIsChecked=(p,task,now)=>cloudChecks.get(p.id)?.get(cloudKey(p,task,now))===true;
+ async function syncCloud(){
+  if(!cloud)return;
+  const current=cloud,now=calendar();
+  try{
+   const rows=await current.client.progress(current.familyId,now.year,now.week);
+   if(cloud!==current)return;
+   cloudChecks=new Map();
+   for(const row of rows){
+    if(!cloudChecks.has(row.child_id))cloudChecks.set(row.child_id,new Map());
+    cloudChecks.get(row.child_id).set(row.task_key,row.completed);
+   }
+   render();
+  }catch(error){el('family-load-status').textContent='Kunne ikke synkronisere: '+error.message;}
+ }
+ async function updateCloud(p,task,checked){
+  if(!cloud)throw Error('Ingen familiekonto aktiv.');
+  const current=cloud,now=calendar(),key=cloudKey(p,task,now);
+  const previous=cloudChecks.get(p.id)?.get(key);
+  if(!cloudChecks.has(p.id))cloudChecks.set(p.id,new Map());
+  cloudChecks.get(p.id).set(key,checked);render();
+  try{
+   await current.client.setTask({familyId:current.familyId,childId:p.id,
+    year:now.year,week:now.week,key,completed:checked});
+  }catch(error){
+   if(previous===undefined)cloudChecks.get(p.id)?.delete(key);
+   else cloudChecks.get(p.id)?.set(key,previous);
+   render();throw error;
+  }
+ }
  function getSummaries(){
   const now=calendar(),summaries=new Map();
-  for(const p of profiles)summaries.set(p.id,profileSummary(p,plans.get(p.id),now,read));
+  for(const p of profiles)summaries.set(p.id,profileSummary(p,plans.get(p.id),now,read,cloud?cloudIsChecked:null));
   return {now,summaries};
  }
  const taskList=(p,items,message)=>items.length?
@@ -77,7 +113,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   if(!active)return;
   const {now,summaries}=getSummaries();
   el('family-week').textContent='Uke '+now.week+' · '+now.year;
-  el('family-count').textContent=profiles.length+' '+(profiles.length===1?'barn':'barn');
+  el('family-count').textContent=profiles.length+' barn';
+  el('family-storage-label').textContent=cloud?'☁ Synkronisert familie':'🔒 Kun på denne enheten';
   el('family-add').disabled=profiles.length>=FAMILY_MAX_PROFILES;
   el('family-add').textContent=profiles.length>=FAMILY_MAX_PROFILES?'Maks seks barn':'+ Legg til barn';
   el('family-empty').hidden=profiles.length!==0;
@@ -155,6 +192,26 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   '<option value="'+escape(s.id)+'">'+escape(s.name)+'</option>').join('');
  const api={
   isActive:()=>active,hasProfiles:()=>profiles.length>0,profileById:byId,
+  isCloudProfile:id=>Boolean(cloud&&byId(id)),
+  isHomeworkChecked:(id,task)=>{
+    const p=byId(id);return Boolean(p&&cloud&&cloudIsChecked(p,task,calendar()));
+  },
+  updateHomework:async(id,task,checked)=>{
+    const p=byId(id);if(!p||!task)throw Error('Fant ikke denne leksen.');
+    await updateCloud(p,task,checked);
+  },
+  setCloud:async(client,familyId,remoteChildren)=>{
+    cloud={client,familyId};
+    profiles=remoteChildren.map(x=>({id:x.id,name:x.nickname,school:x.school_id,
+      grade:x.grade,group:x.group_name||''})).filter(x=>Object.hasOwn(siteConfig.schools,x.school));
+    plans.clear();cloudChecks.clear();await syncCloud();
+    if(active){render();void fetchPlans();}
+  },
+  clearCloud:()=>{
+    cloud=null;cloudChecks.clear();profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
+    plans.clear();if(active){render();void fetchPlans();}
+  },
+  refreshCloud:syncCloud,
   enter:()=>{if(active)return;active=true;render();onModeChange();void fetchPlans();},
   leave:()=>{active=false;run++;loading.clear();onModeChange();},
   refresh:()=>{if(active)void fetchPlans();}
@@ -164,13 +221,24 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
  el('family-refresh').addEventListener('click',api.refresh);
  el('family-return').addEventListener('click',()=>{api.leave();onOpenSingle();});
  el('family-school').addEventListener('change',()=>{setStatus('');void loadGrades();});
- el('family-form').addEventListener('submit',e=>{
+ el('family-form').addEventListener('submit',async e=>{
   e.preventDefault();
   if(!el('family-school').value||!el('family-grade').value){setStatus('Velg skole og klassetrinn.');return;}
   const p={id:editing||crypto.randomUUID(),name:el('family-name').value,
    school:el('family-school').value,grade:el('family-grade').value,group:el('family-group').value};
-  try{profiles=putProfile(profiles,p,siteConfig.schools);persist();closeForm();render();void fetchPlans();}
-  catch(error){setStatus(error.message);}
+  const button=el('family-save');button.disabled=true;
+  try{
+   if(cloud){
+    const fields={nickname:p.name,school_id:p.school,grade:p.grade,group_name:p.group};
+    const rows=editing?await cloud.client.updateChild(editing,cloud.familyId,fields):
+      await cloud.client.createChild({...fields,family_id:cloud.familyId});
+    const row=rows?.[0];if(!row)throw Error('Kunne ikke lagre profilen. Kontroller tilgangen.');
+    profiles=putProfile(profiles,{id:row.id,name:row.nickname,school:row.school_id,
+     grade:row.grade,group:row.group_name||''},siteConfig.schools);
+   }else{profiles=putProfile(profiles,p,siteConfig.schools);persist();}
+   closeForm();render();void fetchPlans();
+  }catch(error){setStatus(error.message);}
+  finally{button.disabled=false;}
  });
  el('family-cards').addEventListener('change',e=>{
   const input=e.target.closest('input[data-family-check]');
@@ -179,9 +247,16 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   if(!p||!Number.isInteger(index)||index<0)return;
   const now=calendar(),key=childProgressKey(p,now.year,now.week,'homework');
   let checked={};try{checked=JSON.parse(read(key)||'{}')||{};}catch{}
-  checked[index]=input.checked;
-  if(!write(key,JSON.stringify(checked)))el('family-load-status').textContent='Kunne ikke lagre avkrysning lokalt.';
-  render();
+  if(cloud){
+   const item=expandHomework(plans.get(p.id)?.homework||[])[index];
+   if(item)void updateCloud(p,item,input.checked).catch(error=>{
+    el('family-load-status').textContent='Endringen ble ikke lagret: '+error.message;
+   });
+  }else{
+   checked[index]=input.checked;
+   if(!write(key,JSON.stringify(checked)))el('family-load-status').textContent='Kunne ikke lagre avkrysning lokalt.';
+   render();
+  }
  });
  el('family-cards').addEventListener('click',e=>{
   const open=e.target.closest('[data-family-open]');
@@ -191,14 +266,22 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   const remove=e.target.closest('[data-family-remove]');
   if(remove){
    const p=byId(remove.dataset.familyRemove);
-   if(p&&confirm('Fjerne '+p.name+' fra familien? Avkrysninger på denne enheten slettes ikke.')){
-    profiles=profiles.filter(x=>x.id!==p.id);plans.delete(p.id);loading.delete(p.id);
-    persist();render();void fetchPlans();
+   if(p&&confirm(cloud?'Fjerne '+p.name+'? Da slettes også progresjonen i familiekontoen.':
+    'Fjerne '+p.name+' fra familien? Avkrysninger på denne enheten slettes ikke.')){
+    if(cloud){
+     void cloud.client.removeChild(p.id,cloud.familyId).then(()=>{
+      profiles=profiles.filter(x=>x.id!==p.id);plans.delete(p.id);cloudChecks.delete(p.id);
+      render();void fetchPlans();
+     }).catch(error=>{el('family-load-status').textContent=error.message;});
+    }else{
+     profiles=profiles.filter(x=>x.id!==p.id);plans.delete(p.id);loading.delete(p.id);
+     persist();render();void fetchPlans();
+    }
    }
   }
  });
  window.addEventListener('storage',e=>{
-  if(e.key!==FAMILY_STORAGE_KEY)return;
+  if(e.key!==FAMILY_STORAGE_KEY||cloud)return;
   profiles=readFamily(e.newValue,siteConfig.schools);
   if(active){render();void fetchPlans();}
  });

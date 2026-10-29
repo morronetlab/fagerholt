@@ -1,0 +1,22 @@
+/* Family account setup and accessible inline sign-in panel. */
+.account-nav{border:1px solid #bfdcc9;background:#fffdf7;color:#286652;padding:10px 15px;min-height:42px;border-radius:12px;font-size:13px;font-weight:850;cursor:pointer;white-space:nowrap}
+.account-nav[aria-expanded=true]{background:#275e4d;color:#fff}
+.account-panel{border:1px solid #d7e7dc;border-radius:22px;box-shadow:0 20px 45px #244c3627;background:#fff;padding:27px 32px;margin:18px auto 24px;max-width:790px;color:#315848}
+.account-panel[hidden],.account-panel [hidden]{display:none!important}
+.account-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.account-head h2{margin:0;color:#2d654f;line-height:1.25;font-size:clamp(23px,3vw,28px)}
+.account-close{border:1px solid #d5e7d8;background:#eef8f1;width:40px;height:40px;display:grid;place-items:center;border-radius:50%;cursor:pointer}
+.account-panel p{line-height:1.6;font-size:13px}
+.account-panel h3{font-size:17px;color:#2b654f;margin:23px 0 9px}
+.account-panel label{display:flex;flex-direction:column;gap:7px;font-weight:800;font-size:13px;margin:15px 0 11px;max-width:470px}
+.account-panel input,.account-panel select{width:100%;min-height:46px;border:1.5px solid #c6dccc;border-radius:11px;padding:11px 13px;font-size:15px;color:#234d3c;background:#fcfefa}
+.account-panel input[readonly]{background:#f2f7f1;color:#477b60;font-size:12px}
+.account-panel input:focus-visible,.account-panel select:focus-visible,.account-panel button:focus-visible{outline:3px solid #6cb791;outline-offset:2px}
+.account-message{min-height:18px;color:#357b59;font-weight:750;white-space:pre-wrap}
+.account-message[data-error=true]{color:#9c452a}
+.account-muted{font-size:12px!important;color:#70897b}
+.account-signed-in{color:#507565}
+.account-panel .family-text-button{display:block;margin-top:20px}
+.account-import-section{border-top:1px solid #e2eee5;margin-top:24px}
+#account-invite-result{background:#f6faf3;border:1px solid #e4efe5;border-radius:13px;padding:14px;margin:14px 0}
+@media(max-width:700px){.account-panel{padding:23px 18px;margin:14px 0}.account-nav{font-size:12px;padding:9px 11px;min-height:38px}}
