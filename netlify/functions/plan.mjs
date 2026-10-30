@@ -89,9 +89,13 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
           const store=await storeFactory();
           const cached=await store.get(key,{type:'json',consistency:'strong'});
           if(cached?.parser==='ai'&&(cached.schoolId===school.id||(school.id==='fagerholt'&&!cached.schoolId))&&cached.grade===grade&&cached.week===week&&cached.year===year&&cached.pdf===pdf.url){
+            // Signed proof for a separate, cached ranking of this exact PDF.
+            // It does not permit the browser to submit text to OpenAI.
+            const practicalPriorityToken=createStatusToken({school:school.id,grade,
+              year,week,hash,model:env.OPENAI_MODEL||'gpt-4.1-mini',pdf:pdf.url},env.AI_JOB_SECRET);
             // A read-only status check never parses the PDF; when the browser
             // receives ready without source verification, it reloads /api/plan.
-            if(statusOnly)return reply({...base,...cached,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,aiStatus:'ready'});
+            if(statusOnly)return reply({...base,...cached,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,aiStatus:'ready',practicalPriorityToken});
             let ready=cached;
             // AI results cached before source-verified deadlines are still
             // repairable. Validate once against the original PDF coordinates,
@@ -108,7 +112,7 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
                 }
               }catch(error){console.warn('Could not verify cached homework source:',error?.message);}
             }
-            return reply({...base,...ready,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,aiStatus:'ready'});
+            return reply({...base,...ready,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,aiStatus:'ready',practicalPriorityToken});
           }
           if(statusOnly){
             // Read-only job inspection: never dispatch another background job.
