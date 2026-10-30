@@ -230,6 +230,12 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
    pendingJobs.set(pair,{mode:'poll',jobId:plan.jobId||null,
     attempt:same?existing.attempt:0,startedAt:same?existing.startedAt:Date.now()});
    schedulePoll(pair,sequence,pollDelay(0));
+  }else if(plan?.aiStatus==='failed'&&(autoRetries.get(pair)||0)<1){
+   // A prior visitor may have triggered the failed analysis. Respect the
+   // server's five-minute failure cooldown, then start one fresh attempt.
+   autoRetries.set(pair,(autoRetries.get(pair)||0)+1);
+   pendingJobs.set(pair,{mode:'cooldown',retryAt:Date.now()+RETRY_COOLDOWN_MS});
+   schedulePoll(pair,sequence,RETRY_COOLDOWN_MS);
   }else{
    clearPairJob(pair);
   }
@@ -265,8 +271,9 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
     schedulePoll(pair,sequence,pollDelay(job.attempt));
    }else{
     clearPairJob(pair);
-    for(const p of pairProfiles(pair))errors.set(p.id,'Klarte ikke kontrollere AI-status. Velg Oppdater.');
-    render();
+    const previous=plans.get(pairProfiles(pair)[0]?.id);
+    applyPair(pair,{...previous,aiStatus:'failed',
+     warning:'Klarte ikke kontrollere AI-status. Prøv på nytt.'},null,sequence);
    }
    return;
   }
@@ -276,8 +283,9 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
    if(Date.now()-job.startedAt<16*60_000)schedulePoll(pair,sequence,pollDelay(job.attempt));
    else{
     clearPairJob(pair);
-    for(const p of pairProfiles(pair))errors.set(p.id,'AI-tolkingen bruker for lang tid. Velg Oppdater.');
-    render();
+    const previous=plans.get(pairProfiles(pair)[0]?.id);
+    applyPair(pair,{...previous,aiStatus:'failed',
+     warning:'AI-tolkingen bruker for lang tid. Prøv på nytt.'},null,sequence);
    }
    return;
   }
