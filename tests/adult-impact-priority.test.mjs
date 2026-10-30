@@ -95,7 +95,7 @@ test('Next school day view still warns about later school closure and vaccinatio
    Mandag:{events:[{title:'Vanlig matematikk'}],bring:[]},
    Tirsdag:{events:[],bring:[]},
    Onsdag:{events:[],bring:[]},
-   Torsdag:{events:[{title:'Vanlig gym'}],bring:[]},
+   Torsdag:{events:[{title:'Ordinær matematikk'}],bring:[]},
    Fredag:{events:[{title:'Planleggingsdag, elevene har fri'}],bring:[]}
   }};
  const summary={ready:true,todayBag:[],bag:[],todayNotes:[],notices:[],weeklyBag:[],
@@ -110,5 +110,5 @@ test('Next school day view still warns about later school closure and vaccinatio
  assert.ok(items.some(x=>x.label.includes('Fredag har elevene fri')),'Future day school notice must be shown');
  assert.ok(items.some(x=>x.label.includes('Vaksine')),'Vaccination on the next school day must be shown');
  assert.ok(!items.some(x=>x.label.includes('Læringsmål')),'Ordinary later-day information stays hidden');
- assert.ok(!items.some(x=>x.label.includes('Vanlig gym')),'Do not leak ordinary next-day activities');
+ assert.ok(!items.some(x=>x.label.includes('Ordinær matematikk')),'Do not leak ordinary next-day activities');
 });
