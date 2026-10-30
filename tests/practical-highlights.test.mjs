@@ -56,3 +56,19 @@ test('Highlights keep source wording intact even when notices are long',()=>{
  const s={...summary,weeklyBag:[],weeklyNotices:[{day:'Mandag',text:long}]};
  assert.equal(view(profile,s,plan).find(x=>x.kind==='notice').label,'Mandag: '+long.trim());
 });
+
+test('Older AI notices about phantom reflectors and English books never reach family dashboard',()=>{
+ const old={...summary,weeklyBag:[
+   {label:'Håndkle',day:'Mandag',note:'Forslag ut fra aktivitet i PDF-en',checked:false}],
+  weeklyNotices:[
+   {day:'Hele uka',text:'Ta med: Refleks (sjekk hvilken dag i PDF-en)'},
+   {day:'Hele uka',text:'Ta med: Engelskboka (sjekk hvilken dag i PDF-en)'}
+  ]};
+ const oldPlan={...plan,notices:[
+  'Ta med: Refleks (sjekk hvilken dag i PDF-en)',
+  'Ta med: Engelskboka (sjekk hvilken dag i PDF-en)']};
+ const items=view(profile,old,oldPlan);
+ assert.equal(items.some(x=>/Refleks|Engelskboka|Håndkle/i.test(x.label)),false);
+ assert.equal(items.some(x=>/særskilt oppmøte/i.test(x.label)),true,
+  'Documented special arrangements remain available');
+});

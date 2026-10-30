@@ -40,9 +40,42 @@ test('AI output preserves complete day events, 4th grade due dates and source-sp
  assert.match(normalized.homework[0].text,/Norsk: Les kapittel 3/);
  assert.match(normalized.homework[0].text,/Matematikk: Gjør oppgave 4/);
  assert.equal(normalized.days.Torsdag.bring[0].label,'Badetøy');
- assert.match(normalized.days.Torsdag.bring[1].note,/Forslag/);
+ assert.equal(normalized.days.Torsdag.bring.length,1,'Inferred towel must not appear as required packing');
  assert.deepEqual(normalized.notices,['Foreldremøte neste uke']);
  assert.deepEqual(normalized.subjects,['Matematikk og norsk']);
+});
+test('PDF does not instruct reflex or English book: AI packing guesses and fabricated notices are dropped',()=>{
+ const sourceText='På mandag skal vi være ute. Vi leser i engelskboka på skolen. Husk å ta med gymtøy på torsdag.';
+ const evidence={sourcePage:1,sourceQuote:'På mandag skal vi være ute. Vi leser i engelskboka på skolen.'};
+ const raw={...aiRaw,
+  packing:[
+   {...evidence,day:'Mandag',label:'Refleks',note:null,evidence:'explicit'},
+   {...evidence,day:null,label:'Engelskboka',note:null,evidence:'explicit'},
+   {sourcePage:1,sourceQuote:'Husk å ta med gymtøy på torsdag.',
+    day:'Torsdag',label:'Gymtøy',note:null,evidence:'explicit'},
+   {...evidence,day:'Mandag',label:'Refleksvest',note:null,evidence:'inferred'}
+  ],
+  notices:[{...evidence,day:null,text:'Ta med: Engelskboka'},
+   {sourcePage:1,sourceQuote:'Vi leser i engelskboka på skolen.',day:null,
+    text:'Vi leser i engelskboka på skolen.'}],
+  homework:[]
+ };
+ const normalized=normalizeAIPlan(raw,{...meta,pageTexts:[sourceText]});
+ const gear=Object.values(normalized.days).flatMap(d=>d.bring).map(g=>g.label);
+ assert.deepEqual(gear,['Gymtøy']);
+ assert.ok(normalized.notices.some(n=>/Vi leser/.test(n)));
+ assert.ok(normalized.notices.every(n=>!/refleks|Ta med: Engelskboka/i.test(typeof n==='string'?n:n.text)));
+ assert.ok(normalized.provenance.every(x=>!x.sourceQuote.includes('sjekk hvilken dag')));
+});
+test('Documented but undated packing uses the original instruction and never an app-generated placeholder',()=>{
+ const sourceText='Husk å ta med refleks til turen neste uke.';
+ const raw={...aiRaw,homework:[],
+  packing:[{sourcePage:1,sourceQuote:sourceText,day:null,
+   label:'Refleks',note:null,evidence:'explicit'}],
+  notices:[]};
+ const normalized=normalizeAIPlan(raw,{...meta,pageTexts:[sourceText]});
+ assert.ok(normalized.notices.some(n=>n===sourceText));
+ assert.ok(normalized.notices.every(n=>!String(n).includes('sjekk hvilken dag')));
 });
 test('AI drops ungrounded evidence and unknown weekdays',()=>{
  const raw=structuredClone(aiRaw);

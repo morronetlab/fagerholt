@@ -2,7 +2,8 @@
 import {siteConfig} from '../../public/site-config.mjs';
 import {getSchool,validGradeCode} from '../../lib/schools.mjs';
 import {aiConfigured,cacheKey,openAIStore,readStatusToken,lockKey,failureKey} from '../../lib/ai-runtime.mjs';
-const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+import {stripSyntheticPackingNotices} from '../../lib/packing-source.mjs';
+const reply=(body,status=200)=>new Response(JSON.stringify(stripSyntheticPackingNotices(body)),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 export function createAIStatusHandler({storeFactory=openAIStore,env=process.env,now=Date.now}={}){
  return async request=>{
   if(request.method!=='GET')return reply({error:'Kun GET støttes'},405);

@@ -60,3 +60,15 @@ test('Fallback parser reclassifies content below an explicit homework heading',(
  assert.ok(plan.dayNotes.Onsdag.some(item=>/vaksine/i.test(item.text)));
  assert.ok(plan.days.Fredag.bring.some(item=>item.label==='Gymsko'));
 });
+
+test('Rules fallback does not invent actionable reminders for undated packing fragments',()=>{
+ const token=(text,y)=>({text,x:25,y,width:text.length*5});
+ const page={width:850,height:700,items:[
+  token('Lekser',130),token('Ta med: Refleks',175),
+  token('Ta med: Engelskboka',218)
+ ]};
+ const plan=analyzePdfPages([page],'2',pdf,45,2026,school);
+ assert.ok(!(plan.notices||[]).some(item=>/sjekk hvilken dag i PDF-en/i.test(String(item))));
+ assert.ok(!Object.values(plan.days).flatMap(day=>day.bring).some(item=>
+  /Refleks|Engelskboka/i.test(item.label)));
+});
