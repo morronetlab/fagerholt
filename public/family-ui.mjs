@@ -8,6 +8,7 @@ import {practiceKey,restorePractice,practiceSummary} from './shared/word-practic
 import {taskFingerprint} from './shared/cloud-account.mjs';
 import {expandHomework} from './shared/homework-view.mjs';
 import {practicalHighlights} from './shared/practical-highlights.mjs';
+import {priorityKey,applyPracticalPriority} from './shared/practical-priority.mjs';
 
 const el=id=>document.getElementById(id);
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -40,6 +41,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
  const plans=new Map(),loading=new Set(),errors=new Map();
  // Poll one server-side AI job per unique school/grade, not once per child.
  const pendingJobs=new Map(),pollTimers=new Map(),autoRetries=new Map();
+ const priorityStates=new Map(),priorityTimers=new Map();
  let run=0,editing=null,gradeRun=0,lastPlanCheckAt=0,loadedWeekKey=null,showAllHighlights=false;
  const AUTO_CHECK_MS=15*60_000, RETRY_COOLDOWN_MS=5*60_000+5000;
  const pairOf=p=>p.school+'|'+p.grade;
@@ -48,6 +50,46 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
  function stopPollTimers(){
   for(const timer of pollTimers.values())clearTimeout(timer);
   pollTimers.clear();
+  for(const timer of priorityTimers.values())clearTimeout(timer);
+  priorityTimers.clear();
+ }
+ const priorityIdentity=plan=>[plan.pdf,plan.createdAt||'',plan.year,plan.week].join('|');
+ function schedulePriority(pair,plan,sequence,delay=4000){
+  if(!active||sequence!==run||document.visibilityState==='hidden')return;
+  const timer=priorityTimers.get(pair);if(timer)clearTimeout(timer);
+  priorityTimers.set(pair,setTimeout(()=>{
+   priorityTimers.delete(pair);void fetchPriority(pair,plan,sequence);
+  },delay));
+ }
+ async function fetchPriority(pair,plan,sequence){
+  if(!active||sequence!==run||!plan?.practicalPriorityToken)return;
+  const identity=priorityIdentity(plan),old=priorityStates.get(pair);
+  if(old?.identity!==identity)return;
+  let response;
+  try{response=await getJson('/api/practical-priority?job='+
+    encodeURIComponent(plan.practicalPriorityToken),26000);}
+  catch{response={status:'unavailable'};}
+  if(!active||sequence!==run||priorityStates.get(pair)?.identity!==identity)return;
+  if(response.status==='ready'&&response.scores&&typeof response.scores==='object'){
+   priorityStates.set(pair,{identity,status:'ready',scores:response.scores});
+   render();
+  }else if(response.status==='processing'){
+   const attempt=(old.attempt||0)+1;
+   priorityStates.set(pair,{identity,status:'processing',attempt});
+   if(attempt<8)schedulePriority(pair,plan,sequence,Math.min(10000,3000+attempt*1000));
+  }else{
+   priorityStates.set(pair,{identity,status:'unavailable'});
+  }
+ }
+ function requestPriority(pair,plan,sequence){
+  const old=priorityStates.get(pair),identity=priorityIdentity(plan||{});
+  if(plan?.aiStatus!=='ready'||!plan.practicalPriorityToken){
+   priorityStates.delete(pair);return;
+  }
+  if(old?.identity===identity&&old.status==='ready')return;
+  if(old?.identity===identity&&priorityTimers.has(pair))return;
+  priorityStates.set(pair,{identity,status:'processing',attempt:0});
+  void fetchPriority(pair,plan,sequence);
  }
 
  const calendar=()=>familyWeekCalendar(new Date(),'Europe/Oslo');
@@ -185,13 +227,22 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   el('family-next-day').textContent=now.upcoming?'i uke '+now.week:
    shownFocus==='today'?'i dag':
    shownFocus==='week'?'denne uka':next==null?'neste skoleuke':'til '+DAYS[next].toLocaleLowerCase('nb-NO');
-  const cards=now.upcoming||!(shownFocus==='next'&&next==null)?
+  const candidates=now.upcoming||!(shownFocus==='next'&&next==null)?
    practicalHighlights({profiles,summaries,plans,calendar:now,focus:shownFocus}):[];
+  const cards=applyPracticalPriority(candidates,item=>{
+   const p=byId(item.id),state=p&&priorityStates.get(pairOf(p));
+   return state?.status==='ready'?state.scores?.[priorityKey(item)]:null;
+  });
   const limit=5,displayed=showAllHighlights?cards:cards.slice(0,limit);
-  const reminderMarkup=displayed.map(x=>
-   '<article class="family-reminder"><span aria-hidden="true">'+x.icon+'</span><div><strong>'+escape(x.name)+'</strong>'+
-   '<p>'+escape(x.label)+'</p></div><button type="button" data-family-open="'+escape(x.id)+
-   '" aria-label="Åpne ukeplan for '+escape(x.name)+'">Se ukeplan →</button></article>').join('');
+  const reminderMarkup=displayed.map(x=>{
+   const emphasized=x.aiImportance===3;
+   const tag=emphasized?(x.aiPrepareAhead?'Forbered i forkant':'Viktig beskjed'):null;
+   return '<article class="family-reminder'+(emphasized?' family-reminder-priority':'')+'">'+
+    '<span aria-hidden="true">'+x.icon+'</span><div><strong>'+escape(x.name)+'</strong>'+
+    (tag?'<span class="family-reminder-importance">'+escape(tag)+'</span>':'')+
+    '<p>'+escape(x.label)+'</p></div><button type="button" data-family-open="'+escape(x.id)+
+    '" aria-label="Åpne ukeplan for '+escape(x.name)+'">Se ukeplan →</button></article>';
+  }).join('');
   const expand=cards.length>limit?
    '<button id="family-reminders-more" class="family-reminders-more" type="button" aria-expanded="'+
    String(showAllHighlights)+'">'+(showAllHighlights?'Vis færre':'Vis alle '+cards.length+' praktiske beskjeder')+'</button>':'';
@@ -274,6 +325,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   if(!active||sequence!==run||!pairProfiles(pair).length)return;
   applyPair(pair,plan,error,sequence);
   setPending(pair,plan,sequence);
+  if(!error&&plan?.aiStatus==='ready')requestPriority(pair,plan,sequence);
  }
  async function pollPair(pair,sequence){
   if(!active||sequence!==run||document.visibilityState==='hidden')return;
@@ -339,7 +391,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   const sequence=++run,now=calendar();
   const targetKey=weekKey(now);
   if(loadedWeekKey!==targetKey){
-   loadedWeekKey=targetKey;plans.clear();autoRetries.clear();cloudChecks.clear();showAllHighlights=false;
+   loadedWeekKey=targetKey;plans.clear();autoRetries.clear();cloudChecks.clear();
+   priorityStates.clear();showAllHighlights=false;
    if(cloud)void syncCloud();
   }
   lastPlanCheckAt=Date.now();
@@ -436,6 +489,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
     if(!recentlyChecked)void fetchPlans();
   },
   leave:()=>{active=false;run++;stopPollTimers();pendingJobs.clear();autoRetries.clear();
+    for(const [pair,state] of priorityStates)if(state.status!=='ready')priorityStates.delete(pair);
     loading.clear();onModeChange();},
   refresh:()=>{if(active){if(cloud)void syncCloud();void fetchPlans();}}
  };
