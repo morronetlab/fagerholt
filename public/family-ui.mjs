@@ -235,9 +235,13 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   });
   const limit=5,displayed=showAllHighlights?cards:cards.slice(0,limit);
   const reminderMarkup=displayed.map(x=>{
-   const emphasized=x.aiImportance===3;
-   const tag=emphasized?(x.aiPrepareAhead?'Forbered i forkant':'Viktig beskjed'):null;
-   return '<article class="family-reminder'+(emphasized?' family-reminder-priority':'')+'">'+
+   const impact=x.adultImpact;
+   const emphasized=Boolean(impact)||x.aiImportance===3;
+   const tag=impact==='workday'?'Påvirker arbeidsdagen':
+    impact==='health'?'Viktig helseinformasjon':
+    emphasized?(x.aiPrepareAhead?'Forbered i forkant':'Viktig beskjed'):null;
+   return '<article class="family-reminder'+(emphasized?' family-reminder-priority':'')+
+    (impact==='workday'?' family-reminder-workday':'')+'">'+
     '<span aria-hidden="true">'+x.icon+'</span><div><strong>'+escape(x.name)+'</strong>'+
     (tag?'<span class="family-reminder-importance">'+escape(tag)+'</span>':'')+
     '<p>'+escape(x.label)+'</p></div><button type="button" data-family-open="'+escape(x.id)+
