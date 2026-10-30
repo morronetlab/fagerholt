@@ -150,6 +150,7 @@
         </div>
         <p class="family-reminders-intro">Fridager, planleggingsdager, vaksiner og endringer som påvirker jobb eller barnepass vises først. Lekser finner du i ukeplanen.</p>
         <div id="family-reminders" class="family-reminders" aria-live="polite"></div>
+        <button type="button" id="family-report-missing" class="family-report-missing">Mangler det en viktig beskjed? Rapporter feil</button>
       </section>
       <div class="family-toolbar">
         <div><h2>Barna mine</h2><p>Hvert barn har sin egen ukeplan og lekseprogresjon.</p></div>
@@ -232,6 +233,7 @@
             <a id="feedback-school-link" class="feedback-primary-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Åpne skolens nettside <span aria-hidden="true">↗</span></a>
             <a id="feedback-grade-link" class="feedback-secondary-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Se originalen <span aria-hidden="true">↗</span></a>
             <button id="feedback-retry" class="feedback-retry" type="button">↻ Sjekk på nytt</button>
+            <button id="feedback-report-issue" class="feedback-retry" type="button" hidden>Rapporter feil i ukeplanen</button>
           </div>
         </div>
       </section>
@@ -292,12 +294,37 @@
       <details class="details" id="notices-panel"><summary>📬 Beskjeder fra skolen <span id="notices-count" class="count"></span><span id="notices-empty-hint" class="section-empty-hint" hidden>Ingen egne beskjeder denne uka</span><span class="chevron">⌄</span></summary><div id="notices-list" class="details-content"></div></details>
       <details class="details" id="goals-panel"><summary>🎯 Læringsmål <span id="goals-count" class="count"></span><span id="goals-empty-hint" class="section-empty-hint" hidden>Ingen egne læringsmål denne uka</span><span class="chevron">⌄</span></summary><div id="goals-list" class="details-content"></div></details>
       <section class="panel" id="contacts-panel" hidden><div class="panel-head"><div><p class="eyebrow">SKOLEKONTAKT</p><h2>Kontaktlærere</h2></div><span class="section-icon">📞</span></div><div id="contacts-list" class="items"></div></section>
-      <p class="disclaimer">Ukeplanen leses automatisk fra skolens PDF. Ved tvil er skolens original alltid fasit. <a id="pdf-source" href="#" target="_blank" rel="noopener noreferrer" hidden>Se original-PDF ↗</a></p>
+      <p class="disclaimer">Ukeplanen leses automatisk fra skolens PDF. Ved tvil er skolens original alltid fasit. <a id="pdf-source" href="#" target="_blank" rel="noopener noreferrer" hidden>Se original-PDF ↗</a> · <button type="button" id="report-plan-issue" class="plan-report-link">Rapporter feil i ukeplanen</button></p>
       </div>
     </div>
   </main>
   <footer>Skoleuka · <span id="footer-school">Kristiansand</span> · Uten familiekonto lagres valg på denne enheten. Med familiekonto deles lekseprogresjonen. <span class="footer-meta"><a href="https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/grunnskole/" target="_blank" rel="noopener noreferrer">Skoleoversikten ↗</a> · <a href="mailto:mortenronn@gmail.com?subject=Feilrapport%20Skoleuka">Rapporter feil: mortenronn@gmail.com</a> · <a id="git-version" href="#" target="_blank" rel="noopener noreferrer" hidden>Git-versjon</a></span></footer>
 </div>
+<dialog id="issue-report-dialog" class="issue-report-dialog" aria-labelledby="issue-report-title" aria-describedby="issue-report-intro">
+  <header class="issue-report-header">
+    <div><p class="family-eyebrow">HJELP OSS Å BLI BEDRE</p><h2 id="issue-report-title">Rapporter feil i ukeplanen</h2></div>
+    <button id="issue-report-close" type="button" class="family-form-close" aria-label="Lukk rapportering">✕</button>
+  </header>
+  <p id="issue-report-intro">Rapporten går til dem som vedlikeholder Skoleuka, ikke direkte til skolen.</p>
+  <form id="issue-report-form">
+    <label>Skole og trinn<select id="issue-report-context" required></select></label>
+    <label>Hva er feil?
+      <select id="issue-report-kind" required>
+        <option value="wrong_date">Feil dato eller dag</option>
+        <option value="missing_notice">Mangler viktig beskjed</option>
+        <option value="wrong_interpretation">Feil tolkning eller innhold</option>
+      </select>
+    </label>
+    <p id="issue-report-source" class="issue-report-source" hidden></p>
+    <label>Beskrivelse (valgfritt for noen feil)
+      <textarea id="issue-report-details" rows="4" maxlength="350" placeholder="Beskriv kort hva original-PDF-en sier."></textarea>
+    </label>
+    <p id="issue-report-help" class="issue-report-help">Beskriv gjerne hva som er feil.</p>
+    <p class="issue-report-privacy">Ikke skriv navn på barn, telefonnummer, e-post eller andre personopplysninger. Skole, trinn, uke, valgt beskjed og rapporttekst sendes – ikke familieprofil eller lekseprogresjon.</p>
+    <p id="issue-report-status" class="issue-report-status" role="status" aria-live="polite" hidden></p>
+    <button id="issue-report-submit" type="submit" class="family-add-button">Send rapport</button>
+  </form>
+</dialog>
 <div id="helper-modal" class="helper-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="helper-title">
   <section class="helper-dialog">
     <button type="button" data-helper-close class="helper-close" aria-label="Lukk leksehjelper">✕</button>

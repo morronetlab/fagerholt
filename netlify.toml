@@ -55,3 +55,15 @@
   to = "/.netlify/functions/account-config"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/report-issue"
+  to = "/.netlify/functions/report-issue"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/report-review"
+  to = "/.netlify/functions/report-review"
+  status = 200
+  force = true

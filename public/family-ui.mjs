@@ -36,7 +36,7 @@ function wordStatus(profile,plan,calendar){
  }
  return total?{total,attempted,weak}:null;
 }
-export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
+export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIssue}){
  let active=false,profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
  let cloud=null,cloudChecks=new Map(),focus='next',lastSynced=null,syncError='';
  const plans=new Map(),loading=new Set(),errors=new Map();
@@ -44,6 +44,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
  const pendingJobs=new Map(),pollTimers=new Map(),autoRetries=new Map();
  const priorityStates=new Map(),priorityTimers=new Map();
  let run=0,editing=null,gradeRun=0,lastPlanCheckAt=0,loadedWeekKey=null,showAllHighlights=false;
+ let reportCards=[];
  const AUTO_CHECK_MS=15*60_000, RETRY_COOLDOWN_MS=5*60_000+5000;
  const pairOf=p=>p.school+'|'+p.grade;
  const pairProfiles=pair=>profiles.filter(p=>pairOf(p)===pair);
@@ -234,6 +235,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
    const p=byId(item.id),state=p&&priorityStates.get(pairOf(p));
    return state?.status==='ready'?state.scores?.[priorityKey(item)]:null;
   });
+  reportCards=cards;
+  el('family-report-missing').hidden=profiles.length===0;
   const limit=5,displayed=showAllHighlights?cards:cards.slice(0,limit);
   const reminderMarkup=displayed.map(x=>{
    const impact=x.adultImpact;
@@ -257,8 +260,10 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
     (tag?'<span class="family-reminder-importance">'+escape(tag)+'</span>':'')+
     (digest.dateLabel?'<span class="family-reminder-date">'+escape(digest.dateLabel)+'</span>':'')+
     '<p class="family-reminder-short">'+escape(digest.shortText)+'</p>'+
-    details+'</div><button type="button" data-family-open="'+escape(x.id)+
-    '" aria-label="Åpne ukeplan for '+escape(x.name)+'">Se ukeplan →</button></article>';
+    details+'</div><div class="family-reminder-actions"><button type="button" data-family-open="'+escape(x.id)+
+    '" aria-label="Åpne ukeplan for '+escape(x.name)+'">Se ukeplan →</button>'+
+    '<button type="button" class="family-report-button" data-family-report="'+cards.indexOf(x)+
+    '" aria-label="Rapporter feil i beskjeden for '+escape(x.name)+'">Rapporter feil</button></div></article>';
   }).join('');
   const expand=cards.length>limit?
    '<button id="family-reminders-more" class="family-reminders-more" type="button" aria-expanded="'+
@@ -526,9 +531,27 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
     (weekKey(calendar())!==loadedWeekKey||Date.now()-lastPlanCheckAt>=AUTO_CHECK_MS))
    api.refresh();
  },60_000);
+ const reportingContexts=()=>[...new Map(profiles.map(p=>{
+  const cal=calendar(),plan=plans.get(p.id);
+  const value={school:p.school,grade:p.grade,year:cal.year,week:cal.week,
+   pdf:plan?.pdf||null};
+  return [p.school+'|'+p.grade,value];
+ })).values()];
+ el('family-report-missing').addEventListener('click',()=>{
+  const contexts=reportingContexts();
+  if(contexts.length)onReportIssue?.({contexts,kind:'missing_notice'});
+ });
  el('family-reminders').addEventListener('click',e=>{
   if(e.target.closest('#family-reminders-more')){
    showAllHighlights=!showAllHighlights;render();return;
+  }
+  const report=e.target.closest('[data-family-report]');
+  if(report){
+   const x=reportCards[Number(report.dataset.familyReport)],p=x&&byId(x.id);
+   if(p)onReportIssue?.({contexts:[{school:p.school,grade:p.grade,
+    year:calendar().year,week:calendar().week,pdf:plans.get(p.id)?.pdf||null}],
+    kind:'wrong_interpretation',sourceItem:x.label,sourcePage:x.sourcePage||null});
+   return;
   }
   const button=e.target.closest('[data-family-open]');
   if(button){const p=byId(button.dataset.familyOpen);if(p)openChildProfile(p);}

@@ -5,6 +5,7 @@ import {childProgressKey} from './shared/family-core.mjs';
 import {smartDayChoice} from './shared/smart-day.mjs';
 import {initWordQuiz,renderWordQuiz,quizItems} from './shared/word-quiz.mjs';
 import {openHomeworkHelper,initHomeworkHelper} from './homework-helper.mjs';
+import {initIssueReporter} from './report-issue.mjs';
 import {needsHomeworkHelp} from './shared/homework-help-eligibility.mjs';
 import {familyWeekCalendar,schoolCalendar,dayDate,DAYS} from './shared/calendar.mjs';
 import {schoolSelectionKey,validSchool,gradeSelectionKey,validGrade,progressKey} from './shared/selection.mjs';
@@ -183,6 +184,7 @@ function renderFeedback(){
     $('feedback-grade-link').firstChild.textContent=state.plan?.pdf?'Se original-PDF ':'Se trinnsiden ';
   }
   $('analysis-progress').hidden=info.kind!=='analyzing';
+  $('feedback-report-issue').hidden=!['missing','partial'].includes(info.kind);
   $('feedback-retry').hidden=!info.showRetry;
   $('feedback-retry').disabled=info.kind==='analyzing'&&state.statusChecking;
   $('feedback-retry').textContent=info.kind==='analyzing'?(state.statusChecking?'Sjekker AI-status …':'↻ Sjekk AI-status'):'↻ Prøv igjen';
@@ -603,9 +605,11 @@ function restoreNavigation(target){
  }finally{restoringRoute=false;}
 }
 function boot(){
+  const issueReporter=initIssueReporter();
   familyUI=initFamilyUI({
    onModeChange:()=>{renderShell();recordNavigation();},
    onOpenProfile:openFamilyProfile,
+   onReportIssue:args=>issueReporter.open(args),
    onOpenSingle:()=>{primaryView='plan';renderShell();recordNavigation();}
   });
   accountUI=initAccountUI({familyUI});
@@ -678,6 +682,14 @@ function boot(){
     const expanded=$('weather-panel').classList.toggle('is-expanded');
     $('weather-toggle').setAttribute('aria-expanded',String(expanded));
   });
+  const reportCurrentPlan=()=>{
+    if(!state.school?.id||!state.grade)return;
+    issueReporter.open({contexts:[{school:state.school.id,grade:state.grade,
+     year:state.plan?.year||calendar.year,week:state.plan?.week||calendar.week,
+     pdf:state.plan?.pdf||null}],kind:'wrong_interpretation'});
+  };
+  $('report-plan-issue').addEventListener('click',reportCurrentPlan);
+  $('feedback-report-issue').addEventListener('click',reportCurrentPlan);
   $('reload').addEventListener('click',reload);
   $('feedback-retry').addEventListener('click',()=>state.plan?.aiStatus==='processing'?reload({quiet:true,statusOnly:true}):reload());
   const savedSchool=storageRead(schoolSelectionKey());

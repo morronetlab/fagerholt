@@ -163,3 +163,43 @@
  font-weight:800;color:#175b43;text-decoration:underline;text-underline-offset:3px}
 .family-reminder-pdf:focus-visible,.family-reminder-detail summary:focus-visible{
  outline:3px solid #edb974;outline-offset:3px;border-radius:4px}
+
+/* Parent-facing report UI: no child/account data is posted. */
+.family-reminder > .family-reminder-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex:0 0 auto}
+.family-reminder .family-reminder-actions button{padding:6px 4px;white-space:normal;text-align:right}
+.family-reminder .family-report-button{color:#687e71;font-size:11px;font-weight:700}
+.family-report-missing,.plan-report-link{border:0;background:none;color:#376f55;cursor:pointer;
+ text-decoration:underline;text-underline-offset:3px;font-size:12px;font-weight:750}
+.family-report-missing{display:block;margin:15px 0 0;padding:6px 0;text-align:left}
+.family-report-missing[hidden]{display:none}
+.plan-report-link{display:inline;padding:0;font:inherit}
+.issue-report-dialog{width:min(530px,calc(100vw - 24px));max-height:min(90vh,750px);
+ overflow-y:auto;border:1px solid #cadfd3;border-radius:19px;padding:22px 24px;
+ box-shadow:0 16px 70px #163d2b55;background:#fff;color:#254d3b}
+.issue-report-dialog::backdrop{background:#162920a9}
+.issue-report-header{display:flex;justify-content:space-between;gap:20px;align-items:flex-start}
+.issue-report-header h2{font-size:clamp(20px,4vw,26px);margin:3px 0 10px}
+.issue-report-dialog>p{font-size:13px;line-height:1.5;color:#5a7264;margin:0 0 15px}
+.issue-report-dialog form{display:grid;gap:13px}
+.issue-report-dialog label{display:grid;gap:6px;font-size:13px;color:#315a43;font-weight:800}
+.issue-report-dialog select,.issue-report-dialog textarea{width:100%;font:inherit;font-weight:450;
+ background:#fbfdfb;border:1px solid #cbdcd0;border-radius:10px;padding:11px;
+ color:#244337;box-sizing:border-box}
+.issue-report-dialog textarea{resize:vertical;min-height:95px;max-height:185px}
+.issue-report-dialog .issue-report-help,.issue-report-dialog .issue-report-privacy,
+.issue-report-dialog .issue-report-source,.issue-report-dialog .issue-report-status{
+ font-size:12px;line-height:1.5;margin:0;color:#637769}
+.issue-report-dialog .issue-report-source{background:#f5f8f2;border-left:3px solid #75a389;
+ border-radius:5px;padding:9px 11px;overflow-wrap:anywhere}
+.issue-report-dialog .issue-report-privacy{padding:9px 11px;border-radius:9px;
+ background:#f8f9f6}
+.issue-report-dialog .issue-report-status{font-weight:800;color:#285e46}
+.issue-report-dialog button:focus-visible,.issue-report-dialog select:focus-visible,
+.issue-report-dialog textarea:focus-visible,.family-report-button:focus-visible,
+.family-report-missing:focus-visible,.plan-report-link:focus-visible{
+ outline:3px solid #edb974;outline-offset:3px}
+@media(max-width:700px){
+ .family-reminder > .family-reminder-actions{width:100%;flex-direction:row;justify-content:flex-end;align-items:center}
+ .family-reminder .family-reminder-actions button{padding:5px 9px}
+ .issue-report-dialog{padding:18px 17px}
+}

@@ -3,6 +3,7 @@ import {siteConfig} from '../../public/site-config.mjs';
 import {pdfPages} from './plan.mjs';
 import {interpretPdfWithAI} from '../../lib/ai-plan.mjs';
 import {auditPracticalSource} from '../../lib/practical-source-audit.mjs';
+import {recordSourceAlert} from '../../lib/issue-report-core.mjs';
 import {aiConfigured,cacheKey,digestPdf,openAIStore,validSignature,releaseJob,failureKey} from '../../lib/ai-runtime.mjs';
 import {getSchool,validGradeCode,isSchoolSectionUrl} from '../../lib/schools.mjs';
 
@@ -56,6 +57,13 @@ export function createAIBackgroundHandler({fetchImpl=fetch,storeFactory=openAISt
          school:school.id,grade,year,week,...sourceAudit
        }));
      await store.setJSON(key,{...normalized,sourceAudit,schoolId:school.id,schoolName:school.name,createdAt:new Date().toISOString(),model:env.OPENAI_MODEL||'gpt-4.1-mini',pdfSizeBytes:bytes.length,pdfPageCount:pages.length||null});
+     // A source audit alert is diagnostic, not a fabricated user-facing notice.
+     // Storage failures must not prevent the verified plan from being served.
+     if(sourceAudit.status==='attention')try{
+       await recordSourceAlert({school:school.id,grade,year,week,hash,pdf,audit:sourceAudit});
+     }catch(error){
+       console.warn('Source audit alert could not be stored',String(error?.message||'error').slice(0,100));
+     }
      mark('totalMs');
      console.info('ukeplan.background_timings',JSON.stringify({...measurements,school:school.id,grade,pdfBytes:bytes.length,pages:pages.length}));
      try{await store.delete(failureKey(key));}catch{}

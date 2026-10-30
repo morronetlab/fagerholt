@@ -578,6 +578,121 @@ test('Family notices have a short source-extractive headline, verified date, ful
  assert.deepEqual(errors,[]);
 });
 
+test('Family practical reminder can be reported without sending private child profile information',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[{id:'private-child-12345',name:'HemmeligBarn',
+   school:'sjostrand',grade:'2',group:''}]
+ })));
+ const notice='Vaksine onsdag morgen.';
+ let submitted=null,submissions=0;
+ await page.route('**/api/report-issue',async route=>{
+  submissions++;
+  submitted=route.request().postDataJSON();
+  await route.fulfill({status:201,contentType:'application/json',
+   body:JSON.stringify({status:'received'})});
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-reminders .family-reminder').first().waitFor({state:'visible'});
+ const card=page.locator('.family-reminder').filter({hasText:/Vaksine/}).first();
+ await card.locator('[data-family-report]').click();
+ await page.locator('#issue-report-dialog').waitFor({state:'visible'});
+ assert.equal(await page.locator('#issue-report-kind').inputValue(),'wrong_interpretation');
+ assert.match(await page.locator('#issue-report-source').innerText(),/Vaksine/);
+ await page.locator('#issue-report-details').fill('Original-PDF oppgir en annen dag.');
+ await page.locator('#issue-report-submit').click();
+ await page.locator('#issue-report-status').getByText(/Rapporten er registrert/).waitFor();
+ assert.equal(submissions,1);
+ assert.equal(submitted.school,'sjostrand');
+ assert.equal(submitted.grade,'2');
+ assert.equal(submitted.year,2026);
+ assert.equal(submitted.week,44);
+ assert.match(submitted.sourceText,/Vaksine/);
+ const payload=JSON.stringify(submitted);
+ assert.doesNotMatch(payload,/HemmeligBarn|private-child-12345|familyId|nickname|progress|access_token/);
+ await page.locator('#issue-report-close').click();
+ assert.deepEqual(errors,[]);
+});
+
+test('Missing important school notice report selects right family grade and requires details',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[
+   {id:'family-grade-002',name:'Barn A',school:'sjostrand',grade:'2',group:''},
+   {id:'family-grade-005',name:'Barn B',school:'sjostrand',grade:'5A',group:''}
+  ]
+ })));
+ let submitted=null;
+ await page.route('**/api/report-issue',async route=>{
+  submitted=route.request().postDataJSON();
+  await route.fulfill({status:201,contentType:'application/json',
+   body:JSON.stringify({status:'received'})});
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-report-missing').waitFor({state:'visible'});
+ await page.locator('#family-report-missing').click();
+ assert.equal(await page.locator('#issue-report-kind').inputValue(),'missing_notice');
+ assert.equal(await page.locator('#issue-report-context option').count(),2);
+ await page.locator('#issue-report-context').selectOption('1');
+ assert.equal(await page.locator('#issue-report-details').getAttribute('required'),'');
+ await page.locator('#issue-report-details').fill('Skolen nevner foreldremøte fredag i PDF-en.');
+ await page.locator('#issue-report-submit').click();
+ await page.locator('#issue-report-status').getByText(/Rapporten er registrert/).waitFor();
+ assert.equal(submitted.grade,'5A');
+ assert.equal(submitted.kind,'missing_notice');
+ assert.equal(submitted.sourceText,'');
+ assert.doesNotMatch(JSON.stringify(submitted),/Barn A|Barn B|family-grade-/);
+ assert.deepEqual(errors,[]);
+});
+
+test('Single-class school week exposes issue reporting without a family account',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ let report=null;
+ await page.route('**/api/report-issue',async route=>{
+  report=route.request().postDataJSON();
+  await route.fulfill({status:201,contentType:'application/json',body:'{"status":"received"}'});
+ });
+ await chooseSchoolGrade(page,'2');
+ await page.locator('#report-plan-issue').click();
+ await page.locator('#issue-report-dialog').waitFor({state:'visible'});
+ await page.locator('#issue-report-kind').selectOption('wrong_date');
+ await page.locator('#issue-report-details').fill('Riktig dag står i skolens PDF.');
+ await page.locator('#issue-report-submit').click();
+ await page.locator('#issue-report-status').getByText(/Rapporten er registrert/).waitFor();
+ assert.equal(report.school,'sjostrand');
+ assert.equal(report.grade,'2');
+ assert.equal(report.kind,'wrong_date');
+ assert.match(report.pdf,/minskole\.no/);
+ assert.deepEqual(errors,[]);
+});
+
+test('Unavailable school PDF still offers issue reporting from the fallback panel',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ let report=null;
+ await page.route('**/api/plan?**',route=>{
+  const plan=basePlan('2');
+  plan.status='unpublished';plan.aiStatus='disabled';plan.pdf=null;
+  return reply(route,plan);
+ });
+ await page.route('**/api/report-issue',async route=>{
+  report=route.request().postDataJSON();
+  await route.fulfill({status:201,contentType:'application/json',body:'{"status":"received"}'});
+ });
+ await chooseSchoolGrade(page,'2');
+ await page.locator('#plan-feedback').waitFor({state:'visible'});
+ assert.equal(await page.locator('#plan-body').isVisible(),false);
+ await page.locator('#feedback-report-issue').click();
+ await page.locator('#issue-report-dialog').waitFor({state:'visible'});
+ await page.locator('#issue-report-kind').selectOption('missing_notice');
+ await page.locator('#issue-report-details').fill('Skolens ukebrev ligger tilgjengelig, men vises ikke her.');
+ await page.locator('#issue-report-submit').click();
+ await page.locator('#issue-report-status').getByText(/Rapporten er registrert/).waitFor();
+ assert.equal(report.kind,'missing_notice');
+ assert.equal(report.school,'sjostrand');
+ assert.equal(report.pdf,null);
+ assert.deepEqual(errors,[]);
+});
+
 test('Opening a ready AI family plan is instant and browser Back and Forward restore views',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
