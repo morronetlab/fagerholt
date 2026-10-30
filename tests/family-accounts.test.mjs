@@ -21,6 +21,22 @@ test('Public configuration strictly accepts HTTPS Supabase publishable endpoint'
  assert.equal(validSupabaseConfig({...config,url:'https://evil.com/'}),false);
  assert.equal(validSupabaseConfig({...config,publishableKey:'service_role_secret_test'}),false);
 });
+test('Native default fetch is called with Window/global receiver (regression: Illegal invocation)',async()=>{
+ const previousFetch=globalThis.fetch,calls=[];
+ globalThis.fetch=function(url,init){
+  assert.equal(this,globalThis,'Native fetch must retain its global receiver');
+  calls.push({url,init});
+  return Promise.resolve(result({}));
+ };
+ try{
+  const account=new CloudAccount(config,{storage:storage()});
+  await account.sendCode('guardian@example.no');
+  assert.equal(calls.length,1);
+  assert.match(calls[0].url,/\\/auth\\/v1\\/otp$/);
+  assert.equal(calls[0].init.method,'POST');
+ }finally{globalThis.fetch=previousFetch;}
+});
+
 test('Email sign-in uses OTP without passwords, session is restored locally',async()=>{
  const calls=[],st=storage();
  const fetcher=async(url,init)=>{
