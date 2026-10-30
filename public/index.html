@@ -25,6 +25,7 @@
       <button type="button" id="account-close" class="account-close" aria-label="Lukk konto">✕</button></div>
     <div id="account-steps" class="onboard-steps" hidden aria-label="Oppsett av familiekonto"><span data-onboard-step="1">1. E-post</span><span data-onboard-step="2">2. Familie</span><span data-onboard-step="3">3. Barn</span><span data-onboard-step="4">4. Ferdig</span></div>
     <p id="account-message" class="account-message" role="status" aria-live="polite"></p>
+    <div data-account-screen="loading" hidden><p role="status">Klargjør familiekontoen …</p></div>
     <div data-account-screen="missing" hidden><p>Familiekontoer er ikke aktivert på denne installasjonen ennå.
       Den vanlige ukeplanen og lokale familieoversikten fungerer fortsatt.</p>
       <p class="account-muted">Tilkoblingen krever Supabase-prosjekt, database og publiserbar nøkkel i Netlify.</p></div>
@@ -138,7 +139,7 @@
       </section>
     </section>
     <section id="family-view" class="family-view" hidden aria-labelledby="family-title">
-      <div class="family-overview-top"><div><p class="family-eyebrow">FAMILIEOVERSIKT</p><h1 id="family-title">God oversikt over skoleuka</h1><p class="family-overview-subtitle">Lekser, pakkeliste og beskjeder for barna.</p></div><div class="family-overview-stats"><span id="family-week">Uke —</span><strong id="family-week-progress">—</strong><small id="family-count">0 barn</small></div></div>
+      <div class="family-overview-top"><div><p class="family-eyebrow">FAMILIEOVERSIKT</p><h1 id="family-title" tabindex="-1">God oversikt over skoleuka</h1><p class="family-overview-subtitle">Lekser, pakkeliste og beskjeder for barna.</p></div><div class="family-overview-stats"><span id="family-week">Uke —</span><strong id="family-week-progress">—</strong><small id="family-count">0 barn</small></div></div>
       <div class="family-overview-meta"><span id="family-storage-label">🔒 Kun på denne enheten</span><span id="family-sync-status" role="status" aria-live="polite"></span></div>
       <section class="family-tomorrow" aria-labelledby="family-tomorrow-title">
         <div class="family-tomorrow-top"><div><p class="family-eyebrow">FAMILIENS HUSKELISTE</p><h2 id="family-tomorrow-title">Dette må dere huske <span id="family-next-day"></span></h2></div><span class="family-tomorrow-icon" aria-hidden="true">🎒</span></div>
@@ -163,7 +164,7 @@
           <label>Klasse eller trinn<select id="family-grade" required disabled><option value="">Velg skole først</option></select></label>
           <label>Gruppe (valgfritt)<input id="family-group" type="text" maxlength="35" placeholder="F.eks. Rød gruppe"></label>
         </div>
-        <p id="family-form-tip" class="family-form-tip">Bruk gjerne kallenavn. Du kan bruke kallenavn. Med familiekonto synkroniseres barneprofilene mellom foresatte.</p>
+        <p id="family-form-tip" class="family-form-tip">Bruk gjerne kallenavn. Lagringen avhenger av om du bruker familiekonto.</p>
         <p id="family-form-status" class="family-form-status" role="status" aria-live="polite"></p>
         <button id="family-save" type="submit" class="family-add-button">Legg til i familien</button>
       </form>
