@@ -87,8 +87,15 @@ export function profileSummary(profile,plan,calendar,storage=()=>null,cloudCheck
   return [...new Map(raw.map(x=>[norm(x.label)+'|'+norm(x.group),x])).values()]
    .map((x,i)=>({...x,checked:checked(storage,profile,calendar,'bag',i,DAYS[day])}));
  };
+ const weeklyBag=DAYS.flatMap((day,i)=>getBag(i).map(gear=>({...gear,day})));
+ const weeklyNotices=[
+  ...(plan.notices||[]).filter(item=>typeof item==='string'&&item.trim())
+   .map(text=>({day:'Hele uka',text})),
+  ...DAYS.flatMap((day,i)=>dayNotes(i).map(text=>({day,text})))
+ ];
  return {ready:true,total:tasks.length,done:tasks.filter(x=>x.checked).length,
    tasks,today:forDay(today),next:forDay(next),bag:getBag(next),todayBag:getBag(today),
+   weeklyBag,weeklyNotices,
    notices:dayNotes(next),todayNotes:dayNotes(today),todayIndex:today,nextIndex:next,
    pdf:plan.pdf||null,source:plan.source||null,status:plan.status};
 }
