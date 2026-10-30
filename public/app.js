@@ -6,7 +6,7 @@ import {smartDayChoice} from './shared/smart-day.mjs';
 import {initWordQuiz,renderWordQuiz,quizItems} from './shared/word-quiz.mjs';
 import {openHomeworkHelper,initHomeworkHelper} from './homework-helper.mjs';
 import {needsHomeworkHelp} from './shared/homework-help-eligibility.mjs';
-import {schoolCalendar,dayDate,DAYS} from './shared/calendar.mjs';
+import {familyWeekCalendar,schoolCalendar,dayDate,DAYS} from './shared/calendar.mjs';
 import {schoolSelectionKey,validSchool,gradeSelectionKey,validGrade,progressKey} from './shared/selection.mjs';
 import {planFeedback} from './shared/plan-feedback.mjs';
 import {normalizeVisualRegion,adjustableVisualRegion,visualCropGeometry,fullPageGeometry} from './shared/visual-region.mjs';
@@ -108,7 +108,8 @@ function renderShell(){
   $('week-label').textContent=`UKE ${calendar.week}`;
   $('smart-week').hidden=!viewingNextWeek;
   $('smart-week').textContent=viewingNextWeek?'Neste uke · automatisk valgt':'';
-  $('back-this-week').hidden=!viewingNextWeek;
+  $('back-this-week').hidden=!viewingNextWeek||
+    (Boolean(state.profileId)&&familyWeekCalendar(new Date(),siteConfig.school.timezone).upcoming);
   $('day-buttons').innerHTML=DAYS.map((d,i)=>`<button type="button" class="day ${i===state.day?'active':''} ${i<calendar.weekday?'past':''}" data-day="${i}" aria-current="${i===state.day?'date':'false'}"><span>${safe(d)}</span><strong>${titleDay(i)}</strong></button>`).join('');
   renderContent();
 }
@@ -511,7 +512,7 @@ async function showBuildVersion(){
     node.hidden=false;
   }catch{node.hidden=true;}
 }
-function openFamilyProfile(profile){
+function openFamilyProfile(profile,{upcoming=false}={}){
   primaryView="plan";
   const school=siteConfig.schools[profile.school];
   if(!school)return;
@@ -519,9 +520,9 @@ function openFamilyProfile(profile){
   state.school=school;state.grade=profile.grade;state.profileId=profile.id;
   state.availableGrades=[{code:profile.grade}];state.gradeError=null;
   state.plan=null;state.loading=true;state.planError=null;state.weather=null;state.weatherError=null;
-  viewingNextWeek=false;dayWasSelected=false;
-  calendar=schoolCalendar(new Date(),school.timezone);
-  state.day=currentChoice().day;state.aiPolls=0;
+  viewingNextWeek=upcoming;dayWasSelected=upcoming;
+  calendar=schoolCalendar(new Date(Date.now()+(upcoming?7*86400_000:0)),school.timezone);
+  state.day=upcoming?0:currentChoice().day;state.aiPolls=0;
   storageWrite(schoolSelectionKey(),profile.school);
   storageWrite(gradeSelectionKey(profile.school),profile.grade);
   familyUI.leave();
@@ -607,9 +608,16 @@ function boot(){
   // If a tablet or fridge display stays open, refresh on week/date rollover.
   setInterval(()=>{
     const next=schoolCalendar(new Date(),siteConfig.school.timezone);
-    if(next.today!==calendar.today||next.week!==calendar.week||next.year!==calendar.year){
-      calendar=next;viewingNextWeek=false;dayWasSelected=false;state.day=currentChoice().day;
-      $('week-label').textContent=`UKE ${next.week}`;
+    // Respect the selected upcoming week until it becomes the current week.
+    const target=viewingNextWeek?
+      schoolCalendar(new Date(Date.now()+7*86400_000),siteConfig.school.timezone):next;
+    const upcomingNowCurrent=viewingNextWeek&&next.week===calendar.week&&next.year===calendar.year;
+    if(upcomingNowCurrent||target.week!==calendar.week||target.year!==calendar.year||
+       (!viewingNextWeek&&target.today!==calendar.today)){
+      calendar=upcomingNowCurrent?next:target;
+      if(upcomingNowCurrent)viewingNextWeek=false;
+      dayWasSelected=false;state.day=viewingNextWeek?0:currentChoice().day;
+      $('week-label').textContent=`UKE ${calendar.week}`;
       $('welcome-week-number').textContent='Uke '+next.week;
       $('today').textContent=new Date().toLocaleDateString('nb-NO',{timeZone:siteConfig.school.timezone,weekday:'long',day:'numeric',month:'long'});
       if(familyUI?.isActive()){renderShell();familyUI.refresh();}

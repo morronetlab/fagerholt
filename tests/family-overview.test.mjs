@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {siteConfig} from '../public/site-config.mjs';
 import {FAMILY_STORAGE_KEY,FAMILY_MAX_PROFILES,readFamily,familyDocument,validProfile,
  putProfile,childProgressKey,groupApplies,schoolDayIndices,profileSummary,familyHighlights} from '../public/shared/family-core.mjs';
-import {dayDate} from '../public/shared/calendar.mjs';
+import {dayDate,familyWeekCalendar} from '../public/shared/calendar.mjs';
 import {practiceKey} from '../public/shared/word-practice-core.mjs';
 const schools=siteConfig.schools;
 const a={id:'child-abcd-1111',name:'Barn A',school:'fagerholt',grade:'3',group:'Rød gruppe'};
@@ -78,4 +78,39 @@ test('Absent and stale plans are labelled unavailable rather than imagined tasks
  assert.match(profileSummary(a,{...plan,aiStatus:'processing'},calendar).reason,/oppdateres automatisk/);
  assert.equal(profileSummary(a,{...plan,aiStatus:'failed'},calendar).ready,false);
  assert.match(profileSummary(a,{...plan,aiStatus:'failed'},calendar).reason,/AI-tolkingen/);
+});
+
+test('Family dashboard changes to next school week Friday at 14:00 Oslo time',()=>{
+ const before=familyWeekCalendar(new Date('2026-10-30T12:59:00Z'),'Europe/Oslo');
+ const after=familyWeekCalendar(new Date('2026-10-30T13:00:00Z'),'Europe/Oslo');
+ assert.deepEqual([before.year,before.week,before.upcoming],[2026,44,false]);
+ assert.deepEqual([after.year,after.week,after.upcoming],[2026,45,true]);
+ assert.equal(after.today,dayDate(2026,45,0),'Next week should anchor to Monday');
+ const saturday=familyWeekCalendar(new Date('2026-10-31T10:00:00Z'),'Europe/Oslo');
+ const sunday=familyWeekCalendar(new Date('2026-11-01T11:00:00Z'),'Europe/Oslo');
+ const monday=familyWeekCalendar(new Date('2026-11-02T08:00:00Z'),'Europe/Oslo');
+ assert.equal(saturday.week,45);
+ assert.equal(sunday.week,45);
+ assert.equal(monday.week,45);
+ assert.equal(monday.upcoming,false);
+});
+test('Family week rollover handles ISO week-year boundaries',()=>{
+ const friday=familyWeekCalendar(new Date('2027-01-01T13:00:00Z'),'Europe/Oslo');
+ const monday=familyWeekCalendar(new Date('2027-01-04T09:00:00Z'),'Europe/Oslo');
+ assert.deepEqual([friday.year,friday.week,friday.upcoming],[2027,1,true]);
+ assert.deepEqual([monday.year,monday.week,monday.upcoming],[2027,1,false]);
+});
+test('Upcoming-week summary shows only next-week tasks and packing, never last week',()=>{
+ const target=familyWeekCalendar(new Date('2026-10-30T14:00:00Z'),'Europe/Oslo');
+ const nextPlan={...plan,year:target.year,week:target.week,
+  homework:[{subject:'Norsk',text:'Ny uke leseark',dueDay:'Mandag'}]};
+ const next=profileSummary(a,nextPlan,target,()=>null);
+ assert.equal(next.ready,true);
+ assert.equal(next.total,1);
+ assert.ok(next.tasks.every(task=>/Ny uke/.test(task.text)));
+ assert.ok(next.weeklyBag.some(gear=>gear.day==='Fredag'));
+ const stale=profileSummary(a,plan,target,()=>null);
+ assert.equal(stale.ready,false);
+ const unpublished=profileSummary(a,{...nextPlan,status:'unpublished'},target,()=>null);
+ assert.equal(unpublished.ready,false);
 });

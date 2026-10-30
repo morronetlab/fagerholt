@@ -3,9 +3,10 @@ import test,{before,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {startStaticServer} from './static-server.mjs';
-import {schoolCalendar} from '../../public/shared/calendar.mjs';
+import {schoolCalendar,familyWeekCalendar} from '../../public/shared/calendar.mjs';
 
 const DAYS=['Mandag','Tirsdag','Onsdag','Torsdag','Fredag'];
+const TEST_WEDNESDAY='2026-10-28T10:00:00Z';
 let browser,server;
 before(async()=>{server=await startStaticServer();browser=await chromium.launch({headless:true,args:['--no-sandbox']});});
 after(async()=>{await browser?.close();await server?.close();});
@@ -27,10 +28,18 @@ const basePlan=grade=>{
  };
 };
 const reply=(route,json)=>route.fulfill({status:200,contentType:'application/json; charset=utf-8',body:JSON.stringify(json)});
-async function openPage(t,{width=1280,height=850,processing=false}={}){
+async function openPage(t,{width=1280,height=850,processing=false,mockNow=TEST_WEDNESDAY}={}){
  const context=await browser.newContext({viewport:{width,height},locale:'nb-NO',timezoneId:'Europe/Oslo'});
  t.after(()=>context.close());
  const page=await context.newPage();
+ await page.addInitScript(iso=>{
+  const NativeDate=Date,stamp=new NativeDate(iso).getTime();
+  class FixedDate extends NativeDate{
+   constructor(...args){if(args.length)super(...args);else super(stamp);}
+   static now(){return stamp;}
+  }
+  window.Date=FixedDate;
+ },mockNow);
  const errors=[];
  page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/api/grades?**',route=>reply(route,{grades:[{code:'2'},{code:'5A'}]}));
@@ -221,8 +230,10 @@ async function addFamilyChild(page,name,grade='2'){
  await page.locator('#family-cards .family-child').filter({hasText:name}).waitFor();
 }
 test('V2 family overview combines two children and keeps completion independently',async t=>{
- const {page,errors}=await openPage(t,{width:390,height:844});
- const current=schoolCalendar(new Date(),'Europe/Oslo');
+ // Friday before the family dashboard cutoff: homework due Friday is visible
+ // in the "I dag" checklist, so it can be checked and unchecked per child.
+ const {page,errors}=await openPage(t,{width:390,height:844,mockNow:'2026-10-30T12:00:00Z'});
+ const current=schoolCalendar(new Date(TEST_WEDNESDAY),'Europe/Oslo');
  await page.route('**/api/plan?**',route=>{
   const grade=new URL(route.request().url()).searchParams.get('grade');
   const plan=basePlan(grade);
@@ -262,7 +273,7 @@ test('V2 family overview combines two children and keeps completion independentl
 });
 test('Family overview starts PDF AI once per class and automatically updates both children when cached',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
- const now=schoolCalendar(new Date(),'Europe/Oslo');
+ const now=schoolCalendar(new Date(TEST_WEDNESDAY),'Europe/Oslo');
  const profiles=[{id:'child-ai-000001',name:'Barn A',school:'sjostrand',grade:'2',group:''},
   {id:'child-ai-000002',name:'Barn B',school:'sjostrand',grade:'2',group:''}];
  await page.evaluate(value=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({version:2,profiles:value})),profiles);
@@ -310,6 +321,92 @@ test('Family rechecks the PDF on a new visit and follows replacement AI jobs aut
  await page.locator('#family-cards .family-child-progress').first().waitFor({state:'visible',timeout:25000});
  assert.equal(fullRequests,3,'A replaced PDF triggers another background job before the canonical ready result');
  assert.equal(statusRequests,2);
+ assert.deepEqual(errors,[]);
+});
+
+test('Friday after school shows only next-week PDF status for each child, never the finished week',async t=>{
+ const friday='2026-10-30T13:05:00Z'; // Friday 14:05 in Oslo
+ const shown=familyWeekCalendar(new Date(friday),'Europe/Oslo');
+ const current=schoolCalendar(new Date(friday),'Europe/Oslo');
+ const {page,errors}=await openPage(t,{width:390,height:844,mockNow:friday});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[
+   {id:'child-week-0001',name:'Barn A',school:'sjostrand',grade:'2',group:''},
+   {id:'child-week-0002',name:'Barn B',school:'sjostrand',grade:'2',group:''}]
+ })));
+ const urls=[];
+ await page.route('**/api/plan?**',route=>{
+  const url=new URL(route.request().url());urls.push(url.search);
+  if(!url.searchParams.has('nextWeek')){
+   return reply(route,{...basePlan('2'),year:current.year,week:current.week,status:'ok',
+    homework:[{subject:'Norsk',text:'GAMMEL UKE: skal ikke vises',dueDay:'Fredag'}]});
+  }
+  return reply(route,{...basePlan('2'),year:shown.year,week:shown.week,status:'unpublished',
+   pdf:null,homework:[],aiStatus:'disabled'});
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-cards .family-not-ready').first().waitFor({state:'visible'});
+ assert.match(await page.locator('#family-week').innerText(),new RegExp('Uke '+shown.week));
+ assert.equal(await page.locator('.family-child-week').count(),2);
+ assert.match(await page.locator('.family-child-week').first().innerText(),new RegExp('UKE '+shown.week));
+ assert.match(await page.locator('#family-cards').innerText(),new RegExp('Ukeplan for uke '+shown.week+' er ikke tilgjengelig ennå'));
+ assert.equal(await page.locator('#family-cards .family-child-progress').count(),0);
+ assert.equal(await page.locator('.family-focus-tabs').isVisible(),false);
+ assert.match(await page.locator('#family-week-progress').innerText(),/Avventer ukeplan/);
+ assert.doesNotMatch(await page.locator('#family-view').innerText(),/GAMMEL UKE/);
+ assert.ok(urls.length>=1&&urls.every(x=>x.includes('nextWeek=1')),
+  'Only the next-week PDF must be requested by family overview');
+ await page.locator('#family-cards [data-family-open]').first().click();
+ await page.locator('#app-view').waitFor({state:'visible'});
+ assert.match(await page.locator('#week-label').innerText(),new RegExp('UKE '+shown.week));
+ assert.equal(await page.locator('#back-this-week').isVisible(),false,
+  'Opening a child cannot jump backwards to the finished school week');
+ assert.deepEqual(errors,[]);
+});
+
+test('Next-week family dashboard shows new weekly tasks with the correct week on Saturday',async t=>{
+ const saturday='2026-10-31T12:00:00Z',shown=familyWeekCalendar(new Date(saturday),'Europe/Oslo');
+ const {page,errors}=await openPage(t,{width:390,height:844,mockNow:saturday});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[{id:'child-week-0003',name:'Barn A',school:'sjostrand',grade:'2',group:''}]
+ })));
+ await page.route('**/api/plan?**',route=>{
+  const query=new URL(route.request().url()).searchParams;
+  assert.equal(query.get('nextWeek'),'1');
+  const plan=basePlan('2');plan.year=shown.year;plan.week=shown.week;
+  plan.homework=[{subject:'Norsk',text:'Les til mandag NESTE UKE',dueDay:'Mandag'}];
+  plan.days.Mandag.bring=[{label:'Gymtøy for neste uke'}];
+  plan.aiStatus='ready';plan.status='ok';
+  return reply(route,plan);
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
+ assert.match(await page.locator('#family-cards').innerText(),/Lekser i uke/);
+ assert.match(await page.locator('#family-cards').innerText(),/Les til mandag NESTE UKE/);
+ assert.match(await page.locator('#family-reminders').innerText(),/Gymtøy for neste uke/);
+ assert.match(await page.locator('.family-child-week').innerText(),new RegExp('UKE '+shown.week));
+ assert.doesNotMatch(await page.locator('#family-view').innerText(),/I dag/);
+ assert.deepEqual(errors,[]);
+});
+
+test('Before Friday 14:00 Oslo the family overview still uses the current week',async t=>{
+ const before='2026-10-30T12:59:00Z',now=schoolCalendar(new Date(before),'Europe/Oslo');
+ const {page,errors}=await openPage(t,{mockNow:before});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[{id:'child-week-0004',name:'Barn A',school:'sjostrand',grade:'2',group:''}]
+ })));
+ const requested=[];
+ await page.route('**/api/plan?**',route=>{
+  const query=new URL(route.request().url()).searchParams;
+  requested.push(query.get('nextWeek'));
+  const plan=basePlan('2');plan.year=now.year;plan.week=now.week;
+  return reply(route,plan);
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
+ assert.equal(await page.locator('.family-focus-tabs').isVisible(),true);
+ assert.equal(requested.every(x=>x===null),true);
+ assert.match(await page.locator('.family-child-week').innerText(),new RegExp('UKE '+now.week));
  assert.deepEqual(errors,[]);
 });
 

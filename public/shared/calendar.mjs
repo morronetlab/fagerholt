@@ -18,3 +18,22 @@ export function dayDate(year, week, index) {
   date.setUTCDate(jan4.getUTCDate()-(jan4.getUTCDay()+6)%7+(week-1)*7+index);
   return date.toISOString().slice(0,10);
 }
+
+/**
+ * Family dashboard always shows the actionable school week.
+ * From Friday at 14:00 Oslo time, and throughout the weekend, the current
+ * school week is over. Select next week's Monday as the reference day so
+ * any "today" based summaries refer only to the upcoming Monday.
+ */
+export function familyWeekCalendar(date=new Date(), zone='Europe/Oslo', fridayCutoffHour=14) {
+  const current=schoolCalendar(date,zone);
+  const localWeekday=new Date(current.today+'T00:00:00Z').getUTCDay(); // Sun=0, Fri=5
+  const hour=Number(new Intl.DateTimeFormat('en-GB',{
+    timeZone:zone,hour:'2-digit',hourCycle:'h23'
+  }).format(date));
+  const upcoming=localWeekday===6||localWeekday===0||
+    (localWeekday===5&&hour>=fridayCutoffHour);
+  if(!upcoming)return {...current,upcoming:false};
+  const target=schoolCalendar(new Date(date.getTime()+7*86400_000),zone);
+  return {...target,today:dayDate(target.year,target.week,0),weekday:0,upcoming:true};
+}
