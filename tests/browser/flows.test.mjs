@@ -481,6 +481,53 @@ test('Family AI ranks advance preparations first, visually highlights them, and 
  assert.deepEqual(errors,[]);
 });
 
+test('Family workday changes and vaccinations outrank homework and even conflicting AI scores',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[{id:'adult-impact-0001',name:'Barn',school:'sjostrand',grade:'2',group:''}]
+ })));
+ let ranks=0,planRequests=0;
+ await page.route('**/api/plan?**',route=>{
+  planRequests++;
+  const p=basePlan('2');
+  p.practicalPriorityToken='signed-pdf-token';
+  p.createdAt='2026-10-28T08:00:00.000Z';
+  p.days.Mandag.events=[{title:'Planleggingsdag – elevene har fri',time:null}];
+  p.days.Tirsdag.events=[{title:'Vanlig matematikk',time:'08:30'}];
+  p.days.Onsdag.events=[{title:'Vaksine ved helsesykepleier',time:null}];
+  p.days.Torsdag.events=[{title:'Svømming',time:'09:00'}];
+  p.days.Fredag.events=[{title:'SFO er stengt',time:null}];
+  p.notices=['Husk at dette er en vanlig skoleuke'];
+  p.homework=[{subject:'Norsk',text:'Les 15 minutter'}];
+  return reply(route,p);
+ });
+ await page.route('**/api/practical-priority?**',route=>{
+  ranks++;
+  return reply(route,{status:'ready',scores:{
+   'event|mandag: planleggingsdag – elevene har fri':{importance:0,prepareAhead:false},
+   'event|fredag: sfo er stengt':{importance:0,prepareAhead:false},
+   'event|onsdag: vaksine ved helsesykepleier':{importance:0,prepareAhead:false},
+   'notice|husk at dette er en vanlig skoleuke':{importance:3,prepareAhead:true},
+   'event|torsdag: svømming kl. 09:00':{importance:3,prepareAhead:true}
+  }});
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
+ await page.locator('[data-family-focus="week"]').click();
+ await page.locator('.family-reminder-workday').first().waitFor({state:'visible'});
+ assert.equal(await page.locator('.family-reminder-workday').count(),2);
+ const items=await page.locator('.family-reminder').allInnerTexts();
+ assert.match(items[0],/Planleggingsdag|SFO er stengt/);
+ assert.match(items[1],/Planleggingsdag|SFO er stengt/);
+ assert.match(items[2],/Vaksine/);
+ assert.match(items[0]+items[1],/Påvirker arbeidsdagen/);
+ assert.match(items[2],/Viktig helseinformasjon/);
+ assert.doesNotMatch(items.join(' '),/Les 15 minutter/);
+ assert.equal(ranks,1);
+ assert.equal(planRequests,1,'Ranking existing plan must not fetch or reprocess its PDF');
+ assert.deepEqual(errors,[]);
+});
+
 test('Opening a ready AI family plan is instant and browser Back and Forward restore views',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
