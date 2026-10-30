@@ -26,15 +26,22 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
   const kinds=kind==='event'?['event','notice']:kind==='gear'?['packing']:['notice','day-note','attendance','packing'];
   const body=norm(label).replace(/^(?:mandag|tirsdag|onsdag|torsdag|fredag)\s*[:–-]\s*/u,'');
   const words=new Set(body.split(/[^a-zæøå0-9]+/u).filter(word=>word.length>=5));
-  let match=null,highest=0;
+  const matches=[];
   for(const citation of plan.provenance||[]){
    if(!kinds.includes(citation.kind)||day&&citation.day&&citation.day!==day)continue;
    const quote=norm(citation.sourceQuote);
    if(!quote||adultImpactType(label)&&adultImpactType(quote)!==adultImpactType(label))continue;
    const overlap=[...words].filter(word=>quote.includes(word)).length;
-   if(overlap>=2&&overlap>highest){highest=overlap;match=citation;}
+   const exact=quote.length>=16&&(body.includes(quote)||quote.includes(body));
+   const sharedEnough=overlap>=3&&overlap>=Math.ceil(words.size*0.65);
+   if(exact||sharedEnough)matches.push({citation,score:(exact?100:0)+overlap});
   }
-  return match?{sourceQuote:String(match.sourceQuote||''),sourcePage:match.sourcePage}:null;
+  matches.sort((a,b)=>b.score-a.score);
+  // Similar passages on different pages are ambiguous: link to the PDF
+  // without claiming a particular page or a verbatim excerpt.
+  if(!matches.length||matches[1]?.score===matches[0].score)return null;
+  return {sourceQuote:String(matches[0].citation.sourceQuote||''),
+   sourcePage:matches[0].citation.sourcePage};
  };
  const push=(profile,kind,label,priority,dayOrder,day=null,plan=null)=>{
   const text=String(label||'').trim();
