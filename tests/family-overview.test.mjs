@@ -75,4 +75,7 @@ test('Absent and stale plans are labelled unavailable rather than imagined tasks
  assert.equal(profileSummary(a,null,calendar).ready,false);
  assert.equal(profileSummary(a,{...plan,week:43},calendar).ready,false);
  assert.equal(profileSummary(a,{...plan,aiStatus:'processing'},calendar).ready,false);
+ assert.match(profileSummary(a,{...plan,aiStatus:'processing'},calendar).reason,/oppdateres automatisk/);
+ assert.equal(profileSummary(a,{...plan,aiStatus:'failed'},calendar).ready,false);
+ assert.match(profileSummary(a,{...plan,aiStatus:'failed'},calendar).reason,/AI-tolkingen/);
 });
