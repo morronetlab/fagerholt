@@ -304,6 +304,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
      '<p class="family-reminder-short">'+escape(x.label.replace(/^\\S+\\s*:\\s*/u,''))+'</p>'+
      '<p class="family-municipal-context">'+escape(summary)+' '+escape(sfo)+'</p>'+
      '<p class="family-municipal-caution">Kommunal standard: skolen kan ha lokale avvik.</p>'+
+     '<span class="family-municipal-source">'+sourceName+'</span>'+
      '<a class="family-reminder-pdf" href="'+escape(authority)+
      '" target="_blank" rel="noopener noreferrer">Se offisiell skolerute ↗</a> · '+
      '<a class="family-reminder-pdf" href="'+escape(schoolLink)+
