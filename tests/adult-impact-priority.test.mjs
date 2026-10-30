@@ -86,3 +86,29 @@ test('Changed importance criteria recompute ranking per PDF without rerunning fu
  assert.equal(PRIORITY_VERSION,2);
  assert.ok(rankingKey('v20/fagerholt/3/2026-44/hash-model.json').startsWith('priorities/v2/'));
 });
+
+test('Next school day view still warns about later school closure and vaccination',()=>{
+ const profile={id:'child-test-1234',name:'Barn',school:'fagerholt',grade:'3',group:''};
+ const plan={parser:'ai',aiStatus:'ready',year:2026,week:44,status:'ok',
+  notices:[],homework:[],everyday:[],attendance:[],
+  days:{
+   Mandag:{events:[{title:'Vanlig matematikk'}],bring:[]},
+   Tirsdag:{events:[],bring:[]},
+   Onsdag:{events:[],bring:[]},
+   Torsdag:{events:[{title:'Vanlig gym'}],bring:[]},
+   Fredag:{events:[{title:'Planleggingsdag, elevene har fri'}],bring:[]}
+  }};
+ const summary={ready:true,todayBag:[],bag:[],todayNotes:[],notices:[],weeklyBag:[],
+  weeklyNotices:[{day:'Fredag',text:'Fredag har elevene fri på grunn av planleggingsdag'},
+   {day:'Torsdag',text:'Vaksine ved helsesykepleier kl. 10.00'},
+   {day:'Fredag',text:'Læringsmål i norsk er å bli bedre lesere'}]};
+ const cal={year:2026,week:44,today:'2026-10-28',upcoming:false};
+ const items=practicalHighlights({profiles:[profile],
+  summaries:new Map([[profile.id,summary]]),
+  plans:new Map([[profile.id,plan]]),calendar:cal,focus:'next'});
+ assert.ok(items.some(x=>x.label.includes('Planleggingsdag')),'Later closure from daily schedule must be shown');
+ assert.ok(items.some(x=>x.label.includes('Fredag har elevene fri')),'Future day school notice must be shown');
+ assert.ok(items.some(x=>x.label.includes('Vaksine')),'Vaccination on the next school day must be shown');
+ assert.ok(!items.some(x=>x.label.includes('Læringsmål')),'Ordinary later-day information stays hidden');
+ assert.ok(!items.some(x=>x.label.includes('Vanlig gym')),'Do not leak ordinary next-day activities');
+});
