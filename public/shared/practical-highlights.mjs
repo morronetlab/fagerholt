@@ -1,6 +1,7 @@
 /** Source-backed practical family highlights. Never synthesizes or re-runs AI. */
 import {DAYS} from './calendar.mjs';
 import {groupApplies,schoolDayIndices} from './family-core.mjs';
+import {adultImpactType,adultImpactRank} from './adult-impact.mjs';
 
 const norm=text=>String(text??'').normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase('nb-NO');
 const ordinaryEquipment=/^(?:pen[an]l|pennal|blyant|viskelær|matpakke|matboks|drikkeflaske|vannflaske|skolesekk|sekk|skolebok|skrivebok|leksebok|i?pad|pc|nettbrett)$/i;
@@ -27,9 +28,10 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
   const key=profile.id+'|'+norm(text);
   if(seen.has(key))return;
   seen.add(key);
+  const adultImpact=adultImpactType(text);
   entries.push({id:profile.id,name:profile.name,kind,
    icon:kind==='gear'?'🎒':kind==='event'?'📅':'📌',label:text,
-   priority,dayOrder});
+   priority,dayOrder,...(adultImpact?{adultImpact}:{})});
  };
  for(const p of profiles){
   const s=summaries.get(p.id),plan=plans.get(p.id);
@@ -63,7 +65,9 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
    const day=DAYS[i];
    for(const event of plan.days?.[day]?.events||[]){
     const title=typeof event==='string'?event:event?.title||'';
-    if(!specialEvent.test(title)||!groupApplies(event,p))continue;
+    // Closure and altered workday information can be written as a day event
+   // rather than as a school notice, so do not lose those items.
+   if(!(specialEvent.test(title)||adultImpactType(title))||!groupApplies(event,p))continue;
     push(p,'event',day+': '+title+(event.time?' kl. '+event.time:''),1,i);
    }
   }
@@ -74,5 +78,6 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
    push(p,'notice',att.day+': særskilt oppmøte '+time+String(att.text||''),0,day);
   }
  }
- return entries.sort((a,b)=>a.priority-b.priority||a.dayOrder-b.dayOrder);
+ return entries.sort((a,b)=>adultImpactRank(b.label)-adultImpactRank(a.label)||
+  a.priority-b.priority||a.dayOrder-b.dayOrder);
 }
