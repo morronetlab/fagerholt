@@ -1,0 +1,67 @@
+/** Source-backed practical family highlights. Never synthesizes or re-runs AI. */
+import {DAYS} from './calendar.mjs';
+import {groupApplies,schoolDayIndices} from './family-core.mjs';
+
+const norm=text=>String(text??'').normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase('nb-NO');
+const ordinaryEquipment=/^(?:pen[an]l|pennal|blyant|viskelær|matpakke|matboks|drikkeflaske|vannflaske|skolesekk|sekk|skolebok|skrivebok|leksebok|i?pad|pc|nettbrett)$/i;
+const specialEvent=/\b(?:svømm|basseng|tur(?:dag)?|utflukt|skogstur|ekskursjon|konsert|forestilling|fotograf|fotografering|klassebilde|karneval|kostyme|utkledning|halloween|vaksin|besøk|kino|teater|idrettsdag|aktivitetsdag|skidag|skøyte|fagdag|avslutning|foreldremøte|elevsamtale|skoletur|leirskole|gym|kroppsøving|løp|aksjon|bursdag|samling)\w*/i;
+const urgent=/\b(?:husk|ta med|viktig|endre|endring|oppmøte|møt|fravær|senere|tidligere|stengt|svømm|tur|vaksin|foreldremøte|fotograf|kostyme|klokka)\w*/i;
+
+/**
+ * Priority: exceptional school notices, special gear, special activities.
+ * Homework belongs on each child's plan, not on the family dashboard.
+ * Keep complete source wording; the UI limits how many highlights it shows.
+ */
+export function practicalHighlights({profiles,summaries,plans,calendar,focus='week'}){
+ const {today,next}=schoolDayIndices(calendar);
+ const selected=calendar.upcoming||focus==='week'?null:
+  focus==='today'?today:next;
+ const dayNumbers=selected==null?(calendar.upcoming||focus==='week'?
+  [0,1,2,3,4]:[]):[selected];
+ const entries=[],seen=new Set();
+ const push=(profile,kind,label,priority,dayOrder)=>{
+  const text=String(label||'').trim();
+  if(!text)return;
+  const key=profile.id+'|'+norm(text);
+  if(seen.has(key))return;
+  seen.add(key);
+  entries.push({id:profile.id,name:profile.name,kind,
+   icon:kind==='gear'?'🎒':kind==='event'?'📅':'📌',label:text,
+   priority,dayOrder});
+ };
+ for(const p of profiles){
+  const s=summaries.get(p.id),plan=plans.get(p.id);
+  if(!s?.ready||!plan||plan.year!==calendar.year||plan.week!==calendar.week)continue;
+  const allDays=selected==null;
+  const bag=allDays?s.weeklyBag:selected===today?s.todayBag:s.bag;
+  for(const item of bag||[]){
+   if(item.checked||ordinaryEquipment.test(norm(item.label)))continue;
+   const day=allDays?item.day:DAYS[selected];
+   push(p,'gear',(day&&day!=='Hver dag'?day+': ':'')+item.label,2,
+    Math.max(0,DAYS.indexOf(day)));
+  }
+  const notices=allDays?s.weeklyNotices:
+   (selected===today?s.todayNotes:s.notices||[]).map(text=>({day:DAYS[selected],text}));
+  for(const notice of notices||[]){
+   if(typeof notice.text!=='string')continue;
+   const day=notice.day==='Hele uka'||!notice.day?'':notice.day+': ';
+   push(p,'notice',day+notice.text,urgent.test(notice.text)?0:3,
+    Math.max(0,DAYS.indexOf(notice.day)));
+  }
+  for(const i of dayNumbers){
+   const day=DAYS[i];
+   for(const event of plan.days?.[day]?.events||[]){
+    const title=typeof event==='string'?event:event?.title||'';
+    if(!specialEvent.test(title)||!groupApplies(event,p))continue;
+    push(p,'event',day+': '+title+(event.time?' kl. '+event.time:''),1,i);
+   }
+  }
+  for(const att of plan.attendance||[]){
+   const day=DAYS.indexOf(att.day);
+   if(day<0||!dayNumbers.includes(day)||!groupApplies(att,p))continue;
+   const time=att.time?'kl. '+att.time+' · ':'';
+   push(p,'notice',att.day+': særskilt oppmøte '+time+String(att.text||''),0,day);
+  }
+ }
+ return entries.sort((a,b)=>a.priority-b.priority||a.dayOrder-b.dayOrder);
+}
