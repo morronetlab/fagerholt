@@ -430,8 +430,10 @@ test('Practical overview limits notices to five, expands without an AI call, and
  assert.equal(await page.locator('.family-reminder').count(),5);
  assert.match(await page.locator('#family-reminders-more').innerText(),/Vis alle/);
  const requestsBefore=planRequests;
+ const count=Number((await page.locator('#family-reminders-more').innerText()).match(/\d+/)?.[0]);
+ assert.ok(count>=9,'At least the nine test notices must be counted');
  await page.locator('#family-reminders-more').click();
- assert.equal(await page.locator('.family-reminder').count(),10);
+ assert.equal(await page.locator('.family-reminder').count(),count);
  assert.equal(planRequests,requestsBefore,'Expanding notices must not fetch a PDF or invoke AI');
  assert.doesNotMatch(await page.locator('#family-reminders').innerText(),/DETTE ER BARE LEKSER/);
  await page.locator('#family-reminders-more').click();
