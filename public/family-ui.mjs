@@ -278,6 +278,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const absent=profiles.length&&statuses.length<new Set(profiles.map(p=>p.school)).size;
   const unusable=statuses.some(x=>x.sourceStatus==='unavailable');
   const snapshots=statuses.filter(x=>x.sourceStatus==='snapshot');
+  el('family-calendar-source').hidden=!profiles.length;
   el('family-calendar-status').textContent=!profiles.length?'':absent?
    'Sjekker den offisielle skoleruta for aktuelle skoler …':
    unusable?'Skoleruta er ikke tilgjengelig for alle skoler. Sjekk kommunens oversikt direkte.':
