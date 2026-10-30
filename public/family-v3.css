@@ -165,7 +165,7 @@
  outline:3px solid #edb974;outline-offset:3px;border-radius:4px}
 
 /* Parent-facing report UI: no child/account data is posted. */
-.family-reminder-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex:0 0 auto}
+.family-reminder > .family-reminder-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex:0 0 auto}
 .family-reminder .family-reminder-actions button{padding:6px 4px;white-space:normal;text-align:right}
 .family-reminder .family-report-button{color:#687e71;font-size:11px;font-weight:700}
 .family-report-missing,.plan-report-link{border:0;background:none;color:#376f55;cursor:pointer;
@@ -199,7 +199,7 @@
 .family-report-missing:focus-visible,.plan-report-link:focus-visible{
  outline:3px solid #edb974;outline-offset:3px}
 @media(max-width:700px){
- .family-reminder-actions{width:100%;flex-direction:row;justify-content:flex-end;align-items:center}
+ .family-reminder > .family-reminder-actions{width:100%;flex-direction:row;justify-content:flex-end;align-items:center}
  .family-reminder .family-reminder-actions button{padding:5px 9px}
  .issue-report-dialog{padding:18px 17px}
 }
