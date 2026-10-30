@@ -54,7 +54,7 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
   // because the parent is viewing "Neste skoledag". Do not revive past days.
   const futureCritical=allDays?[]:(s.weeklyNotices||[]).filter(note=>{
    const day=DAYS.indexOf(note.day);
-   return day>=Math.max(0,today)&&day!==selected&&adultImpactType(note.text);
+   return day>=Math.max(0,today)&&adultImpactType(note.text);
   });
   const notices=allDays?s.weeklyNotices:[
    ...globalNotices,
