@@ -469,15 +469,71 @@ test('Family AI ranks advance preparations first, visually highlights them, and 
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
  await page.locator('[data-family-focus="week"]').click();
- await page.locator('.family-reminder-priority').waitFor({state:'visible',timeout:15000});
- assert.match(await page.locator('.family-reminder').first().innerText(),/Svarfrist for å melde seg på leirskole/);
- assert.match(await page.locator('.family-reminder-importance').innerText(),/Forbered i forkant/);
- assert.equal(await page.locator('.family-reminder-priority').count(),1);
+ await page.locator('.family-reminder-priority').filter({hasText:important})
+  .waitFor({state:'visible',timeout:15000});
+ const reminders=await page.locator('.family-reminder').allInnerTexts();
+ const importantIndex=reminders.findIndex(item=>item.includes(important));
+ const routineIndex=reminders.findIndex(item=>item.includes('Husk at det er vanlig skoledag'));
+ assert.ok(importantIndex>=0&&routineIndex>=0&&importantIndex<routineIndex,
+  'AI planning deadline must outrank routine messages; vaccination may rank even higher');
+ assert.match(await page.locator('.family-reminder-priority').filter({hasText:important}).innerText(),
+  /Forbered i forkant/);
  assert.equal(rankCalls,1);
  assert.equal(planCalls,1,'Ranking must not re-download or re-interpret PDF');
  await page.locator('#family-cards [data-family-open]').first().click();
  assert.equal(await page.locator('#plan-body').isVisible(),true,'No loading page while AI ranks');
  assert.equal(planCalls,1,'Opening a verified plan is still instant');
+ assert.deepEqual(errors,[]);
+});
+
+test('Family workday changes and vaccinations outrank homework and even conflicting AI scores',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[{id:'adult-impact-0001',name:'Barn',school:'sjostrand',grade:'2',group:''}]
+ })));
+ let ranks=0,planRequests=0;
+ await page.route('**/api/plan?**',route=>{
+  planRequests++;
+  const p=basePlan('2');
+  p.practicalPriorityToken='signed-pdf-token';
+  p.createdAt='2026-10-28T08:00:00.000Z';
+  p.days.Mandag.events=[{title:'Planleggingsdag – elevene har fri',time:null}];
+  p.days.Tirsdag.events=[{title:'Vanlig matematikk',time:'08:30'}];
+  p.days.Onsdag.events=[{title:'Vaksine ved helsesykepleier',time:null}];
+  p.days.Torsdag.events=[{title:'Svømming',time:'09:00'}];
+  p.days.Fredag.events=[{title:'SFO er stengt',time:null}];
+  p.notices=['Husk at dette er en vanlig skoleuke'];
+  p.homework=[{subject:'Norsk',text:'Les 15 minutter'}];
+  return reply(route,p);
+ });
+ await page.route('**/api/practical-priority?**',route=>{
+  ranks++;
+  return reply(route,{status:'ready',scores:{
+   'event|mandag: planleggingsdag – elevene har fri':{importance:0,prepareAhead:false},
+   'event|fredag: sfo er stengt':{importance:0,prepareAhead:false},
+   'event|onsdag: vaksine ved helsesykepleier':{importance:0,prepareAhead:false},
+   'notice|husk at dette er en vanlig skoleuke':{importance:3,prepareAhead:true},
+   'event|torsdag: svømming kl. 09:00':{importance:3,prepareAhead:true}
+  }});
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
+ // The default "Neste skoledag" tab must not hide an upcoming Friday SFO closure.
+ await page.locator('.family-reminder-workday').first().waitFor({state:'visible'});
+ assert.match(await page.locator('#family-reminders').innerText(),/SFO er stengt/);
+ assert.match(await page.locator('#family-reminders').innerText(),/Vaksine/);
+ await page.locator('[data-family-focus="week"]').click();
+ await page.locator('.family-reminder-workday').first().waitFor({state:'visible'});
+ assert.equal(await page.locator('.family-reminder-workday').count(),2);
+ const items=await page.locator('.family-reminder').allInnerTexts();
+ assert.match(items[0],/Planleggingsdag|SFO er stengt/);
+ assert.match(items[1],/Planleggingsdag|SFO er stengt/);
+ assert.match(items[2],/Vaksine/);
+ assert.match(items[0]+items[1],/Påvirker arbeidsdagen/);
+ assert.match(items[2],/Viktig helseinformasjon/);
+ assert.doesNotMatch(items.join(' '),/Les 15 minutter/);
+ assert.equal(ranks,1);
+ assert.equal(planRequests,1,'Ranking existing plan must not fetch or reprocess its PDF');
  assert.deepEqual(errors,[]);
 });
 

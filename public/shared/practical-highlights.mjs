@@ -1,6 +1,7 @@
 /** Source-backed practical family highlights. Never synthesizes or re-runs AI. */
 import {DAYS} from './calendar.mjs';
 import {groupApplies,schoolDayIndices} from './family-core.mjs';
+import {adultImpactType,adultImpactRank} from './adult-impact.mjs';
 
 const norm=text=>String(text??'').normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase('nb-NO');
 const ordinaryEquipment=/^(?:pen[an]l|pennal|blyant|viskelær|matpakke|matboks|drikkeflaske|vannflaske|skolesekk|sekk|skolebok|skrivebok|leksebok|i?pad|pc|nettbrett)$/i;
@@ -27,9 +28,10 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
   const key=profile.id+'|'+norm(text);
   if(seen.has(key))return;
   seen.add(key);
+  const adultImpact=adultImpactType(text);
   entries.push({id:profile.id,name:profile.name,kind,
    icon:kind==='gear'?'🎒':kind==='event'?'📅':'📌',label:text,
-   priority,dayOrder});
+   priority,dayOrder,...(adultImpact?{adultImpact}:{})});
  };
  for(const p of profiles){
   const s=summaries.get(p.id),plan=plans.get(p.id);
@@ -48,10 +50,17 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
   const globalNotices=(plan.notices||[]).filter(x=>groupApplies(x,p))
    .map(item=>({day:'Hele uka',text:typeof item==='string'?item:
     item?.text||item?.detail||item?.title||''}));
+  // Important information about a LATER school day must not disappear just
+  // because the parent is viewing "Neste skoledag". Do not revive past days.
+  const futureCritical=allDays?[]:(s.weeklyNotices||[]).filter(note=>{
+   const day=DAYS.indexOf(note.day);
+   return day>=Math.max(0,today)&&adultImpactType(note.text);
+  });
   const notices=allDays?s.weeklyNotices:[
    ...globalNotices,
    ...(selected===today?s.todayNotes:s.notices||[])
-    .map(text=>({day:DAYS[selected],text}))
+    .map(text=>({day:DAYS[selected],text})),
+   ...futureCritical
   ];
   for(const notice of notices||[]){
    if(typeof notice.text!=='string'||syntheticPacking.test(notice.text.trim()))continue;
@@ -59,11 +68,18 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
    push(p,'notice',day+notice.text,urgent.test(notice.text)?0:3,
     Math.max(0,DAYS.indexOf(notice.day)));
   }
-  for(const i of dayNumbers){
+  const eventDays=allDays?dayNumbers:[...new Set([
+   ...dayNumbers,...[0,1,2,3,4].filter(i=>i>=Math.max(0,today))
+  ])];
+  for(const i of eventDays){
    const day=DAYS[i];
    for(const event of plan.days?.[day]?.events||[]){
     const title=typeof event==='string'?event:event?.title||'';
-    if(!specialEvent.test(title)||!groupApplies(event,p))continue;
+    // Closure and altered workday information can be written as a day event
+   // rather than as a school notice, so do not lose those items.
+   const impact=adultImpactType(title);
+   if((!dayNumbers.includes(i)&&!impact)||(!specialEvent.test(title)&&!impact)||
+    !groupApplies(event,p))continue;
     push(p,'event',day+': '+title+(event.time?' kl. '+event.time:''),1,i);
    }
   }
@@ -74,5 +90,6 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
    push(p,'notice',att.day+': særskilt oppmøte '+time+String(att.text||''),0,day);
   }
  }
- return entries.sort((a,b)=>a.priority-b.priority||a.dayOrder-b.dayOrder);
+ return entries.sort((a,b)=>adultImpactRank(b.label)-adultImpactRank(a.label)||
+  a.priority-b.priority||a.dayOrder-b.dayOrder);
 }

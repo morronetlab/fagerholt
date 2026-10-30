@@ -139,3 +139,9 @@
 @media(max-width:700px){
  .family-reminder-importance{margin-left:0;margin-top:5px;display:table}
 }
+
+/* Care coverage and parents' working hours outrank activities and homework. */
+.family-reminder-workday{border:1px solid #d7ac65;border-left:5px solid #98651f;
+ background:#fff9ed;padding-left:12px}
+.family-reminder-workday .family-reminder-importance{background:#eed2a2;color:#624017}
+.family-reminder-workday p{font-weight:650;color:#443928}

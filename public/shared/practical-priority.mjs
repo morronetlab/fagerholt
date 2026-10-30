@@ -1,3 +1,4 @@
+import {adultImpactType,adultImpactRank} from './adult-impact.mjs';
 /** Stable identity for the same public-school notice across family profiles. */
 export function priorityKey(item){
  const normalized=String(item?.label||'').normalize('NFKC').trim().replace(/\s+/g,' ')
@@ -12,7 +13,10 @@ export function applyPracticalPriority(items,scores){
   return {...item,aiImportance:score.importance,
    aiPrepareAhead:score.prepareAhead===true};
  }).sort((a,b)=>{
-  // AI rankings have priority over the existing category/keyword heuristic.
+  // Deterministic safety floor: even when AI misranks a planleggingsdag
+  // as unimportant, school closure / workday changes must come first.
+  const impactDiff=adultImpactRank(b.label)-adultImpactRank(a.label);
+  if(impactDiff)return impactDiff;
   const approximate=x=>x.aiImportance??({0:2,1:1.5,2:1,3:0.5}[x.priority]??0);
   const aRank=approximate(a),bRank=approximate(b);
   return bRank-aRank||a.priority-b.priority||a.dayOrder-b.dayOrder;
