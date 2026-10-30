@@ -29,7 +29,10 @@ export function taskFingerprint({school,grade,year,week,task,day}){
  return a.toString(16).padStart(8,'0')+b.toString(16).padStart(8,'0');
 }
 export class CloudAccount {
- constructor(config,{fetcher=fetch,storage=localStorage}={}){
+ // Invoke native fetch as a method of its host global. Copying it into
+ // this.fetcher and calling it as this.fetcher() produces Illegal invocation
+ // in browsers because native fetch requires the Window receiver.
+ constructor(config,{fetcher=(url,init)=>globalThis.fetch(url,init),storage=localStorage}={}){
   if(!validSupabaseConfig(config))throw Error('Supabase-konfigurasjon mangler eller er ugyldig.');
   this.base=config.url.replace(/\/$/,'');this.key=config.publishableKey;
   this.fetcher=fetcher;this.storage=storage;
