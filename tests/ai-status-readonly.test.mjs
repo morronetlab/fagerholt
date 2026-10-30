@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createPlanHandler} from '../netlify/functions/plan.mjs';
-import {digestPdf,cacheKey,lockKey,failureKey} from '../lib/ai-runtime.mjs';
+import {digestPdf,cacheKey,lockKey,failureKey,createStatusToken} from '../lib/ai-runtime.mjs';
+import {createAIStatusHandler} from '../netlify/functions/ai-status.mjs';
 import {siteConfig} from '../public/site-config.mjs';
 import {planFeedback} from '../public/shared/plan-feedback.mjs';
 
@@ -41,6 +42,28 @@ test('Sjekk AI-status returns the completed, cached plan when the job finishes',
  const out=await (await x.handler(request())).json();
  assert.equal(out.aiStatus,'ready');assert.equal(out.homework[0].text,'Les boka');
  assert.deepEqual(x.counts(),{parsed:0,queued:0});
+});
+test('Cached plans from before the fix never return synthetic messages or guessed gear',async()=>{
+ const x=setup(),marker='Ta med: Refleks (sjekk hvilken dag i PDF-en)';
+ const second='Ta med: Engelskboka (sjekk hvilken dag i PDF-en)';
+ const cached={parser:'ai',schoolId:'fagerholt',grade:'4',year:2026,week:44,pdf,
+  homeworkSourceVersion:1,status:'ok',notices:[marker,{text:second},'Husk klassefest torsdag.'],
+  days:{Mandag:{events:[],bring:[{label:'Refleks',note:'Forslag ut fra aktivitet i PDF-en'}]}},
+  everyday:[{label:'Badetøy',note:'Forslag ut fra aktivitet i PDF-en'}]};
+ x.data.set(key,cached);
+ const canonical=await (await x.handler(request())).json();
+ assert.deepEqual(canonical.notices,['Husk klassefest torsdag.']);
+ assert.deepEqual(canonical.days.Mandag.bring,[]);
+ assert.deepEqual(canonical.everyday,[]);
+ assert.deepEqual(x.counts(),{parsed:0,queued:0});
+ const token=createStatusToken({school:'fagerholt',grade:'4',year:2026,week:44,
+  hash,model:'gpt-4.1-mini',pdf},env.AI_JOB_SECRET);
+ const status=createAIStatusHandler({env,storeFactory:async()=>({get:async name=>x.data.get(name)||null})});
+ const polled=await (await status(new Request('https://preview.example/api/ai-status?job='+encodeURIComponent(token)))).json();
+ assert.equal(polled.aiStatus,'ready');
+ assert.deepEqual(polled.notices,['Husk klassefest torsdag.']);
+ assert.deepEqual(polled.days.Mandag.bring,[]);
+ assert.equal(x.data.get(key),cached,'The original shared Netlify cache is not mutated');
 });
 test('Failed or missing job is reported, never secretly restarted by status poll',async()=>{
  const x=setup();x.data.set(failureKey(key),{retryAt:Date.now()+120000});
