@@ -422,7 +422,19 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
     plans.clear();loadedWeekKey=null;if(active){render();void fetchPlans();}
   },
   refreshCloud:syncCloud,
-  enter:()=>{if(active)return;active=true;render();onModeChange();void fetchPlans();},
+  enter:()=>{
+    if(active)return;
+    active=true;render();onModeChange();
+    // Returning from an already-open child plan should restore instantly,
+    // not re-download the same school PDF seconds later.
+    const now=calendar();
+    const recentlyChecked=loadedWeekKey===weekKey(now)&&
+      Date.now()-lastPlanCheckAt<2*60_000&&profiles.every(p=>{
+       const plan=plans.get(p.id);
+       return plan?.year===now.year&&plan?.week===now.week&&plan.aiStatus==='ready';
+      });
+    if(!recentlyChecked)void fetchPlans();
+  },
   leave:()=>{active=false;run++;stopPollTimers();pendingJobs.clear();autoRetries.clear();
     loading.clear();onModeChange();},
   refresh:()=>{if(active){if(cloud)void syncCloud();void fetchPlans();}}
