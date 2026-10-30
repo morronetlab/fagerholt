@@ -50,10 +50,17 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
   const globalNotices=(plan.notices||[]).filter(x=>groupApplies(x,p))
    .map(item=>({day:'Hele uka',text:typeof item==='string'?item:
     item?.text||item?.detail||item?.title||''}));
+  // Important information about a LATER school day must not disappear just
+  // because the parent is viewing "Neste skoledag". Do not revive past days.
+  const futureCritical=allDays?[]:(s.weeklyNotices||[]).filter(note=>{
+   const day=DAYS.indexOf(note.day);
+   return day>=Math.max(0,today)&&day!==selected&&adultImpactType(note.text);
+  });
   const notices=allDays?s.weeklyNotices:[
    ...globalNotices,
    ...(selected===today?s.todayNotes:s.notices||[])
-    .map(text=>({day:DAYS[selected],text}))
+    .map(text=>({day:DAYS[selected],text})),
+   ...futureCritical
   ];
   for(const notice of notices||[]){
    if(typeof notice.text!=='string'||syntheticPacking.test(notice.text.trim()))continue;
@@ -61,13 +68,18 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
    push(p,'notice',day+notice.text,urgent.test(notice.text)?0:3,
     Math.max(0,DAYS.indexOf(notice.day)));
   }
-  for(const i of dayNumbers){
+  const eventDays=allDays?dayNumbers:[...new Set([
+   ...dayNumbers,...[0,1,2,3,4].filter(i=>i>=Math.max(0,today))
+  ])];
+  for(const i of eventDays){
    const day=DAYS[i];
    for(const event of plan.days?.[day]?.events||[]){
     const title=typeof event==='string'?event:event?.title||'';
     // Closure and altered workday information can be written as a day event
    // rather than as a school notice, so do not lose those items.
-   if(!(specialEvent.test(title)||adultImpactType(title))||!groupApplies(event,p))continue;
+   const impact=adultImpactType(title);
+   if((!dayNumbers.includes(i)&&!impact)||(!specialEvent.test(title)&&!impact)||
+    !groupApplies(event,p))continue;
     push(p,'event',day+': '+title+(event.time?' kl. '+event.time:''),1,i);
    }
   }
