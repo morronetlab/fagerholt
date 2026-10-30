@@ -5,7 +5,7 @@ import {normalizeAIPlan,AI_SCHEMA,AI_SCHEMA_VERSION} from '../lib/ai-plan.mjs';
 import {groupLabel,homeworkProgress} from '../public/shared/group-scope.mjs';
 import {paddedVisualRegion,normalizeVisualRegion,fullPageGeometry,visualCropGeometry} from '../public/shared/visual-region.mjs';
 
-const quote='Rød gruppe skal ha svømming mandag. Grønn gruppe skal ha svømming tirsdag. 5A møter på bussen. 5B møter ved hallen.';
+const quote='Rød gruppe skal ha svømming mandag. Rød gruppe: ta med badetøy mandag. Grønn gruppe skal ha svømming tirsdag. Grønn gruppe: ta med badetøy tirsdag. 5A møter på bussen. 5B møter ved hallen. 5A: ta med gymtøy fredag. 5B: ta med gymtøy fredag.';
 const e={sourcePage:1,sourceQuote:quote};
 const base={days:[],homework:[],packing:[],notices:[],learningGoals:[],subjects:[],specialContent:[],weekTheme:{text:null,sourcePage:null,sourceQuote:''},optionalMission:{text:null,sourcePage:null,sourceQuote:''},coverage:{state:'complete',reason:''}};
 const meta={grade:'3',week:44,year:2026,source:'https://www.minskole.no/fagerholt/seksjon/22636',pdf:'https://www.minskole.no/DynamicContent/Documents/854-fagerholt-uke-44.pdf',pageCount:1,pageTexts:[quote]};
