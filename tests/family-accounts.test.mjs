@@ -44,6 +44,21 @@ test('Email sign-in uses OTP without passwords, session is restored locally',asy
  assert.equal((await again.restore()).id,'parent-1');
  again.signOutLocal();assert.equal(st.getItem(SESSION_KEY),null);
 });
+
+test('Rejected browser requests show a useful but credential-free diagnostic',async()=>{
+ const original=console.error,diagnostics=[];
+ console.error=(...args)=>diagnostics.push(args);
+ try{
+  const c=new CloudAccount(config,{fetcher:async()=>{throw new TypeError('Failed to fetch');},storage:storage()});
+  await assert.rejects(c.sendCode('guardian@example.no'),
+   /Kunne ikke kontakte Supabase.*Failed to fetch/);
+ }finally{console.error=original;}
+ const log=JSON.stringify(diagnostics);
+ assert.match(log,/auth\\/v1\\/otp/);
+ assert.match(log,/Failed to fetch/);
+ assert.doesNotMatch(log,/guardian@example\\.no|sb_publishable_/);
+});
+
 test('Cannot send malformed email or code to Supabase',async()=>{
  const c=new CloudAccount(config,{fetcher:()=>{throw Error('Should not fetch');},storage:storage()});
  await assert.rejects(c.sendCode('not-an-email'),/e-postadresse/i);
