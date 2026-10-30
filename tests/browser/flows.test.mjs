@@ -45,11 +45,56 @@ async function openPage(t,{width=1280,height=850,processing=false}={}){
  return {page,errors};
 }
 async function chooseSchoolGrade(page,grade){
+ if(await page.locator('#welcome-view').isVisible())await page.locator('#landing-open-plan').click();
  await page.locator('#school-search').fill('Sjøstrand');
  await page.locator('[data-school="sjostrand"]').click();
  await page.locator('[data-grade="'+grade+'"]').click();
  await page.locator('#school-name').waitFor({state:'visible'});
 }
+test('New landing presents a family-first choice and keeps guest access visible',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.locator('#welcome-view').waitFor({state:'visible'});
+ assert.match(await page.locator('#welcome-title').innerText(),/Hele familiens skoleuke/);
+ assert.equal(await page.locator('#landing-create-family').isVisible(),true);
+ assert.equal(await page.locator('#landing-open-plan').isVisible(),true);
+ assert.equal(await page.locator('#school-gate').isVisible(),false);
+ await page.locator('#landing-open-plan').click();
+ assert.equal(await page.locator('#school-gate').isVisible(),true);
+ assert.equal(await page.locator('#nav-plan').getAttribute('aria-current'),'page');
+ await page.locator('#school-back').click();
+ assert.equal(await page.locator('#welcome-view').isVisible(),true);
+ assert.deepEqual(errors,[]);
+});
+
+test('School and grade selection remains available after navigating home and back',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await chooseSchoolGrade(page,'2');
+ await page.locator('#homework-list .checkrow').first().waitFor();
+ assert.match(await page.locator('#plan-context-class').innerText(),/Sjøstrand.*2/);
+ await page.locator('#nav-home').click();
+ assert.equal(await page.locator('#welcome-view').isVisible(),true);
+ await page.locator('#nav-plan').click();
+ assert.equal(await page.locator('#app-view').isVisible(),true);
+ await page.locator('#mobile-selection-menu summary').click();
+ await page.locator('#mobile-change-grade').click();
+ assert.equal(await page.locator('#grade-gate').isVisible(),true);
+ await page.locator('#grade-back').click();
+ assert.equal(await page.locator('#school-gate').isVisible(),true);
+ assert.deepEqual(errors,[]);
+});
+
+test('Local family entry and account CTA can both start from the new welcome screen',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.locator('#landing-local-family').click();
+ assert.equal(await page.locator('#family-view').isVisible(),true);
+ assert.equal(await page.locator('#family-form').isVisible(),true);
+ await page.locator('#nav-home').click();
+ assert.equal(await page.locator('#welcome-view').isVisible(),true);
+ await page.locator('#landing-create-family').click();
+ assert.equal(await page.locator('#account-panel').isVisible(),true);
+ assert.deepEqual(errors,[]);
+});
+
 test('English-to-Norwegian quiz appears for Sjøstrand 5A and validates meaning in a browser',async t=>{
  const {page,errors}=await openPage(t);
  await chooseSchoolGrade(page,'5A');
