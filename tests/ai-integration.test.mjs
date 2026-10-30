@@ -138,6 +138,27 @@ test('cached AI result is served without PDF.js and without re-dispatch',async()
  assert.equal(result.aiStatus,'ready');assert.equal(result.parser,'ai');
  assert.equal(queueCount,0);assert.equal(parseCount,0);
 });
+test('Changed PDF contents under the same URL start a new AI job; old hash stays cached',async()=>{
+ const store=memoryStore();
+ store.map.set(key,{...normalizeAIPlan(aiRaw,meta),schoolId:'fagerholt',homeworkSourceVersion:1});
+ const changedPdf='%PDF-1.7 test content, revised after publication';
+ const changedHash=digestPdf(new TextEncoder().encode(changedPdf));
+ let queuedKey=null,queued=0;
+ const handler=createPlanHandler({env,now:()=>new Date('2026-10-27T12:00:00Z'),
+  storeFactory:async()=>store,
+  queueJob:async ({key:requested})=>{queued++;queuedKey=requested;return 'processing';},
+  parsePdfPages:async()=>{throw Error('AI pending: rule parser should not run');},
+  fetchImpl:async url=>url===source?
+   webResponse('<a href="'+pdf+'">Ukeplan uke 44</a>',url):
+   webResponse(changedPdf,url)
+ });
+ const result=await (await handler(new Request('https://preview.example/api/plan?grade=4'))).json();
+ assert.equal(result.aiStatus,'processing');
+ assert.equal(queued,1);
+ assert.notEqual(queuedKey,key,'A revised PDF must not use the old document hash');
+ assert.equal(queuedKey,cacheKey({school:'fagerholt',...body,hash:changedHash}));
+ assert.equal((await store.get(key)).parser,'ai','Old document is preserved for historical lookups');
+});
 test('cache miss starts one signed job and provides rule-based fallback',async()=>{
  const store=memoryStore(),payloads=[];
  const job={...body};
