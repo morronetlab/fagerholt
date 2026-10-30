@@ -54,9 +54,10 @@ test('Rejected browser requests show a useful but credential-free diagnostic',as
    /Kunne ikke kontakte Supabase.*Failed to fetch/);
  }finally{console.error=original;}
  const log=JSON.stringify(diagnostics);
- assert.match(log,/auth\\/v1\\/otp/);
+ assert.ok(log.includes('/auth/v1/otp'));
  assert.match(log,/Failed to fetch/);
- assert.doesNotMatch(log,/guardian@example\\.no|sb_publishable_/);
+ assert.equal(log.includes('guardian@example.no'),false);
+ assert.equal(log.includes('sb_publishable_'),false);
 });
 
 test('Cannot send malformed email or code to Supabase',async()=>{
