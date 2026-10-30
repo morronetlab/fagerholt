@@ -441,6 +441,46 @@ test('Practical overview limits notices to five, expands without an AI call, and
  assert.deepEqual(errors,[]);
 });
 
+test('Family AI ranks advance preparations first, visually highlights them, and never blocks the plan',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[{id:'child-ai-priority-001',name:'Barn A',school:'sjostrand',grade:'2',group:''}]
+ })));
+ let planCalls=0,rankCalls=0;
+ const important='Svarfrist for å melde seg på leirskole er mandag';
+ await page.route('**/api/plan?**',route=>{
+  planCalls++;
+  const p=basePlan('2');
+  p.practicalPriorityToken='signed-document-token';
+  p.createdAt='2026-10-28T09:00:00.000Z';
+  p.notices=['Husk at det er vanlig skoledag',important,
+   'Torsdag kan elevene se en forestilling'];
+  return reply(route,p);
+ });
+ await page.route('**/api/practical-priority?**',route=>{
+  rankCalls++;
+  const scores={
+   ['notice|'+important.toLocaleLowerCase('nb-NO')]:
+    {importance:3,prepareAhead:true},
+   'notice|husk at det er vanlig skoledag':{importance:0,prepareAhead:false}
+  };
+  return reply(route,{status:'ready',scores});
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
+ await page.locator('[data-family-focus="week"]').click();
+ await page.locator('.family-reminder-priority').waitFor({state:'visible',timeout:15000});
+ assert.match(await page.locator('.family-reminder').first().innerText(),/Svarfrist for å melde seg på leirskole/);
+ assert.match(await page.locator('.family-reminder-importance').innerText(),/Forbered i forkant/);
+ assert.equal(await page.locator('.family-reminder-priority').count(),1);
+ assert.equal(rankCalls,1);
+ assert.equal(planCalls,1,'Ranking must not re-download or re-interpret PDF');
+ await page.locator('#family-cards [data-family-open]').first().click();
+ assert.equal(await page.locator('#plan-body').isVisible(),true,'No loading page while AI ranks');
+ assert.equal(planCalls,1,'Opening a verified plan is still instant');
+ assert.deepEqual(errors,[]);
+});
+
 test('Opening a ready AI family plan is instant and browser Back and Forward restore views',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
