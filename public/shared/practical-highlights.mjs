@@ -6,6 +6,8 @@ const norm=text=>String(text??'').normalize('NFKC').trim().replace(/\s+/g,' ').t
 const ordinaryEquipment=/^(?:pen[an]l|pennal|blyant|viskelær|matpakke|matboks|drikkeflaske|vannflaske|skolesekk|sekk|skolebok|skrivebok|leksebok|i?pad|pc|nettbrett)$/i;
 const specialEvent=/\b(?:svømm|basseng|tur(?:dag)?|utflukt|skogstur|ekskursjon|konsert|forestilling|fotograf|fotografering|klassebilde|karneval|kostyme|utkledning|halloween|vaksin|besøk|kino|teater|idrettsdag|aktivitetsdag|skidag|skøyte|fagdag|avslutning|foreldremøte|elevsamtale|skoletur|leirskole|gym|kroppsøving|løp|aksjon|bursdag|samling)\w*/i;
 const urgent=/\b(?:husk|ta med|viktig|endre|endring|oppmøte|møt|fravær|senere|tidligere|stengt|svømm|tur|vaksin|foreldremøte|fotograf|kostyme|klokka)\w*/i;
+// Legacy cached AI plans could include this generated text as if it came from the PDF.
+const syntheticPacking=/^ta med:\s*.+\s*\(sjekk hvilken dag i pdf-en\)\s*\.?$/iu;
 
 /**
  * Priority: exceptional school notices, special gear, special activities.
@@ -35,7 +37,8 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
   const allDays=selected==null;
   const bag=allDays?s.weeklyBag:selected===today?s.todayBag:s.bag;
   for(const item of bag||[]){
-   if(item.checked||ordinaryEquipment.test(norm(item.label)))continue;
+   if(item.checked||/^forslag ut fra aktivitet i pdf-en/i.test(String(item.note||''))||
+    ordinaryEquipment.test(norm(item.label)))continue;
    const day=allDays?item.day:DAYS[selected];
    push(p,'gear',(day&&day!=='Hver dag'?day+': ':'')+item.label,2,
     Math.max(0,DAYS.indexOf(day)));
@@ -51,7 +54,7 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
     .map(text=>({day:DAYS[selected],text}))
   ];
   for(const notice of notices||[]){
-   if(typeof notice.text!=='string')continue;
+   if(typeof notice.text!=='string'||syntheticPacking.test(notice.text.trim()))continue;
    const day=notice.day==='Hele uka'||!notice.day?'':notice.day+': ';
    push(p,'notice',day+notice.text,urgent.test(notice.text)?0:3,
     Math.max(0,DAYS.indexOf(notice.day)));
