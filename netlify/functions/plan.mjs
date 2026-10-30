@@ -112,7 +112,7 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
                 }
               }catch(error){console.warn('Could not verify cached homework source:',error?.message);}
             }
-            return reply({...base,...ready,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,aiStatus:'ready'});
+            return reply({...base,...ready,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,aiStatus:'ready',practicalPriorityToken});
           }
           if(statusOnly){
             // Read-only job inspection: never dispatch another background job.
