@@ -71,9 +71,9 @@ export function initAccountUI({familyUI}){
   if(!accountReady)unconfigured();
   else if(!client?.isSignedIn())show(requestedEmail?'verify':'login');
   else {displaySignedIn();show('signed');}
-  $('account-panel').scrollIntoView({block:'start',behavior:'instant'});
-  if(client?.isSignedIn())$('account-close').focus();
-  else $('account-email').focus();
+  $('account-panel').scrollIntoView({block:'start',behavior:'auto'});
+  const focusTarget=!accountReady||client?.isSignedIn()?'account-close':requestedEmail?'account-code':'account-email';
+  $(focusTarget).focus();
  }
  function close(){
   $('account-panel').hidden=true;
