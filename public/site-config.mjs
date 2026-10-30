@@ -52,7 +52,7 @@ export const siteConfig = Object.freeze({
   // Compatibility for earlier versions and existing Fagerholt-only bookmarks.
   school:byId.fagerholt,
   municipalList:'https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/grunnskole/',
-  brand:{title:'Ukeplanen',subtitle:'En enklere skoleuke',color:'#225e52',accent:'#ed9561'},
+  brand:{title:'Skoleuka',subtitle:'Hele familiens skoleuke',color:'#225e52',accent:'#ed9561'},
   // Regional default until a particular school's coordinates have been verified.
   weather:{lat:58.14671,lon:7.9956,label:'Kristiansand-området',attribution:'Meteorologisk institutt / Yr'},
   allowedSourceHosts:['www.minskole.no','minskole.no','www.minskule.no','minskule.no'],

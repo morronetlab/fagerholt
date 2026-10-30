@@ -114,7 +114,13 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   const {now,summaries}=getSummaries();
   el('family-week').textContent='Uke '+now.week+' · '+now.year;
   el('family-count').textContent=profiles.length+' barn';
-  el('family-storage-label').textContent=cloud?'☁ Synkronisert familie':'🔒 Kun på denne enheten';
+  el('family-storage-label').textContent=cloud?'☁ Lekser synkroniseres mellom foresatte':'🔒 Kun på denne enheten';
+  el('family-form-tip').textContent=cloud?
+   'Bruk gjerne kallenavn. Profilene synkroniseres mellom foresatte i familien.':
+   'Bruk gjerne kallenavn. Profilene lagres bare i denne nettleseren.';
+  el('family-bottom-note').textContent=cloud?
+   'Opplysninger hentes fra skolens egne ukeplaner. Ved tvil er original-PDF fasit. Lekseavkrysninger synkroniseres, mens ordøving lagres lokalt.':
+   'Opplysninger hentes fra skolens egne ukeplaner. Ved tvil er original-PDF fasit. Uten familiekonto lagres avkrysningene bare på denne enheten.';
   el('family-add').disabled=profiles.length>=FAMILY_MAX_PROFILES;
   el('family-add').textContent=profiles.length>=FAMILY_MAX_PROFILES?'Maks seks barn':'+ Legg til barn';
   el('family-empty').hidden=profiles.length!==0;

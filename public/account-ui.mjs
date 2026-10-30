@@ -71,7 +71,9 @@ export function initAccountUI({familyUI}){
   if(!accountReady)unconfigured();
   else if(!client?.isSignedIn())show(requestedEmail?'verify':'login');
   else {displaySignedIn();show('signed');}
-  $('account-close').focus();
+  $('account-panel').scrollIntoView({block:'start',behavior:'auto'});
+  const focusTarget=!accountReady||client?.isSignedIn()?'account-close':requestedEmail?'account-code':'account-email';
+  $(focusTarget).focus();
  }
  function close(){
   $('account-panel').hidden=true;
@@ -198,5 +200,5 @@ export function initAccountUI({familyUI}){
  });
  void restore().then(()=>{if(invitation&&client?.isSignedIn()){open();show('signed');
    status('Du har en invitasjon. Velg «Godta invitasjonen» for å fortsette.');}});
- return {restore,open};
+ return {restore,open,close};
 }

@@ -20,6 +20,9 @@ const $ = id=>document.getElementById(id);
 const safe=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const {brand,features}=siteConfig;
 let familyUI=null;
+let accountUI=null;
+// Only the visible section changes; existing school, child and progress storage keys stay intact.
+let primaryView="welcome";
 let calendar=schoolCalendar(new Date(),siteConfig.school.timezone);
 let actualCalendar=calendar;
 let viewingNextWeek=false;
@@ -78,24 +81,27 @@ function renderGradeChoices(){
 }
 function renderShell(){
   const hasSchool=Boolean(state.school),chosen=Boolean(state.grade&&hasSchool),inFamily=Boolean(familyUI?.isActive());
+  const welcome=primaryView==='welcome'&&!inFamily;
+  const section=inFamily?'family':welcome?'welcome':'plan';
+  $('welcome-view').hidden=!welcome;
   $('family-view').hidden=!inFamily;
+  $('school-gate').hidden=inFamily||welcome||hasSchool;
+  $('grade-gate').hidden=inFamily||welcome||!hasSchool||chosen;
+  $('app-view').hidden=inFamily||welcome||!chosen;
+  for(const btn of document.querySelectorAll('[data-nav]')){
+    const active=btn.dataset.nav===section;
+    if(active)btn.setAttribute('aria-current','page');
+    else btn.removeAttribute('aria-current');
+  }
   $('family-toggle').setAttribute('aria-pressed',String(inFamily));
-  $('family-toggle').textContent=inFamily?'← Min klasse':'⌂ Familien';
-  $('school-gate').hidden=inFamily||hasSchool;
-  $('grade-gate').hidden=inFamily||!hasSchool||chosen;
-  $('app-view').hidden=inFamily||!chosen;
-  $('change-school').hidden=inFamily||!hasSchool;
-  $('change-grade').hidden=inFamily||!chosen;
-  $('mobile-selection-menu').hidden=inFamily||!hasSchool;
-  $('mobile-change-grade').hidden=inFamily||!chosen;
-  if(inFamily||!hasSchool)$('mobile-selection-menu').open=false;
   $('footer-school').textContent=inFamily?'Familieoversikt':state.school?.name||'Kristiansand';
-  if(inFamily||!hasSchool)return;
+  if(inFamily||welcome||!hasSchool)return;
   if(!chosen){
     $('gate-school').textContent=state.school.name;
     renderGradeChoices();
     return;
   }
+  $('plan-context-class').textContent=state.school.name+' · '+state.grade+'. trinn';
   $('school-name').textContent=`${state.school.name.toLocaleUpperCase('nb-NO')} · ${state.grade}. KLASSE`;
   $('welcome-description').textContent=`Se hva som skjer i ${state.grade}. klasse, og kryss av det du har gjort.`;
   $('school-source').href=state.plan?.source||state.school.grades?.[state.grade]||state.school.homepage;
@@ -105,6 +111,19 @@ function renderShell(){
   $('back-this-week').hidden=!viewingNextWeek;
   $('day-buttons').innerHTML=DAYS.map((d,i)=>`<button type="button" class="day ${i===state.day?'active':''} ${i<calendar.weekday?'past':''}" data-day="${i}" aria-current="${i===state.day?'date':'false'}"><span>${safe(d)}</span><strong>${titleDay(i)}</strong></button>`).join('');
   renderContent();
+}
+function navigateTo(view){
+  if(view==='family'){
+    if(familyUI.isActive()){renderShell();return;}
+    primaryView='plan';
+    cancelRequests();
+    familyUI.enter();
+    return;
+  }
+  primaryView=view==='welcome'?'welcome':'plan';
+  if(familyUI.isActive())familyUI.leave();
+  else renderShell();
+  if(primaryView==='plan'&&!state.school)$('school-search').focus();
 }
 function groupBadge(group){
   if(!group)return '';
@@ -433,6 +452,7 @@ function cancelRequests(){
 }
 function selectSchool(id,{restore=false}={}){
   if(!validSchool(id,siteConfig.schools))return;
+  primaryView="plan";
   cancelRequests();state.profileId=null;state.school=siteConfig.schools[id];state.grade=null;
   state.availableGrades=null;state.gradeError=null;
   state.plan=null;state.planError=null;state.weather=null;state.weatherError=null;
@@ -464,6 +484,7 @@ function clearSchool(){
 }
 function selectGrade(grade){
   if(!state.school||!state.availableGrades?.some(g=>g.code===grade))return;
+  primaryView="plan";
   storageWrite(gradeSelectionKey(state.school.id),grade);
   const choice=currentChoice();
   viewingNextWeek=false;dayWasSelected=false;calendar=schoolCalendar(new Date(),siteConfig.school.timezone);
@@ -488,6 +509,7 @@ async function showBuildVersion(){
   }catch{node.hidden=true;}
 }
 function openFamilyProfile(profile){
+  primaryView="plan";
   const school=siteConfig.schools[profile.school];
   if(!school)return;
   cancelRequests();
@@ -504,11 +526,19 @@ function openFamilyProfile(profile){
 }
 function boot(){
   familyUI=initFamilyUI({onModeChange:renderShell,onOpenProfile:openFamilyProfile,onOpenSingle:renderShell});
-  initAccountUI({familyUI});
-  $('family-toggle').addEventListener('click',()=>{
-    if(familyUI.isActive())familyUI.leave();
-    else {cancelRequests();familyUI.enter();}
+  accountUI=initAccountUI({familyUI});
+  $('home-link').addEventListener('click',e=>{e.preventDefault();navigateTo('welcome');});
+  $('nav-home').addEventListener('click',()=>navigateTo('welcome'));
+  $('nav-plan').addEventListener('click',()=>navigateTo('plan'));
+  $('family-toggle').addEventListener('click',()=>navigateTo(familyUI.isActive()?'plan':'family'));
+  $('landing-create-family').addEventListener('click',()=>accountUI.open());
+  $('landing-open-plan').addEventListener('click',()=>navigateTo('plan'));
+  $('landing-local-family').addEventListener('click',()=>{
+    navigateTo('family');
+    $('family-add').click();
   });
+  $('school-back').addEventListener('click',()=>navigateTo('welcome'));
+  $('grade-back').addEventListener('click',()=>{clearSchool();$('school-search').focus();});
   initHomeworkHelper();
   initWordQuiz();
   $('back-this-week').addEventListener('click',()=>{viewingNextWeek=false;dayWasSelected=true;calendar=schoolCalendar(new Date(),siteConfig.school.timezone);state.day=calendar.weekday;renderShell();reload();});
@@ -517,12 +547,13 @@ function boot(){
   document.documentElement.style.setProperty('--brand',brand.color);
   document.documentElement.style.setProperty('--accent',brand.accent);
   $('brand-title').textContent=brand.title;
-  if (brand.title.toLocaleLowerCase('nb-NO') === 'ukeplanen') $('brand-title').innerHTML='uke<span class="logo-accent">planen.</span>';
+  if (brand.title.toLocaleLowerCase('nb-NO') === 'skoleuka') $('brand-title').innerHTML='skole<span class="logo-accent">uka.</span>';
   $('brand-subtitle').textContent=brand.subtitle.toLocaleUpperCase('nb-NO');
   $('gate-school').textContent='';
   $('footer-school').textContent='Kristiansand';
   $('today').textContent=new Date().toLocaleDateString('nb-NO',{timeZone:siteConfig.school.timezone,weekday:'long',day:'numeric',month:'long'});
   $('week-label').textContent=`UKE ${calendar.week}`;
+  $('welcome-week-number').textContent='Uke '+calendar.week;
   renderSchoolChoices();
   $('school-search').addEventListener('input',e=>renderSchoolChoices(e.target.value));
   document.addEventListener('click',e=>{
@@ -567,8 +598,8 @@ function boot(){
   $('reload').addEventListener('click',reload);
   $('feedback-retry').addEventListener('click',()=>state.plan?.aiStatus==='processing'?reload({quiet:true,statusOnly:true}):reload());
   const savedSchool=storageRead(schoolSelectionKey());
-  if(familyUI.hasProfiles())familyUI.enter();
-  else if(validSchool(savedSchool,siteConfig.schools))selectSchool(savedSchool,{restore:true});
+  if(familyUI.hasProfiles()){primaryView='plan';familyUI.enter();}
+  else if(validSchool(savedSchool,siteConfig.schools)){primaryView='plan';selectSchool(savedSchool,{restore:true});}
   else renderShell();
   // If a tablet or fridge display stays open, refresh on week/date rollover.
   setInterval(()=>{
@@ -576,6 +607,7 @@ function boot(){
     if(next.today!==calendar.today||next.week!==calendar.week||next.year!==calendar.year){
       calendar=next;viewingNextWeek=false;dayWasSelected=false;state.day=currentChoice().day;
       $('week-label').textContent=`UKE ${next.week}`;
+      $('welcome-week-number').textContent='Uke '+next.week;
       $('today').textContent=new Date().toLocaleDateString('nb-NO',{timeZone:siteConfig.school.timezone,weekday:'long',day:'numeric',month:'long'});
       if(familyUI?.isActive()){renderShell();familyUI.refresh();}
       else if(state.grade){renderShell();reload();}
