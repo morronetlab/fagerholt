@@ -13,6 +13,8 @@ const changedSchoolHours=/\b(?:skolen|skoledagen|undervisningen|elevene|barna|sf
 const reversedHours=/\b(?:tidligere slutt|senere start|seinere start|endret starttid|endret sluttid|kortere skoledag|forkortet skoledag|sfo stenger|sfo åpner)\b/u;
 const pickupChange=/\b(?:endret|nytt|annerledes|endring(?:er)? i|spesiell)\b.{0,65}\b(?:henting|hentetid|levering|oppmøtetid|oppmøtested|skolestart)\b|\b(?:henting|hentetid|levering|oppmøtetid|oppmøtested|skolestart)\b.{0,65}\b(?:endret|nytt|annerledes)\b/u;
 const health=/\bvaksin[\p{L}]*\b|\b(?:helsesykepleier|helsestasjon)\b.{0,65}\b(?:time|besøk|undersøkelse|oppmøte|vaksin)\b/u;
+const negativeClosure=/\b(?:ikke|ingen|uten)\s+(?:noen\s+)?(?:planleggingsdag|skolefri|skolefridag|fridag|undervisningsfri|elevfri)\b|\b(?:skole|skolen|sfo|aks)\b.{0,40}\b(?:ikke\s+(?:er\s+)?stengt|holder\s+åpent|er\s+åpen|er\s+åpent)\b/u;
+const classTopic=/\b(?:skriv|les|lese|skrive|fortell|tema|oppgave|snakk|øve|tekst\s+om)\b.{0,55}\b(?:høstferie|vinterferie|påskeferie|juleferie|sommerferie)\b/u;
 
 /** 'workday' impacts care, school attendance or parents' working hours.
  * 'health' requires attention, but normally does not outrank a closure.
@@ -20,6 +22,8 @@ const health=/\bvaksin[\p{L}]*\b|\b(?:helsesykepleier|helsestasjon)\b.{0,65}\b(?
 export function adultImpactType(value){
  const text=norm(value),withoutDay=text.replace(dayPrefix,'');
  if(!text)return null;
+ if(negativeClosure.test(text))return null;
+ if(classTopic.test(text)&&!/(?:har|får|skal ha|begynner|starter|stengt|fri fra)\b/u.test(text))return null;
  if(schoolClosure.test(text)||closed.test(text)||reversedClosed.test(text)||
   freePupils.test(text)||/^(?:fri|ingen skole|skolen stengt|sfo stengt)(?:[.!]|\s+for (?:elevene|barna))?$/u.test(withoutDay)||
   changedSchoolHours.test(text)||reversedHours.test(text)||pickupChange.test(text))
