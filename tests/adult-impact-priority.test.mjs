@@ -83,8 +83,8 @@ test('Workday facts outrank both model mistakes and model-highlighted ordinary s
  assert.deepEqual(sorted.slice(2).map(x=>x.label),[list[0].label,list[3].label]);
 });
 test('Changed importance criteria recompute ranking per PDF without rerunning full plan AI',()=>{
- assert.equal(PRIORITY_VERSION,2);
- assert.ok(rankingKey('v20/fagerholt/3/2026-44/hash-model.json').startsWith('priorities/v2/'));
+ assert.equal(PRIORITY_VERSION,3);
+ assert.ok(rankingKey('v20/fagerholt/3/2026-44/hash-model.json').startsWith('priorities/v3/'));
 });
 
 test('Next school day view still warns about later school closure and vaccination',()=>{

@@ -22,16 +22,38 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
  const dayNumbers=selected==null?(calendar.upcoming||focus==='week'?
   [0,1,2,3,4]:[]):[selected];
  const entries=[],seen=new Set();
- const push=(profile,kind,label,priority,dayOrder)=>{
+ const evidenced=(plan,kind,label,day)=>{
+  const kinds=kind==='event'?['event','notice']:kind==='gear'?['packing']:['notice','day-note','attendance','packing'];
+  const body=norm(label).replace(/^(?:mandag|tirsdag|onsdag|torsdag|fredag)\s*[:–-]\s*/u,'');
+  const words=new Set(body.split(/[^a-zæøå0-9]+/u).filter(word=>word.length>=5));
+  const matches=[];
+  for(const citation of plan.provenance||[]){
+   if(!kinds.includes(citation.kind)||day&&citation.day&&citation.day!==day)continue;
+   const quote=norm(citation.sourceQuote);
+   if(!quote||adultImpactType(label)&&adultImpactType(quote)!==adultImpactType(label))continue;
+   const overlap=[...words].filter(word=>quote.includes(word)).length;
+   const exact=quote.length>=16&&(body.includes(quote)||quote.includes(body));
+   const sharedEnough=overlap>=3&&overlap>=Math.ceil(words.size*0.65);
+   if(exact||sharedEnough)matches.push({citation,score:(exact?100:0)+overlap});
+  }
+  matches.sort((a,b)=>b.score-a.score);
+  // Similar passages on different pages are ambiguous: link to the PDF
+  // without claiming a particular page or a verbatim excerpt.
+  if(!matches.length||matches[1]?.score===matches[0].score)return null;
+  return {sourceQuote:String(matches[0].citation.sourceQuote||''),
+   sourcePage:matches[0].citation.sourcePage};
+ };
+ const push=(profile,kind,label,priority,dayOrder,day=null,plan=null)=>{
   const text=String(label||'').trim();
   if(!text)return;
   const key=profile.id+'|'+norm(text);
   if(seen.has(key))return;
   seen.add(key);
   const adultImpact=adultImpactType(text);
+  const source=plan?evidenced(plan,kind,text,day):null;
   entries.push({id:profile.id,name:profile.name,kind,
    icon:kind==='gear'?'🎒':kind==='event'?'📅':'📌',label:text,
-   priority,dayOrder,...(adultImpact?{adultImpact}:{})});
+   priority,dayOrder,day,...(source||{}),...(adultImpact?{adultImpact}:{})});
  };
  for(const p of profiles){
   const s=summaries.get(p.id),plan=plans.get(p.id);
@@ -43,7 +65,7 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
     ordinaryEquipment.test(norm(item.label)))continue;
    const day=allDays?item.day:DAYS[selected];
    push(p,'gear',(day&&day!=='Hver dag'?day+': ':'')+item.label,2,
-    Math.max(0,DAYS.indexOf(day)));
+    Math.max(0,DAYS.indexOf(day)),DAYS.includes(day)?day:null,plan);
   }
   // Week-wide messages matter on individual days too; do not hide them
   // just because the parent selected "I dag" or "Neste skoledag".
@@ -66,7 +88,8 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
    if(typeof notice.text!=='string'||syntheticPacking.test(notice.text.trim()))continue;
    const day=notice.day==='Hele uka'||!notice.day?'':notice.day+': ';
    push(p,'notice',day+notice.text,urgent.test(notice.text)?0:3,
-    Math.max(0,DAYS.indexOf(notice.day)));
+    Math.max(0,DAYS.indexOf(notice.day)),
+    DAYS.includes(notice.day)?notice.day:null,plan);
   }
   const eventDays=allDays?dayNumbers:[...new Set([
    ...dayNumbers,...[0,1,2,3,4].filter(i=>i>=Math.max(0,today))
@@ -80,14 +103,14 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
    const impact=adultImpactType(title);
    if((!dayNumbers.includes(i)&&!impact)||(!specialEvent.test(title)&&!impact)||
     !groupApplies(event,p))continue;
-    push(p,'event',day+': '+title+(event.time?' kl. '+event.time:''),1,i);
+    push(p,'event',day+': '+title+(event.time?' kl. '+event.time:''),1,i,day,plan);
    }
   }
   for(const att of plan.attendance||[]){
    const day=DAYS.indexOf(att.day);
    if(day<0||!dayNumbers.includes(day)||!groupApplies(att,p))continue;
    const time=att.time?'kl. '+att.time+' · ':'';
-   push(p,'notice',att.day+': særskilt oppmøte '+time+String(att.text||''),0,day);
+   push(p,'notice',att.day+': særskilt oppmøte '+time+String(att.text||''),0,day,att.day,plan);
   }
  }
  return entries.sort((a,b)=>adultImpactRank(b.label)-adultImpactRank(a.label)||

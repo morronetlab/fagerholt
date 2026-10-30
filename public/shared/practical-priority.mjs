@@ -1,4 +1,5 @@
-import {adultImpactType,adultImpactRank} from './adult-impact.mjs';
+import {adultImpactRank} from './adult-impact.mjs';
+import {verifiedDigestExcerpt} from './practical-digest.mjs';
 /** Stable identity for the same public-school notice across family profiles. */
 export function priorityKey(item){
  const normalized=String(item?.label||'').normalize('NFKC').trim().replace(/\s+/g,' ')
@@ -10,8 +11,10 @@ export function applyPracticalPriority(items,scores){
   const score=typeof scores==='function'?scores(item):scores?.[priorityKey(item)];
   if(!score||!Number.isInteger(score.importance)||score.importance<0||score.importance>3)
    return item;
+  const shortText=verifiedDigestExcerpt(item.label,score.shortText,145);
   return {...item,aiImportance:score.importance,
-   aiPrepareAhead:score.prepareAhead===true};
+   aiPrepareAhead:score.prepareAhead===true,
+   ...(shortText?{aiShortText:shortText}:{})};
  }).sort((a,b)=>{
   // Deterministic safety floor: even when AI misranks a planleggingsdag
   // as unimportant, school closure / workday changes must come first.

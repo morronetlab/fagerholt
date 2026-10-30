@@ -9,6 +9,7 @@ import {taskFingerprint} from './shared/cloud-account.mjs';
 import {expandHomework} from './shared/homework-view.mjs';
 import {practicalHighlights} from './shared/practical-highlights.mjs';
 import {priorityKey,applyPracticalPriority} from './shared/practical-priority.mjs';
+import {practicalDigest} from './shared/practical-digest.mjs';
 
 const el=id=>document.getElementById(id);
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -240,11 +241,23 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
    const tag=impact==='workday'?'Påvirker arbeidsdagen':
     impact==='health'?'Viktig helseinformasjon':
     emphasized?(x.aiPrepareAhead?'Forbered i forkant':'Viktig beskjed'):null;
+   const p=plans.get(x.id);
+   const digest=practicalDigest(x,{year:now.year,week:now.week,pdf:p?.pdf});
+   const shortened=digest.shortText!==digest.fullText;
+   const sourceQuote=digest.sourceQuote&&digest.sourceQuote!==digest.fullText?
+    '<p class="family-reminder-quote"><span>Kildeutdrag:</span> '+escape(digest.sourceQuote)+'</p>':'';
+   const pdfLink=digest.pdfUrl?'<a class="family-reminder-pdf" href="'+escape(digest.pdfUrl)+
+    '" target="_blank" rel="noopener noreferrer">Se original PDF ↗</a>':'';
+   const details='<details class="family-reminder-detail"><summary>'+
+    (shortened?'Les hele beskjeden':'Se kildedetaljer')+'</summary>'+
+    '<p>'+escape(digest.fullText)+'</p>'+sourceQuote+pdfLink+'</details>';
    return '<article class="family-reminder'+(emphasized?' family-reminder-priority':'')+
     (impact==='workday'?' family-reminder-workday':'')+'">'+
     '<span aria-hidden="true">'+x.icon+'</span><div><strong>'+escape(x.name)+'</strong>'+
     (tag?'<span class="family-reminder-importance">'+escape(tag)+'</span>':'')+
-    '<p>'+escape(x.label)+'</p></div><button type="button" data-family-open="'+escape(x.id)+
+    (digest.dateLabel?'<span class="family-reminder-date">'+escape(digest.dateLabel)+'</span>':'')+
+    '<p class="family-reminder-short">'+escape(digest.shortText)+'</p>'+
+    details+'</div><button type="button" data-family-open="'+escape(x.id)+
     '" aria-label="Åpne ukeplan for '+escape(x.name)+'">Se ukeplan →</button></article>';
   }).join('');
   const expand=cards.length>limit?

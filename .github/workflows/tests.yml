@@ -23,6 +23,11 @@ jobs:
           node-version: '22'
       - run: npm ci --no-audit --no-fund
       - run: npm run check
+      - name: Compare critical practical facts with original school PDF binaries
+        # External MinSkole hosts occasionally block CI; a failed attempt must
+        # show as a warning, not be mistaken for a successfully inspected PDF.
+        continue-on-error: true
+        run: node scripts/verify-practical-original-pdfs.mjs
       - name: Verify current live homework response
         if: github.head_ref == 'fix/todda-live-homework-canonical'
         run: node scripts/inspect-todda-live.mjs
