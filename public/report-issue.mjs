@@ -50,7 +50,7 @@ export function initIssueReporter(){
   const text=String(sourceItem||'').slice(0,450);
   fromItem=text?{context:fromContext,text,page:sourcePage}:null;
   kindSelect.value=KINDS.includes(kind)?kind:'wrong_interpretation';
-  description.value='';status.textContent='';status.hidden=true;submit.disabled=false;
+  description.value='';status.textContent='';status.hidden=true;submit.disabled=false;submit.hidden=false;
   form.hidden=false;sending=false;
   changeKind();refreshSource();
   dialog.showModal();
@@ -85,7 +85,7 @@ export function initIssueReporter(){
    const result=await response.json().catch(()=>({}));
    if(!response.ok)throw Error(result.error||'Kunne ikke sende rapporten.');
    status.textContent='Takk! Rapporten er registrert for '+contextName(ctx)+'.';
-   form.hidden=true;
+   submit.hidden=true;
   }catch(error){
    status.textContent=error.name==='AbortError'?
     'Det tok for lang tid å sende rapporten. Prøv igjen.':
