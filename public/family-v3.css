@@ -103,3 +103,10 @@
  .family-reminder button{padding-left:0}
  .onboard-actions{flex-direction:column-reverse}
 }
+
+/* Automatic shared AI PDF analysis: state stays visible per child. */
+.family-ai-label{margin:7px 20px 2px;padding:7px 11px;width:fit-content;max-width:calc(100% - 40px);font-size:11px;font-weight:800;line-height:1.5;border-radius:11px;color:#386e56;background:#ebf5ed;border:1px solid #d8e8dd}
+.family-child:has(.family-not-ready) .family-ai-label{color:#866633;background:#fff9ec;border-color:#f0e3c2}
+.family-child-actions [data-family-retry]{color:#9b5126;border:1px solid #edd1b9;background:#fff8ef;min-height:43px}
+.family-child-actions [data-family-retry]:hover{background:#ffeddd}
+@media(max-width:700px){.family-ai-label{margin-left:17px;margin-right:17px;max-width:calc(100% - 34px)}}
