@@ -70,7 +70,9 @@ export function profileSummary(profile,plan,calendar,storage=()=>null,cloudCheck
     plan.year!==calendar.year||plan.week!==calendar.week?'Ukeplanen gjelder ikke denne uka.':
     'Ukeplanen er ikke tilgjengelig.',tasks:[],total:0,done:0,today:[],next:[],bag:[],notices:[]};
  if(plan.aiStatus==='processing')
-  return {ready:false,reason:'Skolens PDF analyseres. Oppdater oversikten senere.',tasks:[],total:0,done:0,today:[],next:[],bag:[],notices:[]};
+  return {ready:false,reason:'PDF er funnet. AI-tolkingen pågår, og oversikten oppdateres automatisk.',tasks:[],total:0,done:0,today:[],next:[],bag:[],notices:[]};
+ if(plan.aiStatus==='failed')
+  return {ready:false,reason:'AI-tolkingen ble ikke fullført. Vi prøver igjen automatisk, eller du kan velge «Prøv AI-tolkning igjen».',tasks:[],total:0,done:0,today:[],next:[],bag:[],notices:[]};
  const tasks=expandHomework(plan.homework||[]).map((task,i)=>({
    ...task,index:i,checked:cloudChecked?!!cloudChecked(profile,task,calendar):checked(storage,profile,calendar,'homework',i),
    dueDay:task.repeatDay||task.dueDay||null
