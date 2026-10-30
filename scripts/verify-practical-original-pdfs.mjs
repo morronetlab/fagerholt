@@ -14,6 +14,12 @@ const targets=[
    {all:['vaksin','onsdag'],kind:'health'},
    {all:['ta med','gymsko'],kind:'gear'}
   ]},
+ {school:'Fagerholt 4',year:2026,week:44,
+  url:'https://www.minskole.no/DynamicContent//Documents/854-fagerholt-Ukeplan-uke-44-93c849fa-ad01.pdf',
+  checks:[{all:['uke','44'],kind:'week-label'}]},
+ {school:'Tordenskjolds gate 6',year:2026,week:44,
+  url:'https://www.minskole.no/DynamicContent//Documents/863-todda-Uke-44-.-c350c815-359d.pdf',
+  checks:[{all:['naturfag','norsk','matte'],kind:'homework-fields'}]},
  {school:'Voiebyen 5',year:2024,week:44,
   url:'https://www.minskole.no/DynamicContent//Documents/864-voiebyen-Ukeplan-uke-44-dd1c256c-7eb1.pdf',
   checks:[
