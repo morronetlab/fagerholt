@@ -1,5 +1,6 @@
 import {siteConfig} from './site-config.mjs';
 import {initFamilyUI} from './family-ui.mjs';
+import {initAccountUI} from './account-ui.mjs';
 import {childProgressKey} from './shared/family-core.mjs';
 import {smartDayChoice} from './shared/smart-day.mjs';
 import {initWordQuiz,renderWordQuiz,quizItems} from './shared/word-quiz.mjs';
@@ -32,9 +33,21 @@ const weekDayDate=day=>dayDate(calendar.year,calendar.week,day);
 const titleDay=day=>new Date(`${weekDayDate(day)}T12:00:00Z`).toLocaleDateString('nb-NO',{timeZone:'UTC',day:'numeric',month:'short'});
 const progress=(section,day='all')=>state.profileId?childProgressKey({id:state.profileId,school:state.school.id,grade:state.grade},calendar.year,calendar.week,section,day):progressKey(state.school.id,state.grade,calendar.year,calendar.week,section,day);
 function isChecked(section,index,day='all'){
+  if(section==='homework'&&state.profileId&&familyUI?.isCloudProfile(state.profileId)){
+   const task=expandHomework(state.plan?.homework||[])[index];
+   return task?familyUI.isHomeworkChecked(state.profileId,task):false;
+  }
   try{return Boolean(JSON.parse(storageRead(progress(section,day))||'{}')[index]);}catch{return false;}
 }
 function setChecked(section,index,day,checked){
+  if(section==='homework'&&state.profileId&&familyUI?.isCloudProfile(state.profileId)){
+   const task=expandHomework(state.plan?.homework||[])[index];
+   if(!task)return;
+   void familyUI.updateHomework(state.profileId,task,checked).then(()=>renderContent())
+    .catch(error=>{renderContent();window.alert('Kunne ikke lagre leksen: '+error.message);});
+   renderContent();
+   return;
+  }
   const key=progress(section,day);
   let data={};try{data=JSON.parse(storageRead(key)||'{}')||{};}catch{}
   data[index]=checked;storageWrite(key,JSON.stringify(data));renderContent();
@@ -491,6 +504,7 @@ function openFamilyProfile(profile){
 }
 function boot(){
   familyUI=initFamilyUI({onModeChange:renderShell,onOpenProfile:openFamilyProfile,onOpenSingle:renderShell});
+  initAccountUI({familyUI});
   $('family-toggle').addEventListener('click',()=>{
     if(familyUI.isActive())familyUI.leave();
     else {cancelRequests();familyUI.enter();}

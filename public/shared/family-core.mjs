@@ -63,7 +63,7 @@ export function schoolDayIndices(cal){
  const todayIndex=DAYS.findIndex((_,i)=>dayDate(cal.year,cal.week,i)===cal.today);
  return {today:todayIndex,next:todayIndex>=0&&todayIndex<4?todayIndex+1:null};
 }
-export function profileSummary(profile,plan,calendar,storage=()=>null){
+export function profileSummary(profile,plan,calendar,storage=()=>null,cloudChecked=null){
  if(!plan||plan.status==='error'||plan.status==='unavailable'||plan.status==='unpublished'||
    plan.status==='unreadable'||plan.year!==calendar.year||plan.week!==calendar.week)
   return {ready:false,reason:!plan?'Henter ukeplan …':plan.status==='unpublished'?'Ukeplanen er ikke publisert ennå.':
@@ -72,7 +72,7 @@ export function profileSummary(profile,plan,calendar,storage=()=>null){
  if(plan.aiStatus==='processing')
   return {ready:false,reason:'Skolens PDF analyseres. Oppdater oversikten senere.',tasks:[],total:0,done:0,today:[],next:[],bag:[],notices:[]};
  const tasks=expandHomework(plan.homework||[]).map((task,i)=>({
-   ...task,index:i,checked:checked(storage,profile,calendar,'homework',i),
+   ...task,index:i,checked:cloudChecked?!!cloudChecked(profile,task,calendar):checked(storage,profile,calendar,'homework',i),
    dueDay:task.repeatDay||task.dueDay||null
  })).filter(item=>groupApplies(item,profile));
  const {today,next}=schoolDayIndices(calendar);

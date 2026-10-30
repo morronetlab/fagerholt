@@ -222,3 +222,48 @@ test('Family grade selection, edited profiles and single-class navigation surviv
  assert.equal(await page.locator('#school-gate').isVisible(),true);
  assert.deepEqual(errors,[]);
 });
+
+test('2.1 parent email OTP, create family and cloud-mode dashboard work with mocked Supabase',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ const endpoint='https://testprojectabc.supabase.co';
+ await page.route('**/api/account-config*',route=>reply(route,{
+  enabled:true,url:endpoint+'/',publishableKey:'sb_publishable_test_not_a_real_key'
+ }));
+ // Intercept fetch inside Chromium: CORS preflight/DNS never leaves this
+ // test and we exercise the real account UI + client state transitions.
+ await page.addInitScript(()=>{
+  const original=window.fetch.bind(window);
+  let families=[];
+  window.fetch=(input,init={})=>{
+   const url=typeof input==='string'?input:input.url;
+   if(!url.startsWith('https://testprojectabc.supabase.co/'))return original(input,init);
+   let data={};
+   if(url.includes('/auth/v1/otp'))data={};
+   else if(url.includes('/auth/v1/verify'))data={access_token:'access-token',
+    refresh_token:'refresh-token',expires_in:3600,user:{id:'guardian-one',email:'parent@example.no'}};
+   else if(url.includes('/rest/v1/rpc/create_family')){
+    families=[{id:'family-1',name:'Min familie',created_by:'guardian-one'}];data='family-1';
+   }else if(url.includes('/rest/v1/families'))data=families;
+   else if(url.includes('/rest/v1/children'))data=[];
+   else if(url.includes('/rest/v1/homework_progress'))data=[];
+   else if(url.includes('/auth/v1/user'))data={id:'guardian-one',email:'parent@example.no'};
+   else return Promise.resolve(new Response(JSON.stringify({message:'Unexpected '+url}),{status:404,headers:{'Content-Type':'application/json'}}));
+   return Promise.resolve(new Response(JSON.stringify(data),{status:200,headers:{'Content-Type':'application/json'}}));
+  };
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#account-button').click();
+ await page.locator('#account-email').fill('parent@example.no');
+ await page.locator('#account-send-code').click();
+ await page.waitForTimeout(400);
+ assert.match(await page.locator('#account-message').textContent(),/sendt/i,
+   'OTP response missing. Account mode: '+await page.locator('#account-panel').innerText());
+ await page.locator('#account-code').fill('123456');
+ await page.locator('#account-verify').click();
+ await page.locator('#account-family-name').fill('Min familie');
+ await page.locator('#account-create').click();
+ await page.locator('#family-view').waitFor({state:'visible'});
+ assert.equal(await page.locator('#account-current-family').textContent(),'Min familie');
+ assert.match(await page.locator('#family-storage-label').textContent(),/Synkronisert familie/);
+ assert.deepEqual(errors,[]);
+});

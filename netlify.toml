@@ -43,3 +43,9 @@
   to = "/.netlify/functions/homework-helper"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/account-config"
+  to = "/.netlify/functions/account-config"
+  status = 200
+  force = true
