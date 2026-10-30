@@ -230,7 +230,9 @@ async function addFamilyChild(page,name,grade='2'){
  await page.locator('#family-cards .family-child').filter({hasText:name}).waitFor();
 }
 test('V2 family overview combines two children and keeps completion independently',async t=>{
- const {page,errors}=await openPage(t,{width:390,height:844});
+ // Friday before the family dashboard cutoff: homework due Friday is visible
+ // in the "I dag" checklist, so it can be checked and unchecked per child.
+ const {page,errors}=await openPage(t,{width:390,height:844,mockNow:'2026-10-30T12:00:00Z'});
  const current=schoolCalendar(new Date(TEST_WEDNESDAY),'Europe/Oslo');
  await page.route('**/api/plan?**',route=>{
   const grade=new URL(route.request().url()).searchParams.get('grade');
