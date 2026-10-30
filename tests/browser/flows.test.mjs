@@ -260,6 +260,59 @@ test('V2 family overview combines two children and keeps completion independentl
  assert.equal(await page.locator('#family-cards .family-child').count(),2);
  assert.deepEqual(errors,[]);
 });
+test('Family overview starts PDF AI once per class and automatically updates both children when cached',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ const now=schoolCalendar(new Date(),'Europe/Oslo');
+ const profiles=[{id:'child-ai-000001',name:'Barn A',school:'sjostrand',grade:'2',group:''},
+  {id:'child-ai-000002',name:'Barn B',school:'sjostrand',grade:'2',group:''}];
+ await page.evaluate(value=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({version:2,profiles:value})),profiles);
+ let fullRequests=0,statusRequests=0;
+ await page.route('**/api/plan?**',route=>{
+  fullRequests++;
+  const data={...basePlan('2'),week:now.week,year:now.year};
+  if(fullRequests===1)return reply(route,{...data,status:'partial',parser:'rules',
+   aiStatus:'processing',jobId:'test-ai-handle',parsedFromPdf:false,homework:[]});
+  return reply(route,{...data,status:'ok',parser:'ai',aiStatus:'ready',homeworkSourceVersion:1});
+ });
+ await page.route('**/api/ai-status?**',route=>{
+  statusRequests++;
+  return reply(route,{aiStatus:'ready',status:'ok',parser:'ai',homeworkSourceVersion:1});
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-view').waitFor({state:'visible'});
+ await page.locator('#family-cards .family-child-progress').first().waitFor({state:'visible',timeout:20000});
+ assert.equal(await page.locator('#family-cards .family-child-progress').count(),2);
+ assert.equal(fullRequests,2,'One initial check and one final source-verified read per school/grade');
+ assert.equal(statusRequests,1,'One AI job is polled for both siblings');
+ assert.match(await page.locator('#family-cards .family-ai-label').first().innerText(),/lagret/);
+ assert.deepEqual(errors,[]);
+});
+
+test('Family rechecks the PDF on a new visit and follows replacement AI jobs automatically',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ const now=schoolCalendar(new Date(),'Europe/Oslo');
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[{id:'child-ai-000003',name:'Barn A',school:'sjostrand',grade:'2',group:''}]
+ })));
+ let fullRequests=0,statusRequests=0;
+ await page.route('**/api/plan?**',route=>{
+  fullRequests++;
+  const data={...basePlan('2'),year:now.year,week:now.week,pdf:'https://www.minskole.no/DynamicContent/Documents/new-weekplan.pdf'};
+  if(fullRequests<3)return reply(route,{...data,parser:'rules',status:'partial',
+    aiStatus:'processing',jobId:fullRequests===1?'job-old-pdf':'job-new-pdf',homework:[]});
+  return reply(route,{...data,parser:'ai',status:'ok',aiStatus:'ready',homeworkSourceVersion:1});
+ });
+ await page.route('**/api/ai-status?**',route=>{
+  statusRequests++;
+  return reply(route,{aiStatus:'ready',parser:'ai',status:'ok',homeworkSourceVersion:1});
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-cards .family-child-progress').first().waitFor({state:'visible',timeout:25000});
+ assert.equal(fullRequests,3,'A replaced PDF triggers another background job before the canonical ready result');
+ assert.equal(statusRequests,2);
+ assert.deepEqual(errors,[]);
+});
+
 test('Family grade selection, edited profiles and single-class navigation survive mobile screens',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.locator('#family-toggle').click();
