@@ -537,6 +537,47 @@ test('Family workday changes and vaccinations outrank homework and even conflict
  assert.deepEqual(errors,[]);
 });
 
+test('Family notices have a short source-extractive headline, verified date, full text and original PDF',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[{id:'child-source-digest-001',name:'Barn A',school:'sjostrand',grade:'2',group:''}]
+ })));
+ const source='På fredag har elevene fri på grunn av planleggingsdag. SFO holder stengt denne dagen. Husk å planlegge barnepass i god tid.';
+ const extracted='På fredag har elevene fri på grunn av planleggingsdag.';
+ let rankCalls=0;
+ await page.route('**/api/plan?**',route=>{
+  const p=basePlan('2');
+  p.practicalPriorityToken='signed-document-token';
+  p.createdAt='2026-10-28T09:00:00.000Z';
+  p.notices=[source];
+  p.provenance=[{kind:'notice',sourceQuote:source,sourcePage:2,day:null}];
+  return reply(route,p);
+ });
+ await page.route('**/api/practical-priority?**',route=>{
+  rankCalls++;
+  return reply(route,{status:'ready',scores:{
+   ['notice|'+source.toLocaleLowerCase('nb-NO')]:{
+    importance:3,prepareAhead:true,shortText:extracted
+   }
+  }});
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
+ await page.locator('[data-family-focus="week"]').click();
+ const card=page.locator('.family-reminder').filter({hasText:'planleggingsdag'});
+ await card.locator('.family-reminder-date').waitFor({state:'visible'});
+ assert.match(await card.locator('.family-reminder-date').innerText(),/fredag 30. oktober/i);
+ assert.equal(await card.locator('.family-reminder-short').innerText(),extracted);
+ assert.equal(await card.locator('.family-reminder-importance').innerText(),'Påvirker arbeidsdagen');
+ await card.locator('summary').click();
+ assert.match(await card.locator('.family-reminder-detail').innerText(),/Husk å planlegge barnepass/);
+ assert.match(await card.locator('.family-reminder-quote').innerText(),/Kildeutdrag/);
+ assert.match(await card.locator('.family-reminder-pdf').getAttribute('href'),/\.pdf#page=2$/);
+ assert.equal(await card.locator('.family-reminder-pdf').getAttribute('rel'),'noopener noreferrer');
+ assert.equal(rankCalls,1);
+ assert.deepEqual(errors,[]);
+});
+
 test('Opening a ready AI family plan is instant and browser Back and Forward restore views',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
