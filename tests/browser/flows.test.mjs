@@ -513,6 +513,10 @@ test('Family workday changes and vaccinations outrank homework and even conflict
  });
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
+ // The default "Neste skoledag" tab must not hide an upcoming Friday SFO closure.
+ await page.locator('.family-reminder-workday').first().waitFor({state:'visible'});
+ assert.match(await page.locator('#family-reminders').innerText(),/SFO er stengt/);
+ assert.match(await page.locator('#family-reminders').innerText(),/Vaksine/);
  await page.locator('[data-family-focus="week"]').click();
  await page.locator('.family-reminder-workday').first().waitFor({state:'visible'});
  assert.equal(await page.locator('.family-reminder-workday').count(),2);
