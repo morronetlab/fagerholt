@@ -7,7 +7,7 @@ import {groupLabel,scopedGroup} from '../public/shared/group-scope.mjs';
 import {dueDayLabel,displayEvent,packingText} from '../public/shared/plan-display.mjs';
 import {adjustableVisualRegion,visualCropGeometry,normalizeVisualRegion} from '../public/shared/visual-region.mjs';
 const file=p=>readFileSync(new URL(p,import.meta.url),'utf8');
-const quote='Rød gruppe: mandag, Grønn gruppe: tirsdag; 5A møter kl 8, 5B møter kl 9; Lekse til tirsdag. Ta med badetøy til svømming.';
+const quote='Rød gruppe: mandag, Grønn gruppe: tirsdag; 5A møter kl 8, 5B møter kl 9; Lekse til tirsdag. Ta med badetøy på mandag og tirsdag til svømming.';
 const evidence={sourcePage:1,sourceQuote:quote};
 const base={days:[],homework:[],packing:[],notices:[],learningGoals:[],subjects:[],specialContent:[],
  weekTheme:{text:null,sourcePage:null,sourceQuote:''},optionalMission:{text:null,sourcePage:null,sourceQuote:''},
