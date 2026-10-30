@@ -40,8 +40,16 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
    push(p,'gear',(day&&day!=='Hver dag'?day+': ':'')+item.label,2,
     Math.max(0,DAYS.indexOf(day)));
   }
-  const notices=allDays?s.weeklyNotices:
-   (selected===today?s.todayNotes:s.notices||[]).map(text=>({day:DAYS[selected],text}));
+  // Week-wide messages matter on individual days too; do not hide them
+  // just because the parent selected "I dag" or "Neste skoledag".
+  const globalNotices=(plan.notices||[]).filter(x=>groupApplies(x,p))
+   .map(item=>({day:'Hele uka',text:typeof item==='string'?item:
+    item?.text||item?.detail||item?.title||''}));
+  const notices=allDays?s.weeklyNotices:[
+   ...globalNotices,
+   ...(selected===today?s.todayNotes:s.notices||[])
+    .map(text=>({day:DAYS[selected],text}))
+  ];
   for(const notice of notices||[]){
    if(typeof notice.text!=='string')continue;
    const day=notice.day==='Hele uka'||!notice.day?'':notice.day+': ';
