@@ -17,7 +17,7 @@ const basePlan=grade=>{
  return {
   grade,week:44,year:2026,source:'https://www.minskole.no/sjostrand/seksjon/22175',
   pdf:'https://www.minskole.no/DynamicContent/Documents/uke44.pdf',
-  status:'ok',parser:'ai',aiStatus:'ready',days,
+  status:'ok',parser:'ai',aiStatus:'ready',homeworkSourceVersion:1,days,
   dayNotes:grade==='2'?{Onsdag:[{text:'Vaksine onsdag morgen.'}]}:{},
   everyday:[],attendance:[],subjects:[],learningGoals:[],notices:[],contacts:[],specialContent:[],
   homework:grade==='2'?
@@ -251,7 +251,8 @@ test('V2 family overview combines two children and keeps completion independentl
  assert.equal(await page.locator('#family-reminders').isVisible(),true);
  await page.locator('[data-family-focus="week"]').click();
  assert.equal(await page.locator('[data-family-focus="week"]').getAttribute('aria-pressed'),'true');
- assert.match(await page.locator('#family-reminders').innerText(),/Les en bok fra skolen/);
+ assert.match(await page.locator('#family-reminders').innerText(),/Gymtøy/);
+ assert.doesNotMatch(await page.locator('#family-reminders').innerText(),/Les en bok fra skolen/);
  await page.locator('[data-family-focus="today"]').click();
  assert.equal(await page.locator('[data-family-focus="today"]').getAttribute('aria-pressed'),'true');
  await page.locator('#family-cards [data-family-open]').first().click();
@@ -407,6 +408,86 @@ test('Before Friday 14:00 Oslo the family overview still uses the current week',
  assert.equal(await page.locator('.family-focus-tabs').isVisible(),true);
  assert.equal(requested.every(x=>x===null),true);
  assert.match(await page.locator('.family-child-week').innerText(),new RegExp('UKE '+now.week));
+ assert.deepEqual(errors,[]);
+});
+
+test('Practical overview limits notices to five, expands without an AI call, and never lists homework',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[{id:'child-prac-0001',name:'Barn A',school:'sjostrand',grade:'2',group:''}]
+ })));
+ let planRequests=0;
+ await page.route('**/api/plan?**',route=>{
+  planRequests++;
+  const p=basePlan('2');
+  p.notices=Array.from({length:9},(_,i)=>'Viktig praktisk beskjed nr '+(i+1));
+  p.homework=[{subject:'Norsk',text:'DETTE ER BARE LEKSER',dueDay:'Torsdag'}];
+  return reply(route,p);
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('[data-family-focus="week"]').click();
+ await page.locator('.family-reminder').first().waitFor({state:'visible'});
+ assert.equal(await page.locator('.family-reminder').count(),5);
+ assert.match(await page.locator('#family-reminders-more').innerText(),/Vis alle/);
+ const requestsBefore=planRequests;
+ const count=Number((await page.locator('#family-reminders-more').innerText()).match(/\d+/)?.[0]);
+ assert.ok(count>=9,'At least the nine test notices must be counted');
+ await page.locator('#family-reminders-more').click();
+ assert.equal(await page.locator('.family-reminder').count(),count);
+ assert.equal(planRequests,requestsBefore,'Expanding notices must not fetch a PDF or invoke AI');
+ assert.doesNotMatch(await page.locator('#family-reminders').innerText(),/DETTE ER BARE LEKSER/);
+ await page.locator('#family-reminders-more').click();
+ assert.equal(await page.locator('.family-reminder').count(),5);
+ assert.deepEqual(errors,[]);
+});
+
+test('Opening a ready AI family plan is instant and browser Back and Forward restore views',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[{id:'child-instant-001',name:'Barn A',school:'sjostrand',grade:'2',group:''}]
+ })));
+ let requests=0;
+ await page.route('**/api/plan?**',route=>{
+  requests++;
+  const p=basePlan('2');
+  p.homework=[{subject:'Norsk',text:'Les i ukeplanen',dueDay:'Torsdag'}];
+  return reply(route,p);
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
+ const initialRequests=requests;
+ await page.locator('#family-cards [data-family-open]').first().click();
+ assert.equal(await page.locator('#app-view').isVisible(),true);
+ assert.equal(await page.locator('#plan-body').isVisible(),true);
+ assert.equal(await page.locator('#plan-feedback').isVisible(),false);
+ assert.match(await page.locator('#homework-list').innerText(),/Les i ukeplanen/);
+ assert.equal(requests,initialRequests,'Ready AI plan must be handed directly from family view');
+ await page.goBack();
+ await page.locator('#family-view').waitFor({state:'visible'});
+ assert.equal(requests,initialRequests,'History Back returns to the family without reloading the opened PDF');
+ await page.goForward();
+ await page.locator('#app-view').waitFor({state:'visible'});
+ assert.equal(await page.locator('#plan-body').isVisible(),true);
+ assert.equal(requests,initialRequests,'History Forward should also reuse verified AI data');
+ assert.deepEqual(errors,[]);
+});
+
+test('Browser Back visits grade selection, school selection and home in order',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.locator('#landing-open-plan').click();
+ await page.locator('#school-gate').waitFor({state:'visible'});
+ await page.locator('[data-school="sjostrand"]').click();
+ await page.locator('#grade-choices [data-grade="2"]').waitFor({state:'visible'});
+ await page.locator('[data-grade="2"]').click();
+ await page.locator('#app-view').waitFor({state:'visible'});
+ await page.goBack();
+ await page.locator('#grade-gate').waitFor({state:'visible'});
+ await page.goBack();
+ await page.locator('#school-gate').waitFor({state:'visible'});
+ await page.goBack();
+ await page.locator('#welcome-view').waitFor({state:'visible'});
+ await page.goForward();
+ await page.locator('#school-gate').waitFor({state:'visible'});
  assert.deepEqual(errors,[]);
 });
 

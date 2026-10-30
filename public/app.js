@@ -23,6 +23,21 @@ let familyUI=null;
 let accountUI=null;
 // Only the visible section changes; existing school, child and progress storage keys stay intact.
 let primaryView="welcome";
+let navigationReady=false,restoringRoute=false;
+const NAV_KEY='skoleukaRouteV1';
+function navigationSnapshot(){
+ return {[NAV_KEY]:true,view:familyUI?.isActive()?'family':primaryView,
+  school:state.school?.id||null,grade:state.grade||null,profileId:state.profileId||null,
+  upcoming:viewingNextWeek,year:calendar.year,week:calendar.week,day:state.day};
+}
+function recordNavigation(mode='push'){
+ if(!navigationReady||restoringRoute)return;
+ const snapshot=navigationSnapshot(),previous=history.state;
+ if(previous?.[NAV_KEY]&&JSON.stringify(previous)===JSON.stringify(snapshot))return;
+ try{history[mode==='replace'?'replaceState':'pushState'](snapshot,'',location.href);}
+ catch(error){console.warn('Kunne ikke lagre app-navigasjonen',error?.message);}
+}
+
 let calendar=schoolCalendar(new Date(),siteConfig.school.timezone);
 let actualCalendar=calendar;
 let viewingNextWeek=false;
@@ -113,18 +128,20 @@ function renderShell(){
   $('day-buttons').innerHTML=DAYS.map((d,i)=>`<button type="button" class="day ${i===state.day?'active':''} ${i<calendar.weekday?'past':''}" data-day="${i}" aria-current="${i===state.day?'date':'false'}"><span>${safe(d)}</span><strong>${titleDay(i)}</strong></button>`).join('');
   renderContent();
 }
-function navigateTo(view){
+function navigateTo(view,{record=true}={}){
   if(view==='family'){
     if(familyUI.isActive()){renderShell();return;}
     primaryView='plan';
     cancelRequests();
     familyUI.enter();
+    if(record)recordNavigation();
     return;
   }
   primaryView=view==='welcome'?'welcome':'plan';
   if(familyUI.isActive())familyUI.leave();
   else renderShell();
   if(primaryView==='plan'&&!state.school)$('school-search').focus();
+  if(record)recordNavigation();
 }
 function groupBadge(group){
   if(!group)return '';
@@ -463,6 +480,7 @@ function selectSchool(id,{restore=false}={}){
   storageWrite(schoolSelectionKey(),id);
   renderShell();
   loadSchoolGrades(id,restore);
+  if(!restore)recordNavigation();
 }
 async function loadSchoolGrades(schoolId,restore=false){
   const requestId=state.requestId;
@@ -485,6 +503,7 @@ function clearSchool(){
   state.plan=null;state.planError=null;state.weather=null;state.weatherError=null;
   storageDrop(schoolSelectionKey());
   $('school-search').value='';renderSchoolChoices();renderShell();
+  recordNavigation();
 }
 function selectGrade(grade){
   if(!state.school||!state.availableGrades?.some(g=>g.code===grade))return;
@@ -492,11 +511,11 @@ function selectGrade(grade){
   storageWrite(gradeSelectionKey(state.school.id),grade);
   const choice=currentChoice();
   viewingNextWeek=false;dayWasSelected=false;calendar=schoolCalendar(new Date(),siteConfig.school.timezone);
-  state.aiPolls=0;state.profileId=null;state.grade=grade;state.day=choice.day;renderShell();reload();
+  state.aiPolls=0;state.profileId=null;state.grade=grade;state.day=choice.day;renderShell();recordNavigation();reload();
 }
 function clearGrade(){
   cancelRequests();state.profileId=null;state.grade=null;state.plan=null;state.weather=null;state.planError=null;
-  storageDrop(gradeSelectionKey(state.school.id));renderShell();
+  storageDrop(gradeSelectionKey(state.school.id));renderShell();recordNavigation();
 }
 async function showBuildVersion(){
   const node=$('git-version');
@@ -512,25 +531,85 @@ async function showBuildVersion(){
     node.hidden=false;
   }catch{node.hidden=true;}
 }
-function openFamilyProfile(profile,{upcoming=false}={}){
+function openFamilyProfile(profile,{upcoming=false,cachedPlan=null,record=true}={}){
   primaryView="plan";
   const school=siteConfig.schools[profile.school];
   if(!school)return;
   cancelRequests();
   state.school=school;state.grade=profile.grade;state.profileId=profile.id;
   state.availableGrades=[{code:profile.grade}];state.gradeError=null;
-  state.plan=null;state.loading=true;state.planError=null;state.weather=null;state.weatherError=null;
+  // A source-verified AI plan is already available from the family dashboard.
+  // Render it immediately: do not show the loading screen or repeat /api/plan.
+  const initial= cachedPlan?.aiStatus==='ready'&&cachedPlan?.parser==='ai'&&
+   cachedPlan.homeworkSourceVersion===1&&cachedPlan.status==='ok' ? cachedPlan:null;
+  state.plan=initial;state.loading=!initial;state.planError=null;
+  state.weather=null;state.weatherError=null;
   viewingNextWeek=upcoming;dayWasSelected=upcoming;
   calendar=schoolCalendar(new Date(Date.now()+(upcoming?7*86400_000:0)),school.timezone);
   state.day=upcoming?0:currentChoice().day;state.aiPolls=0;
   storageWrite(schoolSelectionKey(),profile.school);
   storageWrite(gradeSelectionKey(profile.school),profile.grade);
   familyUI.leave();
-  renderShell();reload();
+  renderShell();
+  if(record)recordNavigation();
+  if(!initial){reload();return;}
+  if(features.weather){
+   const requestId=state.requestId;
+   void fetchJSON('/api/weather?school='+encodeURIComponent(profile.school)).then(weather=>{
+    if(state.requestId===requestId&&state.profileId===profile.id&&!familyUI.isActive()){
+     state.weather=weather;renderWeather();
+    }
+   }).catch(()=>{ /* Weather is optional and must not block the cached week plan. */ });
+  }
+}
+function restoreNavigation(target){
+ if(!target||target[NAV_KEY]!==true)return;
+ restoringRoute=true;
+ try{
+  if(target.view==='family'){navigateTo('family',{record:false});return;}
+  if(target.view==='welcome'){navigateTo('welcome',{record:false});return;}
+  if(target.view!=='plan')return;
+  if(familyUI.isActive())familyUI.leave();
+  primaryView='plan';
+  const school=target.school&&siteConfig.schools[target.school];
+  if(!school){
+   cancelRequests();state.school=null;state.grade=null;state.profileId=null;
+   state.plan=null;state.availableGrades=null;renderShell();return;
+  }
+  const profile=target.profileId?familyUI.profileById(target.profileId):null;
+  if(profile&&profile.school===target.school&&profile.grade===target.grade){
+   openFamilyProfile(profile,{upcoming:Boolean(target.upcoming),
+    cachedPlan:familyUI.cachedReadyPlan(profile.id),record:false});
+   if(Number.isInteger(target.day)&&target.day>=0&&target.day<=4){
+    state.day=target.day;renderShell();
+   }
+   return;
+  }
+  const oldSchool=state.school?.id,oldGrade=state.grade;
+  state.school=school;state.grade=target.grade||null;state.profileId=null;
+  state.availableGrades=state.grade?[{code:state.grade}]:
+   oldSchool===school.id?state.availableGrades:null;
+  viewingNextWeek=Boolean(target.upcoming);
+  calendar=schoolCalendar(new Date(Date.now()+(viewingNextWeek?7*86400_000:0)),school.timezone);
+  state.day=Number.isInteger(target.day)&&target.day>=0&&target.day<=4?target.day:calendar.weekday;
+  dayWasSelected=true;
+  if(oldSchool!==school.id||oldGrade!==state.grade||
+    state.plan?.week!==calendar.week||state.plan?.year!==calendar.year){
+   cancelRequests();state.plan=null;state.planError=null;
+  }
+  renderShell();
+  if(state.grade&&!state.plan)void reload();
+  else if(!state.grade&&!state.availableGrades)void loadSchoolGrades(school.id);
+ }finally{restoringRoute=false;}
 }
 function boot(){
-  familyUI=initFamilyUI({onModeChange:renderShell,onOpenProfile:openFamilyProfile,onOpenSingle:renderShell});
+  familyUI=initFamilyUI({
+   onModeChange:()=>{renderShell();recordNavigation();},
+   onOpenProfile:openFamilyProfile,
+   onOpenSingle:()=>{primaryView='plan';renderShell();recordNavigation();}
+  });
   accountUI=initAccountUI({familyUI});
+  window.addEventListener('popstate',event=>restoreNavigation(event.state));
   $('home-link').addEventListener('click',e=>{e.preventDefault();navigateTo('welcome');});
   $('nav-home').addEventListener('click',()=>navigateTo('welcome'));
   $('nav-plan').addEventListener('click',()=>navigateTo('plan'));
@@ -545,7 +624,7 @@ function boot(){
   $('grade-back').addEventListener('click',()=>{clearSchool();$('school-search').focus();});
   initHomeworkHelper();
   initWordQuiz();
-  $('back-this-week').addEventListener('click',()=>{viewingNextWeek=false;dayWasSelected=true;calendar=schoolCalendar(new Date(),siteConfig.school.timezone);state.day=calendar.weekday;renderShell();reload();});
+  $('back-this-week').addEventListener('click',()=>{viewingNextWeek=false;dayWasSelected=true;calendar=schoolCalendar(new Date(),siteConfig.school.timezone);state.day=calendar.weekday;renderShell();recordNavigation();reload();});
   void showBuildVersion();
   document.title=`${brand.title} · Kristiansand`;
   document.documentElement.style.setProperty('--brand',brand.color);
@@ -563,7 +642,7 @@ function boot(){
   document.addEventListener('click',e=>{
     const selectedSchool=e.target.closest('[data-school]');if(selectedSchool){selectSchool(selectedSchool.dataset.school);return;}
     const grade=e.target.closest('[data-grade]');if(grade){selectGrade(grade.dataset.grade);return;}
-    const day=e.target.closest('[data-day]');if(day){dayWasSelected=true;state.day=Number(day.dataset.day);renderShell();return;}
+    const day=e.target.closest('[data-day]');if(day){dayWasSelected=true;state.day=Number(day.dataset.day);renderShell();recordNavigation('replace');return;}
     const tutor=e.target.closest('[data-helper-task]');if(tutor){
       const item=expandHomework(state.plan?.homework||[])[Number(tutor.dataset.helperTask)];
       if(item)openHomeworkHelper({text:item.text,subject:item.subject,grade:state.grade});
@@ -605,6 +684,10 @@ function boot(){
   if(familyUI.hasProfiles()){primaryView='plan';familyUI.enter();}
   else if(validSchool(savedSchool,siteConfig.schools)){primaryView='plan';selectSchool(savedSchool,{restore:true});}
   else renderShell();
+  navigationReady=true;
+  // The first entry is the in-app starting point. Later internal steps are
+  // pushed, so the native browser Back button returns to the prior app view.
+  try{history.replaceState(navigationSnapshot(),' ',location.href);}catch{}
   // If a tablet or fridge display stays open, refresh on week/date rollover.
   setInterval(()=>{
     const next=schoolCalendar(new Date(),siteConfig.school.timezone);
