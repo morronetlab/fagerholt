@@ -110,3 +110,11 @@
 .family-child-actions [data-family-retry]{color:#9b5126;border:1px solid #edd1b9;background:#fff8ef;min-height:43px}
 .family-child-actions [data-family-retry]:hover{background:#ffeddd}
 @media(max-width:700px){.family-ai-label{margin-left:17px;margin-right:17px;max-width:calc(100% - 34px)}}
+
+/* The target week belongs on every child, including when no PDF is published. */
+.family-child-week{display:inline-block;margin-top:7px;padding:5px 10px;border-radius:9px;
+ background:#e6f3ea;color:#285f49;font-size:11px;font-weight:900;letter-spacing:.045em}
+.family-child .family-not-ready{font-size:14px;line-height:1.6}
+.family-focus-tabs[hidden]{display:none!important}
+.family-overview-top .family-overview-subtitle{max-width:560px}
+.family-child:has(.family-not-ready) .family-child-week{background:#fff3de;color:#855f31}
