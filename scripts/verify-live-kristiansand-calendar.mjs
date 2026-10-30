@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import {SKOLERUTE_URL,parseMunicipalYearHtml,municipalDatesForYear}
  from '../lib/kristiansand-calendar.mjs';
 
+try{
 const response=await fetch(SKOLERUTE_URL,{headers:{
  Accept:'text/html','User-Agent':'Skoleuka calendar source QA (https://skoleuka.no)'
 },signal:AbortSignal.timeout(12000)});
@@ -27,3 +28,10 @@ console.info('LIVE MUNICIPAL SOURCE VERIFIED',JSON.stringify({
  november6:byDate('2026-11-06'),december24:byDate('2026-12-24'),
  may7:byDate('2027-05-07')
 }));
+
+}catch(error){
+ const reason=String(error?.message||error).replace(/[\r\n]+/g,' ').slice(0,180);
+ console.error('OFFICIAL CALENDAR LIVE SOURCE UNVERIFIED: '+reason);
+ console.log('::warning file=scripts/verify-live-kristiansand-calendar.mjs,title=Offisiell skolerute ikke verifisert::'+reason);
+ process.exitCode=1;
+}
