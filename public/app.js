@@ -5,6 +5,7 @@ import {childProgressKey} from './shared/family-core.mjs';
 import {smartDayChoice} from './shared/smart-day.mjs';
 import {initWordQuiz,renderWordQuiz,quizItems} from './shared/word-quiz.mjs';
 import {openHomeworkHelper,initHomeworkHelper} from './homework-helper.mjs';
+import {initIssueReporter} from './report-issue.mjs';
 import {needsHomeworkHelp} from './shared/homework-help-eligibility.mjs';
 import {familyWeekCalendar,schoolCalendar,dayDate,DAYS} from './shared/calendar.mjs';
 import {schoolSelectionKey,validSchool,gradeSelectionKey,validGrade,progressKey} from './shared/selection.mjs';
@@ -603,9 +604,11 @@ function restoreNavigation(target){
  }finally{restoringRoute=false;}
 }
 function boot(){
+  const issueReporter=initIssueReporter();
   familyUI=initFamilyUI({
    onModeChange:()=>{renderShell();recordNavigation();},
    onOpenProfile:openFamilyProfile,
+   onReportIssue:args=>issueReporter.open(args),
    onOpenSingle:()=>{primaryView='plan';renderShell();recordNavigation();}
   });
   accountUI=initAccountUI({familyUI});
@@ -677,6 +680,12 @@ function boot(){
   $('weather-toggle').addEventListener('click',()=>{
     const expanded=$('weather-panel').classList.toggle('is-expanded');
     $('weather-toggle').setAttribute('aria-expanded',String(expanded));
+  });
+  $('report-plan-issue').addEventListener('click',()=>{
+    if(!state.school?.id||!state.grade)return;
+    issueReporter.open({contexts:[{school:state.school.id,grade:state.grade,
+     year:state.plan?.year||calendar.year,week:state.plan?.week||calendar.week,
+     pdf:state.plan?.pdf||null}],kind:'wrong_interpretation'});
   });
   $('reload').addEventListener('click',reload);
   $('feedback-retry').addEventListener('click',()=>state.plan?.aiStatus==='processing'?reload({quiet:true,statusOnly:true}):reload());
