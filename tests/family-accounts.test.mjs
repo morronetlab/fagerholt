@@ -32,7 +32,7 @@ test('Native default fetch is called with Window/global receiver (regression: Il
   const account=new CloudAccount(config,{storage:storage()});
   await account.sendCode('guardian@example.no');
   assert.equal(calls.length,1);
-  assert.match(calls[0].url,/\\/auth\\/v1\\/otp$/);
+  assert.ok(calls[0].url.endsWith('/auth/v1/otp'));
   assert.equal(calls[0].init.method,'POST');
  }finally{globalThis.fetch=previousFetch;}
 });
