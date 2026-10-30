@@ -57,7 +57,19 @@ export class CloudAccount {
   if(body!==undefined)h['Content-Type']='application/json';
   let res;
   try{res=await this.fetcher(this.base+path,{method,headers:h,body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});}
-  catch{throw Error('Fikk ikke kontakt med konto-tjenesten. Kontroller nettverket.');}
+  catch(error){
+   // The browser may reject a request before it reaches Supabase (for example,
+   // because of an extension, cross-origin policy or a local network filter).
+   // Keep credentials and the request body out of the diagnostic log.
+   const detail=error instanceof Error?error.message:String(error);
+   const endpoint=path.split('?')[0];
+   console.error('[Ukeplanen konto] Nettverksfeil mot Supabase',{
+    host:new URL(this.base).hostname,endpoint,error:detail.slice(0,180)
+   });
+   throw Error('Kunne ikke kontakte Supabase ('+new URL(this.base).hostname+
+    '). Nettleseren rapporterte: '+(detail||'ukjent nettverksfeil')+
+    '. Se F12 → Network med alle filtre fjernet, eller prøv et inkognitovindu uten utvidelser.');
+  }
   if(res.status===401&&auth&&retry){
    await this.refreshSession(true);
    return this.request(path,{method,body,auth,headers,retry:false});
