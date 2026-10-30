@@ -553,6 +553,7 @@ function boot(){
   $('footer-school').textContent='Kristiansand';
   $('today').textContent=new Date().toLocaleDateString('nb-NO',{timeZone:siteConfig.school.timezone,weekday:'long',day:'numeric',month:'long'});
   $('week-label').textContent=`UKE ${calendar.week}`;
+  $('welcome-week-number').textContent='Uke '+calendar.week;
   renderSchoolChoices();
   $('school-search').addEventListener('input',e=>renderSchoolChoices(e.target.value));
   document.addEventListener('click',e=>{
@@ -606,6 +607,7 @@ function boot(){
     if(next.today!==calendar.today||next.week!==calendar.week||next.year!==calendar.year){
       calendar=next;viewingNextWeek=false;dayWasSelected=false;state.day=currentChoice().day;
       $('week-label').textContent=`UKE ${next.week}`;
+      $('welcome-week-number').textContent='Uke '+next.week;
       $('today').textContent=new Date().toLocaleDateString('nb-NO',{timeZone:siteConfig.school.timezone,weekday:'long',day:'numeric',month:'long'});
       if(familyUI?.isActive()){renderShell();familyUI.refresh();}
       else if(state.grade){renderShell();reload();}
