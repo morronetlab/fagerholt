@@ -469,10 +469,15 @@ test('Family AI ranks advance preparations first, visually highlights them, and 
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
  await page.locator('[data-family-focus="week"]').click();
- await page.locator('.family-reminder-priority').waitFor({state:'visible',timeout:15000});
- assert.match(await page.locator('.family-reminder').first().innerText(),/Svarfrist for å melde seg på leirskole/);
- assert.match(await page.locator('.family-reminder-importance').innerText(),/Forbered i forkant/);
- assert.equal(await page.locator('.family-reminder-priority').count(),1);
+ await page.locator('.family-reminder-priority').filter({hasText:important})
+  .waitFor({state:'visible',timeout:15000});
+ const reminders=await page.locator('.family-reminder').allInnerTexts();
+ const importantIndex=reminders.findIndex(item=>item.includes(important));
+ const routineIndex=reminders.findIndex(item=>item.includes('Husk at det er vanlig skoledag'));
+ assert.ok(importantIndex>=0&&routineIndex>=0&&importantIndex<routineIndex,
+  'AI planning deadline must outrank routine messages; vaccination may rank even higher');
+ assert.match(await page.locator('.family-reminder-priority').filter({hasText:important}).innerText(),
+  /Forbered i forkant/);
  assert.equal(rankCalls,1);
  assert.equal(planCalls,1,'Ranking must not re-download or re-interpret PDF');
  await page.locator('#family-cards [data-family-open]').first().click();
