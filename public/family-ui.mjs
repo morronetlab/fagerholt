@@ -1,6 +1,6 @@
 /** Device-local family UI; one source-grounded weekly plan per class. */
 import {siteConfig} from './site-config.mjs';
-import {schoolCalendar,DAYS} from './shared/calendar.mjs';
+import {familyWeekCalendar,DAYS} from './shared/calendar.mjs';
 import {FAMILY_STORAGE_KEY,FAMILY_MAX_PROFILES,readFamily,familyDocument,putProfile,profileSummary,
  familyHighlights,schoolDayIndices,childProgressKey} from './shared/family-core.mjs';
 import {quizItems,buildQuizRounds} from './shared/word-quiz-core.mjs';
@@ -39,7 +39,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
  const plans=new Map(),loading=new Set(),errors=new Map();
  // Poll one server-side AI job per unique school/grade, not once per child.
  const pendingJobs=new Map(),pollTimers=new Map(),autoRetries=new Map();
- let run=0,editing=null,gradeRun=0,lastPlanCheckAt=0;
+ let run=0,editing=null,gradeRun=0,lastPlanCheckAt=0,loadedWeekKey=null;
  const AUTO_CHECK_MS=15*60_000, RETRY_COOLDOWN_MS=5*60_000+5000;
  const pairOf=p=>p.school+'|'+p.grade;
  const pairProfiles=pair=>profiles.filter(p=>pairOf(p)===pair);
@@ -49,7 +49,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   pollTimers.clear();
  }
 
- const calendar=()=>schoolCalendar(new Date(),'Europe/Oslo');
+ const calendar=()=>familyWeekCalendar(new Date(),'Europe/Oslo');
+ const weekKey=now=>now.year+'-'+String(now.week).padStart(2,'0');
  const byId=id=>profiles.find(p=>p.id===id);
  const setStatus=message=>{el('family-form-status').textContent=message||'';};
  const persist=()=>{
@@ -103,23 +104,31 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
     escape((x.subject?x.subject+': ':'')+x.text)+'</span></label></li>').join('')+'</ul>':
   '<p class="family-muted">'+escape(message)+'</p>';
  function childCard(p,s,now){
-  const school=siteConfig.schools[p.school],plan=plans.get(p.id);
+  const school=siteConfig.schools[p.school],stored=plans.get(p.id);
+  const plan=stored?.year===now.year&&stored?.week===now.week?stored:null;
   const aiLabel=plan?.aiStatus==='ready'?'✓ AI-tolket PDF · lagret':
    plan?.aiStatus==='processing'?'✦ AI tolker PDF automatisk …':
    plan?.aiStatus==='failed'?'⚠ AI-tolkingen feilet':
    plan?.aiStatus==='disabled'||plan?.aiStatus==='unavailable'?'Regelbasert PDF-lesing':null;
   const pct=s.ready&&s.total?Math.round(100*s.done/s.total):0;
-  const practice=s.ready?wordStatus(p,plans.get(p.id),now):null;
+  const practice=s.ready?wordStatus(p,plan,now):null;
   const details=s.ready?[
-   '<div class="family-child-progress"><div><span>Lekser denne uka</span><b>'+s.done+' / '+s.total+' fullført</b></div>',
+   '<div class="family-child-progress"><div><span>Lekser i uke '+now.week+'</span><b>'+s.done+' / '+s.total+' fullført</b></div>',
    '<div class="family-progress-track" role="progressbar" aria-label="Fullført for '+escape(p.name)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><span style="width:'+pct+'%"></span></div></div>',
-   '<div class="family-child-columns"><div><h4>📚 I dag</h4>'+taskList(p,s.today,'Ingen lekser med frist i dag')+'</div>',
-   '<div><h4>🎒 Neste skoledag</h4>'+taskList(p,s.next,s.nextIndex==null?'Neste uke er ikke hentet ennå':'Ingen lekser med frist')+'</div></div>',
+   now.upcoming?
+    '<div class="family-child-columns"><div><h4>📚 Lekser i uke '+now.week+'</h4>'+taskList(p,s.tasks,'Ingen lekser registrert')+'</div>'+
+    '<div><h4>🎒 Pakk til mandag</h4>'+taskList(p,s.today,'Se huskelisten for pakkeliste')+'</div></div>':
+    '<div class="family-child-columns"><div><h4>📚 I dag</h4>'+taskList(p,s.today,'Ingen lekser med frist i dag')+'</div>'+
+    '<div><h4>🎒 Neste skoledag</h4>'+taskList(p,s.next,s.nextIndex==null?'Neste uke er ikke hentet ennå':'Ingen lekser med frist')+'</div></div>',
    '<p class="family-word-state">'+(practice?'✦ Ordøving: '+practice.attempted+' / '+practice.total+(practice.weak?', '+practice.weak+' trenger øving':''):'✦ Ingen ordøving i denne ukeplanen')+'</p>'
-  ].join(''):'<div class="family-not-ready" role="status">'+escape(errors.get(p.id)||s.reason||'Henter ukeplan …')+'</div>';
+  ].join(''):'<div class="family-not-ready" role="status">'+escape(
+    plan?.status==='unpublished'||plan?.status==='unavailable'?
+     'Ukeplan for uke '+now.week+' er ikke tilgjengelig ennå. Skolen har ikke publisert PDF for denne uka.':
+     errors.get(p.id)||s.reason||'Henter ukeplan for uke '+now.week+' …')+'</div>';
   return '<article class="family-child"><div class="family-child-heading">'+
    '<span class="family-avatar" aria-hidden="true">'+escape(p.name.slice(0,1).toUpperCase())+'</span>'+
-   '<div><h3>'+escape(p.name)+'</h3><p>'+escape(school?.name||'Skole')+' · '+escape(p.grade)+'. klasse'+(p.group?' · '+escape(p.group):'')+'</p></div></div>'+
+   '<div><h3>'+escape(p.name)+'</h3><p>'+escape(school?.name||'Skole')+' · '+escape(p.grade)+'. klasse'+(p.group?' · '+escape(p.group):'')+'</p>'+
+   '<span class="family-child-week">UKE '+now.week+' · '+now.year+(now.upcoming?' · NESTE UKE':'')+'</span></div></div>'+
    (aiLabel?'<p class="family-ai-label" role="status">'+escape(aiLabel)+'</p>':'')+
    details+'<div class="family-child-actions">'+
    (plan?.aiStatus==='failed'?'<button type="button" class="family-soft" data-family-retry="'+escape(pairOf(p))+'">Prøv AI-tolkning igjen</button>':'')+
@@ -131,12 +140,16 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
  function render(){
   if(!active)return;
   const {now,summaries}=getSummaries();
-  el('family-week').textContent='Uke '+now.week+' · '+now.year;
+  el('family-week').textContent='Uke '+now.week+' · '+now.year+(now.upcoming?' · neste uke':'');
   el('family-count').textContent=profiles.length+' barn';
   el('family-storage-label').textContent=cloud?'☁ Synkronisert familie · lekser deles mellom foresatte':'🔒 Kun på denne enheten';
   const ready=[...summaries.values()].filter(x=>x.ready);
   const done=ready.reduce((n,x)=>n+x.done,0),total=ready.reduce((n,x)=>n+x.total,0);
-  el('family-week-progress').textContent=ready.length?done+' av '+total+' lekser fullført':'Ukeoversikt';
+  el('family-week-progress').textContent=ready.length?done+' av '+total+' lekser fullført':
+   now.upcoming?'Avventer ukeplan':'Ukeoversikt';
+  el('family-week-context').textContent=now.upcoming?
+   'Skoleuka er over for denne uken. Viser kun uke '+now.week+'.':
+   'Lekser, pakkeliste og beskjeder for barna i uke '+now.week+'.';
   el('family-sync-status').textContent=cloud?
     (syncError|| (lastSynced?'Sist synkronisert kl. '+lastSynced.toLocaleTimeString('nb-NO',{hour:'2-digit',minute:'2-digit'}):'Henter synkronisert progresjon …')) :
     'Avkrysninger lagres lokalt i nettleseren';
@@ -151,22 +164,30 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   el('family-empty').hidden=profiles.length!==0;
   el('family-cards').innerHTML=profiles.map(p=>childCard(p,summaries.get(p.id),now)).join('');
   const {next}=schoolDayIndices(now);
-  for(const button of document.querySelectorAll('[data-family-focus]'))
-   button.setAttribute('aria-pressed',String(button.dataset.familyFocus===focus));
-  el('family-next-day').textContent=focus==='today'?'i dag':
-   focus==='week'?'denne uka':next==null?'neste skoleuke':'til '+DAYS[next].toLocaleLowerCase('nb-NO');
+  const shownFocus=now.upcoming?'week':focus;
+  const tabs=document.querySelector('.family-focus-tabs');
+  tabs.hidden=now.upcoming;
+  for(const button of tabs.querySelectorAll('[data-family-focus]'))
+   button.setAttribute('aria-pressed',String(button.dataset.familyFocus===shownFocus));
+  el('family-next-day').textContent=now.upcoming?'i uke '+now.week:
+   shownFocus==='today'?'i dag':
+   shownFocus==='week'?'denne uka':next==null?'neste skoleuke':'til '+DAYS[next].toLocaleLowerCase('nb-NO');
   const cards=[];
-  if(!(focus==='next'&&next==null)){
+  if(now.upcoming||!(shownFocus==='next'&&next==null)){
    for(const p of profiles){
     const summary=summaries.get(p.id);
     if(!summary?.ready)continue;
-    const due=focus==='today'?summary.today:focus==='next'?summary.next:summary.tasks;
-    for(const task of due.filter(x=>!x.checked)){
+    const due=shownFocus==='today'?summary.today:shownFocus==='next'?summary.next:summary.tasks;
+    for(const task of due.filter(x=>!x.checked))
      cards.push({name:p.name,id:p.id,icon:'📚',label:(task.subject?task.subject+': ':'')+task.text});
-    }
-    if(focus!=='week'){
-     const bag=focus==='today'?summary.todayBag:summary.bag;
-     const notices=focus==='today'?summary.todayNotes:summary.notices;
+    if(now.upcoming){
+     for(const item of summary.weeklyBag.filter(x=>!x.checked))
+      cards.push({name:p.name,id:p.id,icon:'🎒',label:item.day+': pakk '+item.label});
+     for(const note of summary.weeklyNotices)
+      cards.push({name:p.name,id:p.id,icon:'📌',label:note.day+': '+note.text});
+    }else if(shownFocus!=='week'){
+     const bag=shownFocus==='today'?summary.todayBag:summary.bag;
+     const notices=shownFocus==='today'?summary.todayNotes:summary.notices;
      for(const item of bag.filter(x=>!x.checked))cards.push({name:p.name,id:p.id,icon:'🎒',label:'Pakk: '+item.label});
      for(const note of notices)cards.push({name:p.name,id:p.id,icon:'📌',label:note});
     }
@@ -177,12 +198,14 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
    '<article class="family-reminder"><span aria-hidden="true">'+x.icon+'</span><div><strong>'+escape(x.name)+'</strong>'+
    '<p>'+escape(x.label)+'</p></div><button type="button" data-family-open="'+escape(x.id)+
    '" aria-label="Åpne ukeplan for '+escape(x.name)+'">Se ukeplan →</button></article>').join('');
-  el('family-reminders').innerHTML=focus==='next'&&next==null?
+  const noPlan=now.upcoming?'Ukeplan for uke '+now.week+' er ikke tilgjengelig ennå. Vi sjekker automatisk når skolen publiserer PDF-en.':
+   'Ingen tilgjengelige ukeplaner akkurat nå.';
+  el('family-reminders').innerHTML=!now.upcoming&&shownFocus==='next'&&next==null?
    '<p class="family-muted">Neste ukes oppgaver blir tilgjengelige når skolen publiserer ny ukeplan.</p>':
    reminderMarkup+(cards.length>limit?'<p class="family-muted">Viser de 20 første. Åpne barnets ukeplan for resten.</p>':'')||
-   '<p class="family-muted">'+(loading.size?'Henter ukeplaner …':
+   '<p class="family-muted">'+(loading.size?'Sjekker ukeplan for uke '+now.week+' …':
      !profiles.length?'Legg til et barn for å se huskelisten.':
-     ready.length?'Ingen utestående oppgaver i denne visningen.':'Ingen tilgjengelige ukeplaner akkurat nå.')+'</p>';
+     ready.length?'Ingen utestående oppgaver i uke '+now.week+'.':noPlan)+'</p>';
   const analyzing=[...pendingJobs.values()].filter(job=>job.mode==='poll').length;
   el('family-load-status').textContent=loading.size?'Sjekker '+loading.size+' ukeplan(er) for nye PDF-er …':
    analyzing?'AI tolker '+analyzing+' ukeplan(er) automatisk. Resultatet vises når analysen er ferdig.':
@@ -248,7 +271,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   // is reused; an updated PDF (even at the same URL) gets a new hash and job.
   let plan=null,error=null;
   try{plan=await getJson('/api/plan?school='+encodeURIComponent(school)+
-    '&grade='+encodeURIComponent(grade),60000);}
+    '&grade='+encodeURIComponent(grade)+(calendar().upcoming?'&nextWeek=1':''),60000);}
   catch(e){error=e.message||'Klarte ikke hente ukeplan.';}
   if(!active||sequence!==run||!pairProfiles(pair).length)return;
   applyPair(pair,plan,error,sequence);
@@ -262,7 +285,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   let response;
   try{
    const url=job.jobId?'/api/ai-status?job='+encodeURIComponent(job.jobId):
-    '/api/plan?school='+encodeURIComponent(school)+'&grade='+encodeURIComponent(grade)+'&statusOnly=1';
+    '/api/plan?school='+encodeURIComponent(school)+'&grade='+encodeURIComponent(grade)+
+    '&statusOnly=1'+(calendar().upcoming?'&nextWeek=1':'');
    response=await getJson(url,16000);
   }catch{
    if(!active||sequence!==run||pendingJobs.get(pair)!==job)return;
@@ -314,7 +338,12 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
  }
  async function fetchPlans(){
   if(!active)return;
-  const sequence=++run;
+  const sequence=++run,now=calendar();
+  const targetKey=weekKey(now);
+  if(loadedWeekKey!==targetKey){
+   loadedWeekKey=targetKey;plans.clear();autoRetries.clear();cloudChecks.clear();
+   if(cloud)void syncCloud();
+  }
   lastPlanCheckAt=Date.now();
   stopPollTimers();pendingJobs.clear();
   loading.clear();errors.clear();
@@ -331,7 +360,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
  }
  function resumeAnalysis(){
   if(!active||document.visibilityState==='hidden')return;
-  if(Date.now()-lastPlanCheckAt>=2*60_000){void api.refresh();return;}
+  if(weekKey(calendar())!==loadedWeekKey||
+     Date.now()-lastPlanCheckAt>=2*60_000){void api.refresh();return;}
   for(const [pair,job] of pendingJobs){
    if(pollTimers.has(pair))continue;
    const delay=job.mode==='cooldown'?Math.max(1000,job.retryAt-Date.now()):1000;
@@ -385,12 +415,12 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
     cloud={client,familyId};
     profiles=remoteChildren.map(x=>({id:x.id,name:x.nickname,school:x.school_id,
       grade:x.grade,group:x.group_name||''})).filter(x=>Object.hasOwn(siteConfig.schools,x.school));
-    plans.clear();cloudChecks.clear();await syncCloud();
+    plans.clear();cloudChecks.clear();loadedWeekKey=null;await syncCloud();
     if(active){render();void fetchPlans();}
   },
   clearCloud:()=>{
     cloud=null;cloudChecks.clear();lastSynced=null;syncError='';profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
-    plans.clear();if(active){render();void fetchPlans();}
+    plans.clear();loadedWeekKey=null;if(active){render();void fetchPlans();}
   },
   refreshCloud:syncCloud,
   enter:()=>{if(active)return;active=true;render();onModeChange();void fetchPlans();},
@@ -410,12 +440,13 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   else resumeAnalysis();
  });
  setInterval(()=>{
-  if(active&&document.visibilityState==='visible'&&Date.now()-lastPlanCheckAt>=AUTO_CHECK_MS)
+  if(active&&document.visibilityState==='visible'&&
+    (weekKey(calendar())!==loadedWeekKey||Date.now()-lastPlanCheckAt>=AUTO_CHECK_MS))
    api.refresh();
  },60_000);
  el('family-reminders').addEventListener('click',e=>{
   const button=e.target.closest('[data-family-open]');
-  if(button){const p=byId(button.dataset.familyOpen);if(p)onOpenProfile(p);}
+  if(button){const p=byId(button.dataset.familyOpen);if(p)onOpenProfile(p,{upcoming:calendar().upcoming});}
  });
  el('family-cancel').addEventListener('click',closeForm);
  el('family-refresh').addEventListener('click',api.refresh);
@@ -466,7 +497,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
    return;
   }
   const open=e.target.closest('[data-family-open]');
-  if(open){const p=byId(open.dataset.familyOpen);if(p)onOpenProfile(p);return;}
+  if(open){const p=byId(open.dataset.familyOpen);if(p)onOpenProfile(p,{upcoming:calendar().upcoming});return;}
   const edit=e.target.closest('[data-family-edit]');
   if(edit){const p=byId(edit.dataset.familyEdit);if(p)openForm(p);return;}
   const remove=e.target.closest('[data-family-remove]');
