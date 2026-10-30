@@ -21,6 +21,22 @@ test('Public configuration strictly accepts HTTPS Supabase publishable endpoint'
  assert.equal(validSupabaseConfig({...config,url:'https://evil.com/'}),false);
  assert.equal(validSupabaseConfig({...config,publishableKey:'service_role_secret_test'}),false);
 });
+test('Native default fetch is called with Window/global receiver (regression: Illegal invocation)',async()=>{
+ const previousFetch=globalThis.fetch,calls=[];
+ globalThis.fetch=function(url,init){
+  assert.equal(this,globalThis,'Native fetch must retain its global receiver');
+  calls.push({url,init});
+  return Promise.resolve(result({}));
+ };
+ try{
+  const account=new CloudAccount(config,{storage:storage()});
+  await account.sendCode('guardian@example.no');
+  assert.equal(calls.length,1);
+  assert.ok(calls[0].url.endsWith('/auth/v1/otp'));
+  assert.equal(calls[0].init.method,'POST');
+ }finally{globalThis.fetch=previousFetch;}
+});
+
 test('Email sign-in uses OTP without passwords, session is restored locally',async()=>{
  const calls=[],st=storage();
  const fetcher=async(url,init)=>{
@@ -44,6 +60,22 @@ test('Email sign-in uses OTP without passwords, session is restored locally',asy
  assert.equal((await again.restore()).id,'parent-1');
  again.signOutLocal();assert.equal(st.getItem(SESSION_KEY),null);
 });
+
+test('Rejected browser requests show a useful but credential-free diagnostic',async()=>{
+ const original=console.error,diagnostics=[];
+ console.error=(...args)=>diagnostics.push(args);
+ try{
+  const c=new CloudAccount(config,{fetcher:async()=>{throw new TypeError('Failed to fetch');},storage:storage()});
+  await assert.rejects(c.sendCode('guardian@example.no'),
+   /Kunne ikke kontakte Supabase.*Failed to fetch/);
+ }finally{console.error=original;}
+ const log=JSON.stringify(diagnostics);
+ assert.ok(log.includes('/auth/v1/otp'));
+ assert.match(log,/Failed to fetch/);
+ assert.equal(log.includes('guardian@example.no'),false);
+ assert.equal(log.includes('sb_publishable_'),false);
+});
+
 test('Cannot send malformed email or code to Supabase',async()=>{
  const c=new CloudAccount(config,{fetcher:()=>{throw Error('Should not fetch');},storage:storage()});
  await assert.rejects(c.sendCode('not-an-email'),/e-postadresse/i);

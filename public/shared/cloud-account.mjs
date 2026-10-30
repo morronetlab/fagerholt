@@ -29,7 +29,10 @@ export function taskFingerprint({school,grade,year,week,task,day}){
  return a.toString(16).padStart(8,'0')+b.toString(16).padStart(8,'0');
 }
 export class CloudAccount {
- constructor(config,{fetcher=fetch,storage=localStorage}={}){
+ // Invoke native fetch as a method of its host global. Copying it into
+ // this.fetcher and calling it as this.fetcher() produces Illegal invocation
+ // in browsers because native fetch requires the Window receiver.
+ constructor(config,{fetcher=(url,init)=>globalThis.fetch(url,init),storage=localStorage}={}){
   if(!validSupabaseConfig(config))throw Error('Supabase-konfigurasjon mangler eller er ugyldig.');
   this.base=config.url.replace(/\/$/,'');this.key=config.publishableKey;
   this.fetcher=fetcher;this.storage=storage;
@@ -57,7 +60,19 @@ export class CloudAccount {
   if(body!==undefined)h['Content-Type']='application/json';
   let res;
   try{res=await this.fetcher(this.base+path,{method,headers:h,body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});}
-  catch{throw Error('Fikk ikke kontakt med konto-tjenesten. Kontroller nettverket.');}
+  catch(error){
+   // The browser may reject a request before it reaches Supabase (for example,
+   // because of an extension, cross-origin policy or a local network filter).
+   // Keep credentials and the request body out of the diagnostic log.
+   const detail=error instanceof Error?error.message:String(error);
+   const endpoint=path.split('?')[0];
+   console.error('[Ukeplanen konto] Nettverksfeil mot Supabase',{
+    host:new URL(this.base).hostname,endpoint,error:detail.slice(0,180)
+   });
+   throw Error('Kunne ikke kontakte Supabase ('+new URL(this.base).hostname+
+    '). Nettleseren rapporterte: '+(detail||'ukjent nettverksfeil')+
+    '. Se F12 → Network med alle filtre fjernet, eller prøv et inkognitovindu uten utvidelser.');
+  }
   if(res.status===401&&auth&&retry){
    await this.refreshSession(true);
    return this.request(path,{method,body,auth,headers,retry:false});

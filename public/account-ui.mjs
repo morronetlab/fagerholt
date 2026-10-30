@@ -17,7 +17,7 @@ const invitationsFromUrl=()=>{
  return /^[a-f0-9]{64}$/.test(token)?token:null;
 };
 export function initAccountUI({familyUI}){
- let client=null,accountReady=false,requestedEmail='',familyId=null,families=[],invitation=invitationsFromUrl();
+ let client=null,accountReady=false,requestedEmail='',familyId=null,families=[],invitation=invitationsFromUrl(),nextCodeRequestAt=0;
  const status=(msg,error=false)=>{$('account-message').textContent=msg||'';$('account-message').dataset.error=String(error);};
  const show=id=>{for(const section of $('account-panel').querySelectorAll('[data-account-screen]'))
    section.hidden=section.dataset.accountScreen!==id;};
@@ -84,7 +84,7 @@ export function initAccountUI({familyUI}){
  $('account-request-form').addEventListener('submit',async e=>{
   e.preventDefault();
   const email=$('account-email').value.trim(),submit=$('account-send-code');submit.disabled=true;
-  try{await client.sendCode(email);requestedEmail=email;show('verify');status('Vi har sendt en engangskode til '+email+'.');}
+  try{await client.sendCode(email);requestedEmail=email;nextCodeRequestAt=Date.now()+60000;show('verify');status('Vi har sendt en engangskode til '+email+'.');}
   catch(error){status(error.message,true);}finally{submit.disabled=false;}
  });
  $('account-verify-form').addEventListener('submit',async e=>{
@@ -96,6 +96,19 @@ export function initAccountUI({familyUI}){
    status('Du er logget inn.');
    if(invitation)await acceptInvitation();
   }catch(error){status(error.message,true);}finally{submit.disabled=false;}
+ });
+ $('account-resend-code').addEventListener('click',async()=>{
+  if(!client||!requestedEmail){show('login');return;}
+  const remain=Math.ceil((nextCodeRequestAt-Date.now())/1000);
+  if(remain>0){status('Vent '+remain+' sekunder før du ber om en ny kode.',true);return;}
+  const submit=$('account-resend-code');submit.disabled=true;
+  try{
+   await client.sendCode(requestedEmail);
+   nextCodeRequestAt=Date.now()+60000;
+   $('account-code').value='';
+   status('En ny engangskode er forespurt til '+requestedEmail+'. Bruk bare den nyeste koden; tidligere koder kan være ugyldige.');
+  }catch(error){status('Kunne ikke sende ny kode: '+error.message,true);}
+  finally{submit.disabled=false;}
  });
  $('account-back-email').addEventListener('click',()=>{show('login');status('');});
  $('account-family-create').addEventListener('submit',async e=>{

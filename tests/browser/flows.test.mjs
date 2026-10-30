@@ -234,11 +234,12 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  await page.addInitScript(()=>{
   const original=window.fetch.bind(window);
   let families=[];
+  window.__otpRequests=0;
   window.fetch=(input,init={})=>{
    const url=typeof input==='string'?input:input.url;
    if(!url.startsWith('https://testprojectabc.supabase.co/'))return original(input,init);
    let data={};
-   if(url.includes('/auth/v1/otp'))data={};
+   if(url.includes('/auth/v1/otp')){window.__otpRequests++;data={};}
    else if(url.includes('/auth/v1/verify'))data={access_token:'access-token',
     refresh_token:'refresh-token',expires_in:3600,user:{id:'guardian-one',email:'parent@example.no'}};
    else if(url.includes('/rest/v1/rpc/create_family')){
@@ -258,6 +259,18 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  await page.waitForTimeout(400);
  assert.match(await page.locator('#account-message').textContent(),/sendt/i,
    'OTP response missing. Account mode: '+await page.locator('#account-panel').innerText());
+ assert.equal(await page.locator('#account-resend-code').isVisible(),true);
+ await page.locator('#account-resend-code').click();
+ assert.match(await page.locator('#account-message').textContent(),/Vent .*sekunder/i);
+ assert.equal(await page.evaluate(()=>window.__otpRequests),1);
+ await page.evaluate(()=>{
+  window.__originalDateNow=Date.now;
+  Date.now=()=>window.__originalDateNow()+61000;
+ });
+ await page.locator('#account-resend-code').click();
+ await page.getByText(/En ny engangskode er forespurt/i).waitFor();
+ assert.equal(await page.evaluate(()=>window.__otpRequests),2);
+ await page.evaluate(()=>{Date.now=window.__originalDateNow;});
  await page.locator('#account-code').fill('123456');
  await page.locator('#account-verify').click();
  await page.locator('#account-family-name').fill('Min familie');
