@@ -425,6 +425,7 @@ test('Practical overview limits notices to five, expands without an AI call, and
   return reply(route,p);
  });
  await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('[data-family-focus="week"]').click();
  await page.locator('.family-reminder').first().waitFor({state:'visible'});
  assert.equal(await page.locator('.family-reminder').count(),5);
  assert.match(await page.locator('#family-reminders-more').innerText(),/Vis alle/);
