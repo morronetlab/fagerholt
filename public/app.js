@@ -184,6 +184,7 @@ function renderFeedback(){
     $('feedback-grade-link').firstChild.textContent=state.plan?.pdf?'Se original-PDF ':'Se trinnsiden ';
   }
   $('analysis-progress').hidden=info.kind!=='analyzing';
+  $('feedback-report-issue').hidden=!['missing','partial'].includes(info.kind);
   $('feedback-retry').hidden=!info.showRetry;
   $('feedback-retry').disabled=info.kind==='analyzing'&&state.statusChecking;
   $('feedback-retry').textContent=info.kind==='analyzing'?(state.statusChecking?'Sjekker AI-status …':'↻ Sjekk AI-status'):'↻ Prøv igjen';
@@ -681,12 +682,14 @@ function boot(){
     const expanded=$('weather-panel').classList.toggle('is-expanded');
     $('weather-toggle').setAttribute('aria-expanded',String(expanded));
   });
-  $('report-plan-issue').addEventListener('click',()=>{
+  const reportCurrentPlan=()=>{
     if(!state.school?.id||!state.grade)return;
     issueReporter.open({contexts:[{school:state.school.id,grade:state.grade,
      year:state.plan?.year||calendar.year,week:state.plan?.week||calendar.week,
      pdf:state.plan?.pdf||null}],kind:'wrong_interpretation'});
-  });
+  };
+  $('report-plan-issue').addEventListener('click',reportCurrentPlan);
+  $('feedback-report-issue').addEventListener('click',reportCurrentPlan);
   $('reload').addEventListener('click',reload);
   $('feedback-retry').addEventListener('click',()=>state.plan?.aiStatus==='processing'?reload({quiet:true,statusOnly:true}):reload());
   const savedSchool=storageRead(schoolSelectionKey());
