@@ -2,6 +2,7 @@
 import {siteConfig} from '../../public/site-config.mjs';
 import {pdfPages} from './plan.mjs';
 import {interpretPdfWithAI} from '../../lib/ai-plan.mjs';
+import {auditPracticalSource} from '../../lib/practical-source-audit.mjs';
 import {aiConfigured,cacheKey,digestPdf,openAIStore,validSignature,releaseJob,failureKey} from '../../lib/ai-runtime.mjs';
 import {getSchool,validGradeCode,isSchoolSectionUrl} from '../../lib/schools.mjs';
 
@@ -49,7 +50,12 @@ export function createAIBackgroundHandler({fetchImpl=fetch,storeFactory=openAISt
      const normalized=await interpret(aiPdfBytes,{grade,week,year,source,pdf,pageCount:pages.length||16,pageTexts,pageLayouts:pages,
        fetchImpl,apiKey:env.OPENAI_API_KEY,model:env.OPENAI_MODEL||'gpt-4.1-mini'});
      mark('aiCompleteMs');
-     await store.setJSON(key,{...normalized,schoolId:school.id,schoolName:school.name,createdAt:new Date().toISOString(),model:env.OPENAI_MODEL||'gpt-4.1-mini',pdfSizeBytes:bytes.length,pdfPageCount:pages.length||null});
+     const sourceAudit=auditPracticalSource(normalized,pageTexts);
+     if(sourceAudit.status==='attention')
+       console.warn('ukeplan.critical_pdf_audit',JSON.stringify({
+         school:school.id,grade,year,week,...sourceAudit
+       }));
+     await store.setJSON(key,{...normalized,sourceAudit,schoolId:school.id,schoolName:school.name,createdAt:new Date().toISOString(),model:env.OPENAI_MODEL||'gpt-4.1-mini',pdfSizeBytes:bytes.length,pdfPageCount:pages.length||null});
      mark('totalMs');
      console.info('ukeplan.background_timings',JSON.stringify({...measurements,school:school.id,grade,pdfBytes:bytes.length,pages:pages.length}));
      try{await store.delete(failureKey(key));}catch{}
