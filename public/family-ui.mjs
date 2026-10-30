@@ -37,7 +37,18 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
  let active=false,profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
  let cloud=null,cloudChecks=new Map(),focus='next',lastSynced=null,syncError='';
  const plans=new Map(),loading=new Set(),errors=new Map();
- let run=0,editing=null,gradeRun=0;
+ // Poll one server-side AI job per unique school/grade, not once per child.
+ const pendingJobs=new Map(),pollTimers=new Map(),autoRetries=new Map();
+ let run=0,editing=null,gradeRun=0,lastPlanCheckAt=0;
+ const AUTO_CHECK_MS=15*60_000, RETRY_COOLDOWN_MS=5*60_000+5000;
+ const pairOf=p=>p.school+'|'+p.grade;
+ const pairProfiles=pair=>profiles.filter(p=>pairOf(p)===pair);
+ const pollDelay=attempt=>Math.min(15000,4000+Math.max(0,attempt)*1500);
+ function stopPollTimers(){
+  for(const timer of pollTimers.values())clearTimeout(timer);
+  pollTimers.clear();
+ }
+
  const calendar=()=>schoolCalendar(new Date(),'Europe/Oslo');
  const byId=id=>profiles.find(p=>p.id===id);
  const setStatus=message=>{el('family-form-status').textContent=message||'';};
@@ -92,7 +103,11 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
     escape((x.subject?x.subject+': ':'')+x.text)+'</span></label></li>').join('')+'</ul>':
   '<p class="family-muted">'+escape(message)+'</p>';
  function childCard(p,s,now){
-  const school=siteConfig.schools[p.school];
+  const school=siteConfig.schools[p.school],plan=plans.get(p.id);
+  const aiLabel=plan?.aiStatus==='ready'?'✓ AI-tolket PDF · lagret':
+   plan?.aiStatus==='processing'?'✦ AI tolker PDF automatisk …':
+   plan?.aiStatus==='failed'?'⚠ AI-tolkingen feilet':
+   plan?.aiStatus==='disabled'||plan?.aiStatus==='unavailable'?'Regelbasert PDF-lesing':null;
   const pct=s.ready&&s.total?Math.round(100*s.done/s.total):0;
   const practice=s.ready?wordStatus(p,plans.get(p.id),now):null;
   const details=s.ready?[
@@ -105,7 +120,9 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   return '<article class="family-child"><div class="family-child-heading">'+
    '<span class="family-avatar" aria-hidden="true">'+escape(p.name.slice(0,1).toUpperCase())+'</span>'+
    '<div><h3>'+escape(p.name)+'</h3><p>'+escape(school?.name||'Skole')+' · '+escape(p.grade)+'. klasse'+(p.group?' · '+escape(p.group):'')+'</p></div></div>'+
+   (aiLabel?'<p class="family-ai-label" role="status">'+escape(aiLabel)+'</p>':'')+
    details+'<div class="family-child-actions">'+
+   (plan?.aiStatus==='failed'?'<button type="button" class="family-soft" data-family-retry="'+escape(pairOf(p))+'">Prøv AI-tolkning igjen</button>':'')+
    '<button type="button" class="family-open" data-family-open="'+escape(p.id)+'">Åpne ukeplan →</button>'+
    '<button type="button" class="family-soft" data-family-edit="'+escape(p.id)+'">Endre</button>'+
    '<button type="button" class="family-remove" data-family-remove="'+escape(p.id)+'">Fjern</button>'+
@@ -166,34 +183,152 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
    '<p class="family-muted">'+(loading.size?'Henter ukeplaner …':
      !profiles.length?'Legg til et barn for å se huskelisten.':
      ready.length?'Ingen utestående oppgaver i denne visningen.':'Ingen tilgjengelige ukeplaner akkurat nå.')+'</p>';
-  el('family-load-status').textContent=loading.size?'Henter '+loading.size+' ukeplan(er) …':
+  const analyzing=[...pendingJobs.values()].filter(job=>job.mode==='poll').length;
+  el('family-load-status').textContent=loading.size?'Sjekker '+loading.size+' ukeplan(er) for nye PDF-er …':
+   analyzing?'AI tolker '+analyzing+' ukeplan(er) automatisk. Resultatet vises når analysen er ferdig.':
    errors.size?'Noen ukeplaner kunne ikke hentes. Prøv Oppdater.':syncError;
  }
- let activeFetch=0;
+ // /api/plan finds the newest PDF and checks the content-hash against the
+ // site-wide, durable Netlify Blobs AI cache. It queues the job only on a miss.
+ function applyPair(pair,plan,error,sequence){
+  if(!active||sequence!==run)return;
+  const now=calendar();
+  for(const p of pairProfiles(pair)){
+   loading.delete(p.id);
+   if(error||!plan||plan.year!==now.year||plan.week!==now.week){
+    plans.delete(p.id);
+    errors.set(p.id,error||'Skolens ukeplan gjelder ikke aktuell uke.');
+   }else{
+    plans.set(p.id,plan);errors.delete(p.id);
+   }
+  }
+  render();
+ }
+ function clearPairJob(pair){
+  const timer=pollTimers.get(pair);
+  if(timer)clearTimeout(timer);
+  pollTimers.delete(pair);pendingJobs.delete(pair);
+ }
+ function schedulePoll(pair,sequence,delay){
+  if(!active||sequence!==run||document.visibilityState==='hidden')return;
+  const job=pendingJobs.get(pair);
+  if(!job)return;
+  const existing=pollTimers.get(pair);
+  if(existing)clearTimeout(existing);
+  const timer=setTimeout(()=>{
+   pollTimers.delete(pair);
+   if(job.mode==='cooldown')void fetchPair(pair,sequence);
+   else void pollPair(pair,sequence);
+  },delay);
+  pollTimers.set(pair,timer);
+ }
+ function setPending(pair,plan,sequence){
+  if(!active||sequence!==run)return;
+  if(plan?.aiStatus==='processing'){
+   const existing=pendingJobs.get(pair);
+   const same=existing?.jobId===plan.jobId&&existing.mode==='poll';
+   pendingJobs.set(pair,{mode:'poll',jobId:plan.jobId||null,
+    attempt:same?existing.attempt:0,startedAt:same?existing.startedAt:Date.now()});
+   schedulePoll(pair,sequence,pollDelay(0));
+  }else{
+   clearPairJob(pair);
+  }
+  render();
+ }
+ async function fetchPair(pair,sequence){
+  if(!active||sequence!==run)return;
+  const [school,grade]=pair.split('|');
+  // A full request checks the school site and PDF bytes. A cached AI result
+  // is reused; an updated PDF (even at the same URL) gets a new hash and job.
+  let plan=null,error=null;
+  try{plan=await getJson('/api/plan?school='+encodeURIComponent(school)+
+    '&grade='+encodeURIComponent(grade),60000);}
+  catch(e){error=e.message||'Klarte ikke hente ukeplan.';}
+  if(!active||sequence!==run||!pairProfiles(pair).length)return;
+  applyPair(pair,plan,error,sequence);
+  setPending(pair,plan,sequence);
+ }
+ async function pollPair(pair,sequence){
+  if(!active||sequence!==run||document.visibilityState==='hidden')return;
+  const job=pendingJobs.get(pair);
+  if(!job||job.mode!=='poll')return;
+  const [school,grade]=pair.split('|');
+  let response;
+  try{
+   const url=job.jobId?'/api/ai-status?job='+encodeURIComponent(job.jobId):
+    '/api/plan?school='+encodeURIComponent(school)+'&grade='+encodeURIComponent(grade)+'&statusOnly=1';
+   response=await getJson(url,16000);
+  }catch{
+   if(!active||sequence!==run||pendingJobs.get(pair)!==job)return;
+   job.attempt++;
+   if(Date.now()-job.startedAt<16*60_000){
+    schedulePoll(pair,sequence,pollDelay(job.attempt));
+   }else{
+    clearPairJob(pair);
+    for(const p of pairProfiles(pair))errors.set(p.id,'Klarte ikke kontrollere AI-status. Velg Oppdater.');
+    render();
+   }
+   return;
+  }
+  if(!active||sequence!==run||pendingJobs.get(pair)!==job)return;
+  if(response.aiStatus==='processing'){
+   job.attempt++;
+   if(Date.now()-job.startedAt<16*60_000)schedulePoll(pair,sequence,pollDelay(job.attempt));
+   else{
+    clearPairJob(pair);
+    for(const p of pairProfiles(pair))errors.set(p.id,'AI-tolkingen bruker for lang tid. Velg Oppdater.');
+    render();
+   }
+   return;
+  }
+  if(response.aiStatus==='ready'){
+   // AI-status is only a fast cache lookup. Fetch the canonical plan once
+   // to validate extracted homework deadlines and detect a newer PDF.
+   await fetchPair(pair,sequence);
+   return;
+  }
+  if(response.aiStatus==='failed'){
+   const oldPlan=plans.get(pairProfiles(pair)[0]?.id);
+   applyPair(pair,{...oldPlan,aiStatus:'failed',
+    warning:response.warning||'AI-analysen feilet. Vi prøver igjen etter en kort pause.'},null,sequence);
+   const retries=autoRetries.get(pair)||0;
+   if(retries<1){
+    autoRetries.set(pair,retries+1);
+    pendingJobs.set(pair,{mode:'cooldown',retryAt:Date.now()+RETRY_COOLDOWN_MS});
+    schedulePoll(pair,sequence,RETRY_COOLDOWN_MS);
+   }else clearPairJob(pair);
+   render();
+   return;
+  }
+  // An unexpected status is not treated as a completed AI analysis.
+  job.attempt++;
+  schedulePoll(pair,sequence,pollDelay(job.attempt));
+ }
  async function fetchPlans(){
   if(!active)return;
-  const sequence=++run,now=calendar();loading.clear();errors.clear();
+  const sequence=++run;
+  lastPlanCheckAt=Date.now();
+  stopPollTimers();pendingJobs.clear();
+  loading.clear();errors.clear();
   for(const p of profiles)loading.add(p.id);
   render();
-  const pairs=[...new Set(profiles.map(p=>p.school+'|'+p.grade))];
+  const pairs=[...new Set(profiles.map(pairOf))];
   let cursor=0;
   await Promise.all(Array.from({length:Math.min(2,pairs.length)},async()=>{
    while(cursor<pairs.length){
-    const pair=pairs[cursor++],[school,grade]=pair.split('|');
-    let plan=null,error=null;
-    try{plan=await getJson('/api/plan?school='+encodeURIComponent(school)+'&grade='+encodeURIComponent(grade),60000);}
-    catch(e){error=e.message||'Klarte ikke hente ukeplan.';}
-    if(sequence!==run||!active)return;
-    for(const p of profiles.filter(x=>x.school===school&&x.grade===grade)){
-     loading.delete(p.id);
-     if(error||plan?.year!==now.year||plan?.week!==now.week){
-      plans.delete(p.id);
-      errors.set(p.id,error||'Skolens ukeplan gjelder ikke aktuell uke.');
-     }else{plans.set(p.id,plan);errors.delete(p.id);}
-    }
-    render();
+    const pair=pairs[cursor++];
+    await fetchPair(pair,sequence);
    }
   }));
+ }
+ function resumeAnalysis(){
+  if(!active||document.visibilityState==='hidden')return;
+  if(Date.now()-lastPlanCheckAt>=2*60_000){void api.refresh();return;}
+  for(const [pair,job] of pendingJobs){
+   if(pollTimers.has(pair))continue;
+   const delay=job.mode==='cooldown'?Math.max(1000,job.retryAt-Date.now()):1000;
+   schedulePoll(pair,run,delay);
+  }
  }
  function closeForm(){editing=null;el('family-form').hidden=true;setStatus('');}
  async function loadGrades(current=''){
@@ -251,7 +386,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   },
   refreshCloud:syncCloud,
   enter:()=>{if(active)return;active=true;render();onModeChange();void fetchPlans();},
-  leave:()=>{active=false;run++;loading.clear();onModeChange();},
+  leave:()=>{active=false;run++;stopPollTimers();pendingJobs.clear();autoRetries.clear();
+    loading.clear();onModeChange();},
   refresh:()=>{if(active){if(cloud)void syncCloud();void fetchPlans();}}
  };
  el('family-add').addEventListener('click',()=>openForm());
@@ -259,6 +395,16 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
  for(const button of document.querySelectorAll('[data-family-focus]')){
   button.addEventListener('click',()=>{focus=button.dataset.familyFocus;render();});
  }
+ // Recheck when the parent returns to the tab; automatically inspect
+ // the source every 15 minutes while the family screen stays visible.
+ document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden')stopPollTimers();
+  else resumeAnalysis();
+ });
+ setInterval(()=>{
+  if(active&&document.visibilityState==='visible'&&Date.now()-lastPlanCheckAt>=AUTO_CHECK_MS)
+   api.refresh();
+ },60_000);
  el('family-reminders').addEventListener('click',e=>{
   const button=e.target.closest('[data-family-open]');
   if(button){const p=byId(button.dataset.familyOpen);if(p)onOpenProfile(p);}
@@ -305,6 +451,12 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   }
  });
  el('family-cards').addEventListener('click',e=>{
+  const retry=e.target.closest('[data-family-retry]');
+  if(retry){
+   autoRetries.delete(retry.dataset.familyRetry);
+   api.refresh();
+   return;
+  }
   const open=e.target.closest('[data-family-open]');
   if(open){const p=byId(open.dataset.familyOpen);if(p)onOpenProfile(p);return;}
   const edit=e.target.closest('[data-family-edit]');
