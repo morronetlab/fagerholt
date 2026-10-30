@@ -118,3 +118,12 @@
 .family-focus-tabs[hidden]{display:none!important}
 .family-overview-top .family-overview-subtitle{max-width:560px}
 .family-child:has(.family-not-ready) .family-child-week{background:#fff3de;color:#855f31}
+
+/* Compact, source-grounded practical reminders: no repeated weekly homework. */
+.family-reminders-intro{margin:-4px 0 17px;font-size:13px;line-height:1.5;color:#657c70}
+.family-reminders-more{grid-column:1/-1;justify-self:start;padding:10px 16px;min-height:44px;
+ border:1px solid #cbded0;border-radius:11px;background:#f2f8f3;color:#276149;
+ font-size:13px;font-weight:850;cursor:pointer}
+.family-reminders-more:hover{background:#e4f1e8}
+.family-reminders-more:focus-visible{outline:3px solid #edb974;outline-offset:3px}
+.family-reminders .family-reminder p{overflow-wrap:anywhere;white-space:normal}
