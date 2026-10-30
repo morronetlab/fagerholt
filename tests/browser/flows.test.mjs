@@ -666,6 +666,33 @@ test('Single-class school week exposes issue reporting without a family account'
  assert.deepEqual(errors,[]);
 });
 
+test('Unavailable school PDF still offers issue reporting from the fallback panel',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ let report=null;
+ await page.route('**/api/plan?**',route=>{
+  const plan=basePlan('2');
+  plan.status='unpublished';plan.aiStatus='disabled';plan.pdf=null;
+  return reply(route,plan);
+ });
+ await page.route('**/api/report-issue',async route=>{
+  report=route.request().postDataJSON();
+  await route.fulfill({status:201,contentType:'application/json',body:'{"status":"received"}'});
+ });
+ await chooseSchoolGrade(page,'2');
+ await page.locator('#plan-feedback').waitFor({state:'visible'});
+ assert.equal(await page.locator('#plan-body').isVisible(),false);
+ await page.locator('#feedback-report-issue').click();
+ await page.locator('#issue-report-dialog').waitFor({state:'visible'});
+ await page.locator('#issue-report-kind').selectOption('missing_notice');
+ await page.locator('#issue-report-details').fill('Skolens ukebrev ligger tilgjengelig, men vises ikke her.');
+ await page.locator('#issue-report-submit').click();
+ await page.locator('#issue-report-status').getByText(/Rapporten er registrert/).waitFor();
+ assert.equal(report.kind,'missing_notice');
+ assert.equal(report.school,'sjostrand');
+ assert.equal(report.pdf,null);
+ assert.deepEqual(errors,[]);
+});
+
 test('Opening a ready AI family plan is instant and browser Back and Forward restore views',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
