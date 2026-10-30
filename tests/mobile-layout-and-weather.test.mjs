@@ -5,12 +5,15 @@ const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
 const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
 const css=readFileSync(new URL('../public/original-look.css',import.meta.url),'utf8');
 const shared=css.slice(css.indexOf('/* Mobile-first refinement:'));
-test('Mobile selection keeps school switching available before selecting a grade',()=>{
+test('Mobile selection preserves access to switching school and grade',()=>{
  assert.match(html,/id="mobile-selection-menu"/);
  assert.match(html,/id="mobile-change-grade"/);
  assert.match(html,/id="mobile-change-school"/);
- assert.match(app,/\$\('mobile-selection-menu'\)\.hidden=inFamily\|\|!hasSchool/);
- assert.match(app,/\$\('mobile-change-grade'\)\.hidden=inFamily\|\|!chosen/);
+ // The new design puts the switcher inside the plan view and provides
+ // a dedicated back button while choosing a class.
+ assert.match(html,/id="grade-back"/);
+ assert.match(app,/\$\('app-view'\)\.hidden=inFamily\|\|welcome\|\|!chosen/);
+ assert.match(app,/\$\('grade-back'\)\.addEventListener\('click'/);
  assert.match(app,/mobile-change-school'\)\.addEventListener\('click'/);
  assert.match(app,/mobile-change-grade'\)\.addEventListener\('click'/);
 });
