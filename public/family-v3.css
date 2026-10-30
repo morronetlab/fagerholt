@@ -1,0 +1,105 @@
+/* Skoleuka 3 — guardian onboarding and family dashboard. Additive to existing UI. */
+.account-panel{max-width:760px;scroll-margin-top:20px}
+.account-panel[hidden]{display:none!important}
+.account-head{align-items:center}
+.account-head h2{font-size:clamp(24px,3.4vw,34px);letter-spacing:-.9px}
+.onboard-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:20px 0 22px}
+.onboard-steps span{border-top:5px solid #e4eae2;padding:9px 0 2px;color:#899c90;font-size:11px;font-weight:800;white-space:nowrap}
+.onboard-steps span.done{border-color:#a8d2b5;color:#557f63}
+.onboard-steps span.current{border-color:#276d53;color:#245d49}
+.account-panel [data-account-screen="signed"] #account-empty-family{padding:8px 0 12px}
+.account-panel [data-account-screen="signed"] #account-empty-family h3{font-size:23px;margin:7px 0 9px}
+.account-panel [data-account-screen="signed"] #account-empty-family p{color:#637d70}
+.account-panel .family-add-button,.account-panel .family-light-button{min-height:46px}
+.account-panel #account-open-family{display:block;margin:20px 0 10px}
+.account-panel #account-signout{margin-top:14px}
+.onboard-intro{max-width:590px;color:#607b6e;font-size:15px!important;line-height:1.65}
+.onboard-child-form{margin:12px 0;padding:23px;background:#fafcf9;border:1px solid #e2ece1;border-radius:20px}
+.onboard-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.onboard-child-form label{max-width:none;margin:0 0 14px}
+.onboard-child-form label input,.onboard-child-form label select{min-height:49px;background:#fff}
+.onboard-child-form #onboard-child-save{margin-top:6px}
+.onboard-children-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.onboard-child-item{display:flex;flex-direction:column;gap:5px;padding:13px 16px;background:#ebf5ed;border-radius:13px;border:1px solid #d6e7d7;color:#245842}
+.onboard-child-item small{font-size:12px;color:#637b69;line-height:1.5}
+.onboard-import-row{margin:18px 0;padding:17px 20px;border-radius:16px;background:#fffaed;border:1px solid #f1e4cf}
+.onboard-import-row p{color:#746247;margin:0 0 12px}
+.onboard-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:19px}
+.onboard-actions .family-text-button{text-decoration:none}
+.onboard-complete{text-align:center;padding:12px 12px 22px}
+.onboard-success-symbol{width:72px;height:72px;margin:8px auto 18px;border-radius:50%;display:grid;place-items:center;background:#e2f3e9;color:#2f7c53;font-size:40px;font-weight:900}
+.onboard-complete h3{font-size:29px!important;letter-spacing:-.7px;color:#1d5548;margin:0 0 8px!important}
+.onboard-complete p{font-size:15px!important;color:#697f70}
+.onboard-complete button{display:block;width:min(100%,340px);margin:12px auto}
+.family-view{max-width:100%}
+.family-overview-top{display:flex;align-items:center;justify-content:space-between;gap:26px;margin:17px 0 9px;padding:27px 32px;background:linear-gradient(108deg,#e7f4e8,#f5f9ef);border:1px solid #dbe9db;border-radius:22px}
+.family-overview-top .family-eyebrow{margin-bottom:8px}
+.family-overview-top h1{font-size:clamp(27px,3.5vw,41px);letter-spacing:-1.3px;color:#225444;line-height:1.16;margin:0}
+.family-overview-subtitle{font-size:14px;color:#668475;margin:11px 0 0;line-height:1.5}
+.family-overview-stats{flex-shrink:0;min-width:170px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#ffffffc4;border:1px solid #d8e9d8;border-radius:16px;padding:17px 22px;gap:4px;text-align:center}
+.family-overview-stats span{font-size:11px;color:#64937b;font-weight:900}
+.family-overview-stats strong{font-size:19px;color:#24624e;letter-spacing:-.4px}
+.family-overview-stats small{color:#6a8677;font-size:12px}
+.family-overview-meta{display:flex;align-items:center;flex-wrap:wrap;gap:7px 16px;margin:0 4px 16px}
+.family-overview-meta span{color:#6f8879;font-size:12px;line-height:1.5}
+.family-tomorrow{padding:24px 27px;margin:0 0 28px;background:#fff;border:1px solid #e2eade;box-shadow:0 6px 25px #1d553810}
+.family-tomorrow-top{margin-bottom:15px}
+.family-tomorrow h2{font-size:clamp(19px,2.5vw,27px)}
+.family-tomorrow .family-eyebrow{color:#478267}
+.family-tomorrow h2 span{color:#8f7352}
+.family-focus-tabs{display:flex;gap:7px;flex-wrap:wrap;background:#f0f6f0;border-radius:13px;padding:5px;width:fit-content;margin-bottom:18px}
+.family-focus-tabs button{padding:10px 16px;min-height:40px;border-radius:10px;border:0;background:transparent;color:#567568;font-size:13px;font-weight:850;white-space:nowrap}
+.family-focus-tabs button[aria-pressed="true"]{background:#fff;box-shadow:0 2px 8px #27603a1c;color:#245c47}
+.family-reminders{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.family-reminder{display:flex;gap:10px;align-items:flex-start;min-width:0;border:1px solid #e7ece7;background:#f9fcf9;border-radius:14px}
+.family-reminder>div{flex:1;min-width:0}
+.family-reminder strong{font-size:12px}
+.family-reminder p{font-size:12px}
+.family-reminder button{border:0;background:none;color:#2c7356;font-size:11px;font-weight:850;white-space:nowrap;padding:7px 0}
+.family-reminder button:hover{text-decoration:underline}
+.family-toolbar{margin:27px 4px 12px}
+.family-toolbar h2{font-size:25px}
+.family-cards{gap:13px}
+.family-child{border-radius:18px;box-shadow:0 6px 18px #234b3814}
+.family-child-heading{padding:18px 20px 14px}
+.family-child-heading h3{font-size:20px}
+.family-child-progress{padding:14px 20px 2px}
+.family-child-columns{gap:9px;margin:10px 20px 3px}
+.family-child-columns>div{padding:13px 12px}
+.family-child-actions{padding:12px 17px}
+.family-empty{margin:9px 0 19px;padding:30px 22px}
+.family-empty .family-add-button{display:inline-flex;margin:18px 0 0}
+.family-status{min-height:0}
+.family-view button:focus-visible,.account-panel button:focus-visible{outline:3px solid #edb974;outline-offset:3px}
+@media(max-width:850px){
+ .family-overview-stats{min-width:150px}
+ .family-reminders{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+ .account-panel{padding:20px 17px}
+ .onboard-steps{gap:5px}
+ .onboard-steps span{font-size:10px}
+ .onboard-field-grid,.onboard-children-list{grid-template-columns:1fr}
+ .onboard-child-form{padding:17px 14px}
+ .onboard-actions{align-items:stretch}
+ .onboard-actions .family-add-button{flex:1}
+ .family-overview-top{padding:23px 19px;align-items:flex-start;gap:15px}
+ .family-overview-top h1{font-size:28px}
+ .family-overview-stats{min-width:0;padding:11px 12px}
+ .family-overview-stats strong{font-size:14px}
+ .family-overview-subtitle{font-size:13px}
+ .family-overview-meta{margin:12px 3px 17px;flex-direction:column;align-items:flex-start;gap:2px}
+ .family-tomorrow{padding:19px 17px;margin-bottom:22px}
+ .family-focus-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:2px}
+ .family-focus-tabs button{font-size:11px;min-height:45px;padding:8px 4px}
+ .family-child-heading,.family-child-progress{padding-left:17px;padding-right:17px}
+ .family-child-columns{margin-left:17px;margin-right:17px}
+ .family-reminder{flex-wrap:wrap}
+ .family-reminder button{padding:2px 0 2px 32px}
+}
+@media(max-width:410px){
+ .family-overview-top{flex-direction:column}
+ .family-overview-stats{flex-direction:row;flex-wrap:wrap;width:100%;justify-content:space-between}
+ .family-reminder button{padding-left:0}
+ .onboard-actions{flex-direction:column-reverse}
+}

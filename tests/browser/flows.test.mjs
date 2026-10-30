@@ -237,6 +237,12 @@ test('V2 family overview combines two children and keeps completion independentl
  await addFamilyChild(page,'Barn A');
  await addFamilyChild(page,'Barn B');
  assert.equal(await page.locator('#family-cards .family-child').count(),2);
+ assert.equal(await page.locator('#family-reminders').isVisible(),true);
+ await page.locator('[data-family-focus="week"]').click();
+ assert.equal(await page.locator('[data-family-focus="week"]').getAttribute('aria-pressed'),'true');
+ assert.match(await page.locator('#family-reminders').innerText(),/Les en bok fra skolen/);
+ await page.locator('[data-family-focus="today"]').click();
+ assert.equal(await page.locator('[data-family-focus="today"]').getAttribute('aria-pressed'),'true');
  await page.locator('#family-cards [data-family-open]').first().click();
  await page.locator('#homework-list input[type=checkbox]').first().waitFor();
  await page.locator('#homework-list input[type=checkbox]').first().check();
@@ -278,7 +284,7 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  // test and we exercise the real account UI + client state transitions.
  await page.addInitScript(()=>{
   const original=window.fetch.bind(window);
-  let families=[];
+  let families=[],children=[];
   window.__otpRequests=0;
   window.fetch=(input,init={})=>{
    const url=typeof input==='string'?input:input.url;
@@ -290,7 +296,11 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
    else if(url.includes('/rest/v1/rpc/create_family')){
     families=[{id:'family-1',name:'Min familie',created_by:'guardian-one'}];data='family-1';
    }else if(url.includes('/rest/v1/families'))data=families;
-   else if(url.includes('/rest/v1/children'))data=[];
+   else if(url.includes('/rest/v1/children')&&init.method==='POST'){
+    const child=JSON.parse(init.body);children.push({...child,id:'child-'+(children.length+1)});
+    data=[children.at(-1)];
+   }
+   else if(url.includes('/rest/v1/children'))data=children;
    else if(url.includes('/rest/v1/homework_progress'))data=[];
    else if(url.includes('/auth/v1/user'))data={id:'guardian-one',email:'parent@example.no'};
    else return Promise.resolve(new Response(JSON.stringify({message:'Unexpected '+url}),{status:404,headers:{'Content-Type':'application/json'}}));
@@ -320,7 +330,20 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  await page.locator('#account-verify').click();
  await page.locator('#account-family-name').fill('Min familie');
  await page.locator('#account-create').click();
+ await page.locator('[data-account-screen="children"]').waitFor({state:'visible'});
+ assert.equal(await page.locator('#onboard-children-list .onboard-child-item').count(),0);
+ await page.locator('#onboard-child-name').fill('Testbarn');
+ await page.locator('#onboard-child-school').selectOption('sjostrand');
+ await page.locator('#onboard-child-grade option[value="2"]').waitFor({state:'attached'});
+ await page.locator('#onboard-child-grade').selectOption('2');
+ await page.locator('#onboard-child-save').click();
+ await page.locator('#onboard-children-list .onboard-child-item').first().waitFor();
+ assert.equal(await page.locator('#onboard-children-list .onboard-child-item').count(),1);
+ await page.locator('#onboard-children-next').click();
+ assert.equal(await page.locator('[data-account-screen="completed"]').isVisible(),true);
+ await page.locator('#onboard-dashboard').click();
  await page.locator('#family-view').waitFor({state:'visible'});
+ assert.equal(await page.locator('#family-cards .family-child').count(),1);
  assert.equal(await page.locator('#account-current-family').textContent(),'Min familie');
  assert.match(await page.locator('#family-storage-label').textContent(),/Synkronisert familie/);
  assert.deepEqual(errors,[]);

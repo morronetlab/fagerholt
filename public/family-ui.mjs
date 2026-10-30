@@ -35,7 +35,7 @@ function wordStatus(profile,plan,calendar){
 }
 export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
  let active=false,profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
- let cloud=null,cloudChecks=new Map();
+ let cloud=null,cloudChecks=new Map(),focus='next',lastSynced=null,syncError='';
  const plans=new Map(),loading=new Set(),errors=new Map();
  let run=0,editing=null,gradeRun=0;
  const calendar=()=>schoolCalendar(new Date(),'Europe/Oslo');
@@ -56,12 +56,13 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
    const rows=await current.client.progress(current.familyId,now.year,now.week);
    if(cloud!==current)return;
    cloudChecks=new Map();
+   syncError='';lastSynced=new Date();
    for(const row of rows){
     if(!cloudChecks.has(row.child_id))cloudChecks.set(row.child_id,new Map());
     cloudChecks.get(row.child_id).set(row.task_key,row.completed);
    }
    render();
-  }catch(error){el('family-load-status').textContent='Kunne ikke synkronisere: '+error.message;}
+  }catch(error){syncError='Kunne ikke synkronisere: '+error.message;render();}
  }
  async function updateCloud(p,task,checked){
   if(!cloud)throw Error('Ingen familiekonto aktiv.');
@@ -72,6 +73,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   try{
    await current.client.setTask({familyId:current.familyId,childId:p.id,
     year:now.year,week:now.week,key,completed:checked});
+   lastSynced=new Date();syncError='';render();
   }catch(error){
    if(previous===undefined)cloudChecks.get(p.id)?.delete(key);
    else cloudChecks.get(p.id)?.set(key,previous);
@@ -114,7 +116,13 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   const {now,summaries}=getSummaries();
   el('family-week').textContent='Uke '+now.week+' · '+now.year;
   el('family-count').textContent=profiles.length+' barn';
-  el('family-storage-label').textContent=cloud?'☁ Lekser synkroniseres mellom foresatte':'🔒 Kun på denne enheten';
+  el('family-storage-label').textContent=cloud?'☁ Synkronisert familie · lekser deles mellom foresatte':'🔒 Kun på denne enheten';
+  const ready=[...summaries.values()].filter(x=>x.ready);
+  const done=ready.reduce((n,x)=>n+x.done,0),total=ready.reduce((n,x)=>n+x.total,0);
+  el('family-week-progress').textContent=ready.length?done+' av '+total+' lekser fullført':'Ukeoversikt';
+  el('family-sync-status').textContent=cloud?
+    (syncError|| (lastSynced?'Sist synkronisert kl. '+lastSynced.toLocaleTimeString('nb-NO',{hour:'2-digit',minute:'2-digit'}):'Henter synkronisert progresjon …')) :
+    'Avkrysninger lagres lokalt i nettleseren';
   el('family-form-tip').textContent=cloud?
    'Bruk gjerne kallenavn. Profilene synkroniseres mellom foresatte i familien.':
    'Bruk gjerne kallenavn. Profilene lagres bare i denne nettleseren.';
@@ -126,16 +134,40 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
   el('family-empty').hidden=profiles.length!==0;
   el('family-cards').innerHTML=profiles.map(p=>childCard(p,summaries.get(p.id),now)).join('');
   const {next}=schoolDayIndices(now);
-  el('family-next-day').textContent=next==null?'Neste skoleuke':DAYS[next];
-  const highlights=familyHighlights(profiles,summaries,now);
-  el('family-reminders').innerHTML=next==null?
-   '<p class="family-muted">Neste ukes oppgaver vises når ny ukeplan er publisert.</p>':
-   highlights.length?highlights.map(x=>
-    '<div class="family-reminder"><span aria-hidden="true">'+(x.type==='bag'?'🎒':x.type==='notice'?'💬':'📚')+
-    '</span><div><strong>'+escape(x.name)+'</strong><p>'+escape(x.text)+'</p></div></div>').join(''):
-    '<p class="family-muted">'+(loading.size?'Henter skolenes ukeplaner …':'Ingen lekser eller pakking registrert til neste skoledag.')+'</p>';
+  for(const button of document.querySelectorAll('[data-family-focus]'))
+   button.setAttribute('aria-pressed',String(button.dataset.familyFocus===focus));
+  el('family-next-day').textContent=focus==='today'?'i dag':
+   focus==='week'?'denne uka':next==null?'neste skoleuke':'til '+DAYS[next].toLocaleLowerCase('nb-NO');
+  const cards=[];
+  if(!(focus==='next'&&next==null)){
+   for(const p of profiles){
+    const summary=summaries.get(p.id);
+    if(!summary?.ready)continue;
+    const due=focus==='today'?summary.today:focus==='next'?summary.next:summary.tasks;
+    for(const task of due.filter(x=>!x.checked)){
+     cards.push({name:p.name,id:p.id,icon:'📚',label:(task.subject?task.subject+': ':'')+task.text});
+    }
+    if(focus!=='week'){
+     const bag=focus==='today'?summary.todayBag:summary.bag;
+     const notices=focus==='today'?summary.todayNotes:summary.notices;
+     for(const item of bag.filter(x=>!x.checked))cards.push({name:p.name,id:p.id,icon:'🎒',label:'Pakk: '+item.label});
+     for(const note of notices)cards.push({name:p.name,id:p.id,icon:'📌',label:note});
+    }
+   }
+  }
+  const limit=20;
+  const reminderMarkup=cards.slice(0,limit).map(x=>
+   '<article class="family-reminder"><span aria-hidden="true">'+x.icon+'</span><div><strong>'+escape(x.name)+'</strong>'+
+   '<p>'+escape(x.label)+'</p></div><button type="button" data-family-open="'+escape(x.id)+
+   '" aria-label="Åpne ukeplan for '+escape(x.name)+'">Se ukeplan →</button></article>').join('');
+  el('family-reminders').innerHTML=focus==='next'&&next==null?
+   '<p class="family-muted">Neste ukes oppgaver blir tilgjengelige når skolen publiserer ny ukeplan.</p>':
+   reminderMarkup+(cards.length>limit?'<p class="family-muted">Viser de 20 første. Åpne barnets ukeplan for resten.</p>':'')||
+   '<p class="family-muted">'+(loading.size?'Henter ukeplaner …':
+     !profiles.length?'Legg til et barn for å se huskelisten.':
+     ready.length?'Ingen utestående oppgaver i denne visningen.':'Ingen tilgjengelige ukeplaner akkurat nå.')+'</p>';
   el('family-load-status').textContent=loading.size?'Henter '+loading.size+' ukeplan(er) …':
-   errors.size?'Noen ukeplaner kunne ikke hentes. Prøv Oppdater.':'';
+   errors.size?'Noen ukeplaner kunne ikke hentes. Prøv Oppdater.':syncError;
  }
  let activeFetch=0;
  async function fetchPlans(){
@@ -214,15 +246,23 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle}){
     if(active){render();void fetchPlans();}
   },
   clearCloud:()=>{
-    cloud=null;cloudChecks.clear();profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
+    cloud=null;cloudChecks.clear();lastSynced=null;syncError='';profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
     plans.clear();if(active){render();void fetchPlans();}
   },
   refreshCloud:syncCloud,
   enter:()=>{if(active)return;active=true;render();onModeChange();void fetchPlans();},
   leave:()=>{active=false;run++;loading.clear();onModeChange();},
-  refresh:()=>{if(active)void fetchPlans();}
+  refresh:()=>{if(active){if(cloud)void syncCloud();void fetchPlans();}}
  };
  el('family-add').addEventListener('click',()=>openForm());
+ el('family-empty-add').addEventListener('click',()=>openForm());
+ for(const button of document.querySelectorAll('[data-family-focus]')){
+  button.addEventListener('click',()=>{focus=button.dataset.familyFocus;render();});
+ }
+ el('family-reminders').addEventListener('click',e=>{
+  const button=e.target.closest('[data-family-open]');
+  if(button){const p=byId(button.dataset.familyOpen);if(p)onOpenProfile(p);}
+ });
  el('family-cancel').addEventListener('click',closeForm);
  el('family-refresh').addEventListener('click',api.refresh);
  el('family-return').addEventListener('click',()=>{api.leave();onOpenSingle();});

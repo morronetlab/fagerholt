@@ -428,8 +428,11 @@ async function reload({quiet=false,statusOnly=quiet}={}){
     // In weekends show next week only when an actual next-week PDF is published.
     const next=await fetchJSON(`/api/plan?school=${encodeURIComponent(schoolId)}&grade=${encodeURIComponent(grade)}&nextWeek=1`,60000).catch(()=>null);
     if(id!==state.requestId||state.grade!==grade||state.school?.id!==schoolId)return;
-    if(next?.pdf && next.status!=='unpublished' && next.status!=='unavailable'){
-      viewingNextWeek=true;calendar=schoolCalendar(new Date(Date.now()+7*86400000),siteConfig.school.timezone);
+    // Keep homework progress in its real school-week namespace; reject stale nextWeek responses.
+    const nextCalendar=schoolCalendar(new Date(Date.now()+7*86400000),siteConfig.school.timezone);
+    if(next?.pdf && next.status!=='unpublished' && next.status!=='unavailable' &&
+       next.week===nextCalendar.week && next.year===nextCalendar.year){
+      viewingNextWeek=true;calendar=nextCalendar;
       state.day=0;state.plan=next;
       renderShell();
     }

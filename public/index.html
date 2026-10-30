@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#f8f9f5"><meta name="description" content="Hele familiens skoleuke på ett sted. Ukeplaner, lekser, beskjeder og pakkelister fra skolen.">
-  <title>Skoleuka – hele familiens skoleuke</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/original-look.css"><link rel="stylesheet" href="/practice-look.css"><link rel="stylesheet" href="/family-look.css"><link rel="stylesheet" href="/account-look.css"><link rel="stylesheet" href="/ux-v3.css">
+  <title>Skoleuka – hele familiens skoleuke</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/original-look.css"><link rel="stylesheet" href="/practice-look.css"><link rel="stylesheet" href="/family-look.css"><link rel="stylesheet" href="/account-look.css"><link rel="stylesheet" href="/ux-v3.css"><link rel="stylesheet" href="/family-v3.css">
 </head>
 <body>
 <a class="skip-link" href="#main-content">Hopp til innhold</a>
@@ -23,7 +23,9 @@
     <div class="account-head"><div><p class="family-eyebrow">SKOLEUKA · FAMILIEKONTO</p>
       <h2 id="account-heading">Familien på alle enheter</h2></div>
       <button type="button" id="account-close" class="account-close" aria-label="Lukk konto">✕</button></div>
+    <div id="account-steps" class="onboard-steps" hidden aria-label="Oppsett av familiekonto"><span data-onboard-step="1">1. E-post</span><span data-onboard-step="2">2. Familie</span><span data-onboard-step="3">3. Barn</span><span data-onboard-step="4">4. Ferdig</span></div>
     <p id="account-message" class="account-message" role="status" aria-live="polite"></p>
+    <div data-account-screen="loading" hidden><p role="status">Klargjør familiekontoen …</p></div>
     <div data-account-screen="missing" hidden><p>Familiekontoer er ikke aktivert på denne installasjonen ennå.
       Den vanlige ukeplanen og lokale familieoversikten fungerer fortsatt.</p>
       <p class="account-muted">Tilkoblingen krever Supabase-prosjekt, database og publiserbar nøkkel i Netlify.</p></div>
@@ -45,7 +47,7 @@
       <p>Valgt familie: <strong id="account-current-family">Ingen</strong></p>
       <label class="account-family-picker">Bytt familie<select id="account-family-picker"><option value="">Velg familie</option></select></label>
       <div id="account-empty-family">
-        <h3>Opprett din første familie</h3>
+        <h3>Opprett din familie</h3><p>Gi familien et navn. Neste steg er å legge til barna.</p>
         <form id="account-family-create"><label>Familienavn<input id="account-family-name" type="text" maxlength="80" required placeholder="F.eks. Min familie"></label>
           <button id="account-create" type="submit" class="family-add-button">Opprett familie</button></form>
       </div>
@@ -66,7 +68,37 @@
         <button id="account-leave-family" type="button" class="account-danger" hidden>Forlat familien</button>
         <button id="account-delete-family" type="button" class="account-danger" hidden>Slett hele familien og all progresjon</button>
       </div>
+      <button id="account-open-family" type="button" class="family-add-button">Gå til familieoversikten →</button>
       <button id="account-signout" type="button" class="family-text-button">Logg ut</button>
+    </div>
+    <div data-account-screen="children" hidden>
+      <p class="onboard-intro">Legg til barna du ønsker å følge. Du kan bruke kallenavn, og endre opplysningene senere.</p>
+      <div id="onboard-children-list" class="onboard-children-list" aria-live="polite"></div>
+      <form id="onboard-child-form" class="onboard-child-form">
+        <label>Navn eller kallenavn<input id="onboard-child-name" type="text" maxlength="40" required autocomplete="off" placeholder="F.eks. Emilie"></label>
+        <div class="onboard-field-grid">
+          <label>Skole<select id="onboard-child-school" required><option value="">Velg skole</option></select></label>
+          <label>Klasse eller trinn<select id="onboard-child-grade" required disabled><option value="">Velg skole først</option></select></label>
+        </div>
+        <label>Gruppe (valgfritt)<input id="onboard-child-group" type="text" maxlength="35" autocomplete="off" placeholder="F.eks. Rød gruppe"></label>
+        <button id="onboard-child-save" type="submit" class="family-add-button">+ Legg til barn</button>
+      </form>
+      <div id="onboard-import-row" class="onboard-import-row" hidden>
+        <p>Har du lokale barneprofiler? Importer profilene og avkrysninger fra inneværende uke. Eldre data forblir på denne enheten.</p>
+        <button id="onboard-import" type="button" class="family-light-button">Importer lokale profiler</button>
+      </div>
+      <div class="onboard-actions">
+        <button id="onboard-children-back" type="button" class="family-text-button">← Familieinnstillinger</button>
+        <button id="onboard-children-next" type="button" class="family-add-button">Fortsett →</button>
+      </div>
+    </div>
+    <div data-account-screen="completed" hidden class="onboard-complete">
+      <div class="onboard-success-symbol" aria-hidden="true">✓</div>
+      <h3>Familien er klar!</h3>
+      <p id="onboard-complete-description">Du kan nå følge skoleuka for barna på ett sted.</p>
+      <button id="onboard-dashboard" type="button" class="family-add-button">Gå til min familie →</button>
+      <button id="onboard-open-invite" type="button" class="family-light-button">Inviter en annen foresatt</button>
+      <p class="account-muted">Invitasjonen er frivillig. Du kan legge til flere barn senere.</p>
     </div>
   </section>
   <main id="main-content">
@@ -107,16 +139,19 @@
       </section>
     </section>
     <section id="family-view" class="family-view" hidden aria-labelledby="family-title">
-      <div class="family-hero">
-        <div class="family-intro"><p class="family-eyebrow">✦ SKOLEUKA · MIN FAMILIE</p>
-          <h1 id="family-title">Hele skoleuka. <span>Ett sted.</span></h1>
-          <p>Samle ukeplaner, lekser, øveord og det dere må huske – for alle barna.</p>
-          <div class="family-hero-tags"><span id="family-week">Uke —</span><span id="family-count">0 barn</span><span id="family-storage-label">🔒 Kun på denne enheten</span></div>
+      <div class="family-overview-top"><div><p class="family-eyebrow">FAMILIEOVERSIKT</p><h1 id="family-title" tabindex="-1">God oversikt over skoleuka</h1><p class="family-overview-subtitle">Lekser, pakkeliste og beskjeder for barna.</p></div><div class="family-overview-stats"><span id="family-week">Uke —</span><strong id="family-week-progress">—</strong><small id="family-count">0 barn</small></div></div>
+      <div class="family-overview-meta"><span id="family-storage-label">🔒 Kun på denne enheten</span><span id="family-sync-status" role="status" aria-live="polite"></span></div>
+      <section class="family-tomorrow" aria-labelledby="family-tomorrow-title">
+        <div class="family-tomorrow-top"><div><p class="family-eyebrow">FAMILIENS HUSKELISTE</p><h2 id="family-tomorrow-title">Dette må dere huske <span id="family-next-day"></span></h2></div><span class="family-tomorrow-icon" aria-hidden="true">🎒</span></div>
+        <div class="family-focus-tabs" role="group" aria-label="Huskeliste for">
+          <button type="button" data-family-focus="today" aria-pressed="false">I dag</button>
+          <button type="button" data-family-focus="next" aria-pressed="true">Neste skoledag</button>
+          <button type="button" data-family-focus="week" aria-pressed="false">Denne uka</button>
         </div>
-        <div class="family-hero-art" aria-hidden="true"><span class="family-hero-star">✦</span><span class="family-hero-book">Aa</span><span class="family-hero-check">✓</span></div>
-      </div>
+        <div id="family-reminders" class="family-reminders" aria-live="polite"></div>
+      </section>
       <div class="family-toolbar">
-        <div><h2>Barna mine</h2><p>Hvert barn har egen progresjon, også når to går på samme trinn.</p></div>
+        <div><h2>Barna mine</h2><p>Hvert barn har sin egen ukeplan og lekseprogresjon.</p></div>
         <div class="family-toolbar-actions"><button id="family-refresh" type="button" class="family-light-button">↻ Oppdater</button>
         <button id="family-add" type="button" class="family-add-button">+ Legg til barn</button></div>
       </div>
@@ -129,19 +164,12 @@
           <label>Klasse eller trinn<select id="family-grade" required disabled><option value="">Velg skole først</option></select></label>
           <label>Gruppe (valgfritt)<input id="family-group" type="text" maxlength="35" placeholder="F.eks. Rød gruppe"></label>
         </div>
-        <p id="family-form-tip" class="family-form-tip">Bruk gjerne kallenavn. Du kan bruke kallenavn. Med familiekonto synkroniseres barneprofilene mellom foresatte.</p>
+        <p id="family-form-tip" class="family-form-tip">Bruk gjerne kallenavn. Lagringen avhenger av om du bruker familiekonto.</p>
         <p id="family-form-status" class="family-form-status" role="status" aria-live="polite"></p>
         <button id="family-save" type="submit" class="family-add-button">Legg til i familien</button>
       </form>
-      <div id="family-empty" class="family-empty"><span aria-hidden="true">🏠</span><h3>Én samlet oversikt for hele familien</h3>
-        <p>Start med å legge til ett eller flere barn. Du kan velge forskjellige skoler og klassetrinn.</p></div>
+      <div id="family-empty" class="family-empty"><span aria-hidden="true">🏠</span><h3>Legg til det første barnet</h3><p>Velg skole og klassetrinn, så finner vi ukeplanen.</p><button id="family-empty-add" type="button" class="family-add-button">+ Legg til første barn</button></div>
       <div id="family-cards" class="family-cards" aria-live="polite"></div>
-      <section class="family-tomorrow" aria-labelledby="family-tomorrow-title">
-        <div class="family-tomorrow-top"><div><p class="family-eyebrow">HUSKELISTEN</p>
-          <h2 id="family-tomorrow-title">Dette bør være klart til <span id="family-next-day">neste skoledag</span></h2>
-        </div><span class="family-tomorrow-icon" aria-hidden="true">🎒</span></div>
-        <div id="family-reminders" class="family-reminders"></div>
-      </section>
       <div class="family-bottom"><button id="family-return" type="button" class="family-text-button">← Bruk vanlig visning for én klasse</button>
        <p id="family-bottom-note">Opplysninger hentes fra skolenes egne ukeplaner. Ved tvil er original-PDF fasit.</p></div>
     </section>
@@ -180,7 +208,7 @@
         </div>
       </div>
       <section class="hero" id="app-hero">
-        <div class="hero-intro"><p class="eyebrow" id="school-name"></p><h1 id="welcome-title">Morgenklar! <span aria-hidden="true">☀️</span></h1><p class="lead" id="welcome-description">Sjekk skoledagen og pakk sekken.</p>
+        <div class="hero-intro"><p class="eyebrow" id="school-name"></p><h1 id="plan-welcome-title">Morgenklar! <span aria-hidden="true">☀️</span></h1><p class="lead" id="welcome-description">Sjekk skoledagen og pakk sekken.</p>
           <div class="hero-actions"><span id="status-pill" class="state-pill">Henter ukeplan …</span><button type="button" id="reload" class="small-button">↻ Oppdater</button><a id="school-source" href="#" target="_blank" rel="noopener noreferrer">Skolens trinnside ↗</a></div>
         </div>
         <aside id="weather-panel" class="weather" aria-label="Vær for valgt skoledag"><p class="eyebrow">VÆR I OMRÅDET · 08–15</p><div class="weather-main"><span id="weather-icon" class="weather-icon">🌤️</span><strong id="weather-temp">—</strong></div><button id="weather-toggle" class="weather-toggle" type="button" aria-expanded="false" aria-controls="weather-details">Vær for valgt dag <span aria-hidden="true">⌄</span></button><div id="weather-details" class="weather-details"><p id="weather-desc" class="weather-desc">Henter værmelding …</p><p class="source-note" id="weather-location">Værdata: Meteorologisk institutt / Yr</p></div></aside>

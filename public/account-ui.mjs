@@ -17,10 +17,24 @@ const invitationsFromUrl=()=>{
  return /^[a-f0-9]{64}$/.test(token)?token:null;
 };
 export function initAccountUI({familyUI}){
- let client=null,accountReady=false,requestedEmail='',familyId=null,families=[],invitation=invitationsFromUrl(),nextCodeRequestAt=0;
+ let client=null,accountReady=false,requestedEmail='',familyId=null,families=[],children=[],invitation=invitationsFromUrl(),nextCodeRequestAt=0;
+ let currentScreen='login',gradeRun=0,restoring=true;
  const status=(msg,error=false)=>{$('account-message').textContent=msg||'';$('account-message').dataset.error=String(error);};
- const show=id=>{for(const section of $('account-panel').querySelectorAll('[data-account-screen]'))
-   section.hidden=section.dataset.accountScreen!==id;};
+ const show=id=>{
+  currentScreen=id;
+  for(const section of $('account-panel').querySelectorAll('[data-account-screen]'))
+   section.hidden=section.dataset.accountScreen!==id;
+  const step=id==='login'||id==='verify'?1:id==='signed'&&!familyId?2:id==='children'?3:id==='completed'?4:0;
+  $('account-steps').hidden=!step;
+  for(const el of $('account-steps').querySelectorAll('[data-onboard-step]')){
+   el.classList.toggle('current',Number(el.dataset.onboardStep)===step);
+   el.classList.toggle('done',Number(el.dataset.onboardStep)<step);
+  }
+  $('account-heading').textContent=id==='login'?'Kom i gang med Skoleuka':
+   id==='verify'?'Bekreft e-postadressen':id==='children'?'Legg til barna':
+   id==='completed'?'Familien er klar!':id==='signed'&&!familyId?'Opprett familien din':
+   id==='signed'?'Familieinnstillinger':'Familien på alle enheter';
+ };
  const button=$('account-button');
  const unconfigured=()=>{
   show('missing');button.textContent='Konto';accountReady=false;
@@ -30,7 +44,7 @@ export function initAccountUI({familyUI}){
   $('account-user-email').textContent=client.session?.user?.email||requestedEmail||'Innlogget forelder';
   $('account-current-family').textContent=familyId&&families.find(f=>f.id===familyId)?.name||'Ingen familie valgt';
  }
- async function syncFamilies(preferred=null){
+ async function syncFamilies(preferred=null,{screen='signed'}={}){
   families=await client.families();
   const selected=preferred&&families.some(x=>x.id===preferred)?preferred:
     familyId&&families.some(x=>x.id===familyId)?familyId:families[0]?.id||null;
@@ -45,14 +59,32 @@ export function initAccountUI({familyUI}){
   $('account-delete-family').hidden=!owner;
   $('account-leave-family').hidden=!familyId||Boolean(owner);
   if(familyId){
-   const children=await client.children(familyId);
+   children=await client.children(familyId);
    await familyUI.setCloud(client,familyId,children);
    const local=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
    $('account-import').hidden=!local.length;
    familyUI.enter();
-  }else familyUI.clearCloud();
+  }else{children=[];familyUI.clearCloud();}
+  $('onboard-children-list').replaceChildren();
+  for(const child of children){
+   const item=document.createElement('div');
+   item.className='onboard-child-item';
+   const title=document.createElement('strong');title.textContent=child.nickname;
+   const info=document.createElement('small');
+   info.textContent=(siteConfig.schools[child.school_id]?.name||'Skole')+' · '+child.grade+'. trinn'+
+    (child.group_name?' · '+child.group_name:'');
+   item.append(title,info);$('onboard-children-list').append(item);
+  }
+  $('onboard-child-save').disabled=children.length>=6;
+  $('onboard-child-save').textContent=children.length>=6?'Maks seks barn':'+ Legg til barn';
+  const local=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
+  $('onboard-import-row').hidden=!local.length||!familyId;
+  $('onboard-children-next').textContent=children.length?'Fortsett →':'Gå til familieoversikten →';
+  $('onboard-complete-description').textContent=children.length?
+   children.length+' barn er lagt til. Nå kan dere følge skoleuka fra samme familiekonto.':
+   'Familien er opprettet. Legg til barn fra familieoversikten når du ønsker.';
   displaySignedIn();
-  show('signed');
+  show(familyId?screen:'signed');
  }
  async function restore(){
   try{
@@ -64,13 +96,16 @@ export function initAccountUI({familyUI}){
    const user=await client.restore();
    if(user)await syncFamilies();else show('login');
   }catch{unconfigured();}
+  finally{restoring=false;}
  }
  function open(){
   $('account-panel').hidden=false;
   button.setAttribute('aria-expanded','true');
-  if(!accountReady)unconfigured();
+  if(restoring){show('loading');}
+  else if(!accountReady)unconfigured();
   else if(!client?.isSignedIn())show(requestedEmail?'verify':'login');
-  else {displaySignedIn();show('signed');}
+  else if(currentScreen==='children'||currentScreen==='completed')show(currentScreen);
+  else{displaySignedIn();show('signed');}
   $('account-panel').scrollIntoView({block:'start',behavior:'auto'});
   const focusTarget=!accountReady||client?.isSignedIn()?'account-close':requestedEmail?'account-code':'account-email';
   $(focusTarget).focus();
@@ -95,8 +130,9 @@ export function initAccountUI({familyUI}){
   try{
    await client.verifyCode(requestedEmail,$('account-code').value);
    await syncFamilies();
-   status('Du er logget inn.');
-   if(invitation)await acceptInvitation();
+   if(invitation)status('Du er logget inn. Du har mottatt en familieinvitasjon. Velg «Godta mottatt familieinvitasjon» for å fortsette.');
+   else if(familyId&&!children.length){show('children');status('Du er logget inn. Legg til barnet ditt.');}
+   else status('Du er logget inn.');
   }catch(error){status(error.message,true);}finally{submit.disabled=false;}
  });
  $('account-resend-code').addEventListener('click',async()=>{
@@ -117,9 +153,9 @@ export function initAccountUI({familyUI}){
   e.preventDefault();const submit=$('account-create');submit.disabled=true;
   try{
    const id=await client.createFamily($('account-family-name').value.trim());
-   await syncFamilies(id);
-   status('Familien er opprettet! Legg til barna fra familieoversikten.');
-   familyUI.enter();
+   await syncFamilies(id,{screen:'children'});
+   status('Familien er opprettet. Legg til barna, eller fortsett uten barn.');
+   $('onboard-child-name').focus();
   }catch(error){status(error.message,true);}finally{submit.disabled=false;}
  });
  $('account-family-picker').addEventListener('change',async e=>{
@@ -146,22 +182,24 @@ export function initAccountUI({familyUI}){
  });
  async function acceptInvitation(){
   if(!invitation)return;
-  const token=invitation;invitation=null;
-  $('account-invite-accept').hidden=true;
+  const token=invitation;
+  const action=$('account-invite-accept');action.disabled=true;
   try{
    const id=await client.acceptInvite(token);
+   invitation=null;
    await syncFamilies(id);
    status('Du har nå tilgang til familien.');
    familyUI.enter();
   }catch(error){status('Invitasjonen kunne ikke godtas: '+error.message,true);}
+  finally{action.disabled=false;}
  }
  $('account-invite-accept').addEventListener('click',acceptInvitation);
- $('account-import').addEventListener('click',async()=>{
+ async function importLocal(button){
   if(!familyId)return;
   const local=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
   if(!local.length){status('Fant ingen lokale barneprofiler.');return;}
   if(!confirm('Importere '+local.length+' barneprofil(er) og avkrysninger for inneværende uke til familiekontoen? Gamle data blir værende på denne enheten.'))return;
-  const button=$('account-import');button.disabled=true;
+  button.disabled=true;
   try{
    const result=await importCurrentLocalFamily({client,familyId,schools:siteConfig.schools,
     calendar:schoolCalendar(new Date(),'Europe/Oslo'),storage:localStorage,
@@ -170,12 +208,14 @@ export function initAccountUI({familyUI}){
      if(!response.ok)throw Error('Ukeplanen kunne ikke hentes');
      return response.json();
     },onProgress:message=>status(message)});
-   await syncFamilies(familyId);
+   await syncFamilies(familyId,{screen:currentScreen==='children'?'children':'signed'});
    status('Importerte '+result.profiles+' nye profiler og '+result.marked+
     ' fullførte oppgaver fra denne uka.'+(result.notes.length?' '+result.notes.join(' '):''));
   }catch(error){status('Importen ble avbrutt: '+error.message+' Du kan prøve på nytt uten å miste lokale data.',true);}
   finally{button.disabled=false;}
- });
+ }
+ $('account-import').addEventListener('click',()=>void importLocal($('account-import')));
+ $('onboard-import').addEventListener('click',()=>void importLocal($('onboard-import')));
  $('account-delete-family').addEventListener('click',async()=>{
   const f=families.find(x=>x.id===familyId);if(!f)return;
   const typed=prompt('Dette sletter familien, barneprofiler og alle avkrysninger permanent. Skriv familienavnet "'+f.name+'" for å bekrefte.');
@@ -191,14 +231,59 @@ export function initAccountUI({familyUI}){
  $('account-signout').addEventListener('click',async()=>{
   try{await client.signOut();}
   catch{client.signOutLocal();}
-  familyUI.clearCloud();familyId=null;families=[];requestedEmail='';show('login');
+  familyUI.clearCloud();familyId=null;families=[];children=[];requestedEmail='';show('login');
   button.textContent='Logg inn';status('Du er logget ut. Lokale data er fortsatt tilgjengelige.');
  });
  document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'&&client?.isSignedIn()&&familyUI.isActive())
    void familyUI.refreshCloud();
  });
+ const schoolOptions=Object.values(siteConfig.schools).sort((a,b)=>a.name.localeCompare(b.name,'nb-NO'));
+ for(const school of schoolOptions)$('onboard-child-school').add(new Option(school.name,school.id));
+ async function loadOnboardGrades(){
+  const run=++gradeRun,school=$('onboard-child-school').value,select=$('onboard-child-grade');
+  select.disabled=true;select.replaceChildren(new Option(school?'Henter klassetrinn …':'Velg skole først',''));
+  if(!school)return;
+  try{
+   const res=await fetch('/api/grades?school='+encodeURIComponent(school));
+   if(!res.ok)throw Error('Kunne ikke hente klassetrinn.');
+   const data=await res.json();
+   if(run!==gradeRun)return;
+   select.replaceChildren(new Option('Velg klassetrinn',''));
+   for(const grade of data.grades||[]){
+    if(/^[1-7](?:[A-F])?$/i.test(grade.code||''))select.add(new Option(grade.code+'. klasse',grade.code));
+   }
+   select.disabled=select.options.length===1;
+   if(select.disabled)status('Ingen klassetrinn funnet. Prøv en annen skole.',true);
+  }catch(error){if(run===gradeRun){select.replaceChildren(new Option('Kunne ikke hente trinn',''));status(error.message,true);}}
+ }
+ $('onboard-child-school').addEventListener('change',()=>{status('');void loadOnboardGrades();});
+ $('onboard-child-form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(!client?.isSignedIn()||!familyId)return;
+  if(children.length>=6){status('Maks seks barneprofiler per familie.',true);return;}
+  const name=$('onboard-child-name').value.trim(),school=$('onboard-child-school').value,
+   grade=$('onboard-child-grade').value,group=$('onboard-child-group').value.trim();
+  if(!name||name.length>40||!Object.hasOwn(siteConfig.schools,school)||
+     !/^[1-7](?:[A-F])?$/i.test(grade)||group.length>35){status('Kontroller navn, skole, klassetrinn og gruppe.',true);return;}
+  const submit=$('onboard-child-save');submit.disabled=true;
+  try{
+   const created=await client.createChild({family_id:familyId,nickname:name,school_id:school,
+    grade,group_name:group});
+   if(!created?.[0]?.id)throw Error('Serveren bekreftet ikke barneprofilen.');
+   await syncFamilies(familyId,{screen:'children'});
+   $('onboard-child-name').value='';$('onboard-child-group').value='';
+   status('Barnet er lagt til. Du kan legge til flere, eller fortsette.');
+   $('onboard-child-name').focus();
+  }catch(error){status('Kunne ikke legge til barnet: '+error.message,true);}
+  finally{submit.disabled=children.length>=6;}
+ });
+ $('onboard-children-back').addEventListener('click',()=>show('signed'));
+ $('onboard-children-next').addEventListener('click',()=>{show('completed');status('');});
+ $('onboard-dashboard').addEventListener('click',()=>{close();familyUI.enter();$('family-title').focus();});
+ $('onboard-open-invite').addEventListener('click',()=>{show('signed');$('account-invite-email').focus();});
+ $('account-open-family').addEventListener('click',()=>{close();familyUI.enter();});
  void restore().then(()=>{if(invitation&&client?.isSignedIn()){open();show('signed');
-   status('Du har en invitasjon. Velg «Godta invitasjonen» for å fortsette.');}});
+   status('Du har en invitasjon. Velg «Godta mottatt familieinvitasjon» for å fortsette.');}});
  return {restore,open,close};
 }
