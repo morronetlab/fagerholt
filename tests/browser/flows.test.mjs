@@ -550,7 +550,7 @@ test('Family notices have a short source-extractive headline, verified date, ful
   p.practicalPriorityToken='signed-document-token';
   p.createdAt='2026-10-28T09:00:00.000Z';
   p.notices=[source];
-  p.provenance=[{kind:'notice',sourceQuote:source,sourcePage:2,day:null}];
+  p.provenance=[{kind:'notice',sourceQuote:extracted,sourcePage:2,day:null}];
   return reply(route,p);
  });
  await page.route('**/api/practical-priority?**',route=>{
