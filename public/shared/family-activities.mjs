@@ -6,7 +6,6 @@ import {dayDate} from './calendar.mjs';
 
 const ISO=/^\d{4}-\d{2}-\d{2}$/u;
 const TIME=/^(?:[01]\d|2[0-3]):[0-5]\d$/u;
-const UUID=/^[a-f\d]{8}-[a-f\d]{4}-[1-8][a-f\d]{3}-[89ab][a-f\d]{3}-[a-f\d]{12}$/iu;
 export const FAMILY_ACTIVITY_MAX=150;
 const short=(value,max)=>String(value??'').trim().replace(/\s+/gu,' ').slice(0,max+1);
 export function validIsoDate(s){
@@ -31,7 +30,7 @@ export function normalizeActivityDraft(values,childIds=[]){
  if(start_time&&!TIME.test(start_time)||end_time&&(!TIME.test(end_time)||!start_time||end_time<=start_time))
   throw Error('Sjekk klokkeslett. Slutt må være etter start.');
  const child_id=values?.child_id||null;
- if(child_id&&(!UUID.test(child_id)||!childIds.includes(child_id)))
+ if(child_id&&!childIds.includes(child_id))
   throw Error('Velg et barn fra den aktive familien.');
  const location=short(values?.location,120),responsible=short(values?.responsible,80),
   notes=String(values?.notes||'').trim();
