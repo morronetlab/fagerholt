@@ -766,7 +766,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   if(!el('family-practical-details').open)return;
   // The expanded view must include ALL critical notices, not only the
   // original 'next school day' focus.
-  focus='week';showAllHighlights=true;render();
+  focus='week';render();
  });
  el('family-agenda-child').addEventListener('change',event=>{
   agendaChildId=event.target.value;render();
