@@ -154,14 +154,24 @@
  .family-mobile-day-indicator{display:block;width:5px;height:5px;
   border-radius:50%;background:transparent}
  .family-mobile-day-indicator.has-events{background:#328269}
- .family-mobile-calendar-options{position:relative;align-self:stretch;z-index:5}
- .family-mobile-calendar-options>summary{
-  list-style:none;display:flex;align-items:center;justify-content:center;
-  min-width:38px;height:100%;border-radius:11px;background:#f8faf8;
-  border:1px solid #dce9df;color:#285f49;font-size:19px;font-weight:800;
-  cursor:pointer
+ #family-view .family-mobile-calendar-options{
+  position:relative;align-self:stretch;z-index:5;
+  min-width:0;max-width:38px;width:38px
  }
- .family-mobile-calendar-options>summary::-webkit-details-marker{display:none}
+ #family-view .family-mobile-calendar-options>summary{
+  box-sizing:border-box;list-style:none;display:flex;
+  align-items:center;justify-content:center;
+  width:38px;min-width:0;max-width:38px;height:100%;min-height:65px;
+  margin:0;padding:0;white-space:nowrap;overflow:hidden;
+  border-radius:11px;background:#f8faf8;
+  border:1px solid #dce9df;color:#285f49;font-size:20px;font-weight:800;
+  line-height:1;cursor:pointer
+ }
+ #family-view .family-mobile-calendar-options>summary::marker{content:''}
+ #family-view .family-mobile-calendar-options>summary::-webkit-details-marker{display:none}
+ #family-view .family-mobile-calendar-options>summary::before,
+ #family-view .family-mobile-calendar-options>summary::after{content:none!important}
+
  .family-mobile-calendar-options[open]>summary{background:#e6f3eb}
  .family-mobile-calendar-menu{
   position:absolute;right:0;top:calc(100% + 5px);width:max-content;
