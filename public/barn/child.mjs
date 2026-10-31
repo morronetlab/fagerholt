@@ -7,6 +7,7 @@ import {scopedHomeworkItems,scopedPackingItems,childSchoolDayDetails,
  childCheckedKey,readChildChecks,setChildCheck,homeworkItemKey} from './child-learning.mjs';
 import {renderChildQuiz,initChildQuiz} from './child-quiz.mjs';
 import {childTaskKey,checkedProgress,importCandidates} from './child-progress.mjs';
+import {packingFingerprint} from '../shared/packing-fingerprint.mjs';
 import {initChildHelper,openChildHelper} from './child-helper.mjs';
 import {activityOccurrences,activityTimeLabel} from '../shared/family-activities.mjs';
 
@@ -17,7 +18,8 @@ const esc=s=>String(s??'').replace(/[&<>"']/gu,c=>({
 }[c]));
 const safeURL=raw=>{try{const u=new URL(raw);return u.protocol==='https:'?u.href:null;}catch{return null;}};
 const state={child:null,plan:null,activities:[],day:0,calendar:null,session:null,installer:null,
- homework:[],bag:[],progress:null,progressBusy:false,progressError:''};
+ homework:[],bag:[],progress:null,progressBusy:false,progressError:'',
+ packing:null,packingBusy:false,packingError:''};
 const getToken=()=>{try{return localStorage.getItem(KEY);}catch{return null;}};
 function setToken(token){
  try{if(token)localStorage.setItem(KEY,token);else localStorage.removeItem(KEY);}catch{}
@@ -48,7 +50,7 @@ async function get(path,{method='GET',body,token=null}={}){
 }
 function setup(message){
  state.child=null;state.plan=null;state.activities=[];state.progress=null;
- state.progressBusy=false;state.progressError='';
+ state.progressBusy=false;state.progressError='';state.packing=null;state.packingBusy=false;state.packingError='';
  $('child-ready').hidden=true;$('child-setup').hidden=false;
  $('child-setup-message').textContent=message||
   'Be en foresatt åpne «Inviter barn» under din profil og skann QR-koden med denne enheten.';
@@ -95,10 +97,15 @@ function render(){
   (x.notes?'<small>'+esc(x.notes)+'</small>':'')+
   '</span></article>').join(''):empty('Ingen familieaktiviteter denne dagen.');
  state.bag=ok?scopedPackingItems(plan,child,day):[];
- const bagDone=checks(packStore()),bagCount=state.bag.filter(item=>bagDone[item.key]).length;
+ const bagDone=checks(packStore());
+ const bagIsDone=item=>state.packing instanceof Map?
+  state.packing.get(packingFingerprint({school:child.school,grade:child.grade,
+   year:calendar.year,week:calendar.week,day,item}))===true:bagDone[item.key]===true;
+ const bagCount=state.bag.filter(bagIsDone).length;
  $('child-bag').innerHTML=state.bag.length?'<div class="child-check-list">'+
-  state.bag.map(item=>'<label class="child-check-row '+(bagDone[item.key]?'is-done':'')+'">'+
-   '<input type="checkbox" data-child-bag="'+esc(item.key)+'" '+(bagDone[item.key]?'checked':'')+
+  state.bag.map(item=>'<label class="child-check-row '+(bagIsDone(item)?'is-done':'')+'">'+
+   '<input type="checkbox" data-child-bag="'+esc(item.key)+'" '+(bagIsDone(item)?'checked':'')+
+   (state.packing instanceof Map&&!state.packingBusy?'':' disabled')+
    '><span class="child-check-content">'+groupBadge(item.group)+
    '<strong>'+esc(item.label)+'</strong>'+(item.note?'<small>'+esc(item.note)+'</small>':'')+
    '</span></label>').join('')+'</div>':empty('Ingen ekstra utstyr denne dagen.');
@@ -142,13 +149,13 @@ function render(){
   'Ukeplanen kommer fra skolen. <a href="'+esc(link)+
    '" target="_blank" rel="noopener noreferrer">Se originalen ↗</a>':
   'Skolen har ennå ikke publisert en tilgjengelig PDF. For detaljer: spør en foresatt.';
- status(ok?'':plan?.aiStatus==='processing'?'Skolens PDF behandles. Prøv igjen senere.':
+ status(state.packingError?'⚠️ '+state.packingError:ok?'':plan?.aiStatus==='processing'?'Skolens PDF behandles. Prøv igjen senere.':
   'Noen skoleopplysninger mangler for denne uka.');
 }
 async function load(){
  if(state.progressBusy)return; // Keep in-flight writes from being overwritten by a refresh.
  state.session=getToken();
- state.progress=null;state.progressError='';
+ state.progress=null;state.progressError='';state.packing=null;state.packingError='';
  if(!state.session||!/^[a-f0-9]{64}$/u.test(state.session)){setup();return;}
  status('Henter ukeplanen din …');
  const cal=familyWeekCalendar(new Date(),'Europe/Oslo');
@@ -171,6 +178,15 @@ async function load(){
    if(error.status===401||error.status===403)throw error;
    state.progress=null;
    state.progressError='Synkronisering er utilgjengelig. Prøv «Oppdater ukeplan» igjen.';
+  }
+  try{
+   const pack=await get('/api/child-access?action=packing&year='+cal.year+'&week='+cal.week,
+    {token:state.session});
+   state.packing=checkedProgress(pack.progress);
+  }catch(error){
+   if(error.status===401)throw error;
+   state.packing=null;
+   state.packingError='Pakkelisten kan ikke synkroniseres akkurat nå.';
   }
   state.day=cal.weekday;
   render();
@@ -213,11 +229,24 @@ $('child-install-button').addEventListener('click',async()=>{
 $('child-install-dismiss').addEventListener('click',()=>{
  sessionStorage.setItem('child-install-dismissed','1');$('child-install-box').hidden=true;
 });
-$('child-bag').addEventListener('change',event=>{
+$('child-bag').addEventListener('change',async event=>{
  const el=event.target.closest('[data-child-bag]');
- if(!el||!state.child||!state.calendar)return;
- try{setChildCheck(localStorage,packStore(),el.dataset.childBag,el.checked);render();}
- catch{status('Kunne ikke lagre pakkestatus på denne enheten.');}
+ if(!el||!state.child||!state.calendar||state.packingBusy)return;
+ const item=state.bag.find(x=>x.key===el.dataset.childBag);
+ if(!item||!(state.packing instanceof Map)){render();return;}
+ const {child,calendar,session}=state,day=DAYS[state.day];
+ const key=packingFingerprint({school:child.school,grade:child.grade,
+  year:calendar.year,week:calendar.week,day,item});
+ const previous=state.packing.get(key),completed=el.checked;
+ state.packingBusy=true;state.packing.set(key,completed);render();
+ try{
+  await get('/api/child-access',{method:'POST',token:session,body:{action:'set-packing',
+   year:calendar.year,week:calendar.week,taskKey:key,completed}});
+ }catch(error){
+  if(error.status===401){setToken(null);setup('Enhetens tilgang er utløpt.');return;}
+  if(previous===undefined)state.packing.delete(key);else state.packing.set(key,previous);
+  state.packingError='Pakkestatus ble ikke delt med foreldrene. Prøv igjen.';
+ }finally{state.packingBusy=false;if(state.child)render();}
 });
 $('child-homework').addEventListener('change',async event=>{
  const el=event.target.closest('[data-child-homework]');

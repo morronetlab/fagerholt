@@ -142,6 +142,14 @@ export class CloudAccount {
  removeChild(id,familyId){return this.remove('children','id=eq.'+encodeURIComponent(id)+'&family_id=eq.'+encodeURIComponent(familyId));}
  progress(familyId,year,week){return this.rows('homework_progress','select=child_id,task_key,completed&family_id=eq.'+
   encodeURIComponent(familyId)+'&school_year=eq.'+year+'&school_week=eq.'+week);}
+ packingProgress(familyId,year,week){return this.rows('packing_progress','select=child_id,task_key,completed&family_id=eq.'+
+  encodeURIComponent(familyId)+'&school_year=eq.'+year+'&school_week=eq.'+week);}
+ setPacking({familyId,childId,year,week,key,completed}){
+  return this.request('/rest/v1/packing_progress?on_conflict=child_id,school_year,school_week,task_key',{
+   method:'POST',auth:true,body:{family_id:familyId,child_id:childId,
+    school_year:year,school_week:week,task_key:key,completed:!!completed},
+   headers:{Prefer:'resolution=merge-duplicates,return=representation'}});
+ }
  setTask({familyId,childId,year,week,key,completed,ignoreDuplicates=false}){
   const values={family_id:familyId,child_id:childId,school_year:year,school_week:week,
    task_key:key,completed:!!completed};

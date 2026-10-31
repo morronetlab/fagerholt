@@ -63,7 +63,7 @@ export function schoolDayIndices(cal){
  const todayIndex=DAYS.findIndex((_,i)=>dayDate(cal.year,cal.week,i)===cal.today);
  return {today:todayIndex,next:todayIndex>=0&&todayIndex<4?todayIndex+1:null};
 }
-export function profileSummary(profile,plan,calendar,storage=()=>null,cloudChecked=null){
+export function profileSummary(profile,plan,calendar,storage=()=>null,cloudChecked=null,cloudBagChecked=null){
  if(!plan||plan.status==='error'||plan.status==='unavailable'||plan.status==='unpublished'||
    plan.status==='unreadable'||plan.year!==calendar.year||plan.week!==calendar.week)
   return {ready:false,reason:!plan?'Henter ukeplan …':plan.status==='unpublished'?'Ukeplanen er ikke publisert ennå.':
@@ -85,7 +85,9 @@ export function profileSummary(profile,plan,calendar,storage=()=>null,cloudCheck
   if(day==null)return [];
   const raw=[...(plan.everyday||[]),...(plan.days?.[DAYS[day]]?.bring||[])].filter(x=>x&&x.label&&groupApplies(x,profile));
   return [...new Map(raw.map(x=>[norm(x.label)+'|'+norm(x.group),x])).values()]
-   .map((x,i)=>({...x,checked:checked(storage,profile,calendar,'bag',i,DAYS[day])}));
+   .map((x,i)=>({...x,checked:cloudBagChecked?
+     !!cloudBagChecked(profile,x,calendar,DAYS[day]):
+     checked(storage,profile,calendar,'bag',i,DAYS[day])}));
  };
  // Everyday packing is one reminder for the week, not five duplicates.
  const everyday=(plan.everyday||[]).filter(item=>item?.label&&groupApplies(item,profile));
