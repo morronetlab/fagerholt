@@ -332,7 +332,7 @@ test('320px calendar shows five dates without scrolling and retains source detai
  assert.equal(bounds.count,5);
  assert.equal(bounds.allFit,true,'All five date tiles must fit on a 320px screen');
  assert.equal(bounds.scroll,false,'Date picker must not require sideways scrolling');
- assert.ok(bounds.dates.every(d=>/^\\d{1,2}$/.test(d)),'Dates must be visible');
+ assert.ok(bounds.dates.every(d=>/^[0-9]{1,2}$/.test(d)),'Dates must be visible');
  const card=page.locator('#family-agenda-days .family-agenda-item:visible').first();
  assert.equal(await card.locator('.family-agenda-item-more').isVisible(),false);
  assert.equal(await card.locator('.family-agenda-compact-icon').isVisible(),true);
