@@ -3,7 +3,7 @@ import {schoolCalendar} from '../../lib/calendar.mjs';
 import {findPdfLinks,choosePdf,analyzePdfPages,pdfItemsFromTextContent} from '../../lib/plan-core.mjs';
 import {aiConfigured,cacheKey,digestPdf,openAIStore,queueAIJob,lockKey,failureKey,createStatusToken} from '../../lib/ai-runtime.mjs';
 import {getSchool,validGradeCode,locateGradeSections,isSchoolSectionUrl} from '../../lib/schools.mjs';
-import {reconcileHomeworkWithPdf,HOMEWORK_SOURCE_VERSION} from '../../lib/homework-source-truth.mjs';
+import {needsCachedEvidenceRefresh,refreshCachedEvidence} from '../../lib/plan-cache-evidence.mjs';
 import {stripSyntheticPackingNotices} from '../../lib/packing-source.mjs';
 const MAX_PDF_BYTES=14*1024*1024;
 const HEADERS={'User-Agent':'Mozilla/5.0 (compatible; Ukeplanen/0.1; +https://github.com/morronetlab/fagerholt)','Accept-Language':'nb-NO,nb;q=0.9'};
@@ -97,20 +97,19 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
             // receives ready without source verification, it reloads /api/plan.
             if(statusOnly)return reply({...base,...cached,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,aiStatus:'ready',practicalPriorityToken});
             let ready=cached;
-            // AI results cached before source-verified deadlines are still
-            // repairable. Validate once against the original PDF coordinates,
-            // then persist the corrected plan without re-running the model.
-            if(cached.homeworkSourceVersion!==HOMEWORK_SOURCE_VERSION){
+            // A legacy AI cache can contain usable homework but no sourceAudit.
+            // Recheck the same downloaded PDF on read; never run AI again and
+            // never treat a missing audit as successful by default.
+            if(needsCachedEvidenceRefresh(cached)){
               try{
                 const pageLayouts=await parsePdfPages(bytes.slice());
-                if(pageLayouts.length){
-                  const checked=reconcileHomeworkWithPdf(cached.homework,pageLayouts);
-                  ready={...cached,homework:checked.homework,homeworkSourceVersion:HOMEWORK_SOURCE_VERSION,
-                    homeworkSourceVerified:checked.verified};
+                const refreshed=refreshCachedEvidence(cached,pageLayouts);
+                if(refreshed.changed){
+                  ready=refreshed.plan;
                   try{await store.setJSON(key,ready);}
-                  catch(error){console.warn('Could not persist corrected homework cache:',error?.message);}
+                  catch(error){console.warn('Could not persist corrected source evidence:',error?.message);}
                 }
-              }catch(error){console.warn('Could not verify cached homework source:',error?.message);}
+              }catch(error){console.warn('Could not refresh cached source evidence:',error?.message);}
             }
             return reply({...base,...ready,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,aiStatus:'ready',practicalPriorityToken});
           }
