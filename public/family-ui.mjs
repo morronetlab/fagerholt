@@ -11,7 +11,7 @@ import {practicalHighlights} from './shared/practical-highlights.mjs';
 import {priorityKey,applyPracticalPriority} from './shared/practical-priority.mjs';
 import {practicalDigest} from './shared/practical-digest.mjs';
 import {calendarHighlights} from './shared/school-calendar-highlights.mjs';
-import {FAMILY_OVERVIEW_BATCH_MS,holdInitialHighlights,readCalendarCache,storeCalendarCache,cacheableCalendar} from './shared/family-overview-load.mjs';
+import {FAMILY_OVERVIEW_BATCH_MS,holdInitialHighlights,readCalendarCache,storeCalendarCache,cacheableCalendar,stableHighlightOrder,highlightIdentity} from './shared/family-overview-load.mjs';
 
 const el=id=>document.getElementById(id);
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -46,7 +46,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const calendars=new Map(),calendarFetchAt=new Map(),calendarInFlight=new Set();
  const calendarStage=new Map();
  // Keep child cards interactive while briefly batching first reminders paint.
- let overviewBatch=null,overviewTimer=null;
+ let overviewBatch=null,overviewTimer=null,lastReminderOrder=null;
  const previousHtml=new Map();
  const setHtml=(id,markup)=>{
   if(previousHtml.get(id)===markup)return;
@@ -313,10 +313,19 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const pdfCandidates=now.upcoming||!(shownFocus==='next'&&next==null)?
    practicalHighlights({profiles,summaries,plans,calendar:now,focus:shownFocus}):[];
   const municipalCandidates=calendarHighlights({profiles,calendars,calendar:now,focus:shownFocus});
-  const cards=applyPracticalPriority([...municipalCandidates,...pdfCandidates],item=>{
+  const pendingReveal=overviewBatch&&holdInitialHighlights({
+   startedAt:overviewBatch.startedAt,now:Date.now(),
+   pendingPairs:overviewBatch.pairs.size,
+   pendingCalendars:overviewBatch.schools.filter(s=>
+    !cacheableCalendar(calendars.get(s),s,now.year,now.week)).length});
+  const rankedCards=applyPracticalPriority([...municipalCandidates,...pdfCandidates],item=>{
    const p=byId(item.id),state=p&&priorityStates.get(pairOf(p));
    return state?.status==='ready'?state.scores?.[priorityKey(item)]:null;
   });
+  const orderKey=weekKey(now)+'|'+shownFocus+'|'+profiles.map(p=>p.id).join(',');
+  const cards=lastReminderOrder?.key===orderKey&&!pendingReveal?
+   stableHighlightOrder(rankedCards,lastReminderOrder.ids):rankedCards;
+  if(!pendingReveal)lastReminderOrder={key:orderKey,ids:cards.map(highlightIdentity)};
   reportCards=cards;
   const statuses=[...new Set(profiles.map(p=>p.school))]
    .map(school=>calendars.get(school))
@@ -403,11 +412,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const empty=loading.size?'Sjekker ukeplan for uke '+now.week+' …':
    !profiles.length?'Legg til et barn for å se huskelisten.':
    ready.length?'Ingen spesielle beskjeder eller ekstra ting å pakke i denne perioden. Se hvert barns ukeplan for lekser.':noPlan;
-  const hold=overviewBatch&&holdInitialHighlights({
-   startedAt:overviewBatch.startedAt,now:Date.now(),
-   pendingPairs:overviewBatch.pairs.size,
-   pendingCalendars:overviewBatch.schools.filter(s=>
-    !cacheableCalendar(calendars.get(s),s,now.year,now.week)).length});
+  const hold=pendingReveal;
   const reminderBody=!now.upcoming&&shownFocus==='next'&&next==null?
    '<p class="family-muted">Neste ukes oppgaver blir tilgjengelige når skolen publiserer ny ukeplan.</p>':
    reminderMarkup+expand||
