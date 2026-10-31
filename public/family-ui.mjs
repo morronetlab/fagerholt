@@ -854,7 +854,10 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  for(const id of ['family-agenda-days','family-agenda-undated']){
   el(id).addEventListener('click',event=>{
    const button=event.target.closest('[data-family-agenda-edit]');
-   if(button)activityUI.editActivity(button.dataset.familyAgendaEdit);
+   if(button){
+    mobileUI.selectView('activities');
+    activityUI.editActivity(button.dataset.familyAgendaEdit);
+   }
   });
  }
  el('family-reminders').addEventListener('click',e=>{
