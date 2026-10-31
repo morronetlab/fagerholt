@@ -1,6 +1,7 @@
 /** Device-local family UI; one source-grounded weekly plan per class. */
 import {siteConfig} from './site-config.mjs';
 import {initChildPairingUI} from './child-pairing-ui.mjs';
+import {activityOccurrences} from './shared/family-activities.mjs';
 import {initFamilyActivitiesUI} from './family-activities-ui.mjs';
 import {familyWeekCalendar,DAYS} from './shared/calendar.mjs';
 import {FAMILY_STORAGE_KEY,FAMILY_MAX_PROFILES,readFamily,familyDocument,putProfile,profileSummary,
@@ -712,6 +713,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   '<option value="'+escape(s.id)+'">'+escape(s.name)+'</option>').join('');
  const api={
   isActive:()=>active,hasProfiles:()=>profiles.length>0,profileById:byId,
+  activitiesForProfile:(id,year,week,date)=>activityOccurrences(activityUI.getRows(),year,week)
+   .filter(x=>x.date===date&&(!x.child_id||x.child_id===id)),
   cachedReadyPlan:id=>{const p=byId(id);return p?cachedReadyPlan(p):null;},
   isCloudProfile:id=>Boolean(cloud&&byId(id)),
   isHomeworkChecked:(id,task)=>{
