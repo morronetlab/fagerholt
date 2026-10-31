@@ -27,6 +27,16 @@ let primaryView="welcome";
 let navigationReady=false,restoringRoute=false;
 const NAV_KEY='skoleukaRouteV1';
 const LAST_VIEW_KEY='skoleuka.last-primary-view.v1';
+const LAST_ROUTE_KEY='skoleuka.last-route.v1';
+function savedRoute(){
+ const fromHistory=history.state;
+ if(fromHistory?.[NAV_KEY]===true)return fromHistory;
+ try{
+  const stored=JSON.parse(sessionStorage.getItem(LAST_ROUTE_KEY)||'null');
+  if(stored?.[NAV_KEY]===true)return stored;
+ }catch{}
+ return null;
+}
 // SPA route changes begin at the top, but opening/closing the account modal
 // preserves the exact previous scroll position.
 function scrollNewViewToTop(){
@@ -41,8 +51,11 @@ function navigationSnapshot(){
 }
 function recordNavigation(mode='push'){
  if(!navigationReady||restoringRoute)return;
- const snapshot=navigationSnapshot(),previous=history.state;
- try{sessionStorage.setItem(LAST_VIEW_KEY,snapshot.view);}catch{}
+ const snapshot={...navigationSnapshot(),explicit:true},previous=history.state;
+ try{
+  sessionStorage.setItem(LAST_VIEW_KEY,snapshot.view);
+  sessionStorage.setItem(LAST_ROUTE_KEY,JSON.stringify(snapshot));
+ }catch{}
  if(previous?.[NAV_KEY]&&JSON.stringify(previous)===JSON.stringify(snapshot))return;
  try{history[mode==='replace'?'replaceState':'pushState'](snapshot,'',location.href);}
  catch(error){console.warn('Kunne ikke lagre app-navigasjonen',error?.message);}
@@ -153,6 +166,16 @@ function navigateTo(view,{record=true}={}){
     if(record)recordNavigation();
     scrollNewViewToTop();
     return;
+  }
+  // A signed-in family has an already configured school and grade. The header
+  // 'Ukeplan' must open a child's real plan, not the first-run school wizard.
+  if(view==='plan'&&(!state.school||!state.grade)&&familyUI.hasProfiles()){
+    const profile=familyUI.profileById(state.profileId)||familyUI.firstProfile();
+    if(profile){
+      openFamilyProfile(profile,{upcoming:familyWeekCalendar(new Date(),siteConfig.school.timezone).upcoming,
+        cachedPlan:familyUI.cachedReadyPlan(profile.id),record});
+      return;
+    }
   }
   primaryView=view==='welcome'?'welcome':'plan';
   if(familyUI.isActive())familyUI.leave();
@@ -640,6 +663,9 @@ function restoreNavigation(target){
  }finally{restoringRoute=false;scrollNewViewToTop();}
 }
 function boot(){
+  // Capture the exact SPA route before the asynchronous account recovery may
+  // replace history.state while fetching children from Supabase.
+  const initialRoute=savedRoute();
   const issueReporter=initIssueReporter();
   familyUI=initFamilyUI({
    onModeChange:()=>{renderShell();recordNavigation();scrollNewViewToTop();},
@@ -647,7 +673,28 @@ function boot(){
    onReportIssue:args=>issueReporter.open(args),
    onOpenSingle:()=>{primaryView='plan';renderShell();recordNavigation();scrollNewViewToTop();}
   });
-  accountUI=initAccountUI({familyUI,onGoFamily:()=>navigateTo('family')});
+  accountUI=initAccountUI({familyUI,onGoFamily:()=>navigateTo('family'),
+    onCloudRestored:()=>{
+      // A signed-in account must not redirect an explicit homepage or plan
+      // route to the family dashboard merely because session restore finished.
+      if(initialRoute?.view==='welcome')return initialRoute.explicit===true;
+      if(initialRoute?.view!=='plan')return false;
+      if(!initialRoute.school){
+        restoreNavigation(initialRoute);
+        recordNavigation('replace');
+        return true;
+      }
+      if(!siteConfig.schools[initialRoute.school])return false;
+      if(initialRoute.profileId){
+        const child=familyUI.profileById(initialRoute.profileId);
+        if(!child||child.school!==initialRoute.school||
+           child.grade!==initialRoute.grade)return false;
+      }
+      restoreNavigation(initialRoute);
+      recordNavigation('replace');
+      return true;
+    }});
+
   if('scrollRestoration' in history)history.scrollRestoration='manual';
   window.addEventListener('popstate',event=>restoreNavigation(event.state));
   $('home-link').addEventListener('click',e=>{e.preventDefault();navigateTo('welcome');});
@@ -732,17 +779,30 @@ function boot(){
   const savedSchool=storageRead(schoolSelectionKey());
   // Route is known before cloud account restoration finishes. Keep the correct
   // section visible instead of briefly painting the plan and welcome pages.
-  let previousView=history.state?.[NAV_KEY]===true?history.state.view:null;
+  let previousView=initialRoute?.view||null;
   if(!previousView)try{previousView=sessionStorage.getItem(LAST_VIEW_KEY);}catch{}
-  if(previousView==='family'||familyUI.hasProfiles()){primaryView='plan';familyUI.enter();}
-  else if(validSchool(savedSchool,siteConfig.schools)){primaryView='plan';selectSchool(savedSchool,{restore:true});}
-  else renderShell();
+  if(initialRoute?.view==='plan'&&initialRoute.school&&
+     validSchool(initialRoute.school,siteConfig.schools)){
+    restoreNavigation(initialRoute);
+  }else if(previousView==='family'||(familyUI.hasProfiles()&&
+           (previousView!=='welcome'||initialRoute?.explicit!==true))){
+    primaryView='plan';familyUI.enter();
+  }else if(previousView==='welcome'){
+    primaryView='welcome';renderShell();
+  }else if(validSchool(savedSchool,siteConfig.schools)){
+    primaryView='plan';selectSchool(savedSchool,{restore:true});
+  }else renderShell();
   document.documentElement.classList.add('skoleuka-route-ready');
   navigationReady=true;
-  try{sessionStorage.setItem(LAST_VIEW_KEY,navigationSnapshot().view);}catch{}
+  const startupSnapshot=initialRoute?.view==='plan'&&initialRoute.profileId?
+    initialRoute:{...navigationSnapshot(),explicit:initialRoute?.explicit===true};
+  try{
+    sessionStorage.setItem(LAST_VIEW_KEY,startupSnapshot.view);
+    sessionStorage.setItem(LAST_ROUTE_KEY,JSON.stringify(startupSnapshot));
+  }catch{}
   // The first entry is the in-app starting point. Later internal steps are
   // pushed, so the native browser Back button returns to the prior app view.
-  try{history.replaceState(navigationSnapshot(),' ',location.href);}catch{}
+  try{history.replaceState(startupSnapshot,' ',location.href);}catch{}
   // If a tablet or fridge display stays open, refresh on week/date rollover.
   setInterval(()=>{
     const next=schoolCalendar(new Date(),siteConfig.school.timezone);

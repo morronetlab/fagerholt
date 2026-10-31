@@ -752,6 +752,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   '<option value="'+escape(s.id)+'">'+escape(s.name)+'</option>').join('');
  const api={
   isActive:()=>active,hasProfiles:()=>profiles.length>0,profileById:byId,
+  firstProfile:()=>profiles[0]||null,
   activitiesForProfile:(id,year,week,date)=>activityOccurrences(activityUI.getRows(),year,week)
    .filter(x=>x.date===date&&(!x.child_id||x.child_id===id)),
   cachedReadyPlan:id=>{const p=byId(id);return p?cachedReadyPlan(p):null;},
