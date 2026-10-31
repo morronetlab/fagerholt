@@ -1,7 +1,7 @@
 import {siteConfig} from './site-config.mjs';
 import {initFamilyUI} from './family-ui.mjs';
 import {initAccountUI} from './account-ui.mjs';
-import {childProgressKey} from './shared/family-core.mjs';
+import {childProgressKey,groupApplies} from './shared/family-core.mjs';
 import {smartDayChoice} from './shared/smart-day.mjs';
 import {initWordQuiz,renderWordQuiz,quizItems} from './shared/word-quiz.mjs';
 import {openHomeworkHelper,initHomeworkHelper} from './homework-helper.mjs';
@@ -124,7 +124,13 @@ function renderShell(){
     renderGradeChoices();
     return;
   }
-  $('plan-context-class').textContent=state.school.name+' · '+state.grade+'. trinn';
+  const selectedProfile=state.profileId?familyUI?.profileById(state.profileId):null;
+  $('plan-context-class').textContent=(selectedProfile?selectedProfile.name+' · ':'')+
+   state.school.name+' · '+state.grade+'. trinn';
+  for(const id of ['change-school','change-grade','mobile-selection-menu'])
+   $(id).hidden=Boolean(selectedProfile);
+  $('plan-back-family').hidden=!selectedProfile;
+  $('plan-welcome-title').textContent=selectedProfile?'Hei, '+selectedProfile.name+'! ☀️':'Morgenklar! ☀️';
   $('school-name').textContent=`${state.school.name.toLocaleUpperCase('nb-NO')} · ${state.grade}. KLASSE`;
   $('welcome-description').textContent=`Se hva som skjer i ${state.grade}. klasse, og kryss av det du har gjort.`;
   $('school-source').href=state.plan?.source||state.school.grades?.[state.grade]||state.school.homepage;
@@ -238,11 +244,14 @@ function renderContent(){
   $('warning-area').textContent=!feedbackVisible?msg||'':'';
   $('pdf-source').hidden=!p?.pdf;if(p?.pdf)$('pdf-source').href=p.pdf;
   if(p?.source&&state.school)$('school-source').href=p.source;
-  const allEvents=uniqueDayEvents(p?.days?.[DAYS[state.day]]?.events||[]);
+  const selectedProfile=state.profileId?familyUI?.profileById(state.profileId):null;
+  const allEvents=uniqueDayEvents(p?.days?.[DAYS[state.day]]?.events||[])
+   .filter(x=>!selectedProfile||groupApplies(x,selectedProfile));
   // A vaccination is a practical notice, not an additional timetable row.
   const events=allEvents.filter(x=>!isVaccineNotice(x.title));
   const groupedEvents=groupSimultaneousEvents(events);
-  const notes=notesWithImportantEvents(allEvents,(p?.dayNotes?.[DAYS[state.day]]||[]).filter(x=>x&&x.text));
+  const notes=notesWithImportantEvents(allEvents,(p?.dayNotes?.[DAYS[state.day]]||[])
+   .filter(x=>x&&x.text&&(!selectedProfile||groupApplies(x,selectedProfile))));
   const groups=[...new Set([...events,...getBag()].map(x=>x.group).filter(Boolean))];
   $('day-group-summary').hidden=!groups.length;
   $('day-group-summary').innerHTML=groups.length?`<strong>Husk riktig gruppe denne dagen:</strong> ${groups.map(groupBadge).join(' ')}`:'';
@@ -257,9 +266,20 @@ function renderContent(){
   const attendance=(p?.attendance||[]).filter(x=>x.day===DAYS[state.day]&&x.group&&x.time);
   $('day-attendance').hidden=!attendance.length;
   $('day-attendance').innerHTML=attendance.length?`<div class="attendance-heading">⏰ Særskilt oppmøte for enkelte grupper</div>${attendance.map(x=>`<div class="attendance-entry">${groupBadge(x.group)}<strong>Kl. ${safe(x.time)}</strong><span>${safe(x.text)}</span></div>`).join('')}`:'';
-  const bag=getBag();
+  const bag=getBag().filter(x=>!selectedProfile||groupApplies(x,selectedProfile));
   $('bag-list').innerHTML=bag.length?checklist(bag,'bag',DAYS[state.day]):empty(state.loading?'Henter pakkelisten …':'Ingen ekstra utstyr oppgitt for denne dagen.');
   $('plan-columns').classList.toggle('bag-empty',!bag.length&&!state.loading);
+  const dayDateValue=dayDate(calendar.year,calendar.week,state.day);
+  const activities=selectedProfile?
+   familyUI.activitiesForProfile(selectedProfile.id,calendar.year,calendar.week,dayDateValue):[];
+  $('plan-day-activities').hidden=!selectedProfile||!activities.length;
+  $('plan-day-activity-list').innerHTML=activities.map(x=>
+   '<article class="plan-day-activity"><span class="plan-day-activity-time">'+
+   safe(String(x.start_time||'').slice(0,5)||'Etter skolen')+'</span>'+
+   '<div><strong>'+safe(x.title)+'</strong>'+
+   (x.location?'<small>'+safe(x.location)+'</small>':'')+
+   (x.responsible?'<small>Ansvarlig: '+safe(x.responsible)+'</small>':'')+
+   (x.notes?'<p>'+safe(x.notes)+'</p>':'')+'</div></article>').join('');
   const vocabulary=Array.isArray(p?.vocabulary)?p.vocabulary:[];
   renderWordQuiz(vocabulary,{school:state.school?.id,grade:state.grade,week:calendar.week,year:calendar.year,...(state.profileId?{childId:state.profileId}:{})});
   const quizVocabulary=quizItems(vocabulary);
@@ -688,6 +708,7 @@ function boot(){
   document.addEventListener('change',e=>{
     const el=e.target.closest('input[data-check]');if(el)setChecked(el.dataset.check,el.dataset.index,el.dataset.progressDay,el.checked);
   });
+  $('plan-back-family').addEventListener('click',()=>navigateTo('family'));
   $('change-grade').addEventListener('click',clearGrade);
   $('change-school').addEventListener('click',clearSchool);
   $('mobile-change-grade').addEventListener('click',()=>{$('mobile-selection-menu').open=false;clearGrade();});

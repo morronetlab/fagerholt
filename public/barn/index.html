@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1b5a4c">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Min Skoleuka">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="/barn/manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="/barn/icon.svg">
+<link rel="apple-touch-icon" href="/barn/icon-192.png">
+<link rel="stylesheet" href="/barn/child.css">
+<title>Min Skoleuka – ukeplanen min</title>
+</head>
+<body>
+<header class="child-top"><a class="child-brand" href="/barn/" aria-label="Min Skoleuka hjem"><span>✦</span> Min Skoleuka</a>
+ <span id="child-badge" class="child-badge">Min uke</span></header>
+<main id="child-app" class="child-shell">
+ <section id="child-setup" class="child-setup" hidden>
+  <span class="child-sun">☀️</span><p class="eyebrow">DIN HELT EGEN UKEPLAN</p>
+  <h1>Hei! Klar for skoleuka?</h1>
+  <p id="child-setup-message">Be en foresatt åpne «Inviter barn» under din profil og skann QR-koden med denne enheten.</p>
+  <button id="child-retry" class="child-primary" type="button">Prøv igjen</button>
+  <p class="child-small">Du trenger ingen e-postadresse eller passord. QR-koden fungerer bare én gang og utløper etter 10 minutter.</p>
+ </section>
+ <section id="child-ready" hidden>
+  <div class="child-hero">
+   <div><p class="eyebrow">UKEPLANEN MIN <span id="child-grade"></span></p>
+    <h1 id="child-greeting">Hei!</h1><p id="child-week-info"></p></div>
+   <span class="child-sun" aria-hidden="true">☀️</span>
+  </div>
+  <div class="child-install" id="child-install-box" hidden>
+   <div><strong>📱 Ha ukeplanen på hjemskjermen</strong>
+    <p id="child-install-help">Du kan åpne Skoleuka som en vanlig app neste gang.</p></div>
+   <button id="child-install-button" type="button" class="child-outline">Legg til på hjemskjermen</button>
+   <button id="child-install-dismiss" type="button" class="child-close" aria-label="Skjul installasjonsinfo">✕</button>
+  </div>
+  <nav id="child-days" class="child-days" aria-label="Velg skoledag"></nav>
+  <section class="child-panel" aria-labelledby="child-events-heading"><div class="child-panel-heading"><span aria-hidden="true">📚</span><h2 id="child-events-heading">Dette skjer på skolen</h2></div>
+   <div id="child-events"></div><div id="child-notes"></div></section>
+  <section class="child-panel child-activities" aria-labelledby="child-activities-heading"><div class="child-panel-heading"><span aria-hidden="true">⚽</span><h2 id="child-activities-heading">Mine aktiviteter</h2></div>
+   <div id="child-activities"></div></section>
+  <section class="child-panel" aria-labelledby="child-bag-heading"><div class="child-panel-heading"><span aria-hidden="true">🎒</span><h2 id="child-bag-heading">Husk i sekken</h2></div>
+   <div id="child-bag"></div></section>
+  <section class="child-panel" aria-labelledby="child-homework-heading"><div class="child-panel-heading"><span aria-hidden="true">✏️</span><h2 id="child-homework-heading">Lekser denne uka</h2></div>
+   <div id="child-homework"></div></section>
+  <p class="child-source" id="child-source"></p>
+  <div class="child-footer-actions">
+   <button id="child-refresh" type="button" class="child-outline">↻ Oppdater ukeplan</button>
+   <button id="child-remove" type="button" class="child-link">Fjern denne enhetens tilgang</button>
+  </div>
+ </section>
+ <p class="child-status" id="child-status" role="status" aria-live="polite"></p>
+</main>
+<script type="module" src="/barn/child.mjs"></script>
+</body></html>

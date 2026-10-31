@@ -12,7 +12,7 @@ export async function startStaticServer(){
   let target;
   try{
    const path=new URL(req.url,'http://127.0.0.1').pathname;
-   target=resolve(root,'.'+decodeURIComponent(path==='/'?'/index.html':path));
+   target=resolve(root,'.'+decodeURIComponent(path.endsWith('/')?path+'index.html':path));
   }catch{res.writeHead(400).end('Bad path');return;}
   if(target!==root&&!target.startsWith(root+sep)){res.writeHead(403).end('Forbidden');return;}
   try{
