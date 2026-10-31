@@ -93,7 +93,7 @@ test('Output shows official PDF links and safely escapes user and AI text',()=>{
  const injected=familyAgendaItemHtml({kind:'family',title:'<img src=x onerror=alert(1)>',
   details:'<script>bad</script>',scope:'<unsafe>',
   activityId:'abc" onclick="evil()',source:{url:'javascript:alert(1)'}});
- assert.doesNotMatch(injected,/<script>|<img |onclick=|href="javascript:/);
+ assert.doesNotMatch(injected,/<script>|<img | onerror="| onclick="|href="javascript:/);
  assert.match(injected,/&lt;img/);
  assert.match(injected,/&lt;script&gt;/);
  assert.match(injected,/data-family-agenda-edit="abc&quot; onclick=&quot;evil\(\)"/);
