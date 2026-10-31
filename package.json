@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "pdfjs-dist": "4.10.38",
-    "@netlify/blobs": "11.1.7"
+    "@netlify/blobs": "11.1.7",
+    "qrcode-generator": "1.5.2"
   },
   "devDependencies": {
     "playwright": "1.56.1"
