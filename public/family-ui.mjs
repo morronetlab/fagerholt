@@ -295,7 +295,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    '<p class="family-important-empty">'+escape(message)+'</p>');
   el('family-mobile-important-more').hidden=notices.visible.length<=2;
   el('family-mobile-important-more').textContent=
-   el('family-view').classList.contains('mobile-important-expanded')?
+   document.querySelector('#family-view .family-tomorrow')?.classList.contains('mobile-important-expanded')?
     'Vis færre beskjeder':'Vis alle viktige beskjeder';
   el('family-practical-label').textContent=notices.remaining?
    'Vis komplette skolebeskjeder · '+notices.remaining+' flere viktige':
