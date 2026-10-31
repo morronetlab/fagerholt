@@ -91,3 +91,28 @@
   to = "/.netlify/functions/digest-send-test"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/child-access"
+  to = "/.netlify/functions/child-access"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/barn"
+  to = "/barn/"
+  status = 301
+
+[[headers]]
+  for = "/barn/*"
+  [headers.values]
+    Referrer-Policy = "no-referrer"
+    X-Content-Type-Options = "nosniff"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+[[headers]]
+  for = "/api/child-access"
+  [headers.values]
+    Cache-Control = "no-store, private"
+    Referrer-Policy = "no-referrer"
+    X-Robots-Tag = "noindex, nofollow"
