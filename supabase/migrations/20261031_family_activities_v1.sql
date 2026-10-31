@@ -63,3 +63,6 @@ create policy "parents delete shared activities" on public.family_activities
 
 comment on table public.family_activities is
  'Family-owned weekly activities; visible to parents in the same family via RLS. No service key or public access.';
+
+-- Inform PostgREST that the new table is available through the Data API.
+notify pgrst, 'reload schema';
