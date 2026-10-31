@@ -63,7 +63,10 @@ async function chooseSchoolGrade(page,grade){
 test('New landing presents a family-first choice and keeps guest access visible',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.locator('#welcome-view').waitFor({state:'visible'});
- assert.match(await page.locator('#welcome-title').innerText(),/Hele familiens skoleuke/);
+ assert.match(await page.locator('#welcome-title').innerText(),/Skole, lekser og fritid/);
+ assert.equal(await page.locator('.welcome-choice').count(),3);
+ assert.equal(await page.locator('a[href="/barn/"]').isVisible(),true);
+ assert.equal(await page.locator('.welcome-explain > div').count(),4);
  assert.equal(await page.locator('#landing-create-family').isVisible(),true);
  assert.equal(await page.locator('#landing-open-plan').isVisible(),true);
  assert.equal(await page.locator('#school-gate').isVisible(),false);
