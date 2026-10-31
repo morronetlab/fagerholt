@@ -385,7 +385,7 @@ test('Next-week family dashboard shows new weekly tasks with the correct week on
  await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
  assert.match(await page.locator('#family-cards').innerText(),/Lekser i uke/);
  assert.match(await page.locator('#family-cards').innerText(),/Les til mandag NESTE UKE/);
- await page.locator('#family-reminders').getByText(/Gymtøy for neste uke/).waitFor({state:'visible'});
+ await page.locator('#family-reminders').getByText(/Gymtøy for neste uke/).first().waitFor({state:'visible'});
  assert.match(await page.locator('#family-reminders').innerText(),/Gymtøy for neste uke/);
  assert.match(await page.locator('.family-child-week').innerText(),new RegExp('UKE '+shown.week));
  assert.doesNotMatch(await page.locator('#family-view').innerText(),/I dag/);
