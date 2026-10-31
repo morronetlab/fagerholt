@@ -115,9 +115,9 @@
       <div class="welcome-hero">
         <div class="welcome-copy">
           <p class="welcome-eyebrow">SKOLEHVERDAGEN, LITT ENKLERE</p>
-          <h1 id="welcome-title">Hele familiens skoleuke. <span>Ett sted.</span></h1>
-          <p class="welcome-lead">Se ukeplaner, lekser og beskjeder for barna dine, og hold oversikten sammen med andre foresatte.</p>
-          <div class="welcome-points"><span>✓ Ukeplan fra skolen</span><span>✓ Felles lekseoversikt</span><span>✓ Flere barn</span></div>
+          <h1 id="welcome-title">Skole, lekser og fritid. <span>Endelig samlet.</span></h1>
+          <p class="welcome-lead">Samle skolens ukeplaner, viktige beskjeder og familiens aktiviteter. Del oversikten mellom foresatte – og gi hvert barn sin egen app med QR-kode.</p>
+          <div class="welcome-points"><span>✓ Skolens ukeplan automatisk</span><span>✓ Familiens aktiviteter</span><span>✓ Barneapp med QR-kode</span></div>
         </div>
         <div class="welcome-illustration" aria-hidden="true">
           <div class="welcome-notebook"><span>UKEPLAN</span><strong id="welcome-week-number">Uke —</strong><i>✓ Norsk</i><i>✓ Engelsk</i><i>○ Pakk sekken</i></div>
@@ -127,24 +127,32 @@
       <div class="welcome-start" aria-label="Velg hvordan du vil bruke Skoleuka">
         <article class="welcome-choice welcome-choice-main">
           <span class="welcome-choice-icon" aria-hidden="true">👨‍👩‍👧‍👦</span>
-          <h2>Kom i gang med familien</h2>
-          <p>Lag en familiekonto, legg til barna og følg leksene på tvers av mobil og PC.</p>
+          <h2>For foresatte</h2>
+          <p>Opprett familie, legg til barna og få én oversikt med skole, frister og fritidsaktiviteter. Del med en annen foresatt.</p>
           <button id="landing-create-family" type="button" class="welcome-button welcome-button-primary">Opprett familiekonto <span aria-hidden="true">→</span></button>
-          <p class="welcome-helper">Gratis å bruke · innlogging med e-postkode</p>
+          <p class="welcome-helper">1. E-postkode · 2. Legg til barn · 3. Få oversikt</p>
+        </article>
+        <article class="welcome-choice welcome-child-choice">
+          <span class="welcome-choice-icon" aria-hidden="true">📱</span>
+          <h2>For barn</h2>
+          <p>Få din egen ukeplan på telefonen eller nettbrettet, med lekser, pakkeliste og aktiviteter som gjelder deg.</p>
+          <a href="/barn/" class="welcome-button welcome-button-secondary">Åpne min ukeplan <span aria-hidden="true">→</span></a>
+          <p class="welcome-helper">En foresatt inviterer deg med QR-kode</p>
         </article>
         <article class="welcome-choice">
           <span class="welcome-choice-icon" aria-hidden="true">📖</span>
-          <h2>Se ukeplan uten konto</h2>
-          <p>Velg skole og klassetrinn, så finner vi ukens plan fra skolens publiserte informasjon.</p>
+          <h2>Bare se en ukeplan?</h2>
+          <p>Du kan fortsatt finne en offentlig ukeplan uten registrering. Velg skole og klassetrinn.</p>
           <button id="landing-open-plan" type="button" class="welcome-button welcome-button-secondary">Finn ukeplan <span aria-hidden="true">→</span></button>
           <p class="welcome-helper">Ingen registrering nødvendig</p>
         </article>
       </div>
       <p class="welcome-local">Vil du samle barna uten å registrere deg? <button id="landing-local-family" type="button">Bruk familieoversikt kun på denne enheten</button></p>
       <section class="welcome-explain" aria-label="Slik fungerer Skoleuka">
-        <div><span aria-hidden="true">1</span><strong>Velg skole og klasse</strong><p>Vi finner de tilgjengelige ukeplanene.</p></div>
-        <div><span aria-hidden="true">2</span><strong>Få samlet oversikt</strong><p>Se lekser, pakkeliste og viktige beskjeder.</p></div>
-        <div><span aria-hidden="true">3</span><strong>Hold oversikten sammen</strong><p>Med familiekonto kan foresatte dele lekseprogresjonen.</p></div>
+        <div><span aria-hidden="true">1</span><strong>Opprett familiekonto</strong><p>Logg inn som foresatt med kode på e-post.</p></div>
+        <div><span aria-hidden="true">2</span><strong>Legg til barna</strong><p>Velg riktig skole, trinn og eventuell gruppe én gang.</p></div>
+        <div><span aria-hidden="true">3</span><strong>Planlegg familiens uke</strong><p>Se skole, fridager og fritidsaktiviteter samlet.</p></div>
+        <div><span aria-hidden="true">4</span><strong>Inviter barnet med QR</strong><p>Åpne barnekortet, skann QR og legg ukeplanen på barnets hjemskjerm.</p></div>
       </section>
     </section>
     <section id="family-view" class="family-view" hidden aria-labelledby="family-title">
@@ -287,6 +295,7 @@
       <div class="plan-context" id="plan-context">
         <div class="plan-context-name"><span class="plan-context-label">DIN UKEPLAN</span><strong id="plan-context-class">Velg skole og klasse</strong><span id="today" class="date-chip"></span></div>
         <div class="plan-context-actions"><span class="week-badge" id="week-label">UKE —</span>
+          <button id="plan-back-family" type="button" class="ghost" hidden>← Min familie</button>
           <button id="change-school" type="button" class="ghost">Bytt skole</button>
           <button id="change-grade" type="button" class="ghost">Bytt klassetrinn</button>
           <details id="mobile-selection-menu" class="mobile-selection-menu"><summary>Endre valg</summary><div class="mobile-selection-actions"><button id="mobile-change-grade" type="button">Bytt klassetrinn</button><button id="mobile-change-school" type="button">Bytt skole</button></div></details>
@@ -329,6 +338,12 @@
         <section class="panel" aria-labelledby="program-title"><div class="panel-head"><div><p class="eyebrow">SKOLEDAGEN</p><h2 id="program-title">Dette skjer i dag</h2></div><span class="section-icon">📚</span></div><div id="day-program" class="items"></div><section id="day-notes" class="day-notes" hidden aria-label="Praktisk informasjon for dagen"><h3>📌 Praktisk informasjon for dagen</h3><div id="day-notes-list"></div></section><div id="day-attendance" class="day-attendance" hidden aria-label="Særskilt oppmøte for enkelte grupper"></div></section>
         <section class="panel bag" aria-labelledby="bag-title"><div class="panel-head"><div><p class="eyebrow">FØR DU GÅR</p><h2 id="bag-title">Pakk skolesekken</h2></div><span class="section-icon">🎒</span></div><div id="bag-list" class="items"></div></section>
       </div>
+      <section id="plan-day-activities" class="panel plan-day-activities" hidden aria-labelledby="plan-day-activities-title">
+        <div class="panel-head"><div><p class="eyebrow">ETTER SKOLETID</p>
+          <h2 id="plan-day-activities-title">Mine aktiviteter denne dagen</h2></div>
+          <span class="section-icon" aria-hidden="true">⚽</span></div>
+        <div id="plan-day-activity-list" class="items"></div>
+      </section>
       <section class="panel homework homework-studio" aria-labelledby="homework-title"><div class="panel-head"><div><p class="eyebrow">✦ DITT LEKSEHJØRNE</p><h2 id="homework-title">Lekser og oppgaver</h2>
  <p class="homework-studio-lead">Kryss av når du er ferdig. Trenger du et lite dytt? Leksehjelperen kan forklare og gi hint.</p></div><span class="section-icon" aria-hidden="true">✏️</span></div><div id="homework-progress" class="homework-progress" hidden aria-label="Lekseprogresjon">
           <div class="homework-progress-top"><strong id="homework-progress-count">0 av 0 lekser ferdig</strong><span id="homework-progress-stars" aria-hidden="true">☆☆☆</span></div>
