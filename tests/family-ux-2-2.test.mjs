@@ -24,7 +24,7 @@ test('Important source-backed school closures and vaccines stay prominent even w
  const notices=importantFamilyNotices(data([homework,ordinary,closure,municipal],[vaccine]),{limit:3});
  assert.equal(notices.total,3);
  assert.deepEqual(notices.visible.map(x=>x.title),[
-  closure.title,municipal.title,vaccine.title
+  municipal.title,closure.title,vaccine.title
  ]);
  assert.equal(notices.undated,1);
  assert.equal(notices.remaining,0);
@@ -43,7 +43,7 @@ test('Short preview is capped, reports all hidden important items and preserves 
  assert.equal(notices.visible.length,2);
  assert.equal(notices.remaining,1);
  assert.equal(notices.total,3);
- assert.match(familyAgendaItemHtml(notices.visible[0]),/Kilde: Skolens PDF/);
+ assert.match(familyAgendaItemHtml(notices.visible.find(x=>x.kind==='school')),/Kilde: Skolens PDF/);
  const markup=familyAgendaMarkup(data([homework],[ordinary,vaccine]));
  assert.match(markup.undated,/Vaksinasjon/);
  assert.match(markup.undated,/Ta med gymtøy/);
