@@ -85,3 +85,9 @@
   to = "/.netlify/functions/digest-config"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/digest-send-test"
+  to = "/.netlify/functions/digest-send-test"
+  status = 200
+  force = true
