@@ -10,7 +10,7 @@ export function cacheableCalendar(data,school,year,week){
  return !!data&&data.schoolId===school&&data.year===year&&data.week===week&&
   ['live','snapshot'].includes(data.sourceStatus)&&
   Array.isArray(data.events)&&data.events.length<=80&&
-  data.events.every(x=>/^\\d{4}-\\d{2}-\\d{2}$/u.test(x?.date||''));
+  data.events.every(x=>/^\d{4}-\d{2}-\d{2}$/u.test(x?.date||''));
 }
 export function readCalendarCache(storage,school,year,week,now=Date.now()){
  try{
