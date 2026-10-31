@@ -332,6 +332,18 @@ test('320px calendar shows five dates without scrolling and retains source detai
  assert.equal(bounds.count,5);
  assert.equal(bounds.allFit,true,'All five date tiles must fit on a 320px screen');
  assert.equal(bounds.scroll,false,'Date picker must not require sideways scrolling');
+ const menu=await page.locator('#family-mobile-calendar-options > summary').evaluate(el=>{
+  const rect=el.getBoundingClientRect(),calendar=el.closest('.family-mobile-calendar-controls').getBoundingClientRect();
+  const label=el.textContent.trim();
+  const styles=getComputedStyle(el);
+  return {width:rect.width,within:rect.left>=calendar.left-1&&rect.right<=calendar.right+1,
+   contentFits:el.scrollWidth<=el.clientWidth+1,label,aria:el.getAttribute('aria-label'),
+   after:getComputedStyle(el,'::after').content,overflow:styles.overflowX};
+ });
+ assert.equal(menu.label,'⋯','Calendar overflow button should not show long visible text');
+ assert.equal(menu.aria,'Flere kalendervalg');
+ assert.ok(menu.width<=39&&menu.within&&menu.contentFits,
+  'Overflow button must fit in its own fixed-width column without overlapping Friday');
  assert.ok(bounds.dates.every(d=>/^[0-9]{1,2}$/.test(d)),'Dates must be visible');
  const card=page.locator('#family-agenda-days .family-agenda-item:visible').first();
  assert.equal(await card.locator('.family-agenda-item-more').isVisible(),false);
