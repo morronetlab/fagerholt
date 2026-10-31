@@ -199,8 +199,8 @@
       <section class="family-agenda" aria-labelledby="family-agenda-title">
         <div class="family-agenda-top">
           <div><p class="family-eyebrow">SKOLE · FRITID · AVTALER</p>
-            <h2 id="family-agenda-title">Hele familiens uke</h2>
-            <p class="family-agenda-subtitle">Skolebeskjeder, leksefrister og egne aktiviteter samlet dag for dag.</p>
+            <h2 id="family-agenda-title">Skole og fritid</h2>
+            <p class="family-agenda-subtitle">Det som skjer mandag–fredag, med mulighet til å se helgens avtaler.</p>
           </div>
           <label class="family-agenda-filter">Vis aktiviteter for
             <select id="family-agenda-child" aria-label="Filtrer ukeoversikten etter barn">
@@ -210,18 +210,19 @@
         </div>
         <div class="family-agenda-key" aria-label="Forklaring av farger">
           <span class="family-agenda-key-school">Skole og beskjeder</span>
-          <span class="family-agenda-key-homework">Leksefrist</span>
           <span class="family-agenda-key-family">Familieaktivitet</span>
           <span class="family-agenda-key-municipal">Skolerute</span>
         </div>
         <p id="family-agenda-status" class="family-agenda-status" role="status" aria-live="polite"></p>
         <div id="family-agenda-days" class="family-agenda-days"></div>
+        <button type="button" id="family-agenda-weekend-toggle" class="family-agenda-weekend-toggle"
+          aria-expanded="false" aria-controls="family-agenda-days" hidden>Vis helg</button>
         <details id="family-agenda-undated" class="family-agenda-undated" hidden>
-          <summary id="family-agenda-undated-summary">Oppgaver uten bestemt dag</summary>
+          <summary id="family-agenda-undated-summary">Beskjeder uten bestemt dag</summary>
           <div id="family-agenda-undated-list" class="family-agenda-undated-list"></div>
         </details>
         <p id="family-agenda-missing" class="family-agenda-missing" hidden></p>
-        <p class="family-agenda-footnote">Skoleinformasjon kommer fra publiserte ukeplaner og kommunens skolerute. Familiens avtaler er registrert av dere. Sjekk skolens originalkilde ved avvik.</p>
+        <p class="family-agenda-footnote">Skolehendelser kommer fra ukeplaner og kommunens skolerute. Familiens avtaler er registrert av dere. Lekser og utstyr finner du på barnas ukeplaner. Sjekk originalkilden ved avvik.</p>
       </section>
       <section id="family-activity-section" class="family-activities" aria-labelledby="family-activity-title">
         <div class="family-activity-head">
