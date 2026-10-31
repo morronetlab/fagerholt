@@ -394,7 +394,11 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
  });
  $('onboard-children-back').addEventListener('click',()=>show('signed'));
  $('onboard-children-next').addEventListener('click',()=>{show('completed');status('');});
- $('onboard-dashboard').addEventListener('click',()=>{close({restorePage:false});onGoFamily();$('family-title').focus({preventScroll:true});});
+ $('onboard-dashboard').addEventListener('click',()=>{
+  close({restorePage:false});onGoFamily();
+  familyUI.showFirstRunGuide();
+  $('family-title').focus({preventScroll:true});
+ });
  $('onboard-open-invite').addEventListener('click',()=>{show('signed');$('account-invite-email').focus();});
  $('account-open-family').addEventListener('click',()=>{close({restorePage:false});onGoFamily();});
  void restore().then(()=>{if(invitation&&client?.isSignedIn()){open();show('signed');

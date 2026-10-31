@@ -20,6 +20,7 @@ import {calendarHighlights} from './shared/school-calendar-highlights.mjs';
 import {buildFamilyWeekAgenda} from './shared/family-week-agenda.mjs';
 import {focusedFamilyCalendar} from './shared/family-calendar-viewport.mjs';
 import {initFamilyMobileUI} from './family-mobile.mjs';
+import {firstRunGuideState} from './shared/first-run-guide.mjs';
 import {familyAgendaMarkup,familyAgendaItemHtml} from './shared/family-week-agenda-html.mjs';
 import {importantFamilyNotices} from './shared/family-important-notices.mjs';
 import {FAMILY_OVERVIEW_BATCH_MS,holdInitialHighlights,readCalendarCache,storeCalendarCache,cacheableCalendar,stableHighlightOrder,highlightIdentity} from './shared/family-overview-load.mjs';
@@ -53,6 +54,9 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  let active=false,profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
  const mobileUI=initFamilyMobileUI();
  let mobileMoreOpen=new Set();
+ const FIRST_RUN_KEY='skoleuka.first-run-guide.v1';
+ let firstRunFamilyId='';
+ try{firstRunFamilyId=sessionStorage.getItem(FIRST_RUN_KEY)||'';}catch{}
  let cloud=null,cloudChecks=new Map(),bagChecks=new Map(),focus='next',lastSynced=null,syncError='';
  const plans=new Map(),loading=new Set(),errors=new Map();
  // Public municipal dates are independent of individual PDF availability.
@@ -410,8 +414,28 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    '<button type="button" class="family-remove" data-family-remove="'+escape(p.id)+'">Fjern</button>'+
    '</div></article>';
  }
+ function dismissFirstRunGuide(){
+  firstRunFamilyId='';
+  try{sessionStorage.removeItem(FIRST_RUN_KEY);}catch{}
+  el('family-first-run').hidden=true;
+ }
+ function renderFirstRunGuide(){
+  const visible=Boolean(cloud?.familyId&&firstRunFamilyId===cloud.familyId);
+  el('family-first-run').hidden=!visible;
+  if(!visible)return;
+  const state=firstRunGuideState(profiles);
+  el('family-first-run-title').textContent=state.heading;
+  el('family-first-run-description').textContent=state.description;
+  el('family-first-run-next').textContent=state.primary+' →';
+  el('family-first-run-calendar').hidden=!state.childId;
+  for(const [i,li] of [...el('family-first-run').querySelectorAll('[data-first-run-step]')].entries()){
+   li.classList.toggle('is-done',state.checklist[i]===true);
+   li.setAttribute('aria-label',li.textContent+': '+(state.checklist[i]?'ferdig':'neste steg'));
+  }
+ }
  function render(){
   if(!active)return;
+  renderFirstRunGuide();
   const {now,summaries}=getSummaries();
   el('family-week').textContent='Uke '+now.week+' · '+now.year+(now.upcoming?' · neste uke':'');
   el('family-count').textContent=profiles.length+' barn';
@@ -808,6 +832,12 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     plans.clear();loadedWeekKey=null;activityUI.onFamilyChanged();if(active){render();void fetchPlans();}
   },
   refreshCloud:async()=>{await Promise.all([syncCloud(),activityUI.refresh()]);},
+  showFirstRunGuide:()=>{
+   if(!cloud?.familyId)return;
+   firstRunFamilyId=cloud.familyId;
+   try{sessionStorage.setItem(FIRST_RUN_KEY,firstRunFamilyId);}catch{}
+   if(active)render();
+  },
   enter:()=>{
     if(active)return;
     active=true;activityUI.enter();onModeChange();
@@ -828,6 +858,23 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     loading.clear();onModeChange();},
   refresh:()=>{if(active){if(cloud)void syncCloud();void activityUI.refresh();void fetchPlans();}}
  };
+ el('family-first-run-dismiss').addEventListener('click',dismissFirstRunGuide);
+ el('family-first-run-next').addEventListener('click',()=>{
+  const state=firstRunGuideState(profiles);
+  if(state.childId){
+   const child=byId(state.childId);
+   if(!child)return;
+   dismissFirstRunGuide();
+   openChildProfile(child);
+  }else{
+   mobileUI.selectView('overview');
+   openForm();
+  }
+ });
+ el('family-first-run-calendar').addEventListener('click',()=>{
+  dismissFirstRunGuide();
+  mobileUI.selectView('calendar',{scroll:true});
+ });
  el('family-add').addEventListener('click',()=>openForm());
  el('family-mobile-add').addEventListener('click',()=>openForm());
  el('family-mobile-admin-toggle').addEventListener('click',()=>{
