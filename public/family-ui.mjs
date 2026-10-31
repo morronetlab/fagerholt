@@ -853,6 +853,15 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  });
  for(const id of ['family-agenda-days','family-agenda-undated']){
   el(id).addEventListener('click',event=>{
+   const details=event.target.closest('[data-family-agenda-details]');
+   if(details){
+    const card=details.closest('.family-agenda-item');
+    if(!card)return;
+    const expanded=card.classList.toggle('is-expanded');
+    details.setAttribute('aria-expanded',String(expanded));
+    details.textContent=expanded?'Skjul detaljer':'Mer info';
+    return;
+   }
    const button=event.target.closest('[data-family-agenda-edit]');
    if(button){
     mobileUI.selectView('activities');
