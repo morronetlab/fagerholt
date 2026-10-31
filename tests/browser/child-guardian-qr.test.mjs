@@ -25,7 +25,8 @@ async function setup(t,{refuseRefresh=false}={}){
  const context=await browser.newContext();t.after(()=>context.close());
  const page=await context.newPage(),requests=[],errors=[];
  page.on('pageerror',error=>errors.push(error.message));
- await page.goto(server.baseURL+'/barn/manifest.webmanifest');
+ await page.goto(server.baseURL+'/barn/index.html',{waitUntil:'load'});
+ await page.locator('#child-setup').waitFor({state:'visible'});
  await page.setContent(dialogHTML);
  await page.route('**/api/child-access**',async route=>{
   const data=route.request().postDataJSON?.();
