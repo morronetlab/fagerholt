@@ -9,7 +9,7 @@ test('First-time setup without a child tells the parent the one missing step',()
  assert.match(guide.primary,/Legg til første barn/);
  assert.deepEqual(guide.checklist,[true,false,false]);
 });
-test('First-time setup with a child opens that child's week plan, not a school picker',()=>{
+test("First-time setup with a child opens that child\'s week plan, not a school picker",()=>{
  const guide=firstRunGuideState([{id:'a1',name:'Ailin'},{id:'b2',name:'Maya'}]);
  assert.equal(guide.stage,'open-plan');
  assert.equal(guide.childId,'a1');
