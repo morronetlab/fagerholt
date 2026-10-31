@@ -58,6 +58,22 @@ test('Unresolved important notice does not suppress individually PDF-proven home
  assert.match(digest.html,/Delvis kontrollert/);
  assert.match(digest.html,/viktige beskjeder er ikke ferdig verifisert/);
 });
+test('Legacy homework without AI quotes is grounded by PDF text, but unproven deadline is omitted',()=>{
+ const task={subject:'Norsk',text:'Les kapittel fire',dueDay:'Torsdag'};
+ const marked=markVerifiedHomework({...plan,homework:[task]},pages);
+ assert.equal(marked[0].digestSourceVerified,true);
+ assert.equal(marked[0].digestDeadlineVerified,false);
+ const partial={...plan,homework:marked,
+  sourceAudit:{status:'attention',sourceFacts:4,missing:1,unsupported:0}};
+ const message=buildWeeklyDigest({profiles,now:date(),plans:new Map([
+  ['fagerholt|3',partial],['fagerholt|7',unpublished]])});
+ assert.equal(message.readyPlans,1);
+ assert.match(message.text,/Norsk: Les kapittel fire/);
+ assert.doesNotMatch(message.text,/Torsdag: Norsk: Les kapittel fire/);
+ const unsourced=markVerifiedHomework({...plan,homework:[
+  {text:'Alle skal få en gratis privat helikoptertur',dueDay:'Fredag'}]},pages);
+ assert.equal(unsourced[0].digestSourceVerified,false);
+});
 function store(){
  const db=new Map();
  return {db,get:async key=>db.get(key)||null,
