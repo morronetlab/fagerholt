@@ -11,6 +11,7 @@ import {practicalHighlights} from './shared/practical-highlights.mjs';
 import {priorityKey,applyPracticalPriority} from './shared/practical-priority.mjs';
 import {practicalDigest} from './shared/practical-digest.mjs';
 import {calendarHighlights} from './shared/school-calendar-highlights.mjs';
+import {FAMILY_OVERVIEW_BATCH_MS,holdInitialHighlights,readCalendarCache,storeCalendarCache,cacheableCalendar} from './shared/family-overview-load.mjs';
 
 const el=id=>document.getElementById(id);
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -43,6 +44,21 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const plans=new Map(),loading=new Set(),errors=new Map();
  // Public municipal dates are independent of individual PDF availability.
  const calendars=new Map(),calendarFetchAt=new Map(),calendarInFlight=new Set();
+ const calendarStage=new Map();
+ // Keep child cards interactive while briefly batching first reminders paint.
+ let overviewBatch=null,overviewTimer=null;
+ const previousHtml=new Map();
+ const setHtml=(id,markup)=>{
+  if(previousHtml.get(id)===markup)return;
+  el(id).innerHTML=markup;previousHtml.set(id,markup);
+ };
+ const clearOverviewTimer=()=>{if(overviewTimer)clearTimeout(overviewTimer);overviewTimer=null;};
+ function releaseOverviewIfReady(){
+  if(!overviewBatch||overviewBatch.pairs.size)return;
+  const cal=calendar();
+  if(overviewBatch.schools.some(s=>!cacheableCalendar(calendars.get(s),s,cal.year,cal.week)))return;
+  clearOverviewTimer();overviewBatch=null;render();
+ }
  let sourceHealth=null,sourceHealthFetchedAt=0,sourceHealthBusy=false;
  // Poll one server-side AI job per unique school/grade, not once per child.
  const pendingJobs=new Map(),pollTimers=new Map(),autoRetries=new Map();
@@ -117,28 +133,47 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    const marker=school+'|'+week;
    const current=calendars.get(school);
    if(calendarInFlight.has(marker)||
-     current?.year===now.year&&current?.week===now.week&&
-     Date.now()-(calendarFetchAt.get(marker)||0)<60*60_000)continue;
+      cacheableCalendar(current,school,now.year,now.week)&&
+      Date.now()-(calendarFetchAt.get(marker)||0)<15*60_000){
+    releaseOverviewIfReady();continue;
+   }
+   let stored=null;
+   try{stored=readCalendarCache(sessionStorage,school,now.year,now.week);}catch{}
+   if(stored){
+    calendars.set(school,stored);calendarFetchAt.set(marker,Date.now());
+    calendarStage.set(marker,2);releaseOverviewIfReady();render();continue;
+   }
    calendarInFlight.add(marker);
+   calendarStage.set(marker,0);
    void (async()=>{
-    try{
-     const response=await getJson('/api/school-calendar?school='+encodeURIComponent(school)+
-      '&year='+now.year+'&week='+now.week,12500);
-     if(!active||weekKey(calendar())!==week)return;
-     if(response.schoolId===school&&response.year===now.year&&response.week===now.week){
-      calendars.set(school,response);
-      calendarFetchAt.set(marker,Date.now());
-     }
-    }catch{
-     if(active&&weekKey(calendar())===week){
-      calendars.set(school,{schoolId:school,year:now.year,week:now.week,
-       sourceStatus:'unavailable',events:[]});
-      calendarFetchAt.set(marker,Date.now()-50*60_000);
-     }
-    }finally{
-     calendarInFlight.delete(marker);
-     if(active)render();
+    const url='/api/school-calendar?school='+encodeURIComponent(school)+
+     '&year='+now.year+'&week='+now.week;
+    const accept=(response,stage)=>{
+     if(!active||weekKey(calendar())!==week||
+        !cacheableCalendar(response,school,now.year,now.week)||
+        (calendarStage.get(marker)||0)>stage)return;
+     calendarStage.set(marker,stage);
+     calendars.set(school,response);
+     // Only public dates, scoped to this school and week, are retained.
+     try{storeCalendarCache(sessionStorage,response,school,now.year,now.week);}catch{}
+     calendarFetchAt.set(marker,Date.now());
+     releaseOverviewIfReady();render();
+    };
+    // Fast official reserve copy first; the regular live-checked response
+    // runs in parallel and supersedes it even if it resolves earlier.
+    const snapshot=getJson(url+'&mode=snapshot',4000).then(
+     response=>accept(response,1)).catch(()=>{});
+    const live=getJson(url,12500).then(
+     response=>accept(response,2)).catch(()=>{});
+    await Promise.allSettled([snapshot,live]);
+    calendarInFlight.delete(marker);
+    if(!active||weekKey(calendar())!==week)return;
+    if(!cacheableCalendar(calendars.get(school),school,now.year,now.week)){
+     calendars.set(school,{schoolId:school,year:now.year,week:now.week,
+      sourceStatus:'unavailable',events:[]});
+     calendarFetchAt.set(marker,Date.now()-50*60_000);
     }
+    releaseOverviewIfReady();render();
    })();
   }
  }
@@ -265,7 +300,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   el('family-add').disabled=profiles.length>=FAMILY_MAX_PROFILES;
   el('family-add').textContent=profiles.length>=FAMILY_MAX_PROFILES?'Maks seks barn':'+ Legg til barn';
   el('family-empty').hidden=profiles.length!==0;
-  el('family-cards').innerHTML=profiles.map(p=>childCard(p,summaries.get(p.id),now)).join('');
+  setHtml('family-cards',profiles.map(p=>childCard(p,summaries.get(p.id),now)).join(''));
   const {next}=schoolDayIndices(now);
   const shownFocus=now.upcoming?'week':focus;
   const tabs=document.querySelector('.family-focus-tabs');
@@ -368,10 +403,18 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const empty=loading.size?'Sjekker ukeplan for uke '+now.week+' …':
    !profiles.length?'Legg til et barn for å se huskelisten.':
    ready.length?'Ingen spesielle beskjeder eller ekstra ting å pakke i denne perioden. Se hvert barns ukeplan for lekser.':noPlan;
-  el('family-reminders').innerHTML=!now.upcoming&&shownFocus==='next'&&next==null?
+  const hold=overviewBatch&&holdInitialHighlights({
+   startedAt:overviewBatch.startedAt,now:Date.now(),
+   pendingPairs:overviewBatch.pairs.size,
+   pendingCalendars:overviewBatch.schools.filter(s=>
+    !cacheableCalendar(calendars.get(s),s,now.year,now.week)).length});
+  const reminderBody=!now.upcoming&&shownFocus==='next'&&next==null?
    '<p class="family-muted">Neste ukes oppgaver blir tilgjengelige når skolen publiserer ny ukeplan.</p>':
    reminderMarkup+expand||
    '<p class="family-muted">'+escape(empty)+'</p>';
+  setHtml('family-reminders',hold?
+   '<p class="family-muted family-reminders-loading" role="status">Samler ukeplaner og skolerute …</p>':
+   reminderBody);
   const analyzing=[...pendingJobs.values()].filter(job=>job.mode==='poll').length;
   el('family-load-status').textContent=loading.size?'Sjekker '+loading.size+' ukeplan(er) for nye PDF-er …':
    analyzing?'AI tolker '+analyzing+' ukeplan(er) automatisk. Resultatet vises når analysen er ferdig.':
@@ -442,6 +485,9 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   if(!active||sequence!==run||!pairProfiles(pair).length)return;
   applyPair(pair,plan,error,sequence);
   setPending(pair,plan,sequence);
+  if(overviewBatch?.sequence===sequence){
+   overviewBatch.pairs.delete(pair);releaseOverviewIfReady();
+  }
   if(!error&&plan?.aiStatus==='ready')requestPriority(pair,plan,sequence);
  }
  async function pollPair(pair,sequence){
@@ -505,7 +551,6 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  }
  async function fetchPlans(){
   if(!active)return;
-  void fetchCalendars();
   const sequence=++run,now=calendar();
   const targetKey=weekKey(now);
   if(loadedWeekKey!==targetKey){
@@ -517,8 +562,21 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   stopPollTimers();pendingJobs.clear();
   loading.clear();errors.clear();
   for(const p of profiles)loading.add(p.id);
-  render();
   const pairs=[...new Set(profiles.map(pairOf))];
+  clearOverviewTimer();
+  if(pairs.length&&profiles.some(p=>{
+   const value=plans.get(p.id);
+   return !value||value.year!==now.year||value.week!==now.week;
+  })){
+   const batch={sequence,startedAt:Date.now(),pairs:new Set(pairs),
+    schools:[...new Set(profiles.map(p=>p.school))]};
+   overviewBatch=batch;
+   overviewTimer=setTimeout(()=>{
+    if(overviewBatch===batch){overviewBatch=null;render();}
+   },FAMILY_OVERVIEW_BATCH_MS);
+  }else overviewBatch=null;
+  // Start both integrations together. Do not serialize municipal with PDF.
+  void fetchCalendars();render();
   let cursor=0;
   await Promise.all(Array.from({length:Math.min(2,pairs.length)},async()=>{
    while(cursor<pairs.length){
@@ -595,7 +653,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   refreshCloud:syncCloud,
   enter:()=>{
     if(active)return;
-    active=true;render();onModeChange();void fetchCalendars();
+    active=true;onModeChange();
     // Returning from an already-open child plan should restore instantly,
     // not re-download the same school PDF seconds later.
     const now=calendar();
@@ -605,8 +663,10 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
        return plan?.year===now.year&&plan?.week===now.week&&plan.aiStatus==='ready';
       });
     if(!recentlyChecked)void fetchPlans();
+    else{render();void fetchCalendars();}
   },
-  leave:()=>{active=false;run++;stopPollTimers();pendingJobs.clear();autoRetries.clear();
+  leave:()=>{active=false;run++;clearOverviewTimer();overviewBatch=null;
+   stopPollTimers();pendingJobs.clear();autoRetries.clear();
     for(const [pair,state] of priorityStates)if(state.status!=='ready')priorityStates.delete(pair);
     loading.clear();onModeChange();},
   refresh:()=>{if(active){if(cloud)void syncCloud();void fetchPlans();}}
