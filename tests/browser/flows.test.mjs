@@ -251,6 +251,7 @@ test('V2 family overview combines two children and keeps completion independentl
  assert.equal(await page.locator('#family-reminders').isVisible(),true);
  await page.locator('[data-family-focus="week"]').click();
  assert.equal(await page.locator('[data-family-focus="week"]').getAttribute('aria-pressed'),'true');
+ await page.locator('#family-reminders').getByText(/Gymtøy/).waitFor({state:'visible'});
  assert.match(await page.locator('#family-reminders').innerText(),/Gymtøy/);
  assert.doesNotMatch(await page.locator('#family-reminders').innerText(),/Les en bok fra skolen/);
  await page.locator('[data-family-focus="today"]').click();
@@ -384,6 +385,7 @@ test('Next-week family dashboard shows new weekly tasks with the correct week on
  await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
  assert.match(await page.locator('#family-cards').innerText(),/Lekser i uke/);
  assert.match(await page.locator('#family-cards').innerText(),/Les til mandag NESTE UKE/);
+ await page.locator('#family-reminders').getByText(/Gymtøy for neste uke/).waitFor({state:'visible'});
  assert.match(await page.locator('#family-reminders').innerText(),/Gymtøy for neste uke/);
  assert.match(await page.locator('.family-child-week').innerText(),new RegExp('UKE '+shown.week));
  assert.doesNotMatch(await page.locator('#family-view').innerText(),/I dag/);
@@ -698,10 +700,10 @@ test('Friday after 14:00: next week shows municipality school-free date even whe
  await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
   version:2,profiles:[{id:'calendar-school-01',name:'Barn A',school:'fagerholt',grade:'3',group:''}]
  })));
- let calls=0;
+ const calls=[];
  await page.route('**/api/school-calendar?**',async route=>{
   const params=new URL(route.request().url()).searchParams;
-  calls++;
+  calls.push(params.get('mode')||'live');
   assert.equal(params.get('school'),'fagerholt');
   assert.equal(params.get('week'),'45');
   return reply(route,{schoolId:'fagerholt',year:2026,week:45,
@@ -722,7 +724,8 @@ test('Friday after 14:00: next week shows municipality school-free date even whe
  assert.equal(await card.locator('a').first().getAttribute('href'),
   'https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/skoleruta/');
  assert.equal(await page.locator('.family-reminder-municipal').count(),1);
- assert.equal(calls,1,'One municipal fetch per school/week, not per child');
+ assert.deepEqual(calls.sort(),['live','snapshot'],
+  'Exactly one fast snapshot and one live calendar request per school/week, not per child');
  assert.deepEqual(errors,[]);
 });
 
