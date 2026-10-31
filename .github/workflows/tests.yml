@@ -23,6 +23,9 @@ jobs:
           node-version: '22'
       - run: npm ci --no-audit --no-fund
       - run: npm run check
+      - name: Inspect public next-week plan readiness (temporary)
+        if: github.head_ref == 'fix/digest-source-readiness-45'
+        run: node scripts/diagnose-weekly-digest.mjs
       - name: Verify official Kristiansand school calendar HTML and distinct SFO dates
         # External municipality site may be blocked; never present a blocked
         # source as verified. Check this step result separately before merge.
