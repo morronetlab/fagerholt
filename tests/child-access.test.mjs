@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createChildAccessHandler,PAIRING_VALID_MS,DEVICE_VALID_MS} from '../lib/child-access.mjs';
 import {taskFingerprint} from '../public/shared/task-fingerprint.mjs';
+import {packingFingerprint} from '../public/shared/packing-fingerprint.mjs';
 const family='00000000-0000-4000-8000-000000000011';
 const child='00000000-0000-4000-8000-000000000022';
 const parent='00000000-0000-4000-8000-000000000033';
@@ -16,15 +17,19 @@ const schoolPlan={year:2026,week:45,grade:'3',schoolId:'fagerholt',
  parser:'ai',aiStatus:'ready',status:'ready',homework:[
   {text:'Les kapittel 1',subject:'Norsk',group:'Rød',dueDay:'Torsdag'},
   {text:'Regn side 12',subject:'Matte',group:'Blå',dueDay:'Fredag'}
- ]};
+ ],days:{Mandag:{bring:[{label:'Matboks',group:'Rød'},{label:'Svømmetøy',group:'Blå'}]}}};
 const taskKey=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:45,
  task:schoolPlan.homework[0]});
 const otherGroupKey=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:45,
  task:schoolPlan.homework[1]});
+const packingKey=packingFingerprint({school:'fagerholt',grade:'3',year:2026,week:45,
+ day:'Mandag',item:schoolPlan.days.Mandag.bring[0]});
+const otherPackingKey=packingFingerprint({school:'fagerholt',grade:'3',year:2026,week:45,
+ day:'Mandag',item:schoolPlan.days.Mandag.bring[1]});
 const ok=(payload,status=200)=>new Response(payload==null?null:JSON.stringify(payload),{
  status,headers:{'Content-Type':'application/json'}});
 function fixture({authStatus=200,planError=false}={}){
- const pairs=[],devices=[],calls=[],progress=[];let sequence=0;
+ const pairs=[],devices=[],calls=[],progress=[],packing=[];let sequence=0;
  const secret=()=>String(++sequence).padStart(64,'a');
  const fetchImpl=async(raw,options={})=>{
   const url=new URL(raw),pathname=url.pathname,params=url.searchParams;
@@ -81,6 +86,18 @@ function fixture({authStatus=200,planError=false}={}){
    if(hash)return ok(devices.filter(x=>x.secret_hash===hash&&!x.revoked_at));
    return ok(devices.filter(x=>!x.revoked_at));
   }
+  if(pathname==='/rest/v1/packing_progress'){
+   if(options.method==='POST'){
+    const row=JSON.parse(options.body);
+    assert.equal(row.family_id,family);assert.equal(row.child_id,child);
+    assert.equal(row.updated_by_device,devices[0]?.id);
+    const existing=packing.find(x=>x.task_key===row.task_key);
+    if(existing)Object.assign(existing,row);else packing.push(row);
+    return ok([{task_key:row.task_key,completed:row.completed}],201);
+   }
+   return ok(packing.filter(row=>row.child_id===child&&row.family_id===family)
+    .map(x=>({task_key:x.task_key,completed:x.completed})));
+  }
   if(pathname==='/rest/v1/homework_progress'){
    const matches=row=>row.child_id===child&&row.family_id===family&&
     row.school_year===Number(params.get('school_year')?.replace('eq.',''))&&
@@ -111,12 +128,12 @@ function fixture({authStatus=200,planError=false}={}){
  const handler=createChildAccessHandler({env,fetchImpl,now,secret});
  const request=(action,body=null,{token=jwt,origin='https://skoleuka.no'}={})=>
   handler(new Request('https://skoleuka.no/api/child-access'+
-    (body===null?'?action='+action+'&childId='+child+(['child','progress'].includes(action)?'&year=2026&week=45':''):''),{
+    (body===null?'?action='+action+'&childId='+child+(['child','progress','packing'].includes(action)?'&year=2026&week=45':''):''),{
    method:body===null?'GET':'POST',
    headers:{Origin:origin,Authorization:'Bearer '+token, ...(body!==null?{'Content-Type':'application/json'}:{})},
    body:body===null?undefined:JSON.stringify({action,...body})
   }));
- return {request,pairs,devices,calls,progress};
+ return {request,pairs,devices,calls,progress,packing};
 }
 test('A confirmed guardian may mint one-use 10-minute QR; data and QR SVG never expose service key',async()=>{
  const f=fixture(),r=await f.request('create',{childId:child});
@@ -326,4 +343,36 @@ test('Server fails closed if authoritative school plan cannot be loaded',async()
   taskKey,completed:true},{token});
  assert.equal(attempt.status,503);
  assert.equal(f.progress.length,0);
+});
+
+test('Shared packing checks use the child's real group, can be undone, and reject forged keys',async()=>{
+ const f=fixture(),token=await childLogin(f);
+ const forged=await f.request('set-packing',{year:2026,week:45,
+  taskKey:'deadbeefdeadbeef',completed:true},{token});
+ const otherGroup=await f.request('set-packing',{year:2026,week:45,
+  taskKey:otherPackingKey,completed:true},{token});
+ assert.deepEqual([forged.status,otherGroup.status],[403,403]);
+ assert.equal(f.packing.length,0);
+ const saved=await f.request('set-packing',{year:2026,week:45,
+  taskKey:packingKey,completed:true},{token});
+ assert.equal(saved.status,200);
+ assert.equal(f.packing.length,1);assert.equal(f.packing[0].completed,true);
+ const read=await f.request('packing',null,{token});
+ assert.deepEqual((await read.json()).progress,[{key:packingKey,completed:true}]);
+ const undone=await f.request('set-packing',{year:2026,week:45,
+  taskKey:packingKey,completed:false},{token});
+ assert.equal(undone.status,200);
+ assert.equal(f.packing[0].completed,false);
+ await f.request('revoke',{childId:child,deviceId:f.devices[0].id});
+ assert.equal((await f.request('set-packing',{year:2026,week:45,
+  taskKey:packingKey,completed:true},{token})).status,401);
+});
+test('Packing policy migration limits guardian access and device stamp checks family and child',()=>{
+ const sql=readFileSync(new URL('../supabase/migrations/20261031190000_packing_progress_sync.sql',import.meta.url),'utf8');
+ assert.match(sql,/packing_progress enable row level security/i);
+ assert.match(sql,/d\.child_id=new\.child_id/);
+ assert.match(sql,/d\.family_id=new\.family_id/);
+ assert.match(sql,/d\.revoked_at is null/);
+ assert.match(sql,/parent_family_ids\(\)/);
+ assert.match(sql,/grant select,insert,update on public\.packing_progress to service_role/i);
 });
