@@ -14,7 +14,7 @@ const plan={status:'ok',parser:'ai',aiStatus:'ready',year:2026,week:44,pdf,
   {subject:'Norsk',text:'Les sidene 20–24',dueDay:'Torsdag',group:'Rød'},
   {subject:'Matte',text:'Øv på gangetabellen',dueDay:null},
   {subject:'Engelsk',text:'Lær tre gloser',dueDay:'Fredag',group:'Blå'}
- ],notices:[],everyday:[],
+ ],notices:[{text:'Foreldremøte uten dato – bekreft tidspunkt',group:'Rød'}],everyday:[],
  days:{Mandag:{bring:[],events:[]},Tirsdag:{bring:[],events:[]},
   Fredag:{bring:[{label:'Gymtøy',group:'Blå'}],events:[]}},
  dayNotes:{Tirsdag:[{text:'Vaksinasjon tirsdag: Husk samtykkeskjema.',group:'Rød'}]},
@@ -38,18 +38,20 @@ const activities=[
 const agenda=childId=>buildFamilyWeekAgenda({
  profiles:[red,blue],summaries,plans,calendars,activities,calendar,childId
 });
-test('Seven-day agenda combines PDF homework, reminders, municipal dates and weekend family activities',()=>{
+test('Seven-day source model holds school notices, municipal dates and family events without homework or gear',()=>{
  const result=agenda('');
  assert.deepEqual(result.days.map(x=>x.date),[
   '2026-10-26','2026-10-27','2026-10-28','2026-10-29','2026-10-30','2026-10-31','2026-11-01']);
  const tuesday=result.days[1].items;
  assert.ok(tuesday.some(x=>x.kind==='school'&&/Vaksinasjon/.test(x.title)));
  assert.ok(tuesday.some(x=>x.kind==='family'&&/middag/.test(x.title)));
- assert.ok(result.days[3].items.some(x=>x.kind==='homework'&&/sidene 20/.test(x.title)));
+ assert.ok(!result.days.flatMap(x=>x.items).some(x=>x.kind==='homework'||x.details==='Husk utstyr'));
  assert.ok(result.days[4].items.some(x=>x.kind==='municipal'&&/Planleggingsdag/.test(x.title)));
  assert.ok(result.days[6].items.some(x=>x.kind==='family'&&/Korpskonsert/.test(x.title)));
  assert.equal(result.days[5].date,'2026-10-31','Weekend is present even without school events');
- assert.ok(result.undated.some(x=>x.kind==='homework'&&/gangetabellen/.test(x.title)));
+ assert.ok(result.undated.some(x=>x.kind==='school'&&/Foreldremøte/.test(x.title)));
+ assert.ok(!result.undated.some(x=>x.kind==='homework'));
+ assert.ok(!result.days.flatMap(x=>x.items).some(x=>/Gymtøy|gangetabellen|sidene 20/.test(x.title)));
  assert.ok(result.undated.every(x=>x.date===null));
  assert.match(result.days[4].items.find(x=>x.kind==='municipal').details,/reserveversjon/);
  assert.equal(result.missingProfiles.length,0);
@@ -60,14 +62,16 @@ test('Child filter includes all-family activities and right school; never leaks 
  const allBlue=[...b.days.flatMap(d=>d.items),...b.undated];
  assert.ok(allRed.some(x=>/Felles middag/.test(x.title)));
  assert.ok(allBlue.some(x=>/Felles middag/.test(x.title)));
- assert.ok(allRed.some(x=>/Les sidene/.test(x.title)));
- assert.ok(!allBlue.some(x=>/Les sidene/.test(x.title)));
+ assert.ok(allRed.some(x=>/Foreldremøte/.test(x.title)));
+ assert.ok(!allBlue.some(x=>/Foreldremøte/.test(x.title)));
  assert.ok(allRed.some(x=>/Korpskonsert/.test(x.title)));
  assert.ok(!allBlue.some(x=>/Korpskonsert/.test(x.title)));
  assert.ok(allBlue.some(x=>/Tennis/.test(x.title)));
  assert.ok(!allRed.some(x=>/Tennis/.test(x.title)));
- assert.ok(allBlue.some(x=>/Lær tre gloser/.test(x.title)));
- assert.ok(!allRed.some(x=>/Lær tre gloser/.test(x.title)));
+ assert.ok(!allBlue.some(x=>x.kind==='homework'));
+ assert.ok(!allRed.some(x=>x.kind==='homework'));
+ assert.ok(!allBlue.some(x=>x.details==='Husk utstyr'));
+ assert.ok(!allRed.some(x=>x.details==='Husk utstyr'));
  assert.ok(allRed.some(x=>x.kind==='municipal'),'School calendar remains available under both siblings');
  assert.ok(allBlue.some(x=>x.kind==='municipal'));
  assert.ok(allRed.some(x=>/Vaksinasjon/.test(x.title)));
@@ -89,7 +93,8 @@ test('Output shows official PDF links and safely escapes user and AI text',()=>{
  assert.match(html.days,/Offisiell skolerute/);
  assert.match(html.days,/data-family-agenda-edit="red-sunday"/);
  assert.match(html.days,/Hele familien/);
- assert.match(html.undated,/Frist ikke oppgitt/);
+ assert.match(html.undated,/Foreldremøte uten dato/);
+ assert.doesNotMatch(html.days+html.undated,/Les sidene|Øv på gangetabellen|Gymtøy/);
  const injected=familyAgendaItemHtml({kind:'family',title:'<img src=x onerror=alert(1)>',
   details:'<script>bad</script>',scope:'<unsafe>',
   activityId:'abc" onclick="evil()',source:{url:'javascript:alert(1)'}});
