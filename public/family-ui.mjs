@@ -382,7 +382,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    s.done+' av '+s.total+' ferdig</span>':
    '<span class="family-mobile-progress-label">'+escape(
     plan?.status==='unpublished'?'Ukeplan ikke publisert':errors.get(p.id)||'Henter ukeplan …')+'</span>';
-  const compact='<button type="button" class="family-child-compact" data-family-open="'+escape(p.id)+'" '+
+  const compact='<button type="button" class="family-child-compact" data-family-compact-open="'+escape(p.id)+'" '+
    'aria-label="Åpne ukeplan for '+escape(p.name)+'">'+
    '<span class="family-mobile-child-head"><span class="family-avatar" aria-hidden="true">'+
    escape(p.name.slice(0,1).toUpperCase())+'</span><span class="family-mobile-child-identity">'+
@@ -978,8 +978,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    api.refresh();
    return;
   }
-  const open=e.target.closest('[data-family-open]');
-  if(open){const p=byId(open.dataset.familyOpen);if(p)openChildProfile(p);return;}
+  const open=e.target.closest('[data-family-compact-open], [data-family-open]');
+  if(open){const p=byId(open.dataset.familyCompactOpen||open.dataset.familyOpen);if(p)openChildProfile(p);return;}
   const pair=e.target.closest('[data-family-pair]');
   if(pair){const p=byId(pair.dataset.familyPair);if(p&&cloud)childPairingUI.open(p);return;}
   const edit=e.target.closest('[data-family-edit]');
