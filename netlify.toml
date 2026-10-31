@@ -73,3 +73,9 @@
   to = "/.netlify/functions/school-calendar"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/source-health"
+  to = "/.netlify/functions/source-health"
+  status = 200
+  force = true

@@ -43,6 +43,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const plans=new Map(),loading=new Set(),errors=new Map();
  // Public municipal dates are independent of individual PDF availability.
  const calendars=new Map(),calendarFetchAt=new Map(),calendarInFlight=new Set();
+ let sourceHealth=null,sourceHealthFetchedAt=0,sourceHealthBusy=false;
  // Poll one server-side AI job per unique school/grade, not once per child.
  const pendingJobs=new Map(),pollTimers=new Map(),autoRetries=new Map();
  const priorityStates=new Map(),priorityTimers=new Map();
@@ -99,7 +100,17 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
 
  const calendar=()=>familyWeekCalendar(new Date(),'Europe/Oslo');
  const weekKey=now=>now.year+'-'+String(now.week).padStart(2,'0');
+ async function refreshSourceHealth(){
+  if(!active||sourceHealthBusy||Date.now()-sourceHealthFetchedAt<20*60_000)return;
+  sourceHealthBusy=true;
+  try{
+   sourceHealth=await getJson('/api/source-health',9000);
+   sourceHealthFetchedAt=Date.now();
+  }catch{sourceHealth={status:'unavailable',stale:true};sourceHealthFetchedAt=Date.now();}
+  finally{sourceHealthBusy=false;if(active)render();}
+ }
  async function fetchCalendars(){
+  void refreshSourceHealth();
   if(!active||!profiles.length)return;
   const now=calendar(),week=weekKey(now);
   for(const school of new Set(profiles.map(p=>p.school))){
@@ -279,11 +290,19 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const unusable=statuses.some(x=>x.sourceStatus==='unavailable');
   const snapshots=statuses.filter(x=>x.sourceStatus==='snapshot');
   el('family-calendar-source').hidden=!profiles.length;
+  const monitored=sourceHealth?.status==='verified'&&!sourceHealth?.stale;
+  const sourceWarning=sourceHealth?.status==='changed'?
+   'Endringer i kommunens kilde må kontrolleres. Reserveversjonen brukes der datoene er uavklarte.':
+   sourceHealth?.stale?
+   'Kommunens kilde er ikke nylig verifisert. Reserveversjonen fra sist kontrollerte kilde kan være utdatert.':
+   '';
   el('family-calendar-status').textContent=!profiles.length?'':absent?
    'Sjekker den offisielle skoleruta for aktuelle skoler …':
    unusable?'Skoleruta er ikke tilgjengelig for alle skoler. Sjekk kommunens oversikt direkte.':
-   snapshots.length?'Kommunal skolerute: enkelte datoer er hentet fra sist kontrollerte kilde. Lokale avvik kan forekomme.':
-   'Kommunal skolerute er kontrollert. Lokale avvik kan forekomme.';
+   sourceWarning|| (snapshots.length?
+    'Kommunal skolerute: reserveversjon med dato for siste kontroll. Lokale avvik kan forekomme.':
+    monitored?'Kommunens kilde er nylig verifisert. Lokale avvik kan forekomme.':
+    'Kommunal skolerute: automatisk kildekontroll er ikke bekreftet. Sjekk originalen ved tvil.');
   el('family-report-missing').hidden=profiles.length===0;
   const limit=5,displayed=showAllHighlights?cards:cards.slice(0,limit);
   const reminderMarkup=displayed.map(x=>{
