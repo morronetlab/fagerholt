@@ -1,5 +1,5 @@
 -- Child device pairing: secure, short-lived one-time link and revocable read-only sessions.
--- Intentionally not applied to production until reviewed and tested.
+-- Applied to the Skoleuka Supabase project on 2026-10-31 as migration 20261031150237.
 create table if not exists public.child_pairings (
   id uuid primary key default gen_random_uuid(),
   family_id uuid not null,

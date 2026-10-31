@@ -53,10 +53,11 @@ function fixture(){
      created_at:now().toISOString()});return ok(null,201);
    }
    if(options.method==='PATCH'){
-    const id=params.get('id')?.replace('eq.','');
-    const d=devices.find(x=>x.id===id);
+    const id=params.get('id')?.replace('eq.',''),hash=params.get('secret_hash')?.replace('eq.','');
+    const d=devices.find(x=>!x.revoked_at&&
+      (id?x.id===id:hash?x.secret_hash===hash:false));
     if(d)d.revoked_at=JSON.parse(options.body).revoked_at;
-    return ok(null,204);
+    return options.headers?.Prefer==='return=representation'?ok(d?[{id:d.id}]:[]):ok(null,204);
    }
    const hash=params.get('secret_hash')?.replace('eq.','');
    if(hash)return ok(devices.filter(x=>x.secret_hash===hash&&!x.revoked_at));
@@ -133,10 +134,33 @@ test('Reject cross-origin posts and invalid, expired, or replayed QR before any 
  assert.equal(f.devices.length,0);
 });
 test('Migration denies anon/authenticated direct access and makes child sessions revocable',()=>{
- const sql=readFileSync(new URL('../supabase/migrations/20261031_child_pairing_v1.sql',import.meta.url),'utf8');
+ const sql=readFileSync(new URL('../supabase/migrations/20261031150237_child_pairing_v1.sql',import.meta.url),'utf8');
  assert.match(sql,/alter table public\.child_pairings enable row level security/);
  assert.match(sql,/alter table public\.child_device_sessions enable row level security/);
  assert.match(sql,/revoke all on public\.child_device_sessions from public,anon,authenticated/);
  assert.match(sql,/foreign key \(child_id,family_id\)/);
  assert.match(sql,/revoked_at timestamptz/);
+});
+
+test('A child can revoke the exact current device session without a guardian JWT',async()=>{
+ const f=fixture();
+ const link=(await (await f.request('create',{childId:child})).json()).link;
+ const token=link.split('pair=')[1];
+ const issued=(await (await f.request('redeem',{token})).json()).session;
+ assert.equal(f.devices.length,1);
+ const revoked=await f.request('self-revoke',{}, {token:issued});
+ assert.equal(revoked.status,200);
+ assert.equal((await revoked.json()).revoked,true);
+ assert.ok(f.devices[0].revoked_at);
+ assert.equal((await f.request('child',null,{token:issued})).status,401);
+ assert.equal((await f.request('self-revoke',{}, {token:issued})).status,401);
+ assert.equal((await f.request('self-revoke',{}, {token:'bad'})).status,401);
+ assert.ok(f.calls.filter(x=>x.path==='/auth/v1/user').length===1,
+  'Only parent QR creation may require a guardian JWT');
+});
+test('Deployed migration version matches Supabase history and grants only server-side API access',()=>{
+ const service=readFileSync(new URL('../supabase/migrations/20261031150326_child_pairing_service_access.sql',import.meta.url),'utf8');
+ assert.match(service,/grant select, insert, update, delete\s+on table public\.child_pairings, public\.child_device_sessions\s+to service_role/);
+ assert.doesNotMatch(service,/grant [^;]+ to (?:anon|authenticated)\s*;/i);
+ assert.match(service,/child_pairings_child_family_idx/);
 });

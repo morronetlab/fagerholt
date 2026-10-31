@@ -30,6 +30,7 @@ async function get(path,{method='GET',body,token=null}={}){
  return data;
 }
 function setup(message){
+ state.child=null;state.plan=null;state.activities=[];
  $('child-ready').hidden=true;$('child-setup').hidden=false;
  $('child-setup-message').textContent=message||
   'Be en foresatt åpne «Inviter barn» under din profil og skann QR-koden med denne enheten.';
@@ -153,10 +154,26 @@ $('child-days').addEventListener('click',e=>{
 });
 $('child-refresh').addEventListener('click',()=>void load());
 $('child-retry').addEventListener('click',()=>void load());
-$('child-remove').addEventListener('click',()=>{
- if(!confirm('Fjerne ukeplanen fra denne enheten? En foresatt kan også oppheve tilgangen.'))return;
- setToken(null);state.child=null;setup();
+$('child-remove').addEventListener('click',async()=>{
+ if(!confirm('Fjerne denne enhetens tilgang? Du trenger en ny QR-kode for å bruke appen igjen.'))return;
+ const token=getToken();
+ $('child-remove').disabled=true;
+ try{
+  if(token)await get('/api/child-access',{method:'POST',
+   body:{action:'self-revoke'},token});
+ }catch{
+  // The server may be offline or the session may already be invalid.
+  // Keep the device offline/inactive locally; guardian can revoke it online.
+ }finally{
+  setToken(null);state.session=null;setup();
+  $('child-remove').disabled=false;
+ }
 });
+document.addEventListener('visibilitychange',()=>{
+ if(document.visibilityState==='visible'&&getToken())void load();
+});
+// Re-check guardian revocations while the app stays open.
+setInterval(()=>{if(document.visibilityState==='visible'&&getToken())void load();},15*60_000);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/barn/sw.js',{scope:'/barn/'}).catch(()=>{});
 const pair=new URL(location.href).searchParams.get('pair');
 if(pair)void activate(pair);
