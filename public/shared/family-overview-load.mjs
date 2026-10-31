@@ -35,3 +35,24 @@ export function holdInitialHighlights({startedAt=0,now=Date.now(),pendingPairs=0
  return startedAt>0&&now-startedAt<FAMILY_OVERVIEW_BATCH_MS&&
   (pendingPairs>0||pendingCalendars>0);
 }
+
+/** Preserve the currently visible practical-list order when secondary AI scores
+ * arrive, while always allowing newly discovered workday/health warnings to
+ * appear ahead of less important information.
+ */
+import {adultImpactRank} from './adult-impact.mjs';
+export const highlightIdentity=item=>[item.sourceType||'school',item.id||item.schoolId||'',
+ item.kind||'',String(item.label||'').normalize('NFKC').trim().replace(/\s+/gu,' ').toLocaleLowerCase('nb-NO')].join('|');
+export function stableHighlightOrder(items,previousIds=[]){
+ if(!previousIds.length)return items;
+ const order=new Map(previousIds.map((key,i)=>[key,i]));
+ return items.map((item,i)=>({item,i})).sort((a,b)=>{
+  const impact=adultImpactRank(b.item.label)-adultImpactRank(a.item.label);
+  if(impact)return impact;
+  const pa=order.get(highlightIdentity(a.item)),pb=order.get(highlightIdentity(b.item));
+  if(pa!=null&&pb!=null)return pa-pb;
+  if(pa!=null)return -1;
+  if(pb!=null)return 1;
+  return a.i-b.i;
+ }).map(x=>x.item);
+}
