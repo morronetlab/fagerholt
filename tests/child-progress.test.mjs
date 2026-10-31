@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {childTaskKey,checkedProgress,importCandidates} from '../public/barn/child-progress.mjs';
 import {taskFingerprint as parentFingerprint} from '../public/shared/cloud-account.mjs';
 import {scopedHomeworkItems} from '../public/barn/child-learning.mjs';
@@ -63,4 +64,15 @@ test('Daily reading assignment has identical keys and completion in child and gu
  assert.equal(summary.total,5);
  assert.equal(summary.done,2);
  assert.deepEqual(summary.tasks.map(x=>x.checked),[true,false,true,false,false]);
+});
+
+test('Rejected homework fingerprint does not discard a valid paired child session',()=>{
+ const source=readFileSync(new URL('../public/barn/child.mjs',import.meta.url),'utf8');
+ for(const handler of [source.slice(source.indexOf("$('child-homework').addEventListener('change'"),
+  source.indexOf("$('child-import-homework').addEventListener")),
+  source.slice(source.indexOf("$('child-import-homework').addEventListener"),
+  source.indexOf("$('child-homework').addEventListener('click'"))]){
+  assert.match(handler,/if\(error\.status===401\)/);
+  assert.doesNotMatch(handler,/401\|\|error\.status===403/);
+ }
 });
