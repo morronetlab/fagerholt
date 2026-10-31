@@ -1106,3 +1106,85 @@ test('Family activity dates and optional end time are validated before saving',a
  assert.equal(await page.locator('#family-activity-list .family-activity-card').count(),0);
  assert.deepEqual(errors,[]);
 });
+
+test('Skoleuka 2.1 merges school PDF tasks, municipality and weekend family events in one mobile timeline',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844,mockNow:'2026-10-28T10:00:00Z'});
+ const profiles=[
+  {id:'child-agenda-red-001',name:'Barn Rød',school:'sjostrand',grade:'2',group:'Rød'},
+  {id:'child-agenda-blue-002',name:'Barn Blå',school:'sjostrand',grade:'2',group:'Blå'}
+ ];
+ await page.evaluate(profiles=>{
+  localStorage.setItem('ukeplanen.family.v2',JSON.stringify({version:2,profiles}));
+  localStorage.setItem('ukeplanen.family.activities.v1',JSON.stringify([
+   {id:'family-activity-weekend',title:'Søndagskonsert',child_id:profiles[0].id,
+    occurs_on:'2026-11-01',start_time:'12:30',repeat_rule:'none',repeat_until:null},
+   {id:'family-activity-shared',title:'Felles middag',child_id:null,
+    occurs_on:'2026-10-27',start_time:'17:00',repeat_rule:'weekly',repeat_until:null}
+  ]));
+ },profiles);
+ await page.route('**/api/plan?**',route=>{
+  const plan={...basePlan('2'),year:2026,week:44,homework:[
+   {text:'Les sidene 30–33',subject:'Norsk',dueDay:'Torsdag',group:'Rød'},
+   {text:'Lær gloser',subject:'Engelsk',dueDay:'Fredag',group:'Blå'},
+   {text:'Øv på gangetabellen',subject:'Matte'}
+  ],dayNotes:{Tirsdag:[{text:'Vaksinasjon tirsdag – husk samtykke',group:'Rød'}]},
+  days:{...basePlan('2').days,Fredag:{bring:[],events:[]}},
+  notices:['Husk informasjonsskriv fra skolen']};
+  return reply(route,plan);
+ });
+ await page.route('**/api/school-calendar?**',route=>reply(route,{
+  schoolId:'sjostrand',year:2026,week:44,sourceStatus:'live',events:[
+   {date:'2026-10-30',label:'Planleggingsdag – skolefri',schoolFree:true,sfoClosed:false}
+  ]
+ }));
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-agenda-days .family-agenda-item').first().waitFor();
+ await page.locator('#family-agenda-days').getByText('Søndagskonsert').waitFor();
+ assert.equal(await page.locator('.family-agenda-day').count(),7);
+ assert.match(await page.locator('#family-agenda-days').innerText(),/Planleggingsdag/);
+ assert.match(await page.locator('#family-agenda-days').innerText(),/Vaksinasjon/);
+ assert.match(await page.locator('#family-agenda-days').innerText(),/Les sidene 30/);
+ assert.match(await page.locator('#family-agenda-days').innerText(),/Felles middag/);
+ assert.equal(await page.locator('#family-agenda-days .family-agenda-item.kind-family').count(),2);
+ assert.equal(await page.locator('#family-agenda-days a[href*="minskole.no"]').count()>0,true);
+ await page.locator('#family-agenda-undated').getByText('Øv på gangetabellen').first().waitFor();
+ assert.equal(await page.locator('#family-agenda-undated').isVisible(),true);
+ await page.locator('#family-agenda-child').selectOption(profiles[1].id);
+ const filtered=await page.locator('#family-agenda-days').innerText();
+ assert.match(filtered,/Lær gloser/);
+ assert.match(filtered,/Felles middag/);
+ assert.match(filtered,/Planleggingsdag/);
+ assert.doesNotMatch(filtered,/Søndagskonsert|Les sidene 30|Vaksinasjon/);
+ await page.locator('#family-agenda-child').selectOption(profiles[0].id);
+ assert.match(await page.locator('#family-agenda-days').innerText(),/Søndagskonsert/);
+ assert.doesNotMatch(await page.locator('#family-agenda-days').innerText(),/Lær gloser/);
+ assert.deepEqual(errors,[]);
+});
+
+test('Editing a family event in the combined week immediately updates the timeline without erasing school content',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:780,mockNow:'2026-10-28T10:00:00Z'});
+ await page.evaluate(()=>{
+  localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+   version:2,profiles:[{id:'child-agenda-001',name:'Barn A',school:'sjostrand',grade:'2',group:''}]
+  }));
+  localStorage.setItem('ukeplanen.family.activities.v1',JSON.stringify([
+   {id:'activity-agenda-001',title:'Fotballtrening',child_id:null,occurs_on:'2026-10-29',
+    start_time:'17:00',repeat_rule:'weekly',repeat_until:null}
+  ]));
+ });
+ await page.route('**/api/plan?**',route=>reply(route,{
+  ...basePlan('2'),homework:[{text:'Les leksa',subject:'Norsk',dueDay:'Torsdag'}]
+ }));
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-agenda-days [data-family-agenda-edit]').first().waitFor();
+ await page.locator('#family-agenda-days [data-family-agenda-edit]').click();
+ await page.locator('#family-activity-name').fill('Fotball – ny tid');
+ await page.locator('#family-activity-start').fill('18:00');
+ await page.locator('#family-activity-save').click();
+ await page.locator('#family-agenda-days').getByText('Fotball – ny tid').waitFor();
+ assert.match(await page.locator('#family-agenda-days').innerText(),/Les leksa/);
+ assert.match(await page.locator('#family-agenda-days').innerText(),/18:00/);
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-agenda-days').getByText('Fotball – ny tid').waitFor();
+ assert.deepEqual(errors,[]);
+});
