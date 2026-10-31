@@ -24,13 +24,15 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter()}){
   currentScreen=id;
   for(const section of $('account-panel').querySelectorAll('[data-account-screen]'))
    section.hidden=section.dataset.accountScreen!==id;
-  const step=id==='login'||id==='verify'?1:id==='signed'&&!familyId?2:id==='children'?3:id==='completed'?4:0;
+  // E-post er innlogging for både nye og eksisterende foresatte. Vis
+  // først onboarding-steg når vi vet at familien faktisk må settes opp.
+  const step=id==='signed'&&!familyId?2:id==='children'?3:id==='completed'?4:0;
   $('account-steps').hidden=!step;
   for(const el of $('account-steps').querySelectorAll('[data-onboard-step]')){
    el.classList.toggle('current',Number(el.dataset.onboardStep)===step);
    el.classList.toggle('done',Number(el.dataset.onboardStep)<step);
   }
-  $('account-heading').textContent=id==='login'?'Kom i gang med Skoleuka':
+  $('account-heading').textContent=id==='login'?'Logg inn på Skoleuka':
    id==='verify'?'Bekreft e-postadressen':id==='children'?'Legg til barna':
    id==='completed'?'Familien er klar!':id==='signed'&&!familyId?'Opprett familien din':
    id==='signed'?'Familieinnstillinger':'Familien på alle enheter';

@@ -979,6 +979,9 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  });
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#account-button').click();
+ assert.match(await page.locator('#account-heading').innerText(),/Logg inn på Skoleuka/);
+ assert.equal(await page.locator('#account-steps').isVisible(),false,
+  'Returning guardian should not see family registration steps');
  await page.locator('#account-email').fill('parent@example.no');
  await page.locator('#account-send-code').click();
  await page.waitForTimeout(400);

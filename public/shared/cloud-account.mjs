@@ -103,7 +103,14 @@ export class CloudAccount {
  }
  async sendCode(email){
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)throw Error('Skriv en gyldig e-postadresse.');
-  return this.request('/auth/v1/otp',{method:'POST',body:{email:email.toLowerCase().trim(),create_user:true}});
+  try{
+   return await this.request('/auth/v1/otp',{method:'POST',body:{email:email.toLowerCase().trim(),create_user:true}});
+  }catch(error){
+   if(/error sending (?:magic link|confirmation|email)|smtp/i.test(error.message||'')){
+    throw Error('Skoleuka får ikke sendt innloggingskoden akkurat nå. E-posttjenesten har en feil (SMTP). Kontakt driftsansvarlig.');
+   }
+   throw error;
+  }
  }
  async verifyCode(email,token){
   if(!/^\d{6,8}$/.test(token.trim()))throw Error('Skriv inn engangskoden fra e-posten.');
