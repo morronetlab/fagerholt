@@ -1005,7 +1005,7 @@ test('Opening a family child plan from a scrolled overview starts the new view a
  await page.evaluate(()=>{
   const spacer=document.createElement('div');spacer.style.height='1600px';spacer.id='test-scroll-space';
   document.body.append(spacer);
-  window.scrollTo(0,650);
+  window.scrollTo({top:650,behavior:'instant'});
  });
  assert.ok(await page.evaluate(()=>window.scrollY)>200);
  await page.locator('#family-cards [data-family-open]').first().click();
@@ -1013,7 +1013,7 @@ test('Opening a family child plan from a scrolled overview starts the new view a
  await page.waitForFunction(()=>window.scrollY===0);
  assert.equal(await page.evaluate(()=>window.scrollY),0);
  // Browser back should not inherit the child-plan's old scroll position.
- await page.evaluate(()=>window.scrollTo(0,720));
+ await page.evaluate(()=>window.scrollTo({top:720,behavior:'instant'}));
  assert.ok(await page.evaluate(()=>window.scrollY)>200);
  await page.goBack();
  await page.locator('#family-view').waitFor({state:'visible'});
@@ -1028,7 +1028,7 @@ test('Account opens as a blocking modal and X or Escape restores underlying posi
   document.body.append(spacer);
   const account=document.getElementById('account-button');
   account.focus({preventScroll:true});
-  window.scrollTo(0,680);
+  window.scrollTo({top:680,behavior:'instant'});
   account.click();
  });
  await page.locator('#account-panel').waitFor({state:'visible'});
