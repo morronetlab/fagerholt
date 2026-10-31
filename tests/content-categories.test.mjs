@@ -32,7 +32,7 @@ test('The family calendar and child PWA render typed entries without confusing s
  assert.match(child,/contentCategoryLabel\('practical'\)/);
  assert.match(child,/contentCategoryLabel\('activity'\)/);
  assert.match(child,/contentCategoryLabel\('municipal'\)/);
- assert.match(child,/municipal\?\.schoolId===child\.school/);
+ assert.match(child,/official\?\.schoolId===child\.school/);
  assert.match(child,/\['live','snapshot'\]\.includes\(official\.sourceStatus\)/);
  assert.doesNotMatch(child,/const\s+[^\n]*SUPABASE_SERVICE_ROLE_KEY/);
 });
