@@ -28,7 +28,7 @@ test('Validate one-off and recurring activities without silently changing family
 test('Weekly activity recurs across ISO weeks and year boundary, excluding before start and after end',()=>{
  const d=event({occurs_on:'2026-12-28',repeat_until:'2027-01-11'});
  assert.equal(activityOccurrences([d],2026,52).length,0);
- assert.deepEqual(activityOccurrences([d],2026,53).map(x=>x.date),[]); // ISO 2026 has 53 weeks? check below
+ assert.deepEqual(activityOccurrences([d],2026,53).map(x=>x.date),['2026-12-28']);
  assert.deepEqual(activityOccurrences([d],2027,1).map(x=>x.date),['2027-01-04']);
  assert.deepEqual(activityOccurrences([d],2027,2).map(x=>x.date),['2027-01-11']);
  assert.equal(activityOccurrences([d],2027,3).length,0);
