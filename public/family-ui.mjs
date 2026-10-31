@@ -333,8 +333,9 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  }
  const taskList=(p,items,message)=>items.length?
   '<ul class="family-checklist">'+items.map(x=>
-    '<li><label><input type="checkbox" data-family-check="'+escape(p.id)+'" data-family-index="'+x.index+'" '+
+    '<li class="content-kind-homework"><label><input type="checkbox" data-family-check="'+escape(p.id)+'" data-family-index="'+x.index+'" '+
     (x.checked?'checked ':'')+'aria-label="Marker lekse ferdig for '+escape(p.name)+'"><span>'+
+    '<span class="content-type-label content-kind-homework">'+contentCategoryLabel('homework')+'</span> '+
     escape((x.subject?x.subject+': ':'')+x.text)+'</span></label></li>').join('')+'</ul>':
   '<p class="family-muted">'+escape(message)+'</p>';
  function childCard(p,s,now){
