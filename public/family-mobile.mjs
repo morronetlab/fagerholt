@@ -43,11 +43,15 @@ export function initFamilyMobileUI(){
   list.forEach((el,index)=>el.classList.toggle('family-mobile-day-hidden',
    chosen!==-1&&index!==chosen));
  }
+ function selectView(next,{scroll=false}={}){
+  if(!VIEWS.has(next))return;
+  view=next;save();paintTabs();
+  if(scroll&&mobile())root().scrollIntoView({block:'start',behavior:'auto'});
+ }
  nav().addEventListener('click',event=>{
   const button=event.target.closest('[data-family-mobile-tab]');
   if(!button||!VIEWS.has(button.dataset.familyMobileTab))return;
-  view=button.dataset.familyMobileTab;save();paintTabs();
-  if(mobile())root().scrollIntoView({block:'start',behavior:'auto'});
+  selectView(button.dataset.familyMobileTab,{scroll:true});
  });
  dayNav().addEventListener('click',event=>{
   const button=event.target.closest('[data-family-mobile-day]');
@@ -55,5 +59,6 @@ export function initFamilyMobileUI(){
   day=button.dataset.familyMobileDay;save();refreshDays();
  });
  paintTabs();
- return {refreshDays,view:()=>view};
+ return {refreshDays,view:()=>view,selectView,
+  showAllDays:()=>{day='all';save();refreshDays();}};
 }
