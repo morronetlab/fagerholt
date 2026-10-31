@@ -9,6 +9,7 @@ import {FAMILY_STORAGE_KEY,FAMILY_MAX_PROFILES,readFamily,familyDocument,putProf
 import {quizItems,buildQuizRounds} from './shared/word-quiz-core.mjs';
 import {practiceKey,restorePractice,practiceSummary} from './shared/word-practice-core.mjs';
 import {taskFingerprint} from './shared/cloud-account.mjs';
+import {packingFingerprint} from './shared/packing-fingerprint.mjs';
 import {expandHomework} from './shared/homework-view.mjs';
 import {practicalHighlights} from './shared/practical-highlights.mjs';
 import {priorityKey,applyPracticalPriority} from './shared/practical-priority.mjs';
@@ -47,7 +48,7 @@ function wordStatus(profile,plan,calendar){
 }
 export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIssue}){
  let active=false,profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
- let cloud=null,cloudChecks=new Map(),focus='next',lastSynced=null,syncError='';
+ let cloud=null,cloudChecks=new Map(),bagChecks=new Map(),focus='next',lastSynced=null,syncError='';
  const plans=new Map(),loading=new Set(),errors=new Map();
  // Public municipal dates are independent of individual PDF availability.
  const calendars=new Map(),calendarFetchAt=new Map(),calendarInFlight=new Set();
@@ -208,17 +209,27 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const cloudKey=(p,task,now)=>taskFingerprint({school:p.school,grade:p.grade,
    year:now.year,week:now.week,task});
  const cloudIsChecked=(p,task,now)=>cloudChecks.get(p.id)?.get(cloudKey(p,task,now))===true;
+ const bagKey=(p,item,now,day)=>packingFingerprint({school:p.school,grade:p.grade,
+  year:now.year,week:now.week,day,item});
+ const cloudBagChecked=(p,item,now,day)=>bagChecks.get(p.id)?.get(bagKey(p,item,now,day))===true;
  async function syncCloud(){
   if(!cloud)return;
   const current=cloud,now=calendar();
   try{
-   const rows=await current.client.progress(current.familyId,now.year,now.week);
+   const [rows,bags]=await Promise.all([
+    current.client.progress(current.familyId,now.year,now.week),
+    current.client.packingProgress(current.familyId,now.year,now.week)
+   ]);
    if(cloud!==current)return;
-   cloudChecks=new Map();
+   cloudChecks=new Map();bagChecks=new Map();
    syncError='';lastSynced=new Date();
    for(const row of rows){
     if(!cloudChecks.has(row.child_id))cloudChecks.set(row.child_id,new Map());
     cloudChecks.get(row.child_id).set(row.task_key,row.completed);
+   }
+   for(const row of bags){
+    if(!bagChecks.has(row.child_id))bagChecks.set(row.child_id,new Map());
+    bagChecks.get(row.child_id).set(row.task_key,row.completed);
    }
    render();
   }catch(error){syncError='Kunne ikke synkronisere: '+error.message;render();}
@@ -239,9 +250,26 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    render();throw error;
   }
  }
+ async function updateBag(p,item,day,checked){
+  if(!cloud)throw Error('Ingen familiekonto aktiv.');
+  const current=cloud,now=calendar(),key=bagKey(p,item,now,day);
+  const previous=bagChecks.get(p.id)?.get(key);
+  if(!bagChecks.has(p.id))bagChecks.set(p.id,new Map());
+  bagChecks.get(p.id).set(key,checked);render();
+  try{
+   await current.client.setPacking({familyId:current.familyId,childId:p.id,
+    year:now.year,week:now.week,key,completed:checked});
+   lastSynced=new Date();syncError='';render();
+  }catch(error){
+   if(previous===undefined)bagChecks.get(p.id)?.delete(key);
+   else bagChecks.get(p.id)?.set(key,previous);
+   render();throw error;
+  }
+ }
  function getSummaries(){
   const now=calendar(),summaries=new Map();
-  for(const p of profiles)summaries.set(p.id,profileSummary(p,plans.get(p.id),now,read,cloud?cloudIsChecked:null));
+  for(const p of profiles)summaries.set(p.id,profileSummary(p,plans.get(p.id),now,read,cloud?cloudIsChecked:null,
+   cloud?cloudBagChecked:null));
   return {now,summaries};
  }
  function renderImportantNotices(model){
@@ -302,7 +330,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    'Ukeplan ikke klar for '+pending.join(', ')+'. Skolens opplysninger kan mangle. Sjekk original-PDF-en.':'';
  }
  const taskList=(p,items,message)=>items.length?
-  '<ul class="family-checklist">'+items.slice(0,2).map(x=>
+  '<ul class="family-checklist">'+items.map(x=>
     '<li><label><input type="checkbox" data-family-check="'+escape(p.id)+'" data-family-index="'+x.index+'" '+
     (x.checked?'checked ':'')+'aria-label="Marker lekse ferdig for '+escape(p.name)+'"><span>'+
     escape((x.subject?x.subject+': ':'')+x.text)+'</span></label></li>').join('')+'</ul>':
@@ -316,18 +344,24 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    plan?.aiStatus==='disabled'||plan?.aiStatus==='unavailable'?'Regelbasert PDF-lesing':null;
   const pct=s.ready&&s.total?Math.round(100*s.done/s.total):0;
   const practice=s.ready?wordStatus(p,plan,now):null;
-  const packingList=items=>items.length?
-   '<ul class="family-checklist">'+items.slice(0,3).map(x=>'<li>'+escape(x.label)+'</li>').join('')+'</ul>':
-   '<p class="family-muted">Ingen pakkeliste for mandag</p>';
+  const packingList=(items,day)=>items.length?
+   '<ul class="family-checklist">'+items.map(x=>'<li><label>'+
+    '<input type="checkbox" data-family-bag="'+escape(p.id)+'" data-family-bag-day="'+escape(day)+'" '+
+    'data-family-bag-key="'+escape(bagKey(p,x,now,day))+'" '+(x.checked?'checked ':'')+
+    (!cloud?'disabled ':'')+'aria-label="Pakket '+escape(x.label)+' for '+escape(p.name)+'">'+
+    '<span>'+escape(x.label)+'</span></label></li>').join('')+'</ul>':
+   '<p class="family-muted">Ingen ekstra utstyr denne dagen</p>';
   const details=s.ready?[
    '<div class="family-child-progress"><div><span>Lekser i uke '+now.week+'</span><b>'+s.done+' / '+s.total+' fullført</b></div>',
    '<div class="family-progress-track" role="progressbar" aria-label="Fullført for '+escape(p.name)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><span style="width:'+pct+'%"></span></div></div>',
    '<details class="family-child-extra"'+(expandedChildren.has(p.id)?' open':'')+'><summary>Se lekser, pakkeliste og ordøving</summary><div class="family-child-extra-content">',
    now.upcoming?
     '<div class="family-child-columns"><div><h4>📚 Lekser i uke '+now.week+'</h4>'+taskList(p,s.tasks,'Ingen lekser registrert')+'</div>'+
-    '<div><h4>🎒 Pakk til mandag</h4>'+packingList(s.todayBag)+'</div></div>':
+    '<div><h4>🎒 Pakk til mandag</h4>'+packingList(s.todayBag,DAYS[0])+'</div></div>':
     '<div class="family-child-columns"><div><h4>📚 I dag</h4>'+taskList(p,s.today,'Ingen lekser med frist i dag')+'</div>'+
-    '<div><h4>🎒 Neste skoledag</h4>'+taskList(p,s.next,s.nextIndex==null?'Neste uke er ikke hentet ennå':'Ingen lekser med frist')+'</div></div>',
+    '<div><h4>🎒 Pakk til '+(s.nextIndex==null?'neste skoledag':DAYS[s.nextIndex])+'</h4>'+
+     (s.nextIndex==null?'<p class="family-muted">Neste uke er ikke hentet ennå</p>':
+      packingList(s.bag,DAYS[s.nextIndex]))+'</div></div>',
    '<p class="family-word-state">'+(practice?'✦ Ordøving: '+practice.attempted+' / '+practice.total+(practice.weak?', '+practice.weak+' trenger øving':''):'✦ Ingen ordøving i denne ukeplanen')+'</p></div></details>'
   ].join(''):'<div class="family-not-ready" role="status">'+escape(
     plan?.status==='unpublished'||plan?.status==='unavailable'?
@@ -637,7 +671,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const sequence=++run,now=calendar();
   const targetKey=weekKey(now);
   if(loadedWeekKey!==targetKey){
-   loadedWeekKey=targetKey;plans.clear();autoRetries.clear();cloudChecks.clear();
+   loadedWeekKey=targetKey;plans.clear();autoRetries.clear();cloudChecks.clear();bagChecks.clear();
    priorityStates.clear();showAllHighlights=false;
    if(cloud)void syncCloud();
   }
@@ -728,11 +762,11 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     cloud={client,familyId};
     profiles=remoteChildren.map(x=>({id:x.id,name:x.nickname,school:x.school_id,
       grade:x.grade,group:x.group_name||''})).filter(x=>Object.hasOwn(siteConfig.schools,x.school));
-    plans.clear();cloudChecks.clear();loadedWeekKey=null;activityUI.onFamilyChanged();await syncCloud();
+    plans.clear();cloudChecks.clear();bagChecks.clear();loadedWeekKey=null;activityUI.onFamilyChanged();await syncCloud();
     if(active){render();void fetchPlans();}
   },
   clearCloud:()=>{
-    cloud=null;cloudChecks.clear();lastSynced=null;syncError='';profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
+    cloud=null;cloudChecks.clear();bagChecks.clear();lastSynced=null;syncError='';profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
     plans.clear();loadedWeekKey=null;activityUI.onFamilyChanged();if(active){render();void fetchPlans();}
   },
   refreshCloud:async()=>{await Promise.all([syncCloud(),activityUI.refresh()]);},
@@ -772,11 +806,11 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   });
  setInterval(()=>{
   if(active&&document.visibilityState==='visible'){
-   if(cloud&&(!lastSynced||Date.now()-lastSynced.getTime()>55_000))void syncCloud();
+   if(cloud&&(!lastSynced||Date.now()-lastSynced.getTime()>12_000))void syncCloud();
    if(weekKey(calendar())!==loadedWeekKey||Date.now()-lastPlanCheckAt>=AUTO_CHECK_MS)
     api.refresh();
   }
- },60_000);
+ },15_000);
  const reportingContexts=()=>[...new Map(profiles.map(p=>{
   const cal=calendar(),plan=plans.get(p.id);
   const value={school:p.school,grade:p.grade,year:cal.year,week:cal.week,
@@ -860,6 +894,19 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    if(!write(key,JSON.stringify(checked)))el('family-load-status').textContent='Kunne ikke lagre avkrysning lokalt.';
    render();
   }
+ });
+ el('family-cards').addEventListener('change',e=>{
+  const input=e.target.closest('input[data-family-bag]');
+  if(!input||!cloud)return;
+  const p=byId(input.dataset.familyBag),day=input.dataset.familyBagDay;
+  if(!p)return;
+  const summary=getSummaries().summaries.get(p.id);
+  const list=calendar().upcoming?summary?.todayBag:summary?.bag;
+  const item=list?.find(x=>bagKey(p,x,calendar(),day)===input.dataset.familyBagKey);
+  if(!item)return;
+  void updateBag(p,item,day,input.checked).catch(error=>{
+   el('family-load-status').textContent='Pakkestatus ble ikke lagret: '+error.message;
+  });
  });
  el('family-cards').addEventListener('click',e=>{
   const retry=e.target.closest('[data-family-retry]');
