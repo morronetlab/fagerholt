@@ -26,6 +26,13 @@ let accountUI=null;
 let primaryView="welcome";
 let navigationReady=false,restoringRoute=false;
 const NAV_KEY='skoleukaRouteV1';
+// SPA route changes begin at the top, but opening/closing the account modal
+// preserves the exact previous scroll position.
+function scrollNewViewToTop(){
+ const top=()=>window.scrollTo({top:0,left:0,behavior:'instant'});
+ top();
+ requestAnimationFrame(top);
+}
 function navigationSnapshot(){
  return {[NAV_KEY]:true,view:familyUI?.isActive()?'family':primaryView,
   school:state.school?.id||null,grade:state.grade||null,profileId:state.profileId||null,
@@ -131,18 +138,20 @@ function renderShell(){
 }
 function navigateTo(view,{record=true}={}){
   if(view==='family'){
-    if(familyUI.isActive()){renderShell();return;}
+    if(familyUI.isActive()){renderShell();scrollNewViewToTop();return;}
     primaryView='plan';
     cancelRequests();
     familyUI.enter();
     if(record)recordNavigation();
+    scrollNewViewToTop();
     return;
   }
   primaryView=view==='welcome'?'welcome':'plan';
   if(familyUI.isActive())familyUI.leave();
   else renderShell();
-  if(primaryView==='plan'&&!state.school)$('school-search').focus();
+  if(primaryView==='plan'&&!state.school)$('school-search').focus({preventScroll:true});
   if(record)recordNavigation();
+  scrollNewViewToTop();
 }
 function groupBadge(group){
   if(!group)return '';
@@ -481,6 +490,7 @@ function selectSchool(id,{restore=false}={}){
   state.plan=null;state.planError=null;state.weather=null;state.weatherError=null;
   storageWrite(schoolSelectionKey(),id);
   renderShell();
+  if(!restore)scrollNewViewToTop();
   loadSchoolGrades(id,restore);
   if(!restore)recordNavigation();
 }
@@ -505,7 +515,7 @@ function clearSchool(){
   state.plan=null;state.planError=null;state.weather=null;state.weatherError=null;
   storageDrop(schoolSelectionKey());
   $('school-search').value='';renderSchoolChoices();renderShell();
-  recordNavigation();
+  recordNavigation();scrollNewViewToTop();
 }
 function selectGrade(grade){
   if(!state.school||!state.availableGrades?.some(g=>g.code===grade))return;
@@ -513,11 +523,13 @@ function selectGrade(grade){
   storageWrite(gradeSelectionKey(state.school.id),grade);
   const choice=currentChoice();
   viewingNextWeek=false;dayWasSelected=false;calendar=schoolCalendar(new Date(),siteConfig.school.timezone);
-  state.aiPolls=0;state.profileId=null;state.grade=grade;state.day=choice.day;renderShell();recordNavigation();reload();
+  state.aiPolls=0;state.profileId=null;state.grade=grade;state.day=choice.day;
+  renderShell();recordNavigation();scrollNewViewToTop();reload();
 }
 function clearGrade(){
   cancelRequests();state.profileId=null;state.grade=null;state.plan=null;state.weather=null;state.planError=null;
   storageDrop(gradeSelectionKey(state.school.id));renderShell();recordNavigation();
+  scrollNewViewToTop();
 }
 async function showBuildVersion(){
   const node=$('git-version');
@@ -554,6 +566,7 @@ function openFamilyProfile(profile,{upcoming=false,cachedPlan=null,record=true}=
   familyUI.leave();
   renderShell();
   if(record)recordNavigation();
+  scrollNewViewToTop();
   if(!initial){reload();return;}
   if(features.weather){
    const requestId=state.requestId;
@@ -602,17 +615,18 @@ function restoreNavigation(target){
   renderShell();
   if(state.grade&&!state.plan)void reload();
   else if(!state.grade&&!state.availableGrades)void loadSchoolGrades(school.id);
- }finally{restoringRoute=false;}
+ }finally{restoringRoute=false;scrollNewViewToTop();}
 }
 function boot(){
   const issueReporter=initIssueReporter();
   familyUI=initFamilyUI({
-   onModeChange:()=>{renderShell();recordNavigation();},
+   onModeChange:()=>{renderShell();recordNavigation();scrollNewViewToTop();},
    onOpenProfile:openFamilyProfile,
    onReportIssue:args=>issueReporter.open(args),
-   onOpenSingle:()=>{primaryView='plan';renderShell();recordNavigation();}
+   onOpenSingle:()=>{primaryView='plan';renderShell();recordNavigation();scrollNewViewToTop();}
   });
-  accountUI=initAccountUI({familyUI});
+  accountUI=initAccountUI({familyUI,onGoFamily:()=>navigateTo('family')});
+  if('scrollRestoration' in history)history.scrollRestoration='manual';
   window.addEventListener('popstate',event=>restoreNavigation(event.state));
   $('home-link').addEventListener('click',e=>{e.preventDefault();navigateTo('welcome');});
   $('nav-home').addEventListener('click',()=>navigateTo('welcome'));
@@ -628,7 +642,7 @@ function boot(){
   $('grade-back').addEventListener('click',()=>{clearSchool();$('school-search').focus();});
   initHomeworkHelper();
   initWordQuiz();
-  $('back-this-week').addEventListener('click',()=>{viewingNextWeek=false;dayWasSelected=true;calendar=schoolCalendar(new Date(),siteConfig.school.timezone);state.day=calendar.weekday;renderShell();recordNavigation();reload();});
+  $('back-this-week').addEventListener('click',()=>{viewingNextWeek=false;dayWasSelected=true;calendar=schoolCalendar(new Date(),siteConfig.school.timezone);state.day=calendar.weekday;renderShell();recordNavigation();scrollNewViewToTop();reload();});
   void showBuildVersion();
   document.title=`${brand.title} · Kristiansand`;
   document.documentElement.style.setProperty('--brand',brand.color);

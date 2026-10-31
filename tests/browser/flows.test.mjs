@@ -994,3 +994,68 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  assert.match(await page.locator('#family-storage-label').textContent(),/Synkronisert familie/);
  assert.deepEqual(errors,[]);
 });
+
+test('Opening a family child plan from a scrolled overview starts the new view at the top',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:620});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[{id:'child-scroll-001',name:'Barn A',school:'sjostrand',grade:'2',group:''}]
+ })));
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-cards .family-child').waitFor({state:'visible'});
+ await page.evaluate(()=>{
+  const spacer=document.createElement('div');spacer.style.height='1600px';spacer.id='test-scroll-space';
+  document.body.append(spacer);
+  window.scrollTo({top:650,behavior:'instant'});
+ });
+ assert.ok(await page.evaluate(()=>window.scrollY)>200);
+ await page.locator('#family-cards [data-family-open]').first().click();
+ await page.locator('#app-view').waitFor({state:'visible'});
+ await page.waitForFunction(()=>window.scrollY===0);
+ assert.equal(await page.evaluate(()=>window.scrollY),0);
+ // Browser back should not inherit the child-plan's old scroll position.
+ await page.evaluate(()=>window.scrollTo({top:720,behavior:'instant'}));
+ assert.ok(await page.evaluate(()=>window.scrollY)>200);
+ await page.goBack();
+ await page.locator('#family-view').waitFor({state:'visible'});
+ await page.waitForFunction(()=>window.scrollY===0);
+ assert.deepEqual(errors,[]);
+});
+
+test('Account opens as a blocking modal and X or Escape restores underlying position and focus',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:620});
+ await page.evaluate(()=>{
+  const spacer=document.createElement('div');spacer.style.height='1900px';spacer.id='test-scroll-space';
+  document.body.append(spacer);
+  const account=document.getElementById('account-button');
+  account.focus({preventScroll:true});
+  window.scrollTo({top:680,behavior:'instant'});
+  account.click();
+ });
+ await page.locator('#account-panel').waitFor({state:'visible'});
+ const state=await page.evaluate(()=>({
+  modal:document.getElementById('account-panel').matches(':modal'),
+  open:document.getElementById('account-panel').open,
+  backgroundLocked:document.body.classList.contains('account-modal-open'),
+  bodyPosition:getComputedStyle(document.body).position,
+  lockTop:document.body.style.getPropertyValue('--account-lock-top'),
+  expanded:document.getElementById('account-button').getAttribute('aria-expanded'),
+  focusInside:document.getElementById('account-panel').contains(document.activeElement)
+ }));
+ assert.equal(state.modal,true);assert.equal(state.open,true);
+ assert.equal(state.backgroundLocked,true);assert.equal(state.bodyPosition,'fixed');
+ assert.equal(state.lockTop,'-680px');assert.equal(state.expanded,'true');
+ assert.equal(state.focusInside,true);
+ await page.mouse.wheel(0,600);
+ assert.equal(await page.evaluate(()=>getComputedStyle(document.body).position),'fixed');
+ await page.keyboard.press('Escape');
+ await page.waitForFunction(()=>!document.getElementById('account-panel').open&&window.scrollY===680);
+ assert.equal(await page.locator('#account-button').getAttribute('aria-expanded'),'false');
+ assert.equal(await page.evaluate(()=>document.activeElement.id),'account-button');
+ await page.evaluate(()=>document.getElementById('account-button').click());
+ await page.locator('#account-panel').waitFor({state:'visible'});
+ await page.locator('#account-close').click();
+ await page.waitForFunction(()=>!document.getElementById('account-panel').open&&window.scrollY===680);
+ assert.equal(await page.evaluate(()=>document.body.classList.contains('account-modal-open')),false);
+ assert.equal(await page.evaluate(()=>document.activeElement.id),'account-button');
+ assert.deepEqual(errors,[]);
+});
