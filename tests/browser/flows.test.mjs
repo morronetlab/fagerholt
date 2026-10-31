@@ -1248,6 +1248,41 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  assert.deepEqual(errors,[]);
 });
 
+test('Mobile guardian invitation guides a signed-in newcomer to join rather than create a duplicate family',async t=>{
+ const {page,errors}=await openPage(t,{width:320,height:700});
+ const endpoint='https://testprojectabc.supabase.co';
+ await page.route('**/api/account-config*',route=>reply(route,{
+  enabled:true,url:endpoint+'/',publishableKey:'sb_publishable_test_not_a_real_key'
+ }));
+ await page.addInitScript(()=>{
+  const original=window.fetch.bind(window);
+  localStorage.setItem('ukeplanen.cloud.session.v1',JSON.stringify({
+   access_token:'guardian-access',refresh_token:'guardian-refresh',
+   expires_at:Math.floor(Date.now()/1000)+3600,
+   user:{id:'new-guardian',email:'new@example.no'}
+  }));
+  window.fetch=(input,init={})=>{
+   const url=typeof input==='string'?input:input.url;
+   if(!url.startsWith('https://testprojectabc.supabase.co/'))return original(input,init);
+   let data=[];
+   if(url.includes('/auth/v1/user'))data={id:'new-guardian',email:'new@example.no'};
+   if(url.includes('/rest/v1/families'))data=[];
+   return Promise.resolve(new Response(JSON.stringify(data),{
+    status:200,headers:{'Content-Type':'application/json'}
+   }));
+  };
+ });
+ await page.goto(server.baseURL+'/#invite='+'a'.repeat(64),{waitUntil:'domcontentloaded'});
+ await page.locator('#account-invite-prompt').waitFor({state:'visible'});
+ assert.match(await page.locator('#account-heading').innerText(),/Godta familieinvitasjonen/);
+ assert.equal(await page.locator('#account-empty-family').isVisible(),false);
+ assert.equal(await page.locator('#account-invite-accept').isVisible(),true);
+ assert.equal(await page.locator('#account-family-picker-row').isVisible(),false);
+ const fits=await page.locator('#account-panel').evaluate(el=>el.scrollWidth<=el.clientWidth+1);
+ assert.equal(fits,true,'Invitation flow must not scroll horizontally at 320px');
+ assert.deepEqual(errors,[]);
+});
+
 test('Opening a family child plan from a scrolled overview starts the new view at the top',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:620});
  await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
