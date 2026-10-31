@@ -281,6 +281,39 @@ test('An explicitly selected welcome page survives reload even when family profi
  assert.deepEqual(errors,[]);
 });
 
+test('Mobile family overview shows two compact tappable children, hides administration and keeps desktop intact',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.locator('#family-toggle').click();
+ await addFamilyChild(page,'Barn A');
+ await addFamilyChild(page,'Barn B');
+ assert.equal(await page.locator('.family-overview-top').isVisible(),false);
+ assert.equal(await page.locator('.family-mobile-overview-heading').isVisible(),true);
+ assert.equal(await page.locator('#family-cards .family-child-compact:visible').count(),2);
+ assert.equal(await page.locator('#family-cards .family-child-heading:visible').count(),0);
+ assert.equal(await page.locator('#family-cards .family-child-extra:visible').count(),0);
+ assert.equal(await page.locator('#family-cards .family-ai-label:visible').count(),0);
+ assert.equal(await page.locator('#family-mobile-add').isVisible(),true);
+ assert.equal(await page.locator('#family-refresh').isVisible(),false);
+ assert.equal(await page.locator('#family-cards [data-family-pair]:visible').count(),0);
+ assert.equal(await page.locator('#family-cards [data-family-open]:visible').count(),0);
+ const compact=page.locator('#family-cards .family-child-compact').first();
+ assert.match(await compact.innerText(),/Barn A/);
+ const bounds=await page.locator('#family-cards').evaluate(node=>{
+  const cards=[...node.querySelectorAll('.family-child-compact')].map(el=>el.getBoundingClientRect());
+  return {heights:cards.map(rect=>rect.height),scroll:node.scrollWidth>node.clientWidth+1};
+ });
+ assert.equal(bounds.scroll,false);
+ assert.ok(bounds.heights.every(h=>h<=115),'Mobile child cards should be compact');
+ await page.locator('#family-mobile-admin-toggle').click();
+ assert.equal(await page.locator('#family-refresh').isVisible(),true);
+ assert.equal(await page.locator('[data-family-more]:visible').count(),2);
+ await page.locator('#family-mobile-admin-toggle').click();
+ assert.equal(await page.locator('[data-family-more]:visible').count(),0);
+ await page.locator('#family-cards .family-child-compact').nth(1).click();
+ await page.locator('#app-view').waitFor({state:'visible'});
+ assert.match(await page.locator('#plan-context-class').innerText(),/Barn B/);
+ assert.deepEqual(errors,[]);
+});
 test('Mobile family dashboard uses compact tabs, focused calendar day and fewer child actions',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.locator('#family-toggle').click();
