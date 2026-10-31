@@ -13,15 +13,16 @@ const jwt='eyJ.'+'a'.repeat(60)+'.sig';
 const now=()=>new Date('2026-10-31T15:00:00Z');
 const ok=(payload,status=200)=>new Response(payload==null?null:JSON.stringify(payload),{
  status,headers:{'Content-Type':'application/json'}});
-function fixture(){
+function fixture({authStatus=200}={}){
  const pairs=[],devices=[],calls=[];let sequence=0;
  const secret=()=>String(++sequence).padStart(64,'a');
  const fetchImpl=async(raw,options={})=>{
   const url=new URL(raw),pathname=url.pathname,params=url.searchParams;
   calls.push({path:pathname,method:options.method||'GET',query:url.search,
    headers:options.headers,body:options.body&&JSON.parse(options.body)});
-  if(pathname==='/auth/v1/user')return ok({
-   id:parent,email_confirmed_at:'2026-01-01T00:00:00Z',is_anonymous:false});
+  if(pathname==='/auth/v1/user')return authStatus===200?ok({
+   id:parent,email_confirmed_at:'2026-01-01T00:00:00Z',is_anonymous:false}):
+   ok({code:'session_not_found'},authStatus);
   if(pathname==='/rest/v1/children'){
    if(options.headers?.Authorization==='Bearer '+jwt&&params.get('id')==='eq.'+child)
     return ok([{id:child,family_id:family,nickname:'Barn A',
@@ -163,4 +164,32 @@ test('Deployed migration version matches Supabase history and grants only server
  assert.match(service,/grant select, insert, update, delete\s+on table public\.child_pairings, public\.child_device_sessions\s+to service_role/);
  assert.doesNotMatch(service,/grant [^;]+ to (?:anon|authenticated)\s*;/i);
  assert.match(service,/child_pairings_child_family_idx/);
+});
+
+test('Guardian may issue a fresh QR after the previous code was redeemed and the device remains active',async()=>{
+ const f=fixture();
+ const first=await (await f.request('create',{childId:child})).json();
+ assert.equal((await f.request('redeem',{token:first.link.split('pair=')[1]})).status,201);
+ assert.equal(f.devices.length,1,'The first child device stays active');
+ const second=await f.request('create',{childId:child});
+ assert.equal(second.status,201);
+ const newLink=(await second.json()).link;
+ assert.notEqual(newLink,first.link,'New QR must have a fresh token');
+ assert.equal(f.pairs.length,2,'Both QR records remain auditably distinct');
+ assert.equal(f.devices.length,1,'Creating a new QR must not revoke the old device');
+});
+
+test('Supabase session_not_found 403 returns actionable 401 without leaking backend details',async()=>{
+ const f=fixture({authStatus:403});
+ const r=await f.request('create',{childId:child});
+ assert.equal(r.status,401);
+ const result=await r.json();
+ assert.match(result.error,/logg inn på nytt/i);
+ assert.doesNotMatch(JSON.stringify(result),/session_not_found|Bearer|sb_secret_/);
+ assert.equal(f.pairs.length,0,'Invalid guardian session must not create a pairing');
+});
+test('Service-only activity read migration is recorded and does not broaden client RLS',()=>{
+ const sql=readFileSync(new URL('../supabase/migrations/20261031170017_child_access_read_family_activities.sql',import.meta.url),'utf8');
+ assert.match(sql,/grant select on public\.family_activities to service_role/i);
+ assert.doesNotMatch(sql,/grant\s+select[^;]+to\s+(?:anon|authenticated)/i);
 });

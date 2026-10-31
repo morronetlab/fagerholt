@@ -6,16 +6,25 @@ const e=s=>String(s??'').replace(/[&<>"']/gu,c=>({
 export function initChildPairingUI({getCloud}){
  const panel=$('child-pair-dialog');let child=null,previous=null,scrollY=0;
  const message=s=>{$('child-pair-status').textContent=s||'';};
- async function api(action,input=null){
+ async function api(action,input=null,retrySession=true){
   const cloud=getCloud();
   if(!cloud?.client||!cloud?.familyId)throw Error('Logg inn på familiekontoen først.');
-  await cloud.client.ensureSession();
+  try{await cloud.client.ensureSession();}
+  catch{throw Error('Økten er utløpt. Lukk QR-vinduet, oppdater siden og logg inn på nytt.');}
   const uri='/api/child-access'+(input===null?'?action='+action+'&childId='+encodeURIComponent(child.id):'');
   const r=await fetch(uri,{method:input===null?'GET':'POST',headers:{
    Authorization:'Bearer '+cloud.client.session.access_token,Accept:'application/json',
    ...(input!==null?{'Content-Type':'application/json'}:{})
   },body:input===null?undefined:JSON.stringify({action,...input}),cache:'no-store',referrerPolicy:'no-referrer'});
   const data=await r.json().catch(()=>null);
+  if(r.status===401&&retrySession){
+   // Valid Supabase Auth tokens can become invalid when a session is
+   // revoked before the JWT's exp timestamp. Try one refresh only.
+   try{await cloud.client.refreshSession(true);}
+   catch{throw Error('Økten er utløpt. Lukk QR-vinduet, oppdater siden og logg inn på nytt.');}
+   return api(action,input,false);
+  }
+  if(r.status===401)throw Error('Økten er utløpt. Lukk QR-vinduet, oppdater siden og logg inn på nytt.');
   if(!r.ok)throw Error(data?.error||'Kunne ikke opprette barnetilgang.');
   return data;
  }
