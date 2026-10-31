@@ -17,8 +17,15 @@ begin
     new.updated_by = auth.uid();
     new.updated_by_device = null;
   else
-    if new.updated_by_device is null then
-      raise exception 'Missing device attribution for homework update';
+    if new.updated_by_device is null or not exists (
+      select 1 from public.child_device_sessions d
+      where d.id = new.updated_by_device
+        and d.child_id = new.child_id
+        and d.family_id = new.family_id
+        and d.revoked_at is null
+        and d.expires_at > now()
+    ) then
+      raise exception 'Invalid or expired child-device session for this homework row';
     end if;
     new.updated_by = null;
   end if;
