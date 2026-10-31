@@ -219,7 +219,9 @@ test('Guardian-shared completion appears on another child device, including unch
 test('Failed shared homework save rolls checkbox back and shows an unsaved warning',async t=>{
  const {page,errors,progress}=await open(t,'?pair='+pair,{saveReject:true});
  await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
- await page.locator('#child-homework input[data-child-homework="1"]').check();
+ // .check() waits for a durable checked state and retries after intentional
+ // rollback. A plain click correctly tests the failed-save transition.
+ await page.locator('#child-homework input[data-child-homework="1"]').click();
  await page.locator('#child-homework-sync').getByText(/ble ikke lagret/i).waitFor();
  assert.equal(await page.locator('#child-homework input[data-child-homework="1"]').isChecked(),false);
  assert.equal(progress.size,0);
