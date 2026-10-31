@@ -378,7 +378,21 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     plan?.status==='unpublished'||plan?.status==='unavailable'?
      'Ukeplan for uke '+now.week+' er ikke tilgjengelig ennå. Skolen har ikke publisert PDF for denne uka.':
      errors.get(p.id)||s.reason||'Henter ukeplan for uke '+now.week+' …')+'</div>';
-  return '<article class="family-child" data-child-id="'+escape(p.id)+'"><div class="family-child-heading">'+
+  const compactStatus=s.ready?'<span class="family-mobile-progress-label">Lekser</span><span>'+
+   s.done+' av '+s.total+' ferdig</span>':
+   '<span class="family-mobile-progress-label">'+escape(
+    plan?.status==='unpublished'?'Ukeplan ikke publisert':errors.get(p.id)||'Henter ukeplan …')+'</span>';
+  const compact='<button type="button" class="family-child-compact" data-family-open="'+escape(p.id)+'" '+
+   'aria-label="Åpne ukeplan for '+escape(p.name)+'">'+
+   '<span class="family-mobile-child-head"><span class="family-avatar" aria-hidden="true">'+
+   escape(p.name.slice(0,1).toUpperCase())+'</span><span class="family-mobile-child-identity">'+
+   '<strong>'+escape(p.name)+'</strong><small>'+escape(p.grade)+'. klasse'+
+   (p.group?' · '+escape(p.group):'')+'</small></span>'+
+   '<span class="family-mobile-child-chevron" aria-hidden="true">›</span></span>'+
+   '<span class="family-mobile-progress">'+compactStatus+'</span>'+
+   (s.ready?'<span class="family-mobile-progress-track" aria-hidden="true"><span style="width:'+pct+'%"></span></span>':'')+
+   '</button>';
+  return '<article class="family-child" data-child-id="'+escape(p.id)+'">'+compact+'<div class="family-child-heading">'+
    '<span class="family-avatar" aria-hidden="true">'+escape(p.name.slice(0,1).toUpperCase())+'</span>'+
    '<div><h3>'+escape(p.name)+'</h3><p>'+escape(school?.name||'Skole')+' · '+escape(p.grade)+'. klasse'+(p.group?' · '+escape(p.group):'')+'</p>'+
    '<span class="family-child-week">UKE '+now.week+' · '+now.year+(now.upcoming?' · NESTE UKE':'')+'</span></div></div>'+
@@ -397,6 +411,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const {now,summaries}=getSummaries();
   el('family-week').textContent='Uke '+now.week+' · '+now.year+(now.upcoming?' · neste uke':'');
   el('family-count').textContent=profiles.length+' barn';
+  el('family-mobile-week').textContent='Uke '+now.week;
   el('family-storage-label').textContent=cloud?'☁ Synkronisert familie · lekser deles mellom foresatte':'🔒 Kun på denne enheten';
   const ready=[...summaries.values()].filter(x=>x.ready);
   const done=ready.reduce((n,x)=>n+x.done,0),total=ready.reduce((n,x)=>n+x.total,0);
@@ -809,6 +824,16 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   refresh:()=>{if(active){if(cloud)void syncCloud();void activityUI.refresh();void fetchPlans();}}
  };
  el('family-add').addEventListener('click',()=>openForm());
+ el('family-mobile-add').addEventListener('click',()=>{
+  el('family-mobile-admin-panel').classList.add('is-open');
+  el('family-mobile-admin-toggle').setAttribute('aria-expanded','true');
+  openForm();
+ });
+ el('family-mobile-admin-toggle').addEventListener('click',()=>{
+  const panel=el('family-mobile-admin-panel');
+  const expanded=panel.classList.toggle('is-open');
+  el('family-mobile-admin-toggle').setAttribute('aria-expanded',String(expanded));
+ });
  el('family-empty-add').addEventListener('click',()=>openForm());
  for(const button of document.querySelectorAll('[data-family-focus]')){
   button.addEventListener('click',()=>{focus=button.dataset.familyFocus;showAllHighlights=false;render();});
