@@ -16,7 +16,7 @@ const invitationsFromUrl=()=>{
  history.replaceState(null,'',location.pathname+location.search);
  return /^[a-f0-9]{64}$/.test(token)?token:null;
 };
-export function initAccountUI({familyUI}){
+export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter()}){
  let client=null,accountReady=false,requestedEmail='',familyId=null,families=[],children=[],invitation=invitationsFromUrl(),nextCodeRequestAt=0;
  let currentScreen='login',gradeRun=0,restoring=true,digestRequest=0;
  const status=(msg,error=false)=>{$('account-message').textContent=msg||'';$('account-message').dataset.error=String(error);};
@@ -156,26 +156,53 @@ export function initAccountUI({familyUI}){
   }catch{unconfigured();}
   finally{restoring=false;}
  }
+ const panel=$('account-panel');
+ let returnFocus=null,returnScrollY=0,returnToPage=true;
+ let originalLockTop='';
  function open(){
-  $('account-panel').hidden=false;
-  button.setAttribute('aria-expanded','true');
+  if(panel.open)return;
+  returnFocus=document.activeElement;
+  returnScrollY=window.scrollY;
+  returnToPage=true;
+  originalLockTop=document.body.style.getPropertyValue('--account-lock-top');
   if(restoring){show('loading');}
   else if(!accountReady)unconfigured();
   else if(!client?.isSignedIn())show(requestedEmail?'verify':'login');
   else if(currentScreen==='children'||currentScreen==='completed')show(currentScreen);
   else{displaySignedIn();show('signed');}
-  $('account-panel').scrollIntoView({block:'start',behavior:'auto'});
-  const focusTarget=!accountReady||client?.isSignedIn()?'account-close':requestedEmail?'account-code':'account-email';
-  $(focusTarget).focus();
+  // Native modal makes the rest of the app inert and traps keyboard focus.
+  panel.showModal();
+  document.body.style.setProperty('--account-lock-top','-'+returnScrollY+'px');
+  document.documentElement.classList.add('account-modal-open');
+  document.body.classList.add('account-modal-open');
+  button.setAttribute('aria-expanded','true');
+  panel.scrollTop=0;
+  const focusTarget=!accountReady||client?.isSignedIn()?'account-close':
+   requestedEmail?'account-code':'account-email';
+  $(focusTarget).focus({preventScroll:true});
  }
- function close(){
-  $('account-panel').hidden=true;
+ function close({restorePage=true}={}){
+  if(!panel.open)return;
+  returnToPage=restorePage;
+  button.setAttribute('aria-expanded','false');
+  panel.close();
+ }
+ // ESC is handled by the browser and triggers the same cleanup as the X.
+ panel.addEventListener('close',()=>{
+  document.documentElement.classList.remove('account-modal-open');
+  document.body.classList.remove('account-modal-open');
+  if(originalLockTop)document.body.style.setProperty('--account-lock-top',originalLockTop);
+  else document.body.style.removeProperty('--account-lock-top');
   button.setAttribute('aria-expanded','false');status('');
-  button.focus();
- }
- button.addEventListener('click',()=>$('account-panel').hidden?open():close());
- $('account-close').addEventListener('click',close);
- document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('account-panel').hidden)close();});
+  if(returnToPage){
+   window.scrollTo({top:returnScrollY,left:0,behavior:'instant'});
+   const target=returnFocus?.isConnected?returnFocus:button;
+   target.focus({preventScroll:true});
+  }
+  returnToPage=true;
+ });
+ button.addEventListener('click',()=>panel.open?close():open());
+ $('account-close').addEventListener('click',()=>close());
  $('account-request-form').addEventListener('submit',async e=>{
   e.preventDefault();
   const email=$('account-email').value.trim(),submit=$('account-send-code');submit.disabled=true;
@@ -339,9 +366,9 @@ export function initAccountUI({familyUI}){
  });
  $('onboard-children-back').addEventListener('click',()=>show('signed'));
  $('onboard-children-next').addEventListener('click',()=>{show('completed');status('');});
- $('onboard-dashboard').addEventListener('click',()=>{close();familyUI.enter();$('family-title').focus();});
+ $('onboard-dashboard').addEventListener('click',()=>{close({restorePage:false});onGoFamily();$('family-title').focus({preventScroll:true});});
  $('onboard-open-invite').addEventListener('click',()=>{show('signed');$('account-invite-email').focus();});
- $('account-open-family').addEventListener('click',()=>{close();familyUI.enter();});
+ $('account-open-family').addEventListener('click',()=>{close({restorePage:false});onGoFamily();});
  void restore().then(()=>{if(invitation&&client?.isSignedIn()){open();show('signed');
    status('Du har en invitasjon. Velg «Godta mottatt familieinvitasjon» for å fortsette.');}});
  return {restore,open,close};
