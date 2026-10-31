@@ -223,6 +223,18 @@ test('Homework help dialog is clear and restores focus after closing',async t=>{
  assert.deepEqual(errors,[]);
 });
 
+async function setFamilyCalendarWholeWeek(page){
+ await page.locator('#family-mobile-calendar-options > summary').click();
+ await page.locator('[data-family-mobile-range]').click();
+}
+async function toggleFamilyCalendarWeekend(page){
+ await page.locator('#family-mobile-calendar-options > summary').click();
+ await page.locator('[data-family-mobile-weekend]').click();
+}
+async function expandFirstFamilyActivity(page){
+ const activity=page.locator('#family-agenda-days .family-agenda-item.kind-family').first();
+ await activity.locator('[data-family-agenda-details]').click();
+}
 async function addFamilyChild(page,name,grade='2'){
  await page.locator('#family-add').click();
  await page.locator('#family-name').fill(name);
@@ -285,10 +297,13 @@ test('Mobile family dashboard uses compact tabs, focused calendar day and fewer 
  assert.equal(await card.locator('[data-family-edit]').isVisible(),true);
  await page.locator('[data-family-mobile-tab="calendar"]').click();
  assert.equal(await page.locator('.family-agenda').isVisible(),true);
+ assert.equal(await page.locator('#family-mobile-days [data-family-mobile-day]').count(),5);
+ assert.equal(await page.locator('#family-agenda-days .family-agenda-item>.family-agenda-type:visible').count(),0);
+ assert.equal(await page.locator('.family-agenda-key').isVisible(),false);
  assert.equal(await page.locator('#family-children').isVisible(),false);
  await page.locator('.family-agenda-day:visible').first().waitFor({state:'visible'});
  assert.equal(await page.locator('.family-agenda-day:visible').count(),1);
- await page.locator('[data-family-mobile-day="all"]').click();
+ await setFamilyCalendarWholeWeek(page);
  assert.equal(await page.locator('.family-agenda-day:visible').count(),5);
  await page.locator('[data-family-mobile-day="2"]').click();
  assert.equal(await page.locator('.family-agenda-day:visible').count(),1);
@@ -1256,7 +1271,7 @@ test('Family calendar displays four typed sources, verified homework, optional w
  }));
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('[data-family-mobile-tab="calendar"]').click();
- await page.locator('[data-family-mobile-day="all"]').click();
+ await setFamilyCalendarWholeWeek(page);
  await page.locator('#family-agenda-days .family-agenda-item').first().waitFor();
  assert.equal(await page.locator('.family-agenda-day').count(),5);
  assert.equal(await page.locator('#family-agenda-weekend-toggle').isVisible(),true);
@@ -1273,12 +1288,12 @@ test('Family calendar displays four typed sources, verified homework, optional w
  }
  assert.match(await page.locator('#family-agenda-days').innerText(),/Felles middag/);
  assert.equal(await page.locator('#family-agenda-days .family-agenda-item.kind-family').count(),1);
- await page.locator('#family-agenda-weekend-toggle').click();
+ await toggleFamilyCalendarWeekend(page);
  await page.locator('#family-agenda-days').getByText('Søndagskonsert').waitFor();
  assert.equal(await page.locator('.family-agenda-day').count(),7);
  assert.equal(await page.locator('#family-agenda-days .family-agenda-item.kind-family').count(),2);
  assert.equal(await page.locator('#family-agenda-weekend-toggle').getAttribute('aria-expanded'),'true');
- await page.locator('#family-agenda-weekend-toggle').click();
+ await toggleFamilyCalendarWeekend(page);
  assert.equal(await page.locator('.family-agenda-day').count(),5);
  assert.equal(await page.locator('#family-agenda-days a[href*="minskole.no"]').count()>0,true);
  assert.equal(await page.locator('#family-agenda-undated').evaluate(el=>el.open),false);
@@ -1297,7 +1312,7 @@ test('Family calendar displays four typed sources, verified homework, optional w
  await page.locator('#family-agenda-child').selectOption(profiles[0].id);
  assert.equal(await page.locator('.family-agenda-day').count(),5);
  assert.equal(await page.locator('#family-agenda-weekend-toggle').isVisible(),true);
- await page.locator('#family-agenda-weekend-toggle').click();
+ await toggleFamilyCalendarWeekend(page);
  assert.match(await page.locator('#family-agenda-days').innerText(),/Søndagskonsert/);
  assert.doesNotMatch(await page.locator('#family-agenda-days').innerText(),/Lær gloser/);
  assert.deepEqual(errors,[]);
@@ -1320,9 +1335,10 @@ test('Editing a family event in the combined week immediately updates the timeli
  }));
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('[data-family-mobile-tab="calendar"]').click();
- await page.locator('[data-family-mobile-day="all"]').click();
- await page.locator('#family-agenda-days [data-family-agenda-edit]').first().waitFor();
- await page.locator('#family-agenda-days [data-family-agenda-edit]').click();
+ await setFamilyCalendarWholeWeek(page);
+ await page.locator('#family-agenda-days .family-agenda-item.kind-family').first().waitFor({state:'visible'});
+ await expandFirstFamilyActivity(page);
+ await page.locator('#family-agenda-days [data-family-agenda-edit]').first().click();
  assert.equal(await page.locator('#family-activity-section').isVisible(),true);
  await page.locator('#family-activity-name').fill('Fotball – ny tid');
  await page.locator('#family-activity-start').fill('18:00');
@@ -1406,7 +1422,7 @@ test('2.2 family administration is minimized and opens the correct editor from c
  });
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('[data-family-mobile-tab="calendar"]').click();
- await page.locator('[data-family-mobile-day="all"]').click();
+ await setFamilyCalendarWholeWeek(page);
  await page.locator('#family-agenda-days').getByText('Korpsøvelse').waitFor({state:'visible'});
  assert.equal(await page.locator('#family-activity-manage').evaluate(el=>el.open),false);
  assert.match(await page.locator('#family-activity-manage-summary').innerText(),/1 aktivitet/);
@@ -1415,6 +1431,7 @@ test('2.2 family administration is minimized and opens the correct editor from c
  await page.locator('#family-activity-manage>summary').click();
  await page.locator('#family-activity-list').getByText('Korpsøvelse').waitFor({state:'visible'});
  await page.locator('[data-family-mobile-tab="calendar"]').click();
+ await expandFirstFamilyActivity(page);
  await page.locator('#family-agenda-days [data-family-agenda-edit]').click();
  assert.equal(await page.locator('#family-activity-manage').evaluate(el=>el.open),false);
  assert.equal(await page.locator('#family-activity-form').isVisible(),true);
