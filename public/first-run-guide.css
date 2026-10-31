@@ -1,0 +1,30 @@
+/* A one-time hand-off after successful guardian registration.
+ * Hidden for returning accounts and never blocks ordinary navigation.
+ */
+#family-first-run[hidden]{display:none!important}
+.family-first-run{padding:16px 19px;margin:14px 0;border:1px solid #c9e2d0;
+ background:linear-gradient(110deg,#f0f9f2,#fbfcf7);border-radius:16px}
+.family-first-run-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.family-first-run-eyebrow{font-size:10px;font-weight:850;letter-spacing:.9px;color:#42725c}
+.family-first-run h2{margin:5px 0 0;color:#245942;font-size:20px;line-height:1.2}
+#family-first-run-dismiss{display:flex;align-items:center;justify-content:center;flex:0 0 35px;
+ min-height:35px;border:1px solid #d5e9db;background:#fff;border-radius:9px;
+ color:#397057;font-size:15px;font-weight:750}
+.family-first-run-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:6px;margin:12px 0;padding:0;list-style:none}
+.family-first-run-steps li{padding:7px 6px;border-radius:8px;text-align:center;
+ border:1px solid #d3e4d7;color:#657f6d;font-size:12px;font-weight:750;background:#fff}
+.family-first-run-steps li.is-done{background:#ddf1e4;color:#276a4b}
+.family-first-run-steps li.is-done::before{content:'✓ ';font-weight:900}
+.family-first-run p{margin:9px 0 13px;font-size:13px;line-height:1.5;color:#456b56}
+.family-first-run-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.family-first-run-actions button{font-size:12px;min-height:41px}
+@media(max-width:700px){
+ .family-first-run{margin:6px 0 12px;padding:13px;border-radius:13px}
+ .family-first-run h2{font-size:18px}
+ .family-first-run-steps{margin:10px 0 8px}
+ .family-first-run-steps li{font-size:11px}
+ .family-first-run p{font-size:12px;margin:8px 0 10px}
+ .family-first-run-actions{display:grid;grid-template-columns:1fr}
+ .family-first-run-actions button{width:100%;font-size:12px;min-height:43px}
+}
