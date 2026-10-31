@@ -20,6 +20,7 @@
 .family-first-run-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .family-first-run-actions button{font-size:12px;min-height:41px}
 @media(max-width:700px){
+ #family-view:not([data-family-mobile-view=overview]) #family-first-run{display:none!important}
  .family-first-run{margin:6px 0 12px;padding:13px;border-radius:13px}
  .family-first-run h2{font-size:18px}
  .family-first-run-steps{margin:10px 0 8px}
