@@ -12,7 +12,7 @@ const profile={school:'fagerholt',grade:'3',group:''};
 const user='00000000-0000-4000-8000-000000000001';
 const env={WEEKLY_DIGEST_SEND_ENABLED:'true',SUPABASE_URL:'https://qxejliyfgfeigvxsqupg.supabase.co',
  SUPABASE_SERVICE_ROLE_KEY:'sb_secret_'+'s'.repeat(40),RESEND_API_KEY:'re_12345678901234567890123456789',
- EMAIL_FROM:'Skoleuka <noreply@example.com>',URL:'https://skoleuk.no'};
+ EMAIL_FROM:'Skoleuka <noreply@example.com>',URL:'https://skoleuka.no'};
 const cal={schoolId:'fagerholt',year:2026,week:45,sourceStatus:'snapshot',sourceUrl:source,
  schoolUrl:'https://www.minskole.no/fagerholt',checkedAt:'2026-10-30',
  events:[{date:'2026-11-06',schoolFree:true,sfoClosed:false,sfoStatus:'unknown',
@@ -92,7 +92,7 @@ test('Digest only uses verified source quote from PDF; invented AI paragraphs ar
  assert.match(result.text,/Vaksine onsdag morgen/);
  assert.match(result.text,/uke45\.pdf#page=2/);
  assert.doesNotMatch(result.text,/gratis sykkel/);
- assert.match(result.text,/Logg inn på skoleuk.no/);
+ assert.match(result.text,/Logg inn på skoleuka.no/);
 });
 test('Unverified or anomalous PDF audit excludes health notices from outgoing email',()=>{
  for(const status of ['attention','unverified']){
@@ -172,13 +172,13 @@ test('Opted-in account with no family/children never receives a message',async()
 });
 test('Public data loader requests only an allowlisted school/grade from own origin',async()=>{
  const calls=[];
- const result=await getPublicData('https://skoleuk.no',profile,
+ const result=await getPublicData('https://skoleuka.no',profile,
   {year:2026,week:45},{fetchImpl:async url=>{
    calls.push(url);return {ok:true,json:async()=>url.includes('school-calendar')?cal:plan};
   }});
  assert.equal(result.municipal.sourceStatus,'snapshot');
  assert.equal(result.plan.grade,'3');
  assert.equal(calls.length,2);
- assert.ok(calls.every(url=>url.startsWith('https://skoleuk.no/api/')));
+ assert.ok(calls.every(url=>url.startsWith('https://skoleuka.no/api/')));
  assert.ok(calls.some(url=>url.includes('nextWeek=1')));
 });
