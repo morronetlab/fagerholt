@@ -37,7 +37,8 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
   }
   $('account-heading').textContent=id==='login'?(onboardingIntent?'Kom i gang med Skoleuka':'Logg inn på Skoleuka'):
    id==='verify'?'Bekreft e-postadressen':id==='children'?'Legg til barna':
-   id==='completed'?'Familien er klar!':id==='signed'&&!familyId?'Opprett familien din':
+   id==='completed'?'Familien er klar!':id==='signed'&&!familyId?
+   (invitation?'Godta familieinvitasjonen':'Opprett familien din'):
    id==='signed'?'Familieinnstillinger':'Familien på alle enheter';
   // On phones the dialog scrolls internally; a screen change must start at its top.
   $('account-panel').scrollTop=0;
@@ -237,7 +238,7 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
   try{
    await client.verifyCode(requestedEmail,$('account-code').value);
    await syncFamilies();
-   if(invitation)status('Du er logget inn. Du har mottatt en familieinvitasjon. Velg «Godta mottatt familieinvitasjon» for å fortsette.');
+   if(invitation)status('Du har fått en familieinvitasjon. Trykk «Godta familieinvitasjonen» for å bli med.');
    else if(familyId&&!children.length){show('children');status('Du er logget inn. Legg til barnet ditt.');}
    else status('Du er logget inn.');
   }catch(error){status(error.message,true);}finally{submit.disabled=false;}
@@ -397,6 +398,6 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
  $('onboard-open-invite').addEventListener('click',()=>{show('signed');$('account-invite-email').focus();});
  $('account-open-family').addEventListener('click',()=>{close({restorePage:false});onGoFamily();});
  void restore().then(()=>{if(invitation&&client?.isSignedIn()){open();show('signed');
-   status('Du har en invitasjon. Velg «Godta mottatt familieinvitasjon» for å fortsette.');}});
+   status('Du har en familieinvitasjon. Trykk «Godta familieinvitasjonen» for å bli med.');}});
  return {restore,open,close};
 }
