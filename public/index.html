@@ -19,7 +19,7 @@
       <button type="button" id="account-button" class="account-nav" aria-expanded="false" aria-controls="account-panel">Logg inn</button>
     </div>
   </header>
-  <section id="account-panel" class="account-panel" hidden aria-labelledby="account-heading">
+  <dialog id="account-panel" class="account-panel" aria-labelledby="account-heading" aria-modal="true">
     <div class="account-head"><div><p class="family-eyebrow">SKOLEUKA · FAMILIEKONTO</p>
       <h2 id="account-heading">Familien på alle enheter</h2></div>
       <button type="button" id="account-close" class="account-close" aria-label="Lukk konto">✕</button></div>
@@ -109,7 +109,7 @@
       <button id="onboard-open-invite" type="button" class="family-light-button">Inviter en annen foresatt</button>
       <p class="account-muted">Invitasjonen er frivillig. Du kan legge til flere barn senere.</p>
     </div>
-  </section>
+  </dialog>
   <main id="main-content">
     <section id="welcome-view" class="welcome-view" aria-labelledby="welcome-title">
       <div class="welcome-hero">
