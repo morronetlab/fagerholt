@@ -37,6 +37,9 @@ export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar,onChang
  function render(){
   if(!active)return;
   const profiles=getProfiles(),c=getCalendar(),items=activityOccurrences(rows,c.year,c.week);
+  $('family-activity-manage-summary').textContent=items.length?
+   'Vis og administrer '+items.length+' aktivitet'+(items.length===1?'':'er')+' denne uka':
+   'Ingen aktiviteter denne uka · Vis administrasjon';
   $('family-activity-status').textContent=status||
    (loading?'Henter familiens aktiviteter …':isCloud()?
     'Delt mellom foresatte i familiekontoen · trykk Oppdater for å hente endringer.':
@@ -80,6 +83,8 @@ export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar,onChang
  }
  function openForm(item=null){
   editing=item?.id||null;
+  // Editing is the primary task: temporarily minimize the redundant list.
+  $('family-activity-manage').open=false;
   form.hidden=false;formStatus('');
   const c=getCalendar();
   const defaults={title:'',child_id:'',occurs_on:familyActivityWeekDates(c.year,c.week).start,

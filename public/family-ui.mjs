@@ -13,7 +13,8 @@ import {priorityKey,applyPracticalPriority} from './shared/practical-priority.mj
 import {practicalDigest} from './shared/practical-digest.mjs';
 import {calendarHighlights} from './shared/school-calendar-highlights.mjs';
 import {buildFamilyWeekAgenda} from './shared/family-week-agenda.mjs';
-import {familyAgendaMarkup} from './shared/family-week-agenda-html.mjs';
+import {familyAgendaMarkup,familyAgendaItemHtml} from './shared/family-week-agenda-html.mjs';
+import {importantFamilyNotices} from './shared/family-important-notices.mjs';
 import {FAMILY_OVERVIEW_BATCH_MS,holdInitialHighlights,readCalendarCache,storeCalendarCache,cacheableCalendar,stableHighlightOrder,highlightIdentity} from './shared/family-overview-load.mjs';
 
 const el=id=>document.getElementById(id);
@@ -68,6 +69,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const priorityStates=new Map(),priorityTimers=new Map();
  let run=0,editing=null,gradeRun=0,lastPlanCheckAt=0,loadedWeekKey=null,showAllHighlights=false;
  let agendaChildId='';
+ let expandedChildren=new Set();
  let reportCards=[];
  const AUTO_CHECK_MS=15*60_000, RETRY_COOLDOWN_MS=5*60_000+5000;
  const pairOf=p=>p.school+'|'+p.grade;
@@ -238,6 +240,26 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   for(const p of profiles)summaries.set(p.id,profileSummary(p,plans.get(p.id),now,read,cloud?cloudIsChecked:null));
   return {now,summaries};
  }
+ function renderImportantNotices(model){
+  const notices=importantFamilyNotices(model,{limit:3});
+  const html=notices.visible.map(item=>{
+   const when=item.date?new Intl.DateTimeFormat('nb-NO',{
+    timeZone:'UTC',weekday:'long',day:'numeric',month:'short'
+   }).format(new Date(item.date+'T12:00:00Z')):'Uten bestemt dag';
+   return '<div class="family-important-entry">'+
+    '<span class="family-important-date">'+escape(when)+'</span>'+
+    familyAgendaItemHtml(item)+'</div>';
+  }).join('');
+  const message=!profiles.length?'Legg til barn for å se viktige skolebeskjeder.':
+   model.missingProfiles.length?
+    'Skoleplaner lastes inn. Viktige beskjeder kan fortsatt mangle.':
+    'Ingen særskilte viktige beskjeder registrert for denne uka.';
+  setHtml('family-important-cards',html||
+   '<p class="family-important-empty">'+escape(message)+'</p>');
+  el('family-practical-label').textContent=notices.remaining?
+   'Vis komplette skolebeskjeder · '+notices.remaining+' flere viktige':
+   'Vis alle praktiske beskjeder og ekstra utstyr';
+ }
  function renderAgenda(now,summaries){
   const filter=el('family-agenda-child'),selected=agendaChildId;
   const option='<option value="">Alle i familien</option>'+
@@ -249,11 +271,20 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    activities:activityUI.getRows(),calendar:now,childId:agendaChildId});
   const markup=familyAgendaMarkup(model,{today:now.today});
   setHtml('family-agenda-days',markup.days);
-  setHtml('family-agenda-undated',markup.undated);
+  setHtml('family-agenda-undated-list',markup.undated);
   el('family-agenda-undated').hidden=!model.undated.length;
+  const importantUndated=model.undated.filter(item=>item.important).length;
+  el('family-agenda-undated-summary').textContent=model.undated.length+
+   ' punkt uten bestemt dag · Vis'+
+   (importantUndated?' · ⚠ '+importantUndated+' viktig'+(importantUndated===1?'':'e'):'');
   el('family-agenda-status').textContent=
    model.count+' hendelser i uke '+now.week+
    (agendaChildId?' for '+(profiles.find(p=>p.id===agendaChildId)?.name||'valgt barn'):' for familien');
+  // The overview alert strip always covers every child, regardless of
+  // which child is currently selected within the week calendar.
+  const fullModel=agendaChildId?buildFamilyWeekAgenda({profiles,summaries,plans,calendars,
+   activities:activityUI.getRows(),calendar:now,childId:''}):model;
+  renderImportantNotices(fullModel);
   const pending=model.missingProfiles;
   el('family-agenda-missing').hidden=!pending.length;
   el('family-agenda-missing').textContent=pending.length?
@@ -280,17 +311,18 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const details=s.ready?[
    '<div class="family-child-progress"><div><span>Lekser i uke '+now.week+'</span><b>'+s.done+' / '+s.total+' fullført</b></div>',
    '<div class="family-progress-track" role="progressbar" aria-label="Fullført for '+escape(p.name)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><span style="width:'+pct+'%"></span></div></div>',
+   '<details class="family-child-extra"'+(expandedChildren.has(p.id)?' open':'')+'><summary>Se lekser, pakkeliste og ordøving</summary><div class="family-child-extra-content">',
    now.upcoming?
     '<div class="family-child-columns"><div><h4>📚 Lekser i uke '+now.week+'</h4>'+taskList(p,s.tasks,'Ingen lekser registrert')+'</div>'+
     '<div><h4>🎒 Pakk til mandag</h4>'+packingList(s.todayBag)+'</div></div>':
     '<div class="family-child-columns"><div><h4>📚 I dag</h4>'+taskList(p,s.today,'Ingen lekser med frist i dag')+'</div>'+
     '<div><h4>🎒 Neste skoledag</h4>'+taskList(p,s.next,s.nextIndex==null?'Neste uke er ikke hentet ennå':'Ingen lekser med frist')+'</div></div>',
-   '<p class="family-word-state">'+(practice?'✦ Ordøving: '+practice.attempted+' / '+practice.total+(practice.weak?', '+practice.weak+' trenger øving':''):'✦ Ingen ordøving i denne ukeplanen')+'</p>'
+   '<p class="family-word-state">'+(practice?'✦ Ordøving: '+practice.attempted+' / '+practice.total+(practice.weak?', '+practice.weak+' trenger øving':''):'✦ Ingen ordøving i denne ukeplanen')+'</p></div></details>'
   ].join(''):'<div class="family-not-ready" role="status">'+escape(
     plan?.status==='unpublished'||plan?.status==='unavailable'?
      'Ukeplan for uke '+now.week+' er ikke tilgjengelig ennå. Skolen har ikke publisert PDF for denne uka.':
      errors.get(p.id)||s.reason||'Henter ukeplan for uke '+now.week+' …')+'</div>';
-  return '<article class="family-child"><div class="family-child-heading">'+
+  return '<article class="family-child" data-child-id="'+escape(p.id)+'"><div class="family-child-heading">'+
    '<span class="family-avatar" aria-hidden="true">'+escape(p.name.slice(0,1).toUpperCase())+'</span>'+
    '<div><h3>'+escape(p.name)+'</h3><p>'+escape(school?.name||'Skole')+' · '+escape(p.grade)+'. klasse'+(p.group?' · '+escape(p.group):'')+'</p>'+
    '<span class="family-child-week">UKE '+now.week+' · '+now.year+(now.upcoming?' · NESTE UKE':'')+'</span></div></div>'+
@@ -329,6 +361,11 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   el('family-add').disabled=profiles.length>=FAMILY_MAX_PROFILES;
   el('family-add').textContent=profiles.length>=FAMILY_MAX_PROFILES?'Maks seks barn':'+ Legg til barn';
   el('family-empty').hidden=profiles.length!==0;
+  // Preserve manually expanded child details after a checkbox saves progress.
+  // The content is refreshed but the parent's place in the UI is retained.
+  const presentCards=[...el('family-cards').querySelectorAll('.family-child[data-child-id]')];
+  if(presentCards.length)expandedChildren=new Set(presentCards.filter(card=>
+   card.querySelector('.family-child-extra')?.open).map(card=>card.dataset.childId));
   setHtml('family-cards',profiles.map(p=>childCard(p,summaries.get(p.id),now)).join(''));
   const {next}=schoolDayIndices(now);
   const shownFocus=now.upcoming?'week':focus;
@@ -730,6 +767,12 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  el('family-report-missing').addEventListener('click',()=>{
   const contexts=reportingContexts();
   if(contexts.length)onReportIssue?.({contexts,kind:'missing_notice'});
+ });
+ el('family-practical-details').addEventListener('toggle',()=>{
+  if(!el('family-practical-details').open)return;
+  // The expanded view must include ALL critical notices, not only the
+  // original 'next school day' focus.
+  focus='week';render();
  });
  el('family-agenda-child').addEventListener('change',event=>{
   agendaChildId=event.target.value;render();
