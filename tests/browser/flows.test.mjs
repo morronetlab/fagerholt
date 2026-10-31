@@ -1299,7 +1299,7 @@ test('Family calendar displays four typed sources, verified homework, optional w
  await setFamilyCalendarWholeWeek(page);
  await page.locator('#family-agenda-days .family-agenda-item').first().waitFor();
  assert.equal(await page.locator('.family-agenda-day').count(),5);
- assert.equal(await page.locator('#family-agenda-weekend-toggle').isVisible(),true);
+ assert.equal(await page.locator('[data-family-mobile-weekend]').evaluate(el=>el.hidden),false);
  assert.equal(await page.locator('#family-agenda-weekend-toggle').getAttribute('aria-expanded'),'false');
  assert.doesNotMatch(await page.locator('#family-agenda-days').innerText(),/Søndagskonsert/);
  assert.match(await page.locator('#family-agenda-days').innerText(),/Planleggingsdag/);
@@ -1333,10 +1333,10 @@ test('Family calendar displays four typed sources, verified homework, optional w
  assert.match(filtered,/Felles middag/);
  assert.match(filtered,/Planleggingsdag/);
  assert.doesNotMatch(filtered,/Søndagskonsert|Les sidene 30|Vaksinasjon/);
- assert.equal(await page.locator('#family-agenda-weekend-toggle').isVisible(),false);
+ assert.equal(await page.locator('[data-family-mobile-weekend]').evaluate(el=>el.hidden),true);
  await page.locator('#family-agenda-child').selectOption(profiles[0].id);
  assert.equal(await page.locator('.family-agenda-day').count(),5);
- assert.equal(await page.locator('#family-agenda-weekend-toggle').isVisible(),true);
+ assert.equal(await page.locator('[data-family-mobile-weekend]').evaluate(el=>el.hidden),false);
  await toggleFamilyCalendarWeekend(page);
  assert.match(await page.locator('#family-agenda-days').innerText(),/Søndagskonsert/);
  assert.doesNotMatch(await page.locator('#family-agenda-days').innerText(),/Lær gloser/);
