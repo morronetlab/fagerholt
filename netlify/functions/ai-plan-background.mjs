@@ -57,7 +57,7 @@ export function createAIBackgroundHandler({fetchImpl=fetch,storeFactory=openAISt
        console.warn('ukeplan.critical_pdf_audit',JSON.stringify({
          school:school.id,grade,year,week,...sourceAudit
        }));
-     const digestPracticalHighlights=verifyPracticalDigestHighlights(normalized,pages);
+     const digestPracticalHighlights=verifyPracticalDigestHighlights({...normalized,schoolId:school.id},pages);
      await store.setJSON(key,{...normalized,sourceAudit,
        digestPracticalEvidenceVersion:DIGEST_PRACTICAL_EVIDENCE_VERSION,digestPracticalHighlights,
        schoolId:school.id,schoolName:school.name,createdAt:new Date().toISOString(),
