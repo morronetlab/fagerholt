@@ -675,8 +675,16 @@ function boot(){
   });
   accountUI=initAccountUI({familyUI,onGoFamily:()=>navigateTo('family'),
     onCloudRestored:()=>{
-      if(initialRoute?.view!=='plan'||!siteConfig.schools[initialRoute.school]||
-         !initialRoute.grade)return false;
+      // A signed-in account must not redirect an explicit homepage or plan
+      // route to the family dashboard merely because session restore finished.
+      if(initialRoute?.view==='welcome')return true;
+      if(initialRoute?.view!=='plan')return false;
+      if(!initialRoute.school){
+        restoreNavigation(initialRoute);
+        recordNavigation('replace');
+        return true;
+      }
+      if(!siteConfig.schools[initialRoute.school])return false;
       if(initialRoute.profileId){
         const child=familyUI.profileById(initialRoute.profileId);
         if(!child||child.school!==initialRoute.school||
