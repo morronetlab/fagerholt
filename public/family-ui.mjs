@@ -1,5 +1,6 @@
 /** Device-local family UI; one source-grounded weekly plan per class. */
 import {siteConfig} from './site-config.mjs';
+import {initChildPairingUI} from './child-pairing-ui.mjs';
 import {initFamilyActivitiesUI} from './family-activities-ui.mjs';
 import {familyWeekCalendar,DAYS} from './shared/calendar.mjs';
 import {FAMILY_STORAGE_KEY,FAMILY_MAX_PROFILES,readFamily,familyDocument,putProfile,profileSummary,
@@ -124,6 +125,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const calendar=()=>familyWeekCalendar(new Date(),'Europe/Oslo');
  const activityUI=initFamilyActivitiesUI({getProfiles:()=>profiles,getCloud:()=>cloud,getCalendar:calendar,
   onChange:()=>{if(active)render();}});
+ const childPairingUI=initChildPairingUI({getCloud:()=>cloud});
  const weekKey=now=>now.year+'-'+String(now.week).padStart(2,'0');
  async function refreshSourceHealth(){
   if(!active||sourceHealthBusy||Date.now()-sourceHealthFetchedAt<20*60_000)return;
@@ -338,6 +340,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    details+'<div class="family-child-actions">'+
    (plan?.aiStatus==='failed'?'<button type="button" class="family-soft" data-family-retry="'+escape(pairOf(p))+'">Prøv AI-tolkning igjen</button>':'')+
    '<button type="button" class="family-open" data-family-open="'+escape(p.id)+'">Åpne ukeplan →</button>'+
+   (cloud?'<button type="button" class="family-child-invite" data-family-pair="'+escape(p.id)+'">📱 Inviter barnet (QR)</button>':'')+
    '<button type="button" class="family-soft" data-family-edit="'+escape(p.id)+'">Endre</button>'+
    '<button type="button" class="family-remove" data-family-remove="'+escape(p.id)+'">Fjern</button>'+
    '</div></article>';
@@ -859,6 +862,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   }
   const open=e.target.closest('[data-family-open]');
   if(open){const p=byId(open.dataset.familyOpen);if(p)openChildProfile(p);return;}
+  const pair=e.target.closest('[data-family-pair]');
+  if(pair){const p=byId(pair.dataset.familyPair);if(p&&cloud)childPairingUI.open(p);return;}
   const edit=e.target.closest('[data-family-edit]');
   if(edit){const p=byId(edit.dataset.familyEdit);if(p)openForm(p);return;}
   const remove=e.target.closest('[data-family-remove]');
