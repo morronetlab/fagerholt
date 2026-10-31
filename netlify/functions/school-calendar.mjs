@@ -3,6 +3,7 @@ import {getSchool} from '../../lib/schools.mjs';
 import {dayDate} from '../../public/shared/calendar.mjs';
 import {SKOLERUTE_URL,parseMunicipalYearHtml,municipalDatesForYear,officialSnapshot}
  from '../../lib/kristiansand-calendar.mjs';
+import {inspectOfficialHtml} from '../../lib/calendar-monitor.mjs';
 
 const reply=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{
  'Content-Type':'application/json; charset=utf-8',
@@ -57,11 +58,13 @@ export function createSchoolCalendarHandler({fetchImpl=fetch,now=()=>new Date(),
   const events=new Map(),modes=[],verifiedDates=[];
   for(const startYear of years){
    let data=html?parseMunicipalYearHtml(html,startYear):null;
+   // Freeze disputed critical dates on last audited municipality snapshot
+   // instead of passing a valid-looking but unreviewed HTML change to parents.
+   if(data&&startYear===2026&&!inspectOfficialHtml(html,startYear).valid)data=null;
    if(!data)data=officialSnapshot(startYear);
    if(!data)continue;
    const following=html?parseMunicipalYearHtml(html,startYear+1):null;
-   const firstDay= getNextSchoolStart(following?.rows,startYear+1) ||
-    (startYear===2026?'2027-08-19':null);
+   const firstDay=getNextSchoolStart(following?.rows,startYear+1);
    data={...data,sfo:data.sfo?{...data.sfo,nextSchoolStart:firstDay}:null};
    const dates=municipalDatesForYear(data,startYear);
    modes.push(data.origin);
