@@ -18,7 +18,7 @@ const cal={schoolId:'fagerholt',year:2026,week:45,sourceStatus:'snapshot',source
  events:[{date:'2026-11-06',schoolFree:true,sfoClosed:false,sfoStatus:'unknown',
   label:'Fridag (Sørlandsk lærerstevne)'}]};
 const plan={schoolId:'fagerholt',grade:'3',year:2026,week:45,
- status:'ok',aiStatus:'ready',parser:'ai',pdf,days:{},
+ status:'ok',aiStatus:'ready',parser:'ai',pdf,sourceAudit:{status:'ok',sourceFacts:1,missing:0,unsupported:0},days:{},
  notices:['Vaksine onsdag morgen.'],provenance:[{kind:'notice',sourceQuote:'Vaksine onsdag morgen.',
   sourcePage:2,day:null}],dayNotes:{},homework:[]};
 function blob(){
@@ -51,6 +51,15 @@ test('Digest only uses verified source quote from PDF; invented AI paragraphs ar
  assert.match(result.text,/uke45\.pdf#page=2/);
  assert.doesNotMatch(result.text,/gratis sykkel/);
  assert.match(result.text,/Logg inn på skoleuk.no/);
+});
+test('Unverified or anomalous PDF audit excludes health notices from outgoing email',()=>{
+ for(const status of ['attention','unverified']){
+  const unsafe={...plan,sourceAudit:{status,sourceFacts:1,missing:1,unsupported:1}};
+  const result=buildWeeklyDigest({now:now(),profiles:[profile],plans:new Map([
+   ['fagerholt|3',unsafe]])});
+  assert.doesNotMatch(result.text,/Vaksine onsdag morgen/);
+  assert.match(result.text,/PDF-beskjeder er utelatt/);
+ }
 });
 test('Digest turns explicit source closure into SFO closed but does not assume on other days',()=>{
  const data={...cal,sourceStatus:'live',events:[{date:'2026-11-06',
