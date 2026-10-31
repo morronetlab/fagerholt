@@ -16,7 +16,7 @@ const invitationsFromUrl=()=>{
  history.replaceState(null,'',location.pathname+location.search);
  return /^[a-f0-9]{64}$/.test(token)?token:null;
 };
-export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter()}){
+export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudRestored=()=>false}){
  let client=null,accountReady=false,requestedEmail='',familyId=null,families=[],children=[],invitation=invitationsFromUrl(),nextCodeRequestAt=0;
  let currentScreen='login',gradeRun=0,restoring=true,digestRequest=0;
  const status=(msg,error=false)=>{$('account-message').textContent=msg||'';$('account-message').dataset.error=String(error);};
@@ -122,7 +122,9 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter()}){
    await familyUI.setCloud(client,familyId,children);
    const local=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
    $('account-import').hidden=!local.length;
-   familyUI.enter();
+   // Initial login recovery must not change the user's current plan route.
+   // Explicit family switches and onboarding still open the dashboard.
+   if(!restoring||!onCloudRestored())familyUI.enter();
   }else{children=[];familyUI.clearCloud();}
   $('onboard-children-list').replaceChildren();
   for(const child of children){
