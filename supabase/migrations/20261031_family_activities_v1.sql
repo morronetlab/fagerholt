@@ -14,7 +14,7 @@ create table if not exists public.family_activities (
  location text not null default '' check (char_length(location) <= 120),
  responsible text not null default '' check (char_length(responsible) <= 80),
  notes text not null default '' check (char_length(notes) <= 600),
- created_by uuid not null default auth.uid() references auth.users(id),
+ created_by uuid default auth.uid() references auth.users(id) on delete set null,
  created_at timestamptz not null default now(),
  updated_at timestamptz not null default now(),
  constraint family_activities_child_same_family
@@ -55,8 +55,7 @@ drop policy if exists "parents edit shared activities" on public.family_activiti
 create policy "parents edit shared activities" on public.family_activities
  for update to authenticated
  using (family_id in (select private.parent_family_ids()))
- with check (family_id in (select private.parent_family_ids())
-  and created_by is not null);
+ with check (family_id in (select private.parent_family_ids()));
 drop policy if exists "parents delete shared activities" on public.family_activities;
 create policy "parents delete shared activities" on public.family_activities
  for delete to authenticated
