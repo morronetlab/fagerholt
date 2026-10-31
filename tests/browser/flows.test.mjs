@@ -648,6 +648,7 @@ test('Missing important school notice report selects right family grade and requ
    body:JSON.stringify({status:'received'})});
  });
  await page.reload({waitUntil:'domcontentloaded'});
+ await ensurePracticalOpen(page);
  await page.locator('#family-report-missing').waitFor({state:'visible'});
  await page.locator('#family-report-missing').click();
  assert.equal(await page.locator('#issue-report-kind').inputValue(),'missing_notice');
@@ -1217,7 +1218,7 @@ test('Editing a family event in the combined week immediately updates the timeli
 async function ensurePracticalOpen(page){
  const detail=page.locator('#family-practical-details');
  if(await detail.count()&&!(await detail.evaluate(el=>el.open)))
-  await detail.locator('summary').click();
+  await page.locator('#family-practical-details > summary').click();
 }
 
 test('Skoleuka 2.2 mobile hierarchy makes children and critical notices prominent without losing original sources',async t=>{
