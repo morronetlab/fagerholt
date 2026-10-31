@@ -33,7 +33,8 @@ test('Child sees documented due weekdays and repeated homework while retaining s
  assert.deepEqual(r.map(x=>x.index),[0,2,3,4]);
  assert.deepEqual(b.map(x=>x.index),[1]);
  assert.equal(r[0].dueLabel,'Til torsdag');
- assert.equal(r[1].dueLabel,'Til mandag');
+ assert.equal(r[1].dueLabel,null,'Repeated weekdays do not invent a deadline');
+ assert.equal(r[1].repeatLabel,'📖 Mandag – daglig oppgave');
  assert.equal(r[2].repeatLabel,'📖 Fredag – daglig oppgave');
  assert.equal(r[3].dueLabel,null,'AI tasks with no verified date must not infer one');
  assert.notEqual(homeworkItemKey(r[0]),homeworkItemKey(r[1]));
