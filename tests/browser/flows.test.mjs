@@ -127,6 +127,8 @@ test('Sjøstrand 2 displays practical vaccine and packing information, with corr
  await chooseSchoolGrade(page,'2');
  await page.locator('#homework-list .checkrow').first().waitFor();
  assert.equal(await page.locator('#homework-list .checkrow').count(),2);
+ assert.equal(await page.locator('#homework-list .content-type-label.content-kind-homework').count(),0,
+  'Homework section heading already identifies each task');
  assert.equal(await page.locator('#homework-list .helper-open').count(),1);
  assert.doesNotMatch(await page.locator('#homework-list').innerText(),/vaksine|gymsko/i);
  await page.locator('#day-buttons [data-day="2"]').click();
