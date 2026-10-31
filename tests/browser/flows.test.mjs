@@ -1040,6 +1040,7 @@ test('Opening a ready AI family plan is instant and browser Back and Forward res
 
 test('Browser Back visits grade selection, school selection and home in order',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.locator('#landing-other-options').click();
  await page.locator('#landing-open-plan').click();
  await page.locator('#school-gate').waitFor({state:'visible'});
  await page.locator('[data-school="sjostrand"]').click();
