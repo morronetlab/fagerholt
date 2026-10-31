@@ -214,3 +214,56 @@
 .family-calendar-status:empty{display:none}
 .family-calendar-source{font-size:12px;color:#38658b;text-decoration:underline;text-underline-offset:3px}
 .family-calendar-source:focus-visible{outline:3px solid #edb974;outline-offset:3px}
+
+/* Familiens ukeplan 2.0 – calm, accessible shared activity timeline */
+.family-activities{margin:24px 0 25px;padding:23px 25px 26px;border:1px solid #dce9e0;
+ border-radius:20px;background:#fff;box-shadow:0 8px 26px #204f3c0a}
+.family-activity-head{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.family-activity-head h2{font-size:clamp(20px,2.6vw,26px);margin:0;color:#245a46;letter-spacing:-.4px}
+.family-activity-head p:not(.family-eyebrow){font-size:13px;color:#687f72;margin:7px 0 0}
+.family-activity-head .family-add-button{flex-shrink:0}
+.family-activity-status{font-size:12px;line-height:1.5;color:#527765;margin:12px 0}
+.family-activity-list{display:grid;gap:16px;margin-top:20px}
+.family-activity-day{display:grid;gap:8px}
+.family-activity-day h3{font-size:13px;letter-spacing:.025em;text-transform:capitalize;
+ font-weight:850;color:#306b55;margin:0 0 2px}
+.family-activity-card{display:grid;grid-template-columns:minmax(75px,100px) minmax(0,1fr) auto;
+ align-items:start;gap:15px;padding:15px 18px;border-radius:13px;
+ border:1px solid #e0eae2;background:#f8fbf8}
+.family-activity-clock{font-size:13px;font-weight:850;color:#215c48;white-space:nowrap}
+.family-activity-details{min-width:0;display:flex;flex-direction:column;gap:4px}
+.family-activity-details strong{font-size:15px;color:#1d4b3b;overflow-wrap:anywhere}
+.family-activity-details span{font-size:12px;font-weight:650;color:#698676}
+.family-activity-details p{margin:2px 0;font-size:12px;color:#516c5d;line-height:1.55;overflow-wrap:anywhere}
+.family-activity-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:end}
+.family-activity-actions button{background:#fff;border:1px solid #cfe0d3;border-radius:9px;
+ min-height:36px;padding:7px 10px;color:#27634e;font-size:12px;font-weight:800;cursor:pointer}
+.family-activity-actions [data-activity-delete]{color:#8c4c43;border-color:#ecd7d3}
+.family-activity-empty{padding:18px;background:#f5faf6;border-radius:12px;
+ font-size:13px;color:#688475;margin:0}
+.family-activity-form{margin:19px 0 21px;padding:21px;border:1px solid #d6e6dc;
+ border-radius:15px;background:#f6faf7}
+.family-activity-form[hidden],.family-activity-form [hidden]{display:none!important}
+.family-activity-form .family-form-head h3{font-size:19px;color:#235b47}
+.family-activity-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.family-activity-fields label{display:flex;flex-direction:column;gap:6px;color:#315e4b;
+ font-size:12px;font-weight:800}
+.family-activity-fields .family-activity-wide{grid-column:1/-1}
+.family-activity-fields input,.family-activity-fields select,.family-activity-fields textarea{
+ width:100%;min-width:0;box-sizing:border-box;border:1px solid #cbded1;
+ border-radius:10px;padding:10px 12px;background:#fff;font:inherit;font-size:14px;color:#214c3c}
+.family-activity-fields input,.family-activity-fields select{min-height:45px}
+.family-activity-help{font-size:12px;line-height:1.6;color:#66806f;margin:16px 0 12px}
+.family-activities button:focus-visible,.family-activity-fields input:focus-visible,
+.family-activity-fields select:focus-visible,.family-activity-fields textarea:focus-visible{
+ outline:3px solid #70b995;outline-offset:2px}
+@media(max-width:700px){
+ .family-activities{padding:19px 16px}
+ .family-activity-head{align-items:flex-start;flex-direction:column}
+ .family-activity-head .family-add-button{align-self:stretch}
+ .family-activity-card{grid-template-columns:1fr;gap:6px;padding:14px}
+ .family-activity-clock{font-size:12px}
+ .family-activity-actions{justify-content:flex-start;margin-top:8px}
+ .family-activity-fields{grid-template-columns:1fr}
+ .family-activity-fields label{grid-column:1/-1}
+}
