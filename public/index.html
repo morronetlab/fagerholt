@@ -217,8 +217,8 @@
             <h2 id="family-agenda-title">Skole og fritid</h2>
             <p class="family-agenda-subtitle">Det som skjer mandag–fredag, med mulighet til å se helgens avtaler.</p>
           </div>
-          <label class="family-agenda-filter">Vis aktiviteter for
-            <select id="family-agenda-child" aria-label="Filtrer ukeoversikten etter barn">
+          <label class="family-agenda-filter"><span class="family-desktop-filter-label">Vis aktiviteter for</span>
+            <select id="family-agenda-child" aria-label="Velg barn for kalenderen">
               <option value="">Alle i familien</option>
             </select>
           </label>
@@ -229,9 +229,17 @@
           <span class="content-type-label content-kind-activity">⚽ Aktivitet</span>
           <span class="content-type-label content-kind-municipal">🏫 Skolerute</span>
         </div>
-        <nav id="family-mobile-days" class="family-mobile-days" aria-label="Velg dag i kalenderen">
-          <button type="button" data-family-mobile-day="all" aria-pressed="false">Hele uka</button>
-        </nav>
+        <div class="family-mobile-calendar-controls">
+          <nav id="family-mobile-days" class="family-mobile-days" aria-label="Velg dag i kalenderen"></nav>
+          <details id="family-mobile-calendar-options" class="family-mobile-calendar-options">
+            <summary aria-label="Flere valg for kalenderen">⋯ <span class="visually-hidden">Flere kalendervalg</span></summary>
+            <div class="family-mobile-calendar-menu">
+              <button type="button" data-family-mobile-range aria-pressed="false">Vis hele uka</button>
+              <button type="button" data-family-mobile-weekend hidden>Vis helg</button>
+            </div>
+          </details>
+        </div>
+        <p id="family-mobile-day-status" class="family-mobile-day-status" role="status" aria-live="polite"></p>
         <p id="family-agenda-status" class="family-agenda-status" role="status" aria-live="polite"></p>
         <div id="family-agenda-days" class="family-agenda-days"></div>
         <button type="button" id="family-agenda-weekend-toggle" class="family-agenda-weekend-toggle"

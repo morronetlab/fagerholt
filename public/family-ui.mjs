@@ -310,12 +310,12 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const markup=familyAgendaMarkup(visible,{today:now.today});
   setHtml('family-agenda-days',markup.days);
   setHtml('family-agenda-undated-list',markup.undated);
-  mobileUI.refreshDays();
   const weekend=el('family-agenda-weekend-toggle');
   weekend.hidden=visible.weekendCount===0;
   weekend.setAttribute('aria-expanded',String(visible.weekendVisible));
   weekend.textContent=visible.weekendVisible?'Skjul helg':
    'Vis helg ('+visible.weekendCount+' hendelse'+(visible.weekendCount===1?'':'r')+')';
+  mobileUI.refreshDays();
   el('family-agenda-undated').hidden=!model.undated.length;
   const importantUndated=model.undated.filter(item=>item.important).length;
   el('family-agenda-undated-summary').textContent=model.undated.length+
@@ -853,6 +853,15 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  });
  for(const id of ['family-agenda-days','family-agenda-undated']){
   el(id).addEventListener('click',event=>{
+   const details=event.target.closest('[data-family-agenda-details]');
+   if(details){
+    const card=details.closest('.family-agenda-item');
+    if(!card)return;
+    const expanded=card.classList.toggle('is-expanded');
+    details.setAttribute('aria-expanded',String(expanded));
+    details.textContent=expanded?'Skjul detaljer':'Mer info';
+    return;
+   }
    const button=event.target.closest('[data-family-agenda-edit]');
    if(button){
     mobileUI.selectView('activities');

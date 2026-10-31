@@ -114,3 +114,102 @@
  #family-view #family-activity-section .family-activity-head h2{font-size:20px}
  #family-view #family-activity-section .family-activity-head p{display:none}
 }
+
+/* Calendar v2: five day tiles, one quiet filter and expandable event details. */
+.family-mobile-calendar-controls,.family-mobile-day-status,.family-agenda-compact-icon,
+.family-agenda-compact-line,.family-agenda-expand{display:none}
+.family-agenda-compact-main,.family-agenda-compact-text,.family-agenda-item-more{display:contents}
+@media(max-width:700px){
+ #family-view .family-agenda{padding:11px 12px 12px;margin-top:0}
+ #family-view .family-agenda-top{margin:0 0 9px;gap:0}
+ #family-view .family-agenda-top>div{display:none}
+ #family-view .family-agenda-filter{display:block;min-width:0;width:100%;margin:0}
+ #family-view .family-desktop-filter-label{display:none}
+ #family-view .family-agenda-filter select{
+  width:100%;min-height:40px;padding:8px 12px;border-radius:11px;
+  background-color:#f8fcf9;border:1px solid #d8e7dd;color:#265b46;
+  font-weight:750;font-size:13px;
+ }
+ #family-view .family-agenda-key,#family-view .family-agenda-status,
+ #family-view .family-agenda-footnote{display:none}
+ .family-mobile-calendar-controls{
+  display:grid;grid-template-columns:minmax(0,1fr) 38px;align-items:stretch;
+  gap:6px;margin:8px 0 3px
+ }
+ #family-view .family-mobile-days{
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+  overflow:visible;gap:5px;margin:0;padding:0;min-width:0
+ }
+ #family-view .family-mobile-day-tile{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;min-width:0;width:100%;min-height:65px;padding:6px 1px;
+  border:1px solid #dce9df;border-radius:11px;background:#f8faf8;
+  color:#446a56;box-shadow:none;font-size:11px;
+ }
+ #family-view .family-mobile-day-tile[aria-pressed=true]{
+  border:2px solid #328269;background:#e6f3eb;color:#165d44;
+ }
+ .family-mobile-day-name{font-weight:750;font-size:11px}
+ .family-mobile-day-date{font-size:19px;line-height:1.1;font-weight:850}
+ .family-mobile-day-indicator{display:block;width:5px;height:5px;
+  border-radius:50%;background:transparent}
+ .family-mobile-day-indicator.has-events{background:#328269}
+ .family-mobile-calendar-options{position:relative;align-self:stretch;z-index:5}
+ .family-mobile-calendar-options>summary{
+  list-style:none;display:flex;align-items:center;justify-content:center;
+  min-width:38px;height:100%;border-radius:11px;background:#f8faf8;
+  border:1px solid #dce9df;color:#285f49;font-size:19px;font-weight:800;
+  cursor:pointer
+ }
+ .family-mobile-calendar-options>summary::-webkit-details-marker{display:none}
+ .family-mobile-calendar-options[open]>summary{background:#e6f3eb}
+ .family-mobile-calendar-menu{
+  position:absolute;right:0;top:calc(100% + 5px);width:max-content;
+  min-width:152px;max-width:calc(100vw - 40px);display:grid;gap:4px;
+  padding:6px;border:1px solid #c5dccc;border-radius:12px;
+  box-shadow:0 7px 22px #16412b22;background:white
+ }
+ .family-mobile-calendar-menu button{border:0;background:white;min-height:39px;
+  text-align:left;padding:9px 11px;border-radius:8px;font-size:12px;
+  color:#215d44;font-weight:700;white-space:nowrap}
+ .family-mobile-calendar-menu button:hover{background:#edf6ef}
+ .family-mobile-day-status{display:block;color:#285b47;font-size:12px;font-weight:800;
+  text-transform:capitalize;margin:9px 0 7px}
+ #family-view #family-agenda-weekend-toggle{display:none}
+ #family-view .family-agenda-day{padding:9px;border-radius:11px;gap:5px}
+ #family-view .family-agenda-day h3{display:none}
+ #family-view .family-agenda-day.is-empty{display:block;padding:10px}
+ #family-view .family-agenda-item{
+  display:flex;flex-direction:column;gap:2px;padding:9px 10px;margin:0 0 5px;
+  border-left-width:4px;border-radius:9px;
+ }
+ #family-view .family-agenda-item>.family-agenda-type{display:none}
+ #family-view .family-agenda-compact-main{display:flex;align-items:flex-start;gap:10px}
+ #family-view .family-agenda-compact-icon{
+  display:flex;align-items:center;justify-content:center;flex:0 0 31px;
+  width:31px;min-height:31px;border-radius:8px;
+  background:#ffffffba;font-size:17px
+ }
+ #family-view .family-agenda-compact-text{display:grid;gap:3px;min-width:0;flex:1}
+ #family-view .family-agenda-compact-text strong{font-size:13px;line-height:1.3}
+ #family-view .family-agenda-compact-line{
+  display:block;font-size:11px;color:#607d6e;line-height:1.25
+ }
+ #family-view .family-agenda-item-more{display:none}
+ #family-view .family-agenda-item.is-expanded .family-agenda-item-more{
+  display:grid;gap:5px;padding:8px 2px 3px 41px
+ }
+ #family-view .family-agenda-expand{
+  display:block;align-self:flex-end;font-size:10px;font-weight:800;
+  color:#2e7154;background:transparent;border:0;min-height:28px;
+  padding:3px 4px;margin-top:-1px;cursor:pointer
+ }
+ #family-view .family-agenda-edit{width:fit-content}
+ #family-view .family-agenda-quiet{font-size:12px}
+ #family-view .family-agenda-undated{margin-top:7px}
+ #family-view .family-mobile-day-tile:focus-visible,
+ #family-view .family-agenda-expand:focus-visible,
+ #family-view .family-mobile-calendar-options summary:focus-visible{
+  outline:3px solid #b97b37;outline-offset:2px
+ }
+}
