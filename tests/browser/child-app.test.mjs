@@ -32,13 +32,22 @@ async function open(t,query='',{redeem=true,sharedProgress=null,saveReject=false
   class MockDate extends D{constructor(...args){super(...(args.length?args:[fixed]));}static now(){return +fixed;}}
   window.Date=MockDate;
  });
- const calls=[],progress=sharedProgress||new Map();
+ const calls=[],progress=sharedProgress||new Map(),packing=new Map();
  await page.route('**/api/child-access**',route=>{
   const url=new URL(route.request().url());
   calls.push({method:route.request().method(),url:url.pathname+url.search,headers:route.request().headers(),body:route.request().postDataJSON?.()});
   const action=route.request().method()==='POST'?route.request().postDataJSON()?.action:null;
   const isRedeem=action==='redeem',isSelfRevoke=action==='self-revoke',
-   isProgress=url.searchParams.get('action')==='progress',isSave=action==='set-progress';
+   isProgress=url.searchParams.get('action')==='progress',isSave=action==='set-progress',
+   isPacking=url.searchParams.get('action')==='packing',isPackSave=action==='set-packing';
+  if(isPacking)return route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify({progress:[...packing].map(([key,completed])=>({key,completed}))})});
+  if(isPackSave){
+   const body=route.request().postDataJSON();
+   packing.set(body.taskKey,body.completed);
+   return route.fulfill({status:200,contentType:'application/json',
+    body:JSON.stringify({key:body.taskKey,completed:body.completed})});
+  }
   if(isProgress&&readReject)return route.fulfill({status:503,contentType:'application/json',
    body:JSON.stringify({error:'Midlertidig utilgjengelig'})});
   if(isProgress)return route.fulfill({status:200,contentType:'application/json',
@@ -73,7 +82,7 @@ async function open(t,query='',{redeem=true,sharedProgress=null,saveReject=false
   return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(plan)});
  });
  await page.goto(server.baseURL+'/barn/index.html'+query,{waitUntil:'domcontentloaded'});
- return {page,calls,errors,progress};
+ return {page,calls,errors,progress,packing};
 }
 test('One QR activates isolated child app and hides sibling content',async t=>{
  const {page,calls,errors}=await open(t,'?pair='+pair);
@@ -126,8 +135,8 @@ test('Unpaired or expired QR never presents someone else’s profile',async t=>{
  assert.deepEqual(two.errors,[]);
 });
 
-test('Child sees groups and deadlines; packing is local while homework syncs with family progress',async t=>{
- const {page,errors,progress}=await open(t,'?pair='+pair);
+test('Child sees groups and deadlines; packing and homework sync with family progress',async t=>{
+ const {page,errors,progress,packing}=await open(t,'?pair='+pair);
  await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor({state:'visible'});
  assert.match(await page.locator('#child-events').innerText(),/Rød/);
  assert.match(await page.locator('#child-attendance').innerText(),/08:45/);
@@ -141,6 +150,7 @@ test('Child sees groups and deadlines; packing is local while homework syncs wit
  assert.match(await page.locator('#child-homework-progress').innerText(),/0 av 2/);
  assert.equal(await page.locator('#child-bag input[type=checkbox]').count(),1);
  await page.locator('#child-bag input[type=checkbox]').check();
+ assert.equal(packing.size,1);
  await page.locator('#child-homework input[data-child-homework="1"]').check();
  await page.locator('#child-homework-sync').getByText(/deles med foresatte/).waitFor();
  const fingerprint=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:44,
