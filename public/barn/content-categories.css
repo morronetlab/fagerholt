@@ -29,3 +29,11 @@
 .child-panel:has(#child-bag){border-top:5px solid var(--type-practical-border)}
 .child-panel:has(#child-activities){border-top:5px solid var(--type-activity-border)}
 @media(max-width:600px){.child-type-key{gap:6px}.content-type-label{font-size:10px}}
+
+.child-municipal{border-top:5px solid var(--type-municipal-border);background:#fffafc}
+.child-municipal .child-panel-heading>span{background:var(--type-municipal-bg)}
+.child-municipal-row{display:grid;gap:6px;margin:9px 0;padding:12px 14px;
+ border:1px solid #edc8d5;border-left:5px solid var(--type-municipal-border);
+ border-radius:12px;background:#fff4f8}
+.child-municipal-row strong{color:#603149;font-size:14px}
+.child-municipal-row small{font-size:12px;color:#744b5d}
