@@ -196,3 +196,62 @@ test('Child can complete the actual PDF-grounded English quiz and Norwegian word
  assert.equal(await page.locator('#child-quiz-preview').isVisible(),true);
  assert.deepEqual(errors,[]);
 });
+
+test('Guardian-shared completion appears on another child device, including unchecked state',async t=>{
+ const sharedProgress=new Map();
+ const a=await open(t,'?pair='+pair,{sharedProgress});
+ await a.page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ await a.page.locator('#child-homework input[data-child-homework="1"]').check();
+ const key=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:44,task:plan.homework[1]});
+ assert.equal(sharedProgress.get(key),true);
+ const b=await open(t,'?pair='+pair,{sharedProgress});
+ await b.page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ assert.equal(await b.page.locator('#child-homework input[data-child-homework="1"]').isChecked(),true);
+ await b.page.locator('#child-homework input[data-child-homework="1"]').uncheck();
+ assert.equal(sharedProgress.get(key),false);
+ await a.page.reload({waitUntil:'domcontentloaded'});
+ await a.page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ assert.equal(await a.page.locator('#child-homework input[data-child-homework="1"]').isChecked(),false);
+ assert.deepEqual(a.errors,[]);assert.deepEqual(b.errors,[]);
+});
+test('Failed shared homework save rolls checkbox back and shows an unsaved warning',async t=>{
+ const {page,errors,progress}=await open(t,'?pair='+pair,{saveReject:true});
+ await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ await page.locator('#child-homework input[data-child-homework="1"]').check();
+ await page.locator('#child-homework-sync').getByText(/ble ikke lagret/i).waitFor();
+ assert.equal(await page.locator('#child-homework input[data-child-homework="1"]').isChecked(),false);
+ assert.equal(progress.size,0);
+ assert.deepEqual(errors,[]);
+});
+test('Offline shared status disables homework writes, not unrelated child packing',async t=>{
+ const {page,errors}=await open(t,'?pair='+pair,{readReject:true});
+ await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ assert.match(await page.locator('#child-homework-sync').innerText(),/Synkronisering er utilgjengelig/);
+ assert.equal(await page.locator('#child-homework input[data-child-homework="1"]').isDisabled(),true);
+ await page.locator('#child-bag input[type=checkbox]').check();
+ assert.equal(await page.locator('#child-bag input[type=checkbox]').isChecked(),true);
+ assert.deepEqual(errors,[]);
+});
+test('Previously checked local homework needs explicit import and never overwrites guardian false',async t=>{
+ const sharedProgress=new Map();
+ const parentKey=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:44,
+  task:plan.homework[0]});
+ sharedProgress.set(parentKey,false);
+ const {page,calls,errors}=await open(t,'?pair='+pair,{sharedProgress});
+ await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ await page.evaluate((id)=>{
+  localStorage.setItem('skoleuka.child.checked.v1.'+id+'.2026.44.homework.all',
+   JSON.stringify({'0':true,'1':true}));
+ },child);
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ assert.match(await page.locator('#child-import-homework').innerText(),/1 tidligere avkrysning/);
+ assert.equal(await page.locator('#child-homework input[data-child-homework="0"]').isChecked(),false);
+ await page.locator('#child-import-homework').click();
+ const key=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:44,task:plan.homework[1]});
+ await page.locator('#child-homework input[data-child-homework="1"]:checked').waitFor();
+ assert.equal(sharedProgress.get(parentKey),false);
+ assert.equal(sharedProgress.get(key),true);
+ assert.equal(calls.filter(x=>x.body?.action==='set-progress').length,1);
+ assert.deepEqual(errors,[]);
+});
