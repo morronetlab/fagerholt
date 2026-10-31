@@ -1,9 +1,13 @@
 /** Cache ONLY public app shell files. Never cache sessions, school APIs or private responses. */
-const CACHE='skoleuka-child-shell-v1';
+const CACHE='skoleuka-child-shell-v2';
 const FILES=['/barn/','/barn/index.html','/barn/child.css','/barn/child.mjs',
  '/barn/manifest.webmanifest','/barn/icon-192.png','/barn/icon-512.png',
  '/site-config.mjs','/shared/calendar.mjs','/shared/family-core.mjs',
- '/shared/selection.mjs','/shared/homework-view.mjs','/shared/family-activities.mjs'];
+ '/shared/selection.mjs','/shared/homework-view.mjs','/shared/family-activities.mjs',
+ '/barn/child-learning.mjs','/barn/child-quiz.mjs','/barn/child-helper.mjs',
+ '/shared/word-quiz-core.mjs','/shared/word-practice-core.mjs',
+ '/shared/homework-help-eligibility.mjs','/shared/plan-display.mjs',
+ '/shared/day-view.mjs','/shared/group-scope.mjs'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES))
  .then(()=>self.skipWaiting()).catch(()=>{}));});
 self.addEventListener('activate',event=>{event.waitUntil(

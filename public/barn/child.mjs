@@ -1,8 +1,12 @@
 /** A separate, child-only UI. No parent account, Supabase key or sibling data. */
 import {siteConfig} from '../site-config.mjs';
 import {DAYS,dayDate,familyWeekCalendar} from '../shared/calendar.mjs';
-import {groupApplies} from '../shared/family-core.mjs';
-import {expandHomework} from '../shared/homework-view.mjs';
+import {groupColorClass} from '../shared/group-scope.mjs';
+import {needsHomeworkHelp} from '../shared/homework-help-eligibility.mjs';
+import {scopedHomeworkItems,scopedPackingItems,childSchoolDayDetails,
+ childCheckedKey,readChildChecks,setChildCheck,homeworkItemKey} from './child-learning.mjs';
+import {renderChildQuiz,initChildQuiz} from './child-quiz.mjs';
+import {initChildHelper,openChildHelper} from './child-helper.mjs';
 import {activityOccurrences,activityTimeLabel} from '../shared/family-activities.mjs';
 
 const $=id=>document.getElementById(id);
@@ -11,14 +15,25 @@ const esc=s=>String(s??'').replace(/[&<>"']/gu,c=>({
  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
 }[c]));
 const safeURL=raw=>{try{const u=new URL(raw);return u.protocol==='https:'?u.href:null;}catch{return null;}};
-const state={child:null,plan:null,activities:[],day:0,calendar:null,session:null,installer:null};
+const state={child:null,plan:null,activities:[],day:0,calendar:null,session:null,installer:null,homework:[],bag:[]};
 const getToken=()=>{try{return localStorage.getItem(KEY);}catch{return null;}};
 function setToken(token){
  try{if(token)localStorage.setItem(KEY,token);else localStorage.removeItem(KEY);}catch{}
 }
 function status(message){$('child-status').textContent=message||'';}
 const empty=message=>'<p class="child-empty">'+esc(message)+'</p>';
-const scoped=(items,child)=>Array.isArray(items)?items.filter(x=>groupApplies(x,child)):[];
+const groupBadge=group=>group?'<span class="child-group '+groupColorClass(group)+'">'+esc(group)+'</span>':'';
+const packStore=()=>childCheckedKey(state.child,state.calendar.year,state.calendar.week,'bag',DAYS[state.day]);
+const homeworkStore=()=>childCheckedKey(state.child,state.calendar.year,state.calendar.week,'homework');
+const checks=key=>{try{return readChildChecks(localStorage,key);}catch{return {};}};
+const timeline=events=>events.map(block=>
+ '<div class="child-timeblock">'+(block.time?'<time class="child-time">'+esc(block.time)+'</time>':'<span class="child-time">📌</span>')+
+ '<div class="child-timeentries">'+block.entries.map(item=>
+   '<div class="child-timeentry">'+groupBadge(item.group)+
+   '<strong>'+esc(item.title||'Skoleaktivitet')+'</strong>'+
+   (item.endTime?'<small>'+esc(item.endTime)+'</small>':'')+
+   (item.description?'<small>'+esc(item.description)+'</small>':'')+
+   '</div>').join('')+'</div></div>').join('');
 async function get(path,{method='GET',body,token=null}={}){
  const headers={Accept:'application/json'};
  if(token)headers.Authorization='Bearer '+token;
@@ -54,16 +69,20 @@ function render(){
   '<button type="button" data-child-day="'+i+'" '+(i===state.day?'aria-current="date"':'')+
   ' class="'+(i===state.day?'selected':'')+'"><strong>'+esc(day.slice(0,3))+
   '</strong><span>'+new Date(schoolDay(i)+'T12:00:00Z').getUTCDate()+'</span></button>').join('');
- const day=DAYS[state.day],school=plan?.days?.[day]||{};
- const events=ok?scoped(school.events,child):[];
- $('child-events').innerHTML=ok?(events.length?
-  events.map(x=>'<article class="child-row"><span class="child-row-time">'+
-   esc(x.time||'📌')+'</span><span>'+esc(x.title||x.text||'Skoleaktivitet')+'</span></article>').join(''):
-  empty('Ingen spesielle hendelser registrert for denne dagen.')):
-  empty('Ukeplanen er ikke publisert eller tolket ennå. Prøv «Oppdater».');
- const notes=ok?scoped(plan?.dayNotes?.[day],child):[];
- $('child-notes').innerHTML=notes.map(x=>
-  '<p class="child-note">📌 '+esc(x.text||x.label||x)+'</p>').join('');
+ const day=DAYS[state.day];
+ const details=childSchoolDayDetails(ok?plan:null,child,day);
+ $('child-events').innerHTML=ok?(details.own.length?timeline(details.own):
+  empty('Ingen spesielle hendelser for din gruppe denne dagen.')):
+  empty('Ukeplanen er ikke publisert eller ferdig tolket. Prøv «Oppdater».');
+ $('child-notes').innerHTML=details.notes.map(note=>
+  '<p class="child-note">'+(note.important?'⚠️ ':'📌 ')+
+   groupBadge(note.group)+esc(note.text)+'</p>').join('');
+ $('child-attendance').innerHTML=details.attendance.length?
+  '<div class="child-attendance"><strong>⏰ Særskilt oppmøte</strong>'+
+  details.attendance.map(item=>'<p>'+groupBadge(item.group)+'Kl. '+esc(item.time)+' · '+
+   esc(item.text||'')+'</p>').join('')+'</div>':'';
+ $('child-other-groups').hidden=!details.other.length;
+ $('child-other-events').innerHTML=details.other.length?timeline(details.other):'';
  const activityRows=activityOccurrences(state.activities,calendar.year,calendar.week)
   .filter(x=>x.date===schoolDay(state.day)&&(!x.child_id||x.child_id===child.id));
  $('child-activities').innerHTML=activityRows.length?activityRows.map(x=>
@@ -72,16 +91,36 @@ function render(){
   (x.location?'<small>'+esc(x.location)+'</small>':'')+
   (x.notes?'<small>'+esc(x.notes)+'</small>':'')+
   '</span></article>').join(''):empty('Ingen familieaktiviteter denne dagen.');
- const bag=ok?[...scoped(plan?.everyday,child),...scoped(school.bring,child)]:[];
- const labels=[...new Set(bag.map(x=>String(x?.label||x?.text||'').trim()).filter(Boolean))];
- $('child-bag').innerHTML=labels.length?'<ul class="child-list">'+
-  labels.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':empty('Ingen ekstra utstyr denne dagen.');
- const tasks=ok?scoped(expandHomework(plan?.homework||[]),child):[];
- $('child-homework').innerHTML=tasks.length?
-  '<ul class="child-list">'+tasks.map(x=>'<li>'+
-   (x.subject?'<b>'+esc(x.subject)+'</b> · ':'')+esc(x.text)+
-   (x.dueDay?'<small>Frist: '+esc(x.dueDay)+'</small>':'')+'</li>').join('')+'</ul>':
-  empty('Ingen lekser registrert for denne uka.');
+ state.bag=ok?scopedPackingItems(plan,child,day):[];
+ const bagDone=checks(packStore()),bagCount=state.bag.filter(item=>bagDone[item.key]).length;
+ $('child-bag').innerHTML=state.bag.length?'<div class="child-check-list">'+
+  state.bag.map(item=>'<label class="child-check-row '+(bagDone[item.key]?'is-done':'')+'">'+
+   '<input type="checkbox" data-child-bag="'+esc(item.key)+'" '+(bagDone[item.key]?'checked':'')+
+   '><span class="child-check-content">'+groupBadge(item.group)+
+   '<strong>'+esc(item.label)+'</strong>'+(item.note?'<small>'+esc(item.note)+'</small>':'')+
+   '</span></label>').join('')+'</div>':empty('Ingen ekstra utstyr denne dagen.');
+ $('child-bag-progress').textContent=state.bag.length?bagCount+' av '+state.bag.length+' pakket':'';
+ state.homework=ok?scopedHomeworkItems(plan,child):[];
+ const done=checks(homeworkStore());
+ const homeworkDone=state.homework.filter(task=>done[homeworkItemKey(task)]).length;
+ $('child-homework-progress').textContent=state.homework.length?
+  '⭐ '+homeworkDone+' av '+state.homework.length+' lekser fullført':'';
+ $('child-homework').innerHTML=state.homework.length?'<div class="child-check-list">'+
+  state.homework.map(item=>{
+   const checked=done[homeworkItemKey(item)]===true;
+   const label=item.dueLabel||(item.repeatLabel?'':'Frist ikke oppgitt i ukeplanen');
+   return '<article class="child-homework-item"><label class="child-check-row '+(checked?'is-done':'')+'">'+
+    '<input type="checkbox" data-child-homework="'+item.index+'" '+(checked?'checked':'')+'>'+
+    '<span class="child-check-content">'+groupBadge(item.group)+
+    (label?'<span class="child-homework-due">📅 '+esc(label)+'</span>':'')+
+    (item.repeatLabel?'<small>'+esc(item.repeatLabel)+'</small>':'')+
+    (item.subject?'<small class="child-homework-subject">'+esc(item.subject)+'</small>':'')+
+    '<strong>'+esc(item.text||'')+'</strong></span></label>'+
+    (needsHomeworkHelp(item)?'<button class="child-outline child-help-button" data-child-help-task="'+item.index+
+     '" type="button">✨ Få leksehjelp</button>':'')+'</article>';
+  }).join('')+'</div>':empty('Ingen lekser registrert for denne uka.');
+ renderChildQuiz(ok?plan?.vocabulary:[],{child,school:child.school,grade:child.grade,
+  year:calendar.year,week:calendar.week});
  const link=safeURL(plan?.pdf)||safeURL(plan?.source);
  $('child-source').innerHTML=link?
   'Ukeplanen kommer fra skolen. <a href="'+esc(link)+
@@ -147,6 +186,28 @@ $('child-install-button').addEventListener('click',async()=>{
 $('child-install-dismiss').addEventListener('click',()=>{
  sessionStorage.setItem('child-install-dismissed','1');$('child-install-box').hidden=true;
 });
+$('child-bag').addEventListener('change',event=>{
+ const el=event.target.closest('[data-child-bag]');
+ if(!el||!state.child||!state.calendar)return;
+ try{setChildCheck(localStorage,packStore(),el.dataset.childBag,el.checked);render();}
+ catch{status('Kunne ikke lagre pakkestatus på denne enheten.');}
+});
+$('child-homework').addEventListener('change',event=>{
+ const el=event.target.closest('[data-child-homework]');
+ if(!el||!state.child||!state.calendar)return;
+ const item=state.homework.find(x=>x.index===Number(el.dataset.childHomework));
+ if(!item)return;
+ try{setChildCheck(localStorage,homeworkStore(),homeworkItemKey(item),el.checked);render();}
+ catch{status('Kunne ikke lagre lekseprogresjon på denne enheten.');}
+});
+$('child-homework').addEventListener('click',event=>{
+ const btn=event.target.closest('[data-child-help-task]');
+ if(!btn||!state.child)return;
+ const item=state.homework.find(x=>x.index===Number(btn.dataset.childHelpTask));
+ if(item)openChildHelper(item,state.child.grade);
+});
+initChildQuiz();
+initChildHelper();
 $('child-days').addEventListener('click',e=>{
  const button=e.target.closest('[data-child-day]');if(!button)return;
  const value=Number(button.dataset.childDay);if(value<0||value>4)return;

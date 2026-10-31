@@ -14,9 +14,13 @@ const plan={status:'ok',parser:'ai',aiStatus:'ready',year:2026,week:44,
   {title:'Svømming for blå gruppe',group:'Blå',time:'11:00'}
  ],bring:[{label:'Tursekk',group:'Rød'},{label:'Svømmetøy',group:'Blå'}]}},
  everyday:[],dayNotes:{Onsdag:[{text:'Husk samtykke fra foresatt',group:'Rød'}]},
+ attendance:[{day:'Onsdag',time:'08:45',group:'Rød',text:'Ved biblioteket'},
+  {day:'Onsdag',time:'09:00',group:'Blå',text:'Ved gymsalen'}],
  homework:[{text:'Les en bok',subject:'Norsk',group:'Rød',dueDay:'Fredag'},
+  {text:'Forklar hva et adjektiv er',subject:'Norsk',group:'Rød',dueDay:'Torsdag'},
   {text:'Blå gruppes hemmelige lekse',subject:'Norsk',group:'Blå',dueDay:'Fredag'}],
- vocabulary:[],notices:[]};
+ vocabulary:[{category:'engelske gloser',text:'apple - eple; dog - hund'},
+  {category:'norske øveord',text:'skole, sol'}],notices:[]};
 async function open(t,query='',{redeem=true}={}){
  const context=await browser.newContext({viewport:{width:390,height:790},locale:'nb-NO',timezoneId:'Europe/Oslo'});
  t.after(()=>context.close());
@@ -103,4 +107,71 @@ test('Unpaired or expired QR never presents someone else’s profile',async t=>{
  assert.equal(await two.page.locator('#child-ready').isVisible(),false);
  assert.deepEqual(one.errors,[]);
  assert.deepEqual(two.errors,[]);
+});
+
+test('Child sees class-group details and dated assignments, marks bag and homework locally across reload',async t=>{
+ const {page,errors}=await open(t,'?pair='+pair);
+ await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor({state:'visible'});
+ assert.match(await page.locator('#child-events').innerText(),/Rød/);
+ assert.match(await page.locator('#child-attendance').innerText(),/08:45/);
+ assert.match(await page.locator('#child-attendance').innerText(),/biblioteket/);
+ assert.equal(await page.locator('#child-other-groups').evaluate(el=>el.open),false);
+ await page.locator('#child-other-groups > summary').click();
+ assert.match(await page.locator('#child-other-events').innerText(),/Svømming for blå/);
+ assert.match(await page.locator('#child-other-events').innerText(),/Blå/);
+ assert.match(await page.locator('#child-homework').innerText(),/Til fredag/);
+ assert.match(await page.locator('#child-homework').innerText(),/Til torsdag/);
+ assert.match(await page.locator('#child-homework-progress').innerText(),/0 av 2/);
+ assert.equal(await page.locator('#child-bag input[type=checkbox]').count(),1);
+ await page.locator('#child-bag input[type=checkbox]').check();
+ await page.locator('#child-homework input[data-child-homework="1"]').check();
+ assert.match(await page.locator('#child-bag-progress').innerText(),/1 av 1/);
+ assert.match(await page.locator('#child-homework-progress').innerText(),/1 av 2/);
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ assert.equal(await page.locator('#child-bag input[type=checkbox]').isChecked(),true);
+ assert.equal(await page.locator('#child-homework input[data-child-homework="1"]').isChecked(),true);
+ assert.match(await page.locator('#child-bag-progress').innerText(),/1 av 1/);
+ assert.deepEqual(errors,[]);
+});
+test('Child may ask for a hint without exposing child identity or device bearer to homework AI',async t=>{
+ const {page,errors}=await open(t,'?pair='+pair);
+ const requests=[];
+ await page.route('**/api/homework-helper',route=>{
+  requests.push({headers:route.request().headers(),payload:route.request().postDataJSON()});
+  return route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify({help:'Adjektiv beskriver ting og personer. Prøv å finne et eksempel.'})});
+ });
+ await page.locator('#child-homework [data-child-help-task="1"]').waitFor({state:'visible'});
+ assert.equal(await page.locator('#child-homework [data-child-help-task="0"]').count(),0,
+  'Reading-only tasks should not display the AI help button');
+ await page.locator('#child-homework [data-child-help-task="1"]').click();
+ await page.locator('#child-helper').waitFor({state:'visible'});
+ await page.locator('[data-child-help="hint"]').click();
+ await page.locator('#child-helper-result').getByText(/Adjektiv beskriver/).waitFor();
+ assert.equal(requests.length,1);
+ assert.equal(requests[0].payload.mode,'hint');
+ assert.deepEqual(Object.keys(requests[0].payload).sort(),['grade','mode','subject','text']);
+ assert.equal(requests[0].headers.authorization,undefined);
+ assert.doesNotMatch(JSON.stringify(requests),/Barn A|skoleuka.child.device|Bearer/);
+ await page.locator('#child-helper-close').click();
+ assert.equal(await page.locator('#child-helper').isVisible(),false);
+ assert.deepEqual(errors,[]);
+});
+test('Child can complete the actual PDF-grounded English quiz and Norwegian word exercise',async t=>{
+ const {page,errors}=await open(t,'?pair='+pair);
+ await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ assert.equal(await page.locator('#child-quiz-section').isVisible(),true);
+ await page.locator('[data-child-quiz-language="en"]').click();
+ await page.locator('#child-quiz-game').waitFor({state:'visible'});
+ assert.match(await page.locator('#child-quiz-question').innerText(),/apple/);
+ await page.locator('#child-quiz-answer').fill('eple');
+ await page.locator('#child-quiz-form button[type=submit]').click();
+ assert.match(await page.locator('#child-quiz-feedback').innerText(),/Riktig/);
+ await page.locator('#child-quiz-pause').click();
+ await page.locator('[data-child-quiz-language="nb"]').click();
+ assert.match(await page.locator('#child-quiz-question').innerText(),/Se ordet kort/);
+ await page.locator('#child-quiz-peek').click();
+ assert.equal(await page.locator('#child-quiz-preview').isVisible(),true);
+ assert.deepEqual(errors,[]);
 });
