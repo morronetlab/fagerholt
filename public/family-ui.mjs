@@ -1,5 +1,6 @@
 /** Device-local family UI; one source-grounded weekly plan per class. */
 import {siteConfig} from './site-config.mjs';
+import {initFamilyActivitiesUI} from './family-activities-ui.mjs';
 import {familyWeekCalendar,DAYS} from './shared/calendar.mjs';
 import {FAMILY_STORAGE_KEY,FAMILY_MAX_PROFILES,readFamily,familyDocument,putProfile,profileSummary,
  familyHighlights,schoolDayIndices,childProgressKey} from './shared/family-core.mjs';
@@ -115,6 +116,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  }
 
  const calendar=()=>familyWeekCalendar(new Date(),'Europe/Oslo');
+ const activityUI=initFamilyActivitiesUI({getProfiles:()=>profiles,getCloud:()=>cloud,getCalendar:calendar});
  const weekKey=now=>now.year+'-'+String(now.week).padStart(2,'0');
  async function refreshSourceHealth(){
   if(!active||sourceHealthBusy||Date.now()-sourceHealthFetchedAt<20*60_000)return;
@@ -297,6 +299,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   el('family-bottom-note').textContent=cloud?
    'Opplysninger hentes fra skolens egne ukeplaner. Ved tvil er original-PDF fasit. Lekseavkrysninger synkroniseres, mens ordøving lagres lokalt.':
    'Opplysninger hentes fra skolens egne ukeplaner. Ved tvil er original-PDF fasit. Uten familiekonto lagres avkrysningene bare på denne enheten.';
+  activityUI.render();
   el('family-add').disabled=profiles.length>=FAMILY_MAX_PROFILES;
   el('family-add').textContent=profiles.length>=FAMILY_MAX_PROFILES?'Maks seks barn':'+ Legg til barn';
   el('family-empty').hidden=profiles.length!==0;
@@ -648,17 +651,17 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     cloud={client,familyId};
     profiles=remoteChildren.map(x=>({id:x.id,name:x.nickname,school:x.school_id,
       grade:x.grade,group:x.group_name||''})).filter(x=>Object.hasOwn(siteConfig.schools,x.school));
-    plans.clear();cloudChecks.clear();loadedWeekKey=null;await syncCloud();
+    plans.clear();cloudChecks.clear();loadedWeekKey=null;activityUI.onFamilyChanged();await syncCloud();
     if(active){render();void fetchPlans();}
   },
   clearCloud:()=>{
     cloud=null;cloudChecks.clear();lastSynced=null;syncError='';profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
-    plans.clear();loadedWeekKey=null;if(active){render();void fetchPlans();}
+    plans.clear();loadedWeekKey=null;activityUI.onFamilyChanged();if(active){render();void fetchPlans();}
   },
-  refreshCloud:syncCloud,
+  refreshCloud:async()=>{await Promise.all([syncCloud(),activityUI.refresh()]);},
   enter:()=>{
     if(active)return;
-    active=true;onModeChange();
+    active=true;activityUI.enter();onModeChange();
     // Returning from an already-open child plan should restore instantly,
     // not re-download the same school PDF seconds later.
     const now=calendar();
@@ -670,11 +673,11 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     if(!recentlyChecked)void fetchPlans();
     else{render();void fetchCalendars();}
   },
-  leave:()=>{active=false;run++;clearOverviewTimer();overviewBatch=null;
+  leave:()=>{active=false;activityUI.leave();run++;clearOverviewTimer();overviewBatch=null;
    stopPollTimers();pendingJobs.clear();autoRetries.clear();
     for(const [pair,state] of priorityStates)if(state.status!=='ready')priorityStates.delete(pair);
     loading.clear();onModeChange();},
-  refresh:()=>{if(active){if(cloud)void syncCloud();void fetchPlans();}}
+  refresh:()=>{if(active){if(cloud)void syncCloud();void activityUI.refresh();void fetchPlans();}}
  };
  el('family-add').addEventListener('click',()=>openForm());
  el('family-empty-add').addEventListener('click',()=>openForm());
@@ -736,7 +739,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     profiles=putProfile(profiles,{id:row.id,name:row.nickname,school:row.school_id,
      grade:row.grade,group:row.group_name||''},siteConfig.schools);
    }else{profiles=putProfile(profiles,p,siteConfig.schools);persist();}
-   closeForm();render();void fetchPlans();
+   closeForm();activityUI.render();render();void fetchPlans();
   }catch(error){setStatus(error.message);}
   finally{button.disabled=false;}
  });
@@ -777,11 +780,12 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     if(cloud){
      void cloud.client.removeChild(p.id,cloud.familyId).then(()=>{
       profiles=profiles.filter(x=>x.id!==p.id);plans.delete(p.id);cloudChecks.delete(p.id);
+      activityUI.render();
       render();void fetchPlans();
      }).catch(error=>{el('family-load-status').textContent=error.message;});
     }else{
      profiles=profiles.filter(x=>x.id!==p.id);plans.delete(p.id);loading.delete(p.id);
-     persist();render();void fetchPlans();
+     persist();activityUI.render();render();void fetchPlans();
     }
    }
   }
@@ -789,7 +793,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  window.addEventListener('storage',e=>{
   if(e.key!==FAMILY_STORAGE_KEY||cloud)return;
   profiles=readFamily(e.newValue,siteConfig.schools);
-  if(active){render();void fetchPlans();}
+  if(active){activityUI.render();render();void fetchPlans();}
  });
  return api;
 }
