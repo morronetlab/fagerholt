@@ -293,6 +293,10 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     'Ingen særskilte viktige beskjeder registrert for denne uka.';
   setHtml('family-important-cards',html||
    '<p class="family-important-empty">'+escape(message)+'</p>');
+  el('family-mobile-important-more').hidden=notices.visible.length<=2;
+  el('family-mobile-important-more').textContent=
+   el('family-view').classList.contains('mobile-important-expanded')?
+    'Vis færre beskjeder':'Vis alle viktige beskjeder';
   el('family-practical-label').textContent=notices.remaining?
    'Vis komplette skolebeskjeder · '+notices.remaining+' flere viktige':
    'Vis alle praktiske beskjeder og ekstra utstyr';
@@ -824,17 +828,29 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   refresh:()=>{if(active){if(cloud)void syncCloud();void activityUI.refresh();void fetchPlans();}}
  };
  el('family-add').addEventListener('click',()=>openForm());
- el('family-mobile-add').addEventListener('click',()=>{
-  el('family-mobile-admin-panel').classList.add('is-open');
-  el('family-mobile-admin-toggle').setAttribute('aria-expanded','true');
-  openForm();
- });
+ el('family-mobile-add').addEventListener('click',()=>openForm());
  el('family-mobile-admin-toggle').addEventListener('click',()=>{
   const panel=el('family-mobile-admin-panel');
   const expanded=panel.classList.toggle('is-open');
+  el('family-view').classList.toggle('family-mobile-managing',expanded);
   el('family-mobile-admin-toggle').setAttribute('aria-expanded',String(expanded));
  });
  el('family-empty-add').addEventListener('click',()=>openForm());
+ el('family-mobile-important-more').addEventListener('click',()=>{
+  const section=document.querySelector('#family-view .family-tomorrow');
+  const expanded=section.classList.toggle('mobile-important-expanded');
+  el('family-mobile-important-more').setAttribute('aria-expanded',String(expanded));
+  el('family-mobile-important-more').textContent=expanded?'Vis færre beskjeder':'Vis alle viktige beskjeder';
+ });
+ el('family-important-cards').addEventListener('click',event=>{
+  const button=event.target.closest('[data-family-agenda-details]');
+  if(!button)return;
+  const card=button.closest('.family-agenda-item');
+  if(!card)return;
+  const expanded=card.classList.toggle('is-expanded');
+  button.setAttribute('aria-expanded',String(expanded));
+  button.textContent=expanded?'Skjul detaljer':'Mer info';
+ });
  for(const button of document.querySelectorAll('[data-family-focus]')){
   button.addEventListener('click',()=>{focus=button.dataset.familyFocus;showAllHighlights=false;render();});
  }
