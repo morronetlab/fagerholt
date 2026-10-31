@@ -108,11 +108,11 @@ function render(){
  $('child-homework').innerHTML=state.homework.length?'<div class="child-check-list">'+
   state.homework.map(item=>{
    const checked=done[homeworkItemKey(item)]===true;
-   const label=item.dueLabel||'Frist ikke oppgitt i ukeplanen';
+   const label=item.dueLabel||(item.repeatLabel?'':'Frist ikke oppgitt i ukeplanen');
    return '<article class="child-homework-item"><label class="child-check-row '+(checked?'is-done':'')+'">'+
     '<input type="checkbox" data-child-homework="'+item.index+'" '+(checked?'checked':'')+'>'+
     '<span class="child-check-content">'+groupBadge(item.group)+
-    '<span class="child-homework-due">📅 '+esc(label)+'</span>'+
+    (label?'<span class="child-homework-due">📅 '+esc(label)+'</span>':'')+
     (item.repeatLabel?'<small>'+esc(item.repeatLabel)+'</small>':'')+
     (item.subject?'<small class="child-homework-subject">'+esc(item.subject)+'</small>':'')+
     '<strong>'+esc(item.text||'')+'</strong></span></label>'+
