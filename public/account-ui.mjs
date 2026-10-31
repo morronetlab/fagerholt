@@ -18,7 +18,7 @@ const invitationsFromUrl=()=>{
 };
 export function initAccountUI({familyUI}){
  let client=null,accountReady=false,requestedEmail='',familyId=null,families=[],children=[],invitation=invitationsFromUrl(),nextCodeRequestAt=0;
- let currentScreen='login',gradeRun=0,restoring=true;
+ let currentScreen='login',gradeRun=0,restoring=true,digestRequest=0;
  const status=(msg,error=false)=>{$('account-message').textContent=msg||'';$('account-message').dataset.error=String(error);};
  const show=id=>{
   currentScreen=id;
@@ -44,6 +44,44 @@ export function initAccountUI({familyUI}){
   $('account-user-email').textContent=client.session?.user?.email||requestedEmail||'Innlogget forelder';
   $('account-current-family').textContent=familyId&&families.find(f=>f.id===familyId)?.name||'Ingen familie valgt';
  }
+ async function refreshDigestSettings(){
+  const seq=++digestRequest;
+  const section=$('account-digest-settings'),checkbox=$('account-digest-optin');
+  section.hidden=!client?.isSignedIn()||!familyId;
+  checkbox.disabled=true;
+  if(section.hidden)return;
+  try{
+   const [config,enabled]=await Promise.all([
+    fetch('/api/digest-config',{cache:'no-store'})
+     .then(async r=>r.ok?r.json():{available:false}).catch(()=>({available:false})),
+    client.weeklyDigestPreference()
+   ]);
+   if(seq!==digestRequest)return;
+   checkbox.checked=enabled;
+   checkbox.disabled=!config.available;
+   $('account-digest-availability').textContent=config.available?
+    'Utsendingen er aktiv. Oppsummeringen sendes søndag kveld når neste ukes kilder er tilgjengelige.':
+    'E-postutsending er foreløpig ikke aktivert av driftsansvarlig. Påmelding er sperret.';
+  }catch{
+   if(seq!==digestRequest)return;
+   checkbox.checked=false;checkbox.disabled=true;
+   $('account-digest-availability').textContent='Kan ikke lese e-postinnstillingene. Kontakt driftsansvarlig.';
+  }
+ }
+ $('account-digest-optin').addEventListener('change',async e=>{
+  if(!client?.isSignedIn()||!familyId)return;
+  const checkbox=e.target,desired=checkbox.checked;
+  checkbox.disabled=true;
+  $('account-digest-status').textContent='Lagrer innstillingen …';
+  try{
+   await client.setWeeklyDigest(desired);
+   $('account-digest-status').textContent=desired?
+    'Du er påmeldt søndagsoppsummeringen.':'E-postoppsummeringen er slått av.';
+  }catch(error){
+   checkbox.checked=!desired;
+   $('account-digest-status').textContent='Kunne ikke lagre valget: '+error.message;
+  }finally{void refreshDigestSettings();}
+ });
  async function syncFamilies(preferred=null,{screen='signed'}={}){
   families=await client.families();
   const selected=preferred&&families.some(x=>x.id===preferred)?preferred:
@@ -85,6 +123,7 @@ export function initAccountUI({familyUI}){
    'Familien er opprettet. Legg til barn fra familieoversikten når du ønsker.';
   displaySignedIn();
   show(familyId?screen:'signed');
+  void refreshDigestSettings();
  }
  async function restore(){
   try{
@@ -231,6 +270,7 @@ export function initAccountUI({familyUI}){
  $('account-signout').addEventListener('click',async()=>{
   try{await client.signOut();}
   catch{client.signOutLocal();}
+  digestRequest++;$('account-digest-settings').hidden=true;
   familyUI.clearCloud();familyId=null;families=[];children=[];requestedEmail='';show('login');
   button.textContent='Logg inn';status('Du er logget ut. Lokale data er fortsatt tilgjengelige.');
  });

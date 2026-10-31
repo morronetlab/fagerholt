@@ -847,6 +847,63 @@ test('Family grade selection, edited profiles and single-class navigation surviv
  assert.deepEqual(errors,[]);
 });
 
+test('Verified parent can explicitly enable and disable Sunday email without a second email address',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ const endpoint='https://testprojectabc.supabase.co';
+ await page.route('**/api/account-config*',route=>reply(route,{
+  enabled:true,url:endpoint+'/',publishableKey:'sb_publishable_test_not_a_real_key'
+ }));
+ await page.route('**/api/digest-config*',route=>reply(route,{available:true}));
+ await page.addInitScript(()=>{
+  const original=window.fetch.bind(window);
+  let enabled=false;
+  const expires_at=Math.floor(Date.now()/1000)+3600;
+  localStorage.setItem('ukeplanen.cloud.session.v1',JSON.stringify({
+   access_token:'parent-access-token',refresh_token:'parent-refresh',
+   expires_at,user:{id:'guardian-one',email:'parent@example.no'}
+  }));
+  window.__digestWrites=[];
+  window.fetch=(input,init={})=>{
+   const url=typeof input==='string'?input:input.url;
+   if(!url.startsWith('https://testprojectabc.supabase.co/'))return original(input,init);
+   let data={};
+   if(url.includes('/auth/v1/user'))data={id:'guardian-one',email:'parent@example.no'};
+   else if(url.includes('/rest/v1/families'))data=[{
+    id:'family-1',name:'Skolefamilien',created_by:'guardian-one'
+   }];
+   else if(url.includes('/rest/v1/children'))data=[];
+   else if(url.includes('/rest/v1/homework_progress'))data=[];
+   else if(url.includes('/rest/v1/weekly_digest_subscriptions')){
+    if(init.method==='POST'){
+     const body=JSON.parse(init.body);enabled=Boolean(body.enabled);
+     window.__digestWrites.push(body);
+     data=[body];
+    }else if(init.method==='DELETE'){enabled=false;window.__digestWrites.push({enabled:false});data=[];}
+    else data=enabled?[{user_id:'guardian-one',enabled:true}]:[];
+   }else return Promise.resolve(new Response(JSON.stringify({message:'Unexpected '+url}),{status:404}));
+   return Promise.resolve(new Response(JSON.stringify(data),{
+    status:200,headers:{'Content-Type':'application/json'}
+   }));
+  };
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#account-button').click();
+ await page.locator('#account-digest-settings').waitFor({state:'visible'});
+ const check=page.locator('#account-digest-optin');
+ await check.waitFor({state:'visible'});
+ await page.waitForFunction(()=>!document.getElementById('account-digest-optin').disabled);
+ assert.equal(await check.isChecked(),false);
+ await check.check();
+ await page.getByText(/Du er påmeldt søndagsoppsummeringen/).waitFor();
+ assert.deepEqual(await page.evaluate(()=>window.__digestWrites),[{
+  user_id:'guardian-one',enabled:true
+ }]);
+ await check.uncheck();
+ await page.getByText(/E-postoppsummeringen er slått av/).waitFor();
+ assert.equal(await check.isChecked(),false);
+ assert.deepEqual(errors,[]);
+});
+
 test('2.1 parent email OTP, create family and cloud-mode dashboard work with mocked Supabase',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  const endpoint='https://testprojectabc.supabase.co';

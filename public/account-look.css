@@ -20,3 +20,12 @@
 .account-import-section{border-top:1px solid #e2eee5;margin-top:24px}
 #account-invite-result{background:#f6faf3;border:1px solid #e4efe5;border-radius:13px;padding:14px;margin:14px 0}
 @media(max-width:700px){.account-panel{padding:23px 18px;margin:14px 0}.account-nav{font-size:12px;padding:9px 11px;min-height:38px}}
+
+/* Sunday briefing: intentional, reversible parent opt-in. */
+.account-digest-settings{margin:22px 0;padding:18px 20px;background:#f4f9f3;border:1px solid #d5e7d7;border-radius:16px}
+.account-digest-settings h3{margin:0 0 7px;font-size:18px;color:#245541}
+.account-digest-settings p{font-size:13px;line-height:1.55;color:#5a7463}
+.account-digest-toggle{display:flex!important;align-items:center;gap:11px;padding:13px;margin:11px 0;
+ background:#fff;border:1px solid #d4e4d8;border-radius:12px;font-weight:750}
+.account-digest-toggle input{width:20px;height:20px;flex:0 0 auto;accent-color:#297054}
+.account-digest-settings [role=status]{font-size:12px;font-weight:750;color:#296547}
