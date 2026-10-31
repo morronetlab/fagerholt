@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {importantFamilyNotices} from '../public/shared/family-important-notices.mjs';
 import {familyAgendaItemHtml,familyAgendaMarkup} from '../public/shared/family-week-agenda-html.mjs';
+import {profileSummary} from '../public/shared/family-core.mjs';
+import {practicalHighlights} from '../public/shared/practical-highlights.mjs';
+import {buildFamilyWeekAgenda} from '../public/shared/family-week-agenda.mjs';
 
 const closure={key:'school|one',kind:'school',important:true,date:'2026-11-06',
  title:'Fredag: Planleggingsdag – elevene har fri',scope:'Barn A',
@@ -53,4 +56,25 @@ test('Priority preview never turns unrelated lessons into a warning',()=>{
  const notices=importantFamilyNotices(data([homework,ordinary]),{limit:3});
  assert.equal(notices.total,0);
  assert.deepEqual(notices.visible,[]);
+});
+
+test('Full-week family model retains group-specific structured vaccine notices without inventing a date',()=>{
+ const calendar={year:2026,week:44,today:'2026-10-28',upcoming:false};
+ const red={id:'ux-child-red',name:'Barn Rød',school:'sjostrand',grade:'2',group:'Rød'};
+ const blue={id:'ux-child-blue',name:'Barn Blå',school:'sjostrand',grade:'2',group:'Blå'};
+ const plan={status:'ok',aiStatus:'ready',year:2026,week:44,
+  pdf:'https://www.minskole.no/DynamicContent/Documents/uke44.pdf',
+  notices:[{text:'Vaksinasjon denne uka – husk samtykkeskjema',group:'Rød'}],
+  days:{},dayNotes:{},everyday:[],homework:[],provenance:[]};
+ const profiles=[red,blue],plans=new Map(profiles.map(p=>[p.id,plan]));
+ const summaries=new Map(profiles.map(p=>[p.id,profileSummary(p,plan,calendar)]));
+ const raw=practicalHighlights({profiles,summaries,plans,calendar,focus:'week'});
+ assert.ok(raw.some(item=>item.id===red.id&&/Vaksinasjon/.test(item.label)));
+ assert.ok(!raw.some(item=>item.id===blue.id&&/Vaksinasjon/.test(item.label)));
+ const model=buildFamilyWeekAgenda({profiles,summaries,plans,calendar});
+ const alert=importantFamilyNotices(model,{limit:3});
+ assert.equal(alert.total,1);
+ assert.equal(alert.visible[0].date,null);
+ assert.equal(alert.visible[0].scope,red.name);
+ assert.ok(alert.visible[0].source.url.includes('minskole.no'));
 });
