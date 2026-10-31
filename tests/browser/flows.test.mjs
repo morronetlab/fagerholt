@@ -232,6 +232,30 @@ async function addFamilyChild(page,name,grade='2'){
  await page.locator('#family-save').click();
  await page.locator('#family-cards .family-child').filter({hasText:name}).waitFor();
 }
+test('Header Ukeplan opens an existing child and reloading its plan stays on that child',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.locator('#family-toggle').click();
+ await addFamilyChild(page,'Første barn');
+ await addFamilyChild(page,'Andre barn');
+ await page.locator('#nav-plan').click();
+ await page.locator('#app-view').waitFor({state:'visible'});
+ assert.match(await page.locator('#plan-context-class').innerText(),/Første barn/);
+ assert.equal(await page.locator('#school-gate').isVisible(),false);
+ assert.equal(await page.locator('#grade-gate').isVisible(),false);
+ await page.locator('#plan-back-family').click();
+ await page.locator('#family-cards .family-child').nth(1).locator('[data-family-open]').click();
+ await page.locator('#app-view').waitFor({state:'visible'});
+ assert.match(await page.locator('#plan-context-class').innerText(),/Andre barn/);
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#app-view').waitFor({state:'visible'});
+ assert.match(await page.locator('#plan-context-class').innerText(),/Andre barn/);
+ assert.equal(await page.locator('#family-view').isVisible(),false);
+ assert.equal(await page.locator('#school-gate').isVisible(),false);
+ assert.equal(await page.locator('#grade-gate').isVisible(),false);
+ assert.equal(await page.locator('#nav-plan').getAttribute('aria-current'),'page');
+ assert.deepEqual(errors,[]);
+});
+
 test('V2 family overview combines two children and keeps completion independently',async t=>{
  // Friday before the family dashboard cutoff: homework due Friday is visible
  // in the "I dag" checklist, so it can be checked and unchecked per child.
