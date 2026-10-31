@@ -1,6 +1,6 @@
-/** Combined family week, using the same school/PDF and municipal facts as the
- * existing dashboard. It never guesses due dates or changes raw school records.
- * Date-less notices belong to "Hele uka", not an invented weekday.
+/** Family calendar: exceptional school events, announcements and family plans.
+ * Homework and packing remain in the per-child plan and are never calendar events.
+ * Date-less school notices are not assigned invented weekdays.
  */
 import {DAYS,dayDate} from './calendar.mjs';
 import {practicalHighlights} from './practical-highlights.mjs';
@@ -24,7 +24,7 @@ const provenance=(profile,plan,page)=>{
  const school=siteConfig.schools[profile.school];
  return {name:'Skolens nettside',url:safeLink(plan?.source)||safeLink(school?.homepage)};
 };
-const categoryRank={municipal:0,school:1,family:2,homework:3};
+const categoryRank={municipal:0,school:1,family:2};
 export function buildFamilyWeekAgenda({profiles=[],summaries=new Map(),plans=new Map(),
  calendars=new Map(),activities=[],calendar,childId=''}={}){
  if(!calendar||!Number.isInteger(calendar.year)||!Number.isInteger(calendar.week))
@@ -35,24 +35,15 @@ export function buildFamilyWeekAgenda({profiles=[],summaries=new Map(),plans=new
  const items=[];
  const missingProfiles=[];
  for(const p of visible){
-  const summary=summaries.get(p.id);
-  const plan=plans.get(p.id);
-  if(!summary?.ready){missingProfiles.push(p.name);continue;}
-  for(const [i,task] of (summary.tasks||[]).entries()){
-   if(!task?.text)continue;
-   const index=DAYS.indexOf(task.dueDay),date=index>=0?dates[index]:null;
-   const source=provenance(p,plan,task.sourcePage);
-   items.push({key:'hw|'+p.id+'|'+i,kind:'homework',date,
-    title:(task.subject?task.subject+': ':'')+task.text,
-    childId:p.id,scope:p.name,source,checked:task.checked===true,
-    details:date?'Leksefrist':'Frist ikke oppgitt',time:null});
-  }
+  if(!summaries.get(p.id)?.ready)missingProfiles.push(p.name);
  }
  const selectedPlans=new Map(visible.map(p=>[p.id,plans.get(p.id)]));
  for(const [i,note] of practicalHighlights({profiles:visible,summaries,plans:selectedPlans,
   calendar,focus:'week'}).entries()){
   const p=visible.find(x=>x.id===note.id);
-  if(!p)continue;
+  // Gear is already available in each child's plan and the expanded
+  // practical checklist. The calendar represents events, not packing tasks.
+  if(!p||note.kind==='gear')continue;
   const date=schoolNoticeDate(note,calendar.year,calendar.week);
   const source=provenance(p,plans.get(p.id),note.sourcePage);
   items.push({key:'practical|'+p.id+'|'+i,kind:'school',date:date&&range.has(date)?date:null,
@@ -84,7 +75,7 @@ export function buildFamilyWeekAgenda({profiles=[],summaries=new Map(),plans=new
  }
  const order=(a,b)=>{
   const rank=(categoryRank[a.kind]??4)-(categoryRank[b.kind]??4);
-  // Day-wide school closures/notices appear first; timed family events then homework.
+  // Day-wide school closures and notices appear before family events.
   if(rank)return rank;
   if(a.time&&b.time&&a.time!==b.time)return a.time.localeCompare(b.time);
   return a.title.localeCompare(b.title,'nb-NO');

@@ -13,6 +13,7 @@ import {priorityKey,applyPracticalPriority} from './shared/practical-priority.mj
 import {practicalDigest} from './shared/practical-digest.mjs';
 import {calendarHighlights} from './shared/school-calendar-highlights.mjs';
 import {buildFamilyWeekAgenda} from './shared/family-week-agenda.mjs';
+import {focusedFamilyCalendar} from './shared/family-calendar-viewport.mjs';
 import {familyAgendaMarkup,familyAgendaItemHtml} from './shared/family-week-agenda-html.mjs';
 import {importantFamilyNotices} from './shared/family-important-notices.mjs';
 import {FAMILY_OVERVIEW_BATCH_MS,holdInitialHighlights,readCalendarCache,storeCalendarCache,cacheableCalendar,stableHighlightOrder,highlightIdentity} from './shared/family-overview-load.mjs';
@@ -68,7 +69,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const pendingJobs=new Map(),pollTimers=new Map(),autoRetries=new Map();
  const priorityStates=new Map(),priorityTimers=new Map();
  let run=0,editing=null,gradeRun=0,lastPlanCheckAt=0,loadedWeekKey=null,showAllHighlights=false;
- let agendaChildId='';
+ let agendaChildId='',showWeekend=false;
  let expandedChildren=new Set();
  let reportCards=[];
  const AUTO_CHECK_MS=15*60_000, RETRY_COOLDOWN_MS=5*60_000+5000;
@@ -269,16 +270,23 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   filter.value=agendaChildId;
   const model=buildFamilyWeekAgenda({profiles,summaries,plans,calendars,
    activities:activityUI.getRows(),calendar:now,childId:agendaChildId});
-  const markup=familyAgendaMarkup(model,{today:now.today});
+  const visible=focusedFamilyCalendar(model,{showWeekend});
+  const markup=familyAgendaMarkup(visible,{today:now.today});
   setHtml('family-agenda-days',markup.days);
   setHtml('family-agenda-undated-list',markup.undated);
+  const weekend=el('family-agenda-weekend-toggle');
+  weekend.hidden=visible.weekendCount===0;
+  weekend.setAttribute('aria-expanded',String(visible.weekendVisible));
+  weekend.textContent=visible.weekendVisible?'Skjul helg':
+   'Vis helg ('+visible.weekendCount+' hendelse'+(visible.weekendCount===1?'':'r')+')';
   el('family-agenda-undated').hidden=!model.undated.length;
   const importantUndated=model.undated.filter(item=>item.important).length;
   el('family-agenda-undated-summary').textContent=model.undated.length+
    ' punkt uten bestemt dag · Vis'+
    (importantUndated?' · ⚠ '+importantUndated+' viktig'+(importantUndated===1?'':'e'):'');
   el('family-agenda-status').textContent=
-   model.count+' hendelser i uke '+now.week+
+   visible.count+' hendelser'+(visible.weekendVisible?' mandag–søndag':' mandag–fredag')+
+   ' i uke '+now.week+
    (agendaChildId?' for '+(profiles.find(p=>p.id===agendaChildId)?.name||'valgt barn'):' for familien');
   // The overview alert strip always covers every child, regardless of
   // which child is currently selected within the week calendar.
@@ -775,7 +783,10 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   focus='week';render();
  });
  el('family-agenda-child').addEventListener('change',event=>{
-  agendaChildId=event.target.value;render();
+  agendaChildId=event.target.value;showWeekend=false;render();
+ });
+ el('family-agenda-weekend-toggle').addEventListener('click',()=>{
+  showWeekend=!showWeekend;render();
  });
  for(const id of ['family-agenda-days','family-agenda-undated']){
   el(id).addEventListener('click',event=>{
