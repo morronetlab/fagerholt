@@ -705,7 +705,11 @@ function boot(){
   $('nav-home').addEventListener('click',()=>navigateTo('welcome'));
   $('nav-plan').addEventListener('click',()=>navigateTo('plan'));
   $('family-toggle').addEventListener('click',()=>navigateTo(familyUI.isActive()?'plan':'family'));
-  $('landing-create-family').addEventListener('click',()=>accountUI.open());
+  $('landing-create-family').addEventListener('click',()=>accountUI.open({onboarding:true}));
+  $('landing-other-options').addEventListener('click',()=>{
+    const expanded=$('welcome-view').classList.toggle('show-welcome-options');
+    $('landing-other-options').setAttribute('aria-expanded',String(expanded));
+  });
   $('landing-open-plan').addEventListener('click',()=>navigateTo('plan'));
   $('landing-local-family').addEventListener('click',()=>{
     navigateTo('family');

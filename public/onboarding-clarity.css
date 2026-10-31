@@ -1,0 +1,115 @@
+/* Skoleuka first-run journey: one main action per step, readable on small phones.
+   No changes to account/session, stored family data or desktop navigation. */
+.welcome-other-options{display:none}
+.onboard-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+ gap:7px;margin:16px 0 13px;align-items:stretch}
+.onboard-steps>span{display:flex;align-items:center;justify-content:center;
+ min-width:0;min-height:38px;padding:7px 4px;border-radius:9px;
+ border:1px solid #dde9df;background:#f6faf5;color:#7a8f80;
+ text-align:center;font-size:11px;font-weight:750}
+.onboard-steps>span.current{border-color:#2b7960;color:#1d5946;
+ background:#e5f5e9;box-shadow:inset 0 0 0 1px #6ba58c}
+.onboard-steps>span.done{border-color:#c7e3cf;color:#246d50;background:#edf8f0}
+.onboard-steps>span.done::before{content:'✓ ';margin-right:3px}
+.account-panel .account-onboard-lead{margin:13px 0 10px;color:#45685a;font-size:14px;
+ line-height:1.55}
+.account-panel #account-verify-email{overflow-wrap:anywhere;color:#285a48}
+.account-panel .account-message:empty{display:none}
+.account-panel #account-empty-family{padding:5px 0 4px}
+.account-panel #account-empty-family h3{margin-top:11px}
+.account-panel .account-field-help{color:#6f8777;font-size:12px;margin:0 0 14px;
+ max-width:480px;line-height:1.5}
+.account-panel .account-optional{color:#748b7a;font-size:11px;font-weight:500}
+.account-panel .onboard-children-list{display:grid;gap:8px;margin:9px 0 12px}
+.account-panel .onboard-child-item{display:flex;flex-direction:column;gap:3px;
+ padding:11px 12px;background:#f1f9f2;border:1px solid #d7e8db;
+ border-radius:11px;color:#255b45}
+.account-panel .onboard-child-item strong::before{content:'✓ ';color:#27825b}
+.account-panel .onboard-child-item small{color:#658577;font-size:12px}
+.account-panel .onboard-import-row,.account-panel .account-invite-prompt{
+ padding:14px;border:1px solid #c7e3d1;border-radius:12px;
+ background:#f2faf5;margin:12px 0 15px}
+.account-panel .onboard-import-row>strong,.account-panel .account-invite-prompt>strong{
+ display:block;font-size:14px;color:#245a43}
+.account-panel .onboard-import-row p{margin:6px 0 10px}
+.account-panel .onboard-actions{display:flex;align-items:center;
+ justify-content:space-between;gap:10px;margin:15px 0 3px}
+.account-panel #onboard-add-another{margin-top:9px}
+.account-panel #onboard-children-next{font-weight:850}
+.account-panel #onboard-children-back{margin:0}
+.account-panel .onboard-complete{text-align:center}
+.account-panel .onboard-success-symbol{display:grid;place-items:center;margin:0 auto 12px;
+ width:62px;height:62px;border-radius:50%;background:#e5f7e9;color:#237251;
+ font-size:32px;font-weight:900}
+@media(max-width:700px){
+ #welcome-view{padding:5px 0 24px}
+ #welcome-view .welcome-hero{padding:19px 17px;min-height:0;
+  grid-template-columns:minmax(0,1fr);border-radius:17px;gap:0}
+ #welcome-view .welcome-illustration,
+ #welcome-view .welcome-points{display:none}
+ #welcome-view .welcome-eyebrow{margin-bottom:8px;font-size:10px}
+ #welcome-view .welcome-copy h1{font-size:26px;letter-spacing:-.85px;
+  line-height:1.15;margin:0 0 8px}
+ #welcome-view .welcome-lead{font-size:13px;line-height:1.5}
+ #welcome-view .welcome-start{margin-top:9px;gap:9px;grid-template-columns:1fr}
+ #welcome-view .welcome-choice{padding:15px 16px;border-radius:15px;box-shadow:none;gap:0}
+ #welcome-view .welcome-choice-main .welcome-choice-icon{display:none}
+ #welcome-view .welcome-choice h2{margin:0 0 7px;font-size:18px}
+ #welcome-view .welcome-choice>p:not(.welcome-helper){font-size:12px;
+  line-height:1.5;margin:0 0 11px}
+ #welcome-view .welcome-choice .welcome-button{width:100%;
+  min-height:46px;padding:10px 14px;font-size:13px;margin-top:0}
+ #welcome-view .welcome-choice .welcome-helper{font-size:11px!important;margin:8px 0 0!important}
+ #welcome-view .welcome-other-options{display:flex;align-items:center;
+  justify-content:center;min-height:42px;padding:8px 12px;
+  border:1px solid #d4e5d8;border-radius:12px;
+  background:#fff;color:#2f694e;font-size:12px;font-weight:800}
+ #welcome-view .welcome-choice:not(.welcome-choice-main),
+ #welcome-view .welcome-local{display:none}
+ #welcome-view.show-welcome-options .welcome-choice:not(.welcome-choice-main){display:flex}
+ #welcome-view.show-welcome-options .welcome-local{display:block;margin:11px 0 0}
+ #welcome-view .welcome-explain{display:none}
+ dialog.account-panel{box-sizing:border-box;width:calc(100% - 12px);max-height:calc(100dvh - 12px);
+  padding:13px 16px 18px;border-radius:16px;margin:auto}
+ dialog.account-panel .account-head{top:-13px;margin-top:0;
+  padding:10px 0 10px;align-items:center}
+ dialog.account-panel .account-head h2{font-size:21px;line-height:1.22}
+ dialog.account-panel .account-head .family-eyebrow{display:none}
+ dialog.account-panel .account-close{width:36px;height:36px;min-width:36px}
+ dialog.account-panel .account-message{font-size:12px;line-height:1.45;
+  padding:8px 10px;border-radius:9px;background:#eff7f1;min-height:0;margin:8px 0}
+ dialog.account-panel .account-message[data-error=true]{background:#fff1eb}
+ dialog.account-panel .onboard-steps{margin:12px 0 8px;gap:5px}
+ dialog.account-panel .onboard-steps>span{font-size:10px;padding:5px 2px;min-height:34px}
+ dialog.account-panel [data-account-screen]>p:first-child{margin-top:11px}
+ dialog.account-panel label{max-width:none;margin:10px 0 9px;font-size:12px;gap:5px}
+ dialog.account-panel input,dialog.account-panel select{font-size:16px;
+  min-height:48px;padding:10px 12px}
+ dialog.account-panel .onboard-field-grid{display:grid;grid-template-columns:1fr;
+  gap:0}
+ dialog.account-panel .onboard-field-grid label{margin-top:9px}
+ dialog.account-panel #account-request-form,dialog.account-panel #account-verify-form,
+ dialog.account-panel #account-family-create{display:grid;gap:5px}
+ dialog.account-panel #account-send-code,dialog.account-panel #account-verify,
+ dialog.account-panel #account-create,dialog.account-panel #onboard-child-save,
+ dialog.account-panel #onboard-children-next,dialog.account-panel #onboard-dashboard{
+  width:100%;max-width:none;min-height:47px;padding:11px 15px;
+  font-size:14px;border-radius:11px
+ }
+ dialog.account-panel #account-resend-code,dialog.account-panel #account-back-email{
+  display:inline-flex;margin:8px 10px 4px 0;min-height:37px;
+  align-items:center;padding:5px 6px;font-size:12px;line-height:1.4
+ }
+ dialog.account-panel #onboard-child-form{margin:5px 0}
+ dialog.account-panel #onboard-add-another{width:100%;min-height:43px;margin-top:11px}
+ dialog.account-panel .onboard-actions{
+  position:sticky;bottom:-18px;z-index:2;display:grid;grid-template-columns:1fr;
+  gap:5px;background:linear-gradient(#fffefcee,#fff 18px);
+  padding:12px 0 9px;margin-top:7px;border-top:1px solid #e1ece4
+ }
+ dialog.account-panel #onboard-children-next{grid-row:1}
+ dialog.account-panel #onboard-children-back{grid-row:2;
+  text-align:center;font-size:12px;min-height:38px}
+ dialog.account-panel .onboard-complete{padding:14px 0 0}
+ dialog.account-panel .onboard-complete .family-light-button{width:100%;min-height:42px}
+}

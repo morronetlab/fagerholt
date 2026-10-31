@@ -54,7 +54,12 @@ async function openPage(t,{width=1280,height=850,processing=false,mockNow=TEST_W
  return {page,errors};
 }
 async function chooseSchoolGrade(page,grade){
- if(await page.locator('#welcome-view').isVisible())await page.locator('#landing-open-plan').click();
+ if(await page.locator('#welcome-view').isVisible()){
+  const alternatives=page.locator('#landing-other-options');
+  if(await alternatives.isVisible()&&await alternatives.getAttribute('aria-expanded')==='false')
+   await alternatives.click();
+  await page.locator('#landing-open-plan').click();
+ }
  await page.locator('#school-search').fill('Sjøstrand');
  await page.locator('[data-school="sjostrand"]').click();
  await page.locator('[data-grade="'+grade+'"]').click();
@@ -65,10 +70,21 @@ test('New landing presents a family-first choice and keeps guest access visible'
  await page.locator('#welcome-view').waitFor({state:'visible'});
  assert.match(await page.locator('#welcome-title').innerText(),/Skole, lekser og fritid/);
  assert.equal(await page.locator('.welcome-choice').count(),3);
- assert.equal(await page.locator('a[href="/barn/"]').isVisible(),true);
- assert.equal(await page.locator('.welcome-explain > div').count(),4);
+ assert.equal(await page.locator('a[href="/barn/"]').isVisible(),false,
+  'Mobile first-run keeps secondary choices collapsed');
+ assert.equal(await page.locator('#landing-open-plan').isVisible(),false);
  assert.equal(await page.locator('#landing-create-family').isVisible(),true);
+ assert.equal(await page.locator('#landing-other-options').isVisible(),true);
+ const layout=await page.locator('#welcome-view').evaluate(view=>({
+  width:view.scrollWidth,viewport:window.innerWidth,
+  primary:view.querySelector('#landing-create-family').getBoundingClientRect().bottom
+ }));
+ assert.ok(layout.width<=layout.viewport+1,'Welcome must fit a small phone');
+ assert.ok(layout.primary<750,'Main signup action should appear in the first mobile viewport');
+ await page.locator('#landing-other-options').click();
+ assert.equal(await page.locator('a[href="/barn/"]').isVisible(),true);
  assert.equal(await page.locator('#landing-open-plan').isVisible(),true);
+ assert.equal(await page.locator('#landing-local-family').isVisible(),true);
  assert.equal(await page.locator('#school-gate').isVisible(),false);
  await page.locator('#landing-open-plan').click();
  assert.equal(await page.locator('#school-gate').isVisible(),true);
@@ -97,6 +113,7 @@ test('School and grade selection remains available after navigating home and bac
 
 test('Local family entry and account CTA can both start from the new welcome screen',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.locator('#landing-other-options').click();
  await page.locator('#landing-local-family').click();
  assert.equal(await page.locator('#family-view').isVisible(),true);
  assert.equal(await page.locator('#family-form').isVisible(),true);
@@ -1023,6 +1040,7 @@ test('Opening a ready AI family plan is instant and browser Back and Forward res
 
 test('Browser Back visits grade selection, school selection and home in order',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.locator('#landing-other-options').click();
  await page.locator('#landing-open-plan').click();
  await page.locator('#school-gate').waitFor({state:'visible'});
  await page.locator('[data-school="sjostrand"]').click();
@@ -1164,10 +1182,18 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  assert.match(await page.locator('#account-heading').innerText(),/Logg inn på Skoleuka/);
  assert.equal(await page.locator('#account-steps').isVisible(),false,
   'Returning guardian should not see family registration steps');
+ await page.locator('#account-close').click();
+ await page.locator('#landing-create-family').click();
+ assert.match(await page.locator('#account-heading').innerText(),/Kom i gang med Skoleuka/);
+ assert.equal(await page.locator('#account-steps').isVisible(),true);
+ assert.equal(await page.locator('[data-onboard-step="1"]').getAttribute('aria-current'),'step');
  await page.locator('#account-email').fill('parent@example.no');
  await page.locator('#account-send-code').click();
  await page.waitForTimeout(400);
- assert.match(await page.locator('#account-message').textContent(),/sendt/i,
+ assert.equal(await page.locator('#account-verify-email').innerText(),'parent@example.no');
+ assert.match(await page.locator('[data-account-screen="verify"]').innerText(),/søppelpost/i);
+ assert.equal(await page.locator('[data-onboard-step="1"]').getAttribute('aria-current'),'step');
+ assert.match(await page.locator('#account-message').textContent(),/sjekk e-posten/i,
    'OTP response missing. Account mode: '+await page.locator('#account-panel').innerText());
  assert.equal(await page.locator('#account-resend-code').isVisible(),true);
  await page.locator('#account-resend-code').click();
@@ -1183,10 +1209,19 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  await page.evaluate(()=>{Date.now=window.__originalDateNow;});
  await page.locator('#account-code').fill('123456');
  await page.locator('#account-verify').click();
+ await page.locator('#account-family-name').waitFor({state:'visible'});
+ assert.equal(await page.locator('[data-onboard-step="2"]').getAttribute('aria-current'),'step');
+ assert.equal(await page.locator('#account-family-picker-row').isVisible(),false);
+ assert.equal(await page.locator('#account-open-family').isVisible(),false);
+ assert.equal(await page.locator('#account-family-name').isVisible(),true);
  await page.locator('#account-family-name').fill('Min familie');
  await page.locator('#account-create').click();
  await page.locator('[data-account-screen="children"]').waitFor({state:'visible'});
+ assert.equal(await page.locator('[data-onboard-step="3"]').getAttribute('aria-current'),'step');
  assert.equal(await page.locator('#onboard-children-list .onboard-child-item').count(),0);
+ assert.equal(await page.locator('#onboard-child-form').isVisible(),true);
+ assert.match(await page.locator('[data-account-screen="children"]').innerText(),/Rød og Blå/);
+ assert.equal(await page.locator('#onboard-import-row').isVisible(),false);
  await page.locator('#onboard-child-name').fill('Testbarn');
  await page.locator('#onboard-child-school').selectOption('sjostrand');
  await page.locator('#onboard-child-grade option[value="2"]').waitFor({state:'attached'});
@@ -1194,13 +1229,60 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  await page.locator('#onboard-child-save').click();
  await page.locator('#onboard-children-list .onboard-child-item').first().waitFor();
  assert.equal(await page.locator('#onboard-children-list .onboard-child-item').count(),1);
+ assert.equal(await page.locator('#onboard-child-form').isVisible(),false);
+ assert.equal(await page.locator('#onboard-add-another').isVisible(),true);
+ assert.match(await page.locator('#onboard-children-next').innerText(),/Fullfør oppsettet/);
+ await page.locator('#onboard-add-another').click();
+ assert.equal(await page.locator('#onboard-child-form').isVisible(),true);
+ assert.equal(await page.locator('#onboard-child-school').inputValue(),'sjostrand');
+ // Reuse the previous school and grade for a sibling; no need to reselect them.
+ assert.equal(await page.locator('#onboard-child-grade').inputValue(),'2');
  await page.locator('#onboard-children-next').click();
  assert.equal(await page.locator('[data-account-screen="completed"]').isVisible(),true);
+ assert.equal(await page.locator('[data-onboard-step="4"]').getAttribute('aria-current'),'step');
  await page.locator('#onboard-dashboard').click();
  await page.locator('#family-view').waitFor({state:'visible'});
  assert.equal(await page.locator('#family-cards .family-child').count(),1);
  assert.equal(await page.locator('#account-current-family').textContent(),'Min familie');
  assert.match(await page.locator('#family-storage-label').textContent(),/Synkronisert familie/);
+ assert.deepEqual(errors,[]);
+});
+
+test('Mobile guardian invitation guides a signed-in newcomer to join rather than create a duplicate family',async t=>{
+ const {page,errors}=await openPage(t,{width:320,height:700});
+ const endpoint='https://testprojectabc.supabase.co';
+ await page.route('**/api/account-config*',route=>reply(route,{
+  enabled:true,url:endpoint+'/',publishableKey:'sb_publishable_test_not_a_real_key'
+ }));
+ await page.addInitScript(()=>{
+  const original=window.fetch.bind(window);
+  localStorage.setItem('ukeplanen.cloud.session.v1',JSON.stringify({
+   access_token:'guardian-access',refresh_token:'guardian-refresh',
+   expires_at:Math.floor(Date.now()/1000)+3600,
+   user:{id:'new-guardian',email:'new@example.no'}
+  }));
+  window.fetch=(input,init={})=>{
+   const url=typeof input==='string'?input:input.url;
+   if(!url.startsWith('https://testprojectabc.supabase.co/'))return original(input,init);
+   let data=[];
+   if(url.includes('/auth/v1/user'))data={id:'new-guardian',email:'new@example.no'};
+   if(url.includes('/rest/v1/families'))data=[];
+   return Promise.resolve(new Response(JSON.stringify(data),{
+    status:200,headers:{'Content-Type':'application/json'}
+   }));
+  };
+ });
+ await page.goto(server.baseURL+'/#invite='+'a'.repeat(64),{waitUntil:'domcontentloaded'});
+ // A hash-only navigation on the already-loaded test page does not re-run
+ // the bootstrap. A real opened invitation link loads a fresh document.
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#account-invite-prompt').waitFor({state:'visible'});
+ assert.match(await page.locator('#account-heading').innerText(),/Godta familieinvitasjonen/);
+ assert.equal(await page.locator('#account-empty-family').isVisible(),false);
+ assert.equal(await page.locator('#account-invite-accept').isVisible(),true);
+ assert.equal(await page.locator('#account-family-picker-row').isVisible(),false);
+ const fits=await page.locator('#account-panel').evaluate(el=>el.scrollWidth<=el.clientWidth+1);
+ assert.equal(fits,true,'Invitation flow must not scroll horizontally at 320px');
  assert.deepEqual(errors,[]);
 });
 
