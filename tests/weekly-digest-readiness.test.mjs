@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {needsCachedEvidenceRefresh,refreshCachedEvidence} from '../lib/plan-cache-evidence.mjs';
 import {HOMEWORK_SOURCE_VERSION} from '../lib/homework-source-truth.mjs';
+import {homeworkMatchesPdf,markVerifiedHomework} from '../lib/homework-email-evidence.mjs';
 import {buildWeeklyDigest} from '../lib/weekly-digest.mjs';
 import {runWeeklyDigestDispatch,partialDeliveryWindow} from '../lib/weekly-digest-dispatch.mjs';
 
@@ -40,6 +41,22 @@ test('No exceptional notices still means a successfully audited weekly plan',()=
  assert.match(digest.html,/Ukeplanen er ikke publisert ennå/);
  assert.match(digest.html,/Se skolens trinnside/);
  assert.match(digest.html,/seksjon\/22640/);
+});
+test('Unresolved important notice does not suppress individually PDF-proven homework',()=>{
+ const task={subject:'Norsk',text:'Les kapittel fire',dueDay:'Torsdag',
+  sourcePage:1,sourceQuote:'Norsk leselekse: Les kapittel fire, mandag til torsdag.'};
+ assert.equal(homeworkMatchesPdf(task,pages),true);
+ assert.equal(homeworkMatchesPdf({...task,sourceQuote:'Alle elever skal fly til månen'},pages),false);
+ const marked=markVerifiedHomework({...plan,homework:[task]},pages);
+ assert.equal(marked[0].digestSourceVerified,true);
+ const item={...plan,homework:marked,sourceAudit:{status:'attention',sourceFacts:4,missing:1,unsupported:0}};
+ const digest=buildWeeklyDigest({profiles,now:date(),plans:new Map([
+  ['fagerholt|3',item],['fagerholt|7',unpublished]])});
+ assert.equal(digest.readyPlans,1);
+ assert.equal(digest.sections[0].partial,true);
+ assert.match(digest.text,/Les kapittel fire/);
+ assert.match(digest.html,/Delvis kontrollert/);
+ assert.match(digest.html,/viktige beskjeder er ikke ferdig verifisert/);
 });
 function store(){
  const db=new Map();
