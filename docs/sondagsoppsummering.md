@@ -62,3 +62,13 @@ Før utsending til alle: slå `WEEKLY_DIGEST_SEND_ENABLED=false`, fjern `WEEKLY_
 `SUPABASE_SERVICE_ROLE_KEY` beholder sitt eksisterende navn i Skoleuka, men kan settes til en nyere `sb_secret_...` nøkkel. Denne sendes **kun i HTTP-headeren `apikey`**, aldri som `Authorization: Bearer`. Den eldre `service_role` JWT-en krever `Authorization: Bearer`. Bruk helst en dedikert ny servernøkkel som kan roteres separat, ikke den offentlige `sb_publishable_`-nøkkelen.
 
 **Viktig:** Scheduled Function er tidsstyrt, og normal utsending krever søndag kveld i Europe/Oslo. Vanlig manuell invokering utenfor sendetidsvinduet sender ingenting. For å teste mailleverandør og domenet isolert kan Resend-dashboardet brukes før søndagstesten av Skoleuka.
+
+## Familievennlig HTML-oppsummering (PR #73)
+
+Utsending sendes som både HTML og ren tekst. HTML-malen er bygget med e-postklient-kompatible tabeller og inline CSS, maks 600 px bredde, høy kontrast, tydelig skille per barn og en sentral lenke til den fullstendige ukeplanen.
+
+For hvert skolebarn vises dokumenterte lekser og frister, utstyr som skal tas med, og viktige kildebelagte beskjeder. Ukeplanens offisielle PDF lenkes ved gyldig URL. Verifiserte leksedetaljer kan brukes når de er hentet fra PDF-tabellen, selv om andre PDF-beskjeder ikke er ferdig kvalitetssikret. Ikke-verifiserte opplysninger blir aldri fylt inn med antakelser. Alle tekstfelt HTML-escapes før utsending.
+
+Ordinær søndagsutsending utsettes hvis minst én ukeplan ikke er ferdig behandlet og kildekontrollert. Den neste planlagte kjøringen prøver på nytt innenfor sendetidsvinduet. Hvis en plan fortsatt ikke er klar når vinduet er over, sendes ingen e-post den uken; testmail kan likevel vise delvis innhold tydelig merket. Se etter manglende kildebehandling i driftslogger og på Skoleuka. Ikke fjern kildekrav for å omgå dette.
+
+Testmail sender HTML med tydelig TEST-merking, men beholder begrensningen én godkjent testmail per foreldrekonto per 24 timer. Manuell visuell verifisering i Gmail/Outlook (desktop og mobil) anbefales før ordinær utrulling.
