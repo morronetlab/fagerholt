@@ -158,6 +158,9 @@
       </section>
     </section>
     <section id="family-view" class="family-view" hidden aria-labelledby="family-title">
+      <div class="family-mobile-overview-heading">
+        <h2>Min familie</h2><span id="family-mobile-week">Uke —</span>
+      </div>
       <div class="family-overview-top"><div><p class="family-eyebrow">FAMILIEOVERSIKT</p><h1 id="family-title" tabindex="-1">God oversikt over skoleuka</h1><p id="family-week-context" class="family-overview-subtitle">Lekser, pakkeliste og beskjeder for barna.</p></div><div class="family-overview-stats"><span id="family-week">Uke —</span><strong id="family-week-progress">—</strong><small id="family-count">0 barn</small></div></div>
       <nav id="family-mobile-nav" class="family-mobile-nav" aria-label="Min familie på mobil">
         <button type="button" data-family-mobile-tab="overview" aria-pressed="true" aria-controls="family-children">🏠 Oversikt</button>
@@ -168,8 +171,14 @@
       <section id="family-children" class="family-children" aria-labelledby="family-children-title">
       <div class="family-toolbar">
         <div><h2 id="family-children-title">Barna mine</h2><p>Hvert barn har sin egen ukeplan og lekseprogresjon.</p></div>
-        <div class="family-toolbar-actions"><button id="family-refresh" type="button" class="family-light-button">↻ Oppdater</button>
-        <button id="family-add" type="button" class="family-add-button">+ Legg til barn</button></div>
+        <div class="family-toolbar-actions">
+          <button id="family-mobile-add" type="button" aria-label="Legg til barn">+ Legg til</button>
+          <button id="family-mobile-admin-toggle" type="button" aria-expanded="false" aria-controls="family-mobile-admin-panel">⚙</button>
+          <div id="family-mobile-admin-panel" class="family-mobile-admin-panel">
+            <button id="family-refresh" type="button" class="family-light-button">↻ Oppdater</button>
+            <button id="family-add" type="button" class="family-add-button">+ Legg til barn</button>
+          </div>
+        </div>
       </div>
       <p id="family-load-status" class="family-status" role="status" aria-live="polite"></p>
       <form id="family-form" class="family-form" hidden aria-labelledby="family-form-title">
@@ -195,6 +204,7 @@
           <span aria-hidden="true" class="family-important-icon">!</span>
         </div>
         <div id="family-important-cards" class="family-important-cards" aria-live="polite"></div>
+        <button type="button" id="family-mobile-important-more" aria-expanded="false" hidden>Vis alle viktige beskjeder</button>
         <details id="family-practical-details" class="family-disclosure">
           <summary><span id="family-practical-label">Vis komplette skolebeskjeder og ekstra utstyr</span><span id="family-next-day" class="family-disclosure-time"></span></summary>
           <div class="family-disclosure-body">

@@ -293,6 +293,10 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     'Ingen særskilte viktige beskjeder registrert for denne uka.';
   setHtml('family-important-cards',html||
    '<p class="family-important-empty">'+escape(message)+'</p>');
+  el('family-mobile-important-more').hidden=notices.visible.length<=2;
+  el('family-mobile-important-more').textContent=
+   document.querySelector('#family-view .family-tomorrow')?.classList.contains('mobile-important-expanded')?
+    'Vis færre beskjeder':'Vis alle viktige beskjeder';
   el('family-practical-label').textContent=notices.remaining?
    'Vis komplette skolebeskjeder · '+notices.remaining+' flere viktige':
    'Vis alle praktiske beskjeder og ekstra utstyr';
@@ -378,7 +382,21 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     plan?.status==='unpublished'||plan?.status==='unavailable'?
      'Ukeplan for uke '+now.week+' er ikke tilgjengelig ennå. Skolen har ikke publisert PDF for denne uka.':
      errors.get(p.id)||s.reason||'Henter ukeplan for uke '+now.week+' …')+'</div>';
-  return '<article class="family-child" data-child-id="'+escape(p.id)+'"><div class="family-child-heading">'+
+  const compactStatus=s.ready?'<span class="family-mobile-progress-label">Lekser</span><span>'+
+   s.done+' av '+s.total+' ferdig</span>':
+   '<span class="family-mobile-progress-label">'+escape(
+    plan?.status==='unpublished'?'Ukeplan ikke publisert':errors.get(p.id)||'Henter ukeplan …')+'</span>';
+  const compact='<button type="button" class="family-child-compact" data-family-compact-open="'+escape(p.id)+'" '+
+   'aria-label="Åpne ukeplan for '+escape(p.name)+'">'+
+   '<span class="family-mobile-child-head"><span class="family-avatar" aria-hidden="true">'+
+   escape(p.name.slice(0,1).toUpperCase())+'</span><span class="family-mobile-child-identity">'+
+   '<strong>'+escape(p.name)+'</strong><small>'+escape(p.grade)+'. klasse'+
+   (p.group?' · '+escape(p.group):'')+'</small></span>'+
+   '<span class="family-mobile-child-chevron" aria-hidden="true">›</span></span>'+
+   '<span class="family-mobile-progress">'+compactStatus+'</span>'+
+   (s.ready?'<span class="family-mobile-progress-track" aria-hidden="true"><span style="width:'+pct+'%"></span></span>':'')+
+   '</button>';
+  return '<article class="family-child" data-child-id="'+escape(p.id)+'">'+compact+'<div class="family-child-heading">'+
    '<span class="family-avatar" aria-hidden="true">'+escape(p.name.slice(0,1).toUpperCase())+'</span>'+
    '<div><h3>'+escape(p.name)+'</h3><p>'+escape(school?.name||'Skole')+' · '+escape(p.grade)+'. klasse'+(p.group?' · '+escape(p.group):'')+'</p>'+
    '<span class="family-child-week">UKE '+now.week+' · '+now.year+(now.upcoming?' · NESTE UKE':'')+'</span></div></div>'+
@@ -397,6 +415,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const {now,summaries}=getSummaries();
   el('family-week').textContent='Uke '+now.week+' · '+now.year+(now.upcoming?' · neste uke':'');
   el('family-count').textContent=profiles.length+' barn';
+  el('family-mobile-week').textContent='Uke '+now.week;
   el('family-storage-label').textContent=cloud?'☁ Synkronisert familie · lekser deles mellom foresatte':'🔒 Kun på denne enheten';
   const ready=[...summaries.values()].filter(x=>x.ready);
   const done=ready.reduce((n,x)=>n+x.done,0),total=ready.reduce((n,x)=>n+x.total,0);
@@ -417,6 +436,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   activityUI.render();
   renderAgenda(now,summaries);
   el('family-add').disabled=profiles.length>=FAMILY_MAX_PROFILES;
+  el('family-mobile-add').disabled=profiles.length>=FAMILY_MAX_PROFILES;
   el('family-add').textContent=profiles.length>=FAMILY_MAX_PROFILES?'Maks seks barn':'+ Legg til barn';
   el('family-empty').hidden=profiles.length!==0;
   // Preserve manually expanded child details after a checkbox saves progress.
@@ -809,7 +829,29 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   refresh:()=>{if(active){if(cloud)void syncCloud();void activityUI.refresh();void fetchPlans();}}
  };
  el('family-add').addEventListener('click',()=>openForm());
+ el('family-mobile-add').addEventListener('click',()=>openForm());
+ el('family-mobile-admin-toggle').addEventListener('click',()=>{
+  const panel=el('family-mobile-admin-panel');
+  const expanded=panel.classList.toggle('is-open');
+  el('family-view').classList.toggle('family-mobile-managing',expanded);
+  el('family-mobile-admin-toggle').setAttribute('aria-expanded',String(expanded));
+ });
  el('family-empty-add').addEventListener('click',()=>openForm());
+ el('family-mobile-important-more').addEventListener('click',()=>{
+  const section=document.querySelector('#family-view .family-tomorrow');
+  const expanded=section.classList.toggle('mobile-important-expanded');
+  el('family-mobile-important-more').setAttribute('aria-expanded',String(expanded));
+  el('family-mobile-important-more').textContent=expanded?'Vis færre beskjeder':'Vis alle viktige beskjeder';
+ });
+ el('family-important-cards').addEventListener('click',event=>{
+  const button=event.target.closest('[data-family-agenda-details]');
+  if(!button)return;
+  const card=button.closest('.family-agenda-item');
+  if(!card)return;
+  const expanded=card.classList.toggle('is-expanded');
+  button.setAttribute('aria-expanded',String(expanded));
+  button.textContent=expanded?'Skjul detaljer':'Mer info';
+ });
  for(const button of document.querySelectorAll('[data-family-focus]')){
   button.addEventListener('click',()=>{focus=button.dataset.familyFocus;showAllHighlights=false;render();});
  }
@@ -953,8 +995,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    api.refresh();
    return;
   }
-  const open=e.target.closest('[data-family-open]');
-  if(open){const p=byId(open.dataset.familyOpen);if(p)openChildProfile(p);return;}
+  const open=e.target.closest('[data-family-compact-open], [data-family-open]');
+  if(open){const p=byId(open.dataset.familyCompactOpen||open.dataset.familyOpen);if(p)openChildProfile(p);return;}
   const pair=e.target.closest('[data-family-pair]');
   if(pair){const p=byId(pair.dataset.familyPair);if(p&&cloud)childPairingUI.open(p);return;}
   const edit=e.target.closest('[data-family-edit]');

@@ -236,7 +236,8 @@ async function expandFirstFamilyActivity(page){
  await activity.locator('[data-family-agenda-details]').click();
 }
 async function addFamilyChild(page,name,grade='2'){
- await page.locator('#family-add').click();
+ const mobile=await page.evaluate(()=>window.matchMedia('(max-width:700px)').matches);
+ await page.locator(mobile?'#family-mobile-add':'#family-add').click();
  await page.locator('#family-name').fill(name);
  await page.locator('#family-school').selectOption('sjostrand');
  await page.locator('#family-grade option[value="'+grade+'"]').waitFor({state:'attached'});
@@ -255,7 +256,7 @@ test('Header Ukeplan opens an existing child and reloading its plan stays on tha
  assert.equal(await page.locator('#school-gate').isVisible(),false);
  assert.equal(await page.locator('#grade-gate').isVisible(),false);
  await page.locator('#plan-back-family').click();
- await page.locator('#family-cards .family-child').nth(1).locator('[data-family-open]').click();
+ await page.locator('#family-cards .family-child').nth(1).locator('[data-family-compact-open]:visible, [data-family-open]:visible').click();
  await page.locator('#app-view').waitFor({state:'visible'});
  assert.match(await page.locator('#plan-context-class').innerText(),/Andre barn/);
  await page.reload({waitUntil:'domcontentloaded'});
@@ -280,6 +281,39 @@ test('An explicitly selected welcome page survives reload even when family profi
  assert.deepEqual(errors,[]);
 });
 
+test('Mobile family overview shows two compact tappable children, hides administration and keeps desktop intact',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.locator('#family-toggle').click();
+ await addFamilyChild(page,'Barn A');
+ await addFamilyChild(page,'Barn B');
+ assert.equal(await page.locator('.family-overview-top').isVisible(),false);
+ assert.equal(await page.locator('.family-mobile-overview-heading').isVisible(),true);
+ assert.equal(await page.locator('#family-cards .family-child-compact:visible').count(),2);
+ assert.equal(await page.locator('#family-cards .family-child-heading:visible').count(),0);
+ assert.equal(await page.locator('#family-cards .family-child-extra:visible').count(),0);
+ assert.equal(await page.locator('#family-cards .family-ai-label:visible').count(),0);
+ assert.equal(await page.locator('#family-mobile-add').isVisible(),true);
+ assert.equal(await page.locator('#family-refresh').isVisible(),false);
+ assert.equal(await page.locator('#family-cards [data-family-pair]:visible').count(),0);
+ assert.equal(await page.locator('#family-cards [data-family-open]:visible').count(),0);
+ const compact=page.locator('#family-cards .family-child-compact').first();
+ assert.match(await compact.innerText(),/Barn A/);
+ const bounds=await page.locator('#family-cards').evaluate(node=>{
+  const cards=[...node.querySelectorAll('.family-child-compact')].map(el=>el.getBoundingClientRect());
+  return {heights:cards.map(rect=>rect.height),scroll:node.scrollWidth>node.clientWidth+1};
+ });
+ assert.equal(bounds.scroll,false);
+ assert.ok(bounds.heights.every(h=>h<=115),'Mobile child cards should be compact');
+ await page.locator('#family-mobile-admin-toggle').click();
+ assert.equal(await page.locator('#family-refresh').isVisible(),true);
+ assert.equal(await page.locator('[data-family-more]:visible').count(),2);
+ await page.locator('#family-mobile-admin-toggle').click();
+ assert.equal(await page.locator('[data-family-more]:visible').count(),0);
+ await page.locator('#family-cards .family-child-compact').nth(1).click();
+ await page.locator('#app-view').waitFor({state:'visible'});
+ assert.match(await page.locator('#plan-context-class').innerText(),/Barn B/);
+ assert.deepEqual(errors,[]);
+});
 test('Mobile family dashboard uses compact tabs, focused calendar day and fewer child actions',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.locator('#family-toggle').click();
@@ -291,8 +325,9 @@ test('Mobile family dashboard uses compact tabs, focused calendar day and fewer 
  assert.equal(await page.locator('.family-agenda').isVisible(),false);
  assert.equal(await page.locator('#family-activity-section').isVisible(),false);
  const card=page.locator('#family-cards .family-child').first();
- assert.equal(await card.locator('[data-family-open]').isVisible(),true);
+ assert.equal(await card.locator('[data-family-compact-open]:visible, [data-family-open]:visible').isVisible(),true);
  assert.equal(await card.locator('[data-family-edit]').isVisible(),false);
+ await page.locator('#family-mobile-admin-toggle').click();
  await card.locator('[data-family-more]').click();
  assert.equal(await card.locator('[data-family-edit]').isVisible(),true);
  await page.locator('[data-family-mobile-tab="calendar"]').click();
@@ -399,19 +434,22 @@ test('V2 family overview combines two children and keeps completion independentl
  await ensurePracticalOpen(page);
  await page.locator('[data-family-focus="today"]').click();
  assert.equal(await page.locator('[data-family-focus="today"]').getAttribute('aria-pressed'),'true');
- await page.locator('#family-cards [data-family-open]').first().click();
+ await page.locator('#family-cards [data-family-compact-open]:visible, #family-cards [data-family-open]:visible').first().click();
  await page.locator('#homework-list input[type=checkbox]').first().waitFor();
  await page.locator('#homework-list input[type=checkbox]').first().check();
  await page.locator('#family-toggle').click();
- await page.locator('#family-cards .family-child').first().locator('.family-child-progress').waitFor();
- assert.match(await page.locator('#family-cards .family-child').first().locator('.family-child-progress').innerText(),/1 \/ 2/);
- assert.match(await page.locator('#family-cards .family-child').nth(1).locator('.family-child-progress').innerText(),/0 \/ 2/);
+ await page.locator('#family-cards .family-child').first().locator('.family-mobile-progress-track').waitFor({state:'visible'});
+ assert.match(await page.locator('#family-cards .family-child').first().locator('.family-mobile-progress').innerText(),/1 av 2/);
+ assert.match(await page.locator('#family-cards .family-child').nth(1).locator('.family-mobile-progress').innerText(),/0 av 2/);
+ await page.locator('#family-mobile-admin-toggle').click();
+ await page.locator('#family-cards .family-child').nth(1).locator('[data-family-more]').click();
  await page.locator('#family-cards .family-child').nth(1).locator('.family-child-extra > summary').click();
  await page.locator('#family-cards .family-child').nth(1).locator('input[data-family-check]').first().check();
- assert.match(await page.locator('#family-cards .family-child').nth(1).locator('.family-child-progress').innerText(),/1 \/ 2/);
+ assert.match(await page.locator('#family-cards .family-child').nth(1).locator('.family-mobile-progress').innerText(),/1 av 2/);
+ await page.locator('#family-cards .family-child').first().locator('[data-family-more]').click();
  await page.locator('#family-cards .family-child').first().locator('.family-child-extra > summary').click();
  await page.locator('#family-cards .family-child').first().locator('input[data-family-index="0"]').uncheck();
- assert.match(await page.locator('#family-cards .family-child').first().locator('.family-child-progress').innerText(),/0 \/ 2/);
+ assert.match(await page.locator('#family-cards .family-child').first().locator('.family-mobile-progress').innerText(),/0 av 2/);
  assert.match(await page.locator('#family-cards .family-child').nth(1).locator('.family-child-progress').innerText(),/1 \/ 2/);
  await page.reload();
  await page.locator('#family-cards .family-child').nth(1).waitFor();
@@ -438,8 +476,8 @@ test('Family overview starts PDF AI once per class and automatically updates bot
  });
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-view').waitFor({state:'visible'});
- await page.locator('#family-cards .family-child-progress').first().waitFor({state:'visible',timeout:20000});
- assert.equal(await page.locator('#family-cards .family-child-progress').count(),2);
+ await page.locator('#family-cards .family-mobile-progress-track:visible, #family-cards .family-child-progress:visible').first().waitFor({state:'visible',timeout:20000});
+ assert.equal(await page.locator('#family-cards .family-mobile-progress-track:visible, #family-cards .family-child-progress:visible').count(),2);
  assert.equal(fullRequests,2,'One initial check and one final source-verified read per school/grade');
  assert.equal(statusRequests,1,'One AI job is polled for both siblings');
  assert.match(await page.locator('#family-cards .family-ai-label').first().innerText(),/lagret/);
@@ -465,7 +503,7 @@ test('Family rechecks the PDF on a new visit and follows replacement AI jobs aut
   return reply(route,{aiStatus:'ready',parser:'ai',status:'ok',homeworkSourceVersion:1});
  });
  await page.reload({waitUntil:'domcontentloaded'});
- await page.locator('#family-cards .family-child-progress').first().waitFor({state:'visible',timeout:25000});
+ await page.locator('#family-cards .family-mobile-progress-track:visible, #family-cards .family-child-progress:visible').first().waitFor({state:'visible',timeout:25000});
  assert.equal(fullRequests,3,'A replaced PDF triggers another background job before the canonical ready result');
  assert.equal(statusRequests,2);
  assert.deepEqual(errors,[]);
@@ -492,18 +530,18 @@ test('Friday after school shows only next-week PDF status for each child, never 
    pdf:null,homework:[],aiStatus:'disabled'});
  });
  await page.reload({waitUntil:'domcontentloaded'});
- await page.locator('#family-cards .family-not-ready').first().waitFor({state:'visible'});
+ await page.locator('#family-cards .family-mobile-progress-label:visible, #family-cards .family-not-ready:visible').first().waitFor({state:'visible'});
  assert.match(await page.locator('#family-week').innerText(),new RegExp('Uke '+shown.week));
  assert.equal(await page.locator('.family-child-week').count(),2);
  assert.match(await page.locator('.family-child-week').first().innerText(),new RegExp('UKE '+shown.week));
- assert.match(await page.locator('#family-cards').innerText(),new RegExp('Ukeplan for uke '+shown.week+' er ikke tilgjengelig ennå'));
- assert.equal(await page.locator('#family-cards .family-child-progress').count(),0);
+ assert.match(await page.locator('#family-cards').innerText(),/Ukeplan ikke publisert/);
+ assert.equal(await page.locator('#family-cards .family-mobile-progress-track:visible').count(),0);
  assert.equal(await page.locator('.family-focus-tabs').isVisible(),false);
  assert.match(await page.locator('#family-week-progress').innerText(),/Avventer ukeplan/);
  assert.doesNotMatch(await page.locator('#family-view').innerText(),/GAMMEL UKE/);
  assert.ok(urls.length>=1&&urls.every(x=>x.includes('nextWeek=1')),
   'Only the next-week PDF must be requested by family overview');
- await page.locator('#family-cards [data-family-open]').first().click();
+ await page.locator('#family-cards [data-family-compact-open]:visible, #family-cards [data-family-open]:visible').first().click();
  await page.locator('#app-view').waitFor({state:'visible'});
  assert.match(await page.locator('#week-label').innerText(),new RegExp('UKE '+shown.week));
  assert.equal(await page.locator('#back-this-week').isVisible(),false,
@@ -527,14 +565,16 @@ test('Next-week family dashboard shows new weekly tasks with the correct week on
   return reply(route,plan);
  });
  await page.reload({waitUntil:'domcontentloaded'});
- await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
- assert.match(await page.locator('#family-cards').innerText(),/Lekser i uke/);
+ await page.locator('#family-cards .family-mobile-progress-track:visible, #family-cards .family-child-progress:visible').waitFor({state:'visible'});
+ assert.match(await page.locator('#family-cards').innerText(),/Lekser/);
+ await page.locator('#family-mobile-admin-toggle').click();
+ await page.locator('#family-cards [data-family-more]').first().click();
  await page.locator('#family-cards .family-child-extra > summary').click();
  assert.match(await page.locator('#family-cards').innerText(),/Les til mandag NESTE UKE/);
  await ensurePracticalOpen(page);
  await page.locator('#family-reminders').getByText(/Gymtøy for neste uke/).first().waitFor({state:'visible'});
  assert.match(await page.locator('#family-reminders').innerText(),/Gymtøy for neste uke/);
- assert.match(await page.locator('.family-child-week').innerText(),new RegExp('UKE '+shown.week));
+ assert.match(await page.locator('#family-mobile-week').innerText(),new RegExp('Uke '+shown.week));
  assert.doesNotMatch(await page.locator('#family-view').innerText(),/I dag/);
  assert.deepEqual(errors,[]);
 });
@@ -553,11 +593,11 @@ test('Before Friday 14:00 Oslo the family overview still uses the current week',
   return reply(route,plan);
  });
  await page.reload({waitUntil:'domcontentloaded'});
- await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
+ await page.locator('#family-cards .family-mobile-progress-track:visible, #family-cards .family-child-progress:visible').waitFor({state:'visible'});
  await ensurePracticalOpen(page);
  assert.equal(await page.locator('.family-focus-tabs').isVisible(),true);
  assert.equal(requested.every(x=>x===null),true);
- assert.match(await page.locator('.family-child-week').innerText(),new RegExp('UKE '+now.week));
+ assert.match(await page.locator('#family-mobile-week').innerText(),new RegExp('Uke '+now.week));
  assert.deepEqual(errors,[]);
 });
 
@@ -618,7 +658,7 @@ test('Family AI ranks advance preparations first, visually highlights them, and 
   return reply(route,{status:'ready',scores});
  });
  await page.reload({waitUntil:'domcontentloaded'});
- await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
+ await page.locator('#family-cards .family-mobile-progress-track:visible, #family-cards .family-child-progress:visible').waitFor({state:'visible'});
  await ensurePracticalOpen(page);
  await page.locator('[data-family-focus="week"]').click();
  await page.locator('.family-reminder-priority').filter({hasText:important})
@@ -632,7 +672,7 @@ test('Family AI ranks advance preparations first, visually highlights them, and 
   /Forbered i forkant/);
  assert.equal(rankCalls,1);
  assert.equal(planCalls,1,'Ranking must not re-download or re-interpret PDF');
- await page.locator('#family-cards [data-family-open]').first().click();
+ await page.locator('#family-cards [data-family-compact-open]:visible, #family-cards [data-family-open]:visible').first().click();
  assert.equal(await page.locator('#plan-body').isVisible(),true,'No loading page while AI ranks');
  assert.equal(planCalls,1,'Opening a verified plan is still instant');
  assert.deepEqual(errors,[]);
@@ -669,7 +709,7 @@ test('Family workday changes and vaccinations outrank homework and even conflict
   }});
  });
  await page.reload({waitUntil:'domcontentloaded'});
- await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
+ await page.locator('#family-cards .family-mobile-progress-track:visible, #family-cards .family-child-progress:visible').waitFor({state:'visible'});
  // The default "Neste skoledag" tab must not hide an upcoming Friday SFO closure.
  await ensurePracticalOpen(page);
  await page.locator('.family-reminder-workday').first().waitFor({state:'visible'});
@@ -717,7 +757,7 @@ test('Family notices have a short source-extractive headline, verified date, ful
   }});
  });
  await page.reload({waitUntil:'domcontentloaded'});
- await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
+ await page.locator('#family-cards .family-mobile-progress-track:visible, #family-cards .family-child-progress:visible').waitFor({state:'visible'});
  await ensurePracticalOpen(page);
  await page.locator('[data-family-focus="week"]').click();
  const card=page.locator('.family-reminder').filter({hasText:'planleggingsdag'});
@@ -958,9 +998,9 @@ test('Opening a ready AI family plan is instant and browser Back and Forward res
   return reply(route,p);
  });
  await page.reload({waitUntil:'domcontentloaded'});
- await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
+ await page.locator('#family-cards .family-mobile-progress-track:visible, #family-cards .family-child-progress:visible').waitFor({state:'visible'});
  const initialRequests=requests;
- await page.locator('#family-cards [data-family-open]').first().click();
+ await page.locator('#family-cards [data-family-compact-open]:visible, #family-cards [data-family-open]:visible').first().click();
  assert.equal(await page.locator('#app-view').isVisible(),true);
  assert.equal(await page.locator('#plan-body').isVisible(),true);
  assert.equal(await page.locator('#plan-feedback').isVisible(),false);
@@ -999,6 +1039,7 @@ test('Family grade selection, edited profiles and single-class navigation surviv
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.locator('#family-toggle').click();
  await addFamilyChild(page,'Min profil','5A');
+ await page.locator('#family-mobile-admin-toggle').click();
  await page.locator('[data-family-more]').first().click();
  await page.locator('[data-family-edit]').click();
  await page.locator('#family-name').fill('Oppdatert profil');
@@ -1171,7 +1212,7 @@ test('Opening a family child plan from a scrolled overview starts the new view a
   window.scrollTo({top:650,behavior:'instant'});
  });
  assert.ok(await page.evaluate(()=>window.scrollY)>200);
- await page.locator('#family-cards [data-family-open]').first().click();
+ await page.locator('#family-cards [data-family-compact-open]:visible, #family-cards [data-family-open]:visible').first().click();
  await page.locator('#app-view').waitFor({state:'visible'});
  await page.waitForFunction(()=>window.scrollY===0);
  assert.equal(await page.evaluate(()=>window.scrollY),0);
@@ -1414,6 +1455,7 @@ test('Skoleuka 2.2 mobile hierarchy makes children and critical notices prominen
  }));
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-important-cards').getByText(/Planleggingsdag/).waitFor({state:'visible'});
+ await page.locator('#family-mobile-important-more').click();
  await page.locator('#family-important-cards').getByText(/Vaksinasjon/).waitFor({state:'visible'});
  const snapshot=await page.evaluate(()=>{
   const top=id=>document.querySelector(id).getBoundingClientRect().top;
@@ -1431,8 +1473,8 @@ test('Skoleuka 2.2 mobile hierarchy makes children and critical notices prominen
  assert.equal(snapshot.reminders,false);
  assert.equal(snapshot.activity,false);
  assert.equal(snapshot.undated,false);
- assert.equal(await page.locator('#family-cards .family-child-progress').count(),1);
- assert.equal(await page.locator('#family-cards [data-family-open]').isVisible(),true);
+ assert.equal(await page.locator('#family-cards .family-mobile-progress-track:visible, #family-cards .family-child-progress:visible').count(),1);
+ assert.equal(await page.locator('#family-cards [data-family-compact-open]:visible, #family-cards [data-family-open]:visible').first().isVisible(),true);
  assert.equal(await page.locator('#family-important-cards a[href*="minskole.no"]').count()>0,true);
  assert.match(await page.locator('#family-agenda-undated-summary').innerText(),/viktig/);
  await page.locator('[data-family-mobile-tab="calendar"]').click();
@@ -1504,7 +1546,7 @@ test('Opening a saved child plan hides school/grade switching and shows only tha
   ]));
  },[child1,child2]);
  await page.reload({waitUntil:'domcontentloaded'});
- await page.locator('#family-cards [data-family-open]').first().click();
+ await page.locator('#family-cards [data-family-compact-open]:visible, #family-cards [data-family-open]:visible').first().click();
  await page.locator('#app-view').waitFor({state:'visible'});
  await page.locator('#plan-day-activities').waitFor({state:'visible'});
  assert.equal(await page.locator('#change-school').isVisible(),false);

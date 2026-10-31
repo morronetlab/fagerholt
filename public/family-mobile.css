@@ -223,3 +223,147 @@
   outline:3px solid #b97b37;outline-offset:2px
  }
 }
+
+/* PR #99: mobile overview is a dashboard, not an administration form.
+   These rules are intentionally restricted to the family Overview tab. */
+.family-mobile-overview-heading,.family-child-compact,
+#family-mobile-add,#family-mobile-admin-toggle{display:none}
+.family-mobile-admin-panel{display:contents}
+@media(max-width:700px){
+ #family-view[data-family-mobile-view=overview] .family-overview-top{display:none!important}
+ #family-view[data-family-mobile-view=overview] .family-overview-meta{display:none!important}
+ #family-view .family-mobile-overview-heading{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:2px 3px 3px;margin:0 0 5px
+ }
+ #family-view .family-mobile-overview-heading h2{
+  margin:0;color:#245c48;font-size:20px;line-height:1.2;font-weight:850
+ }
+ #family-view .family-mobile-overview-heading span{
+  color:#50735c;font-size:12px;font-weight:800;white-space:nowrap
+ }
+ #family-view .family-mobile-nav{margin:4px 0 11px}
+ #family-view #family-children{
+  border:none!important;background:transparent!important;
+  box-shadow:none!important;padding:0!important;margin:0 0 10px!important
+ }
+ #family-view .family-toolbar{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:8px;margin:0 2px 9px!important
+ }
+ #family-view .family-toolbar h2{font-size:16px;margin:0}
+ #family-view .family-toolbar-actions{
+  display:flex;flex-direction:row;align-items:center;gap:5px
+ }
+ #family-view #family-mobile-add,#family-view #family-mobile-admin-toggle{
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid #d6e5da;background:#f8fcf9;
+  border-radius:9px;min-height:35px;height:35px;
+  color:#2f6d51;font-size:11px;font-weight:800;padding:6px 9px
+ }
+ #family-view #family-mobile-admin-toggle{width:36px;min-width:36px;padding:0;font-size:16px}
+ #family-view #family-mobile-admin-toggle[aria-expanded=true]{background:#e6f3ea}
+ #family-view .family-mobile-admin-panel{
+  display:none;position:absolute;right:0;top:41px;z-index:15;
+  width:min(210px,calc(100vw - 48px));background:white;
+  padding:8px;border:1px solid #d8e8dc;border-radius:12px;
+  box-shadow:0 8px 24px #18442b24
+ }
+ #family-view .family-toolbar-actions{position:relative}
+ #family-view .family-mobile-admin-panel.is-open{display:grid;gap:7px}
+ #family-view .family-mobile-admin-panel.is-open button{
+  display:block!important;min-height:40px;width:100%;
+  text-align:left;padding:7px 11px;font-size:12px
+ }
+ #family-view .family-cards{display:grid;gap:7px}
+ #family-view .family-child{
+  position:relative;min-width:0;background:#fff!important;
+  border:1px solid #dfebe1;border-radius:13px;
+  box-shadow:none!important;overflow:visible
+ }
+ #family-view .family-child-compact{
+  display:flex;flex-direction:column;gap:10px;width:100%;
+  min-height:92px;background:transparent;border:0;text-align:left;
+  border-radius:13px;padding:12px 13px;cursor:pointer;color:#245b45
+ }
+ #family-view .family-child-compact:focus-visible{outline:3px solid #c28748;outline-offset:2px}
+ #family-view .family-mobile-child-head{
+  display:flex;align-items:center;gap:10px;width:100%;min-width:0
+ }
+ #family-view .family-mobile-child-head .family-avatar{
+  display:grid;place-items:center;width:36px;height:36px;min-width:36px;
+  border-radius:50%;font-size:15px
+ }
+ #family-view .family-mobile-child-identity{display:grid;gap:3px;min-width:0;flex:1}
+ #family-view .family-mobile-child-identity strong{
+  font-size:15px;line-height:1.15;color:#245b45
+ }
+ #family-view .family-mobile-child-identity small{
+  font-size:11px;color:#708779;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+ }
+ #family-view .family-mobile-child-chevron{
+  margin-left:auto;font-size:24px;font-weight:500;line-height:1;color:#558572
+ }
+ #family-view .family-mobile-progress{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  color:#28664b;font-size:11px;font-weight:850
+ }
+ #family-view .family-mobile-progress-label{font-weight:700;color:#718777}
+ #family-view .family-mobile-progress-track{
+  display:block;width:100%;height:5px;overflow:hidden;background:#e7eee7;
+  border-radius:8px;margin-top:-6px
+ }
+ #family-view .family-mobile-progress-track>span{
+  display:block;height:100%;border-radius:8px;background:#35896b
+ }
+ #family-view .family-child-heading,
+ #family-view .family-child-progress,
+ #family-view .family-child-extra,
+ #family-view .family-child .family-ai-label,
+ #family-view .family-child .family-not-ready,
+ #family-view .family-child-actions{display:none!important}
+ #family-view.family-mobile-managing .family-child-actions{
+  display:flex!important;gap:6px;align-items:center;justify-content:flex-end;
+  padding:0 11px 9px
+ }
+ #family-view.family-mobile-managing .family-child-actions [data-family-open]{display:none!important}
+ #family-view.family-mobile-managing .family-mobile-more{
+  display:inline-flex;align-items:center;min-height:32px;height:32px;
+  padding:5px 9px;font-size:11px;grid-column:auto;grid-row:auto;margin-left:auto
+ }
+ #family-view.family-mobile-managing .family-child.mobile-more-open .family-child-actions{
+  display:grid!important;grid-template-columns:1fr 1fr
+ }
+ #family-view.family-mobile-managing .family-child.mobile-more-open .family-child-extra{
+  display:block!important;margin:0 11px 8px!important
+ }
+ #family-view.family-mobile-managing .family-child.mobile-more-open .family-child-actions [data-family-pair],
+ #family-view.family-mobile-managing .family-child.mobile-more-open .family-child-actions [data-family-edit],
+ #family-view.family-mobile-managing .family-child.mobile-more-open .family-child-actions [data-family-remove],
+ #family-view.family-mobile-managing .family-child.mobile-more-open .family-child-actions [data-family-retry]{
+  display:inline-flex!important;grid-column:auto;min-height:35px;font-size:11px
+ }
+ #family-view.family-mobile-managing .family-child.mobile-more-open .family-mobile-more{grid-column:1/-1}
+ #family-view .family-tomorrow{padding:11px 12px;margin:0 0 10px;border-radius:13px}
+ #family-view .family-important-heading{margin:0 0 6px;align-items:center}
+ #family-view .family-important-heading h2{font-size:16px;line-height:1.25}
+ #family-view .family-important-icon{display:none}
+ #family-view .family-important-cards{gap:5px}
+ #family-view .family-important-entry:nth-child(n+3){display:none}
+ #family-view .family-tomorrow.mobile-important-expanded .family-important-entry:nth-child(n+3){display:block}
+ #family-view .family-important-entry{padding:7px 8px}
+ #family-view .family-important-entry .family-agenda-item{padding:7px 8px}
+ #family-view .family-tomorrow .family-important-entry .family-agenda-item-more{display:none}
+ #family-view .family-important-entry .family-agenda-expand{display:block}
+ #family-view .family-important-entry .family-agenda-item.is-expanded .family-agenda-item-more{display:grid}
+ #family-view .family-important-cards .family-agenda-item strong{font-size:12px}
+ #family-view .family-important-date{font-size:10px}
+ #family-view #family-mobile-important-more{
+  display:block;width:100%;min-height:34px;margin-top:5px;
+  background:transparent;border:0;color:#2a7055;font-size:11px;font-weight:800
+ }
+ #family-view #family-mobile-important-more[hidden]{display:none}
+ #family-view .family-tomorrow .family-disclosure{margin-top:6px}
+ #family-view .family-tomorrow .family-disclosure>summary{font-size:11px;min-height:37px;padding:8px}
+ #family-view #family-load-status:empty{display:none}
+}
