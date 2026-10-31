@@ -39,7 +39,7 @@ test('Child shell is separated from account, family and guardian administrative 
  assert.doesNotMatch(js,/SUPABASE_SERVICE_ROLE_KEY|sb_secret_/);
  assert.match(js,/history\.replaceState\(null,'','\/barn\/'\)/);
  assert.match(js,/localStorage\.setItem\(KEY,token\)/);
- assert.match(js,/groupApplies/);
+ assert.match(read('public/barn/child-learning.mjs'),/groupApplies/);
 });
 test('Saved family plan hides school and grade switches while guest selection stays intact',()=>{
  const app=read('public/app.js'),html=read('public/index.html');
