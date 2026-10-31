@@ -1,4 +1,4 @@
-/* Family account setup and accessible inline sign-in panel. */
+/* Family account setup and accessible modal sign-in panel. */
 .account-nav{border:1px solid #bfdcc9;background:#fffdf7;color:#286652;padding:10px 15px;min-height:42px;border-radius:12px;font-size:13px;font-weight:850;cursor:pointer;white-space:nowrap}
 .account-nav[aria-expanded=true]{background:#275e4d;color:#fff}
 .account-panel{border:1px solid #d7e7dc;border-radius:22px;box-shadow:0 20px 45px #244c3627;background:#fff;padding:27px 32px;margin:18px auto 24px;max-width:790px;color:#315848}
@@ -29,3 +29,29 @@
  background:#fff;border:1px solid #d4e4d8;border-radius:12px;font-weight:750}
 .account-digest-toggle input{width:20px;height:20px;flex:0 0 auto;accent-color:#297054}
 .account-digest-settings [role=status]{font-size:12px;font-weight:750;color:#296547}
+
+/* Account is a true viewport modal. The backdrop blocks underlying controls,
+   while lengthy account settings scroll *inside* the dialog only. */
+html.account-modal-open{overflow:hidden}
+body.account-modal-open{position:fixed;inset-inline:0;top:var(--account-lock-top,0px);
+ width:100%;overflow:hidden}
+dialog.account-panel{
+ position:fixed;inset:0;box-sizing:border-box;
+ display:block;width:min(790px,calc(100% - 32px));max-width:790px;
+ max-height:calc(100dvh - 36px);margin:auto;padding:27px 32px;
+ overflow-y:auto;overscroll-behavior:contain;
+ background:#fff;border:1px solid #d7e7dc;border-radius:22px;
+ box-shadow:0 24px 70px #163e2d4a;color:#315848;
+}
+dialog.account-panel:not([open]){display:none}
+dialog.account-panel::backdrop{background:rgba(14,35,27,.66);backdrop-filter:blur(3px)}
+dialog.account-panel .account-head{
+ position:sticky;top:-27px;z-index:3;padding:8px 0 13px;margin-top:-8px;
+ border-bottom:1px solid #e1ece4;background:#fff
+}
+dialog.account-panel .account-close{flex-shrink:0}
+@media(max-width:700px){
+ dialog.account-panel{width:calc(100% - 20px);max-height:calc(100dvh - 20px);
+  padding:23px 18px;border-radius:17px;margin:auto}
+ dialog.account-panel .account-head{top:-23px}
+}
