@@ -1,0 +1,82 @@
+name: One-time read-only production email smoke
+on:
+  push:
+    branches:
+      - test/prod-email-smoke-20261031
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Verify public production readiness without exposing keys or sending email
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          const sites=['https://skoleuk.no','https://ukeplanen.netlify.app'];
+          const statuses=[];
+          async function req(base,path,{method='GET'}={}){
+            const u=new URL(path,base);
+            const r=await fetch(u,{method,headers:{'Accept':'application/json'},
+              redirect:'follow',signal:AbortSignal.timeout(14000)});
+            let json=null;
+            try{json=await r.json()}catch{}
+            return {status:r.status,json,servedHost:new URL(r.url).hostname};
+          }
+          async function probe(base){
+            const result={host:new URL(base).hostname};
+            for(const [key,path] of [
+              ['build','/build-info.json'],['digest','/api/digest-config'],
+              ['calendarHealth','/api/source-health'],
+              ['calendar','/api/school-calendar?school=fagerholt&year=2026&week=45'],
+              ['account','/api/account-config']
+            ]){
+              try{
+                const x=await req(base,path);
+                result[key]={http:x.status,host:x.servedHost};
+                if(key==='digest')result[key].ready=x.json?.available===true;
+                if(key==='calendarHealth'){
+                  result[key].sourceStatus=x.json?.status||null;
+                  result[key].stale=x.json?.stale;
+                  result[key].verified=Boolean(x.json?.lastVerifiedAt);
+                }
+                if(key==='calendar')result[key].schoolFreeNov6=x.json?.events?.some(
+                  x=>x.date==='2026-11-06'&&x.schoolFree===true);
+                if(key==='account')result[key].accountEnabled=x.json?.enabled===true;
+                if(key==='build')result[key].commit=(x.json?.commit||'').slice(0,10);
+              }catch(e){result[key]={error:String(e.message||'unreachable').slice(0,80)}}
+            }
+            try{
+              const x=await req(base,'/api/source-health',{method:'POST'});
+              result.healthMethodGuard={http:x.status};
+            }catch(e){result.healthMethodGuard={error:String(e.message).slice(0,60)}}
+            return result;
+          }
+          for(const site of sites){
+            const p=await probe(site);
+            console.log('READ_ONLY_PRODUCTION_SMOKE '+JSON.stringify(p));
+            statuses.push(p);
+          }
+          const primary=statuses[0],fallback=statuses[1];
+          const reliable=statuses.some(s=>
+            s.digest?.http===200&&s.calendarHealth?.http===200&&
+            s.account?.http===200&&s.calendar?.http===200);
+          if(!reliable){
+            console.error('No production endpoint host passed read-only availability checks.');
+            process.exitCode=1;
+          }
+          if(primary.digest?.http!==200){
+            console.warn('Custom domain endpoint not accessible from GitHub runner. Check DNS/Netlify routing.');
+          }
+          if(statuses.some(s=>s.digest?.http===200&&s.digest.ready===false)){
+            console.warn('Public e-mail readiness is FALSE (sending disabled or sender/service key invalid).');
+          }
+          if(!statuses.some(s=>s.calendar?.schoolFreeNov6===true)){
+            console.error('Municipal calendar Nov 6 closure missing.');
+            process.exitCode=1;
+          }
+          NODE
