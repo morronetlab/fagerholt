@@ -78,7 +78,7 @@ test('Dispatcher never sends without explicit activation and role credentials',a
 });
 test('Confirmed opt-in sends one email per week, skips unconfirmed recipients, no address in logs or blob',async()=>{
  const db=blob(),sent=[];
- const service={subscribers:async()=>[{user_id:user},
+ const service={isSubscribed:async id=>id===user,subscribers:async()=>[{user_id:user},
   {user_id:'00000000-0000-4000-8000-000000000002'}],
  memberFamilies:async()=>[{family_id:'00000000-0000-4000-8000-000000000099'}],
  children:async()=>[profile].map(x=>({school_id:x.school,grade:x.grade,group_name:x.group})),
@@ -96,6 +96,20 @@ test('Confirmed opt-in sends one email per week, skips unconfirmed recipients, n
  const b=await runWeeklyDigestDispatch(args);
  assert.equal(b.sent,0);assert.equal(sent.length,1);
  assert.equal([...db.db.keys()].filter(k=>k.startsWith('sent/')).length,1);
+});
+test('Parent who unsubscribes during PDF retrieval cannot be mailed',async()=>{
+ const db=blob(),sent=[];
+ const result=await runWeeklyDigestDispatch({env,now,storeFactory:async()=>db,
+  serviceFactory:()=>({
+   subscribers:async()=>[{user_id:user}],
+   memberFamilies:async()=>[{family_id:'00000000-0000-4000-8000-000000000099'}],
+   children:async()=>[{school_id:'fagerholt',grade:'3',group_name:''}],
+   user:async()=>({id:user,email:'parent@example.com',email_confirmed_at:'2026-10-31'}),
+   isSubscribed:async()=>false
+  }),loadSources:async()=>({municipal:cal,plan}),
+  send:async mail=>{sent.push(mail);return 'unexpected';}});
+ assert.equal(result.sent,0);assert.equal(sent.length,0);
+ assert.equal(db.db.get('skip/2026-45/'+user).reason,'unsubscribed');
 });
 test('Opted-in account with no family/children never receives a message',async()=>{
  const db=blob(),sent=[];
