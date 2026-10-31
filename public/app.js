@@ -290,7 +290,7 @@ function renderContent(){
     </span></div>`).join(''):
     empty(state.loading?'Henter dagsprogram …':noDayScheduleMessage({hasNotes:notes.length>0,complete:p?.status==='ok'&&p?.parser==='ai'}));
   $('day-notes').hidden=!notes.length;
-  $('day-notes-list').innerHTML=notes.map(x=>`<p class="${x.important?'day-note-critical':''}">${x.important?'<strong>💉 Viktig: Vaksinasjon</strong>':''}${groupBadge(x.group)}${safe(x.text)}</p>`).join('');
+  $('day-notes-list').innerHTML=notes.map(x=>`<p class="${x.important?'day-note-critical':''}"><span class="content-type-label content-kind-practical">${contentCategoryLabel('practical')}</span> ${x.important?'<strong>💉 Viktig: Vaksinasjon</strong>':''}${groupBadge(x.group)}${safe(x.text)}</p>`).join('');
   const attendance=(p?.attendance||[]).filter(x=>x.day===DAYS[state.day]&&x.group&&x.time);
   $('day-attendance').hidden=!attendance.length;
   $('day-attendance').innerHTML=attendance.length?`<div class="attendance-heading">⏰ Særskilt oppmøte for enkelte grupper</div>${attendance.map(x=>`<div class="attendance-entry">${groupBadge(x.group)}<strong>Kl. ${safe(x.time)}</strong><span>${safe(x.text)}</span></div>`).join('')}`:'';
@@ -304,7 +304,7 @@ function renderContent(){
   $('plan-day-activity-list').innerHTML=activities.map(x=>
    '<article class="plan-day-activity"><span class="plan-day-activity-time">'+
    safe(String(x.start_time||'').slice(0,5)||'Etter skolen')+'</span>'+
-   '<div><strong>'+safe(x.title)+'</strong>'+
+   '<div><span class="content-type-label content-kind-activity">'+contentCategoryLabel('activity')+'</span><strong>'+safe(x.title)+'</strong>'+
    (x.location?'<small>'+safe(x.location)+'</small>':'')+
    (x.responsible?'<small>Ansvarlig: '+safe(x.responsible)+'</small>':'')+
    (x.notes?'<p>'+safe(x.notes)+'</p>':'')+'</div></article>').join('');
@@ -349,7 +349,7 @@ function renderContent(){
   $('notices-panel').classList.toggle('compact-empty',!notices.length);
   $('notices-empty-hint').hidden=Boolean(notices.length);
   if(!notices.length)$('notices-panel').open=false;
-  $('notices-list').innerHTML=notices.length?notices.map(x=>`<p>${groupBadge(x?.group)}${safe(typeof x==='string'?x:x?.text||x?.detail||x?.title)}</p>`).join(''):empty('Ingen beskjeder ble funnet i PDF-en.');
+  $('notices-list').innerHTML=notices.length?notices.map(x=>`<p><span class="content-type-label content-kind-practical">${contentCategoryLabel('practical')}</span> ${groupBadge(x?.group)}${safe(typeof x==='string'?x:x?.text||x?.detail||x?.title)}</p>`).join(''):empty('Ingen beskjeder ble funnet i PDF-en.');
   const goals=features.learningGoals?p?.learningGoals||[]:[];
   $('goals-panel').hidden=!features.learningGoals;
   $('goals-panel').classList.toggle('compact-empty',!goals.length);
