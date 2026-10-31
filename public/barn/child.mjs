@@ -260,7 +260,8 @@ $('child-homework').addEventListener('change',async event=>{
   await get('/api/child-access',{method:'POST',token,
    body:{action:'set-progress',year,week,taskKey:key,completed:checked}});
  }catch(error){
-  if(error.status===401||error.status===403){
+  // 403 means the key was rejected; a valid QR session must not be discarded.
+  if(error.status===401){
    setToken(null);setup('Enhetens tilgang er avsluttet. Be en foresatt lage en ny QR-kode.');return;
   }
   if(previous===undefined)state.progress.delete(key);else state.progress.set(key,previous);
@@ -282,7 +283,8 @@ $('child-import-homework').addEventListener('click',async()=>{
    state.progress.set(taskKey,true);
   }
  }catch(error){
-  if(error.status===401||error.status===403){
+  // 403 means the key was rejected; a valid QR session must not be discarded.
+  if(error.status===401){
    setToken(null);setup('Enhetens tilgang er avsluttet. Be en foresatt lage en ny QR-kode.');return;
   }
   state.progressError='Noen eldre avkrysninger kunne ikke overføres. Prøv igjen.';

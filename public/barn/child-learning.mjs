@@ -14,8 +14,10 @@ export function scopedHomeworkItems(plan,child){
   ...task,index,
   dueLabel:dueDayLabel(task,{allowTextFallback:plan?.parser!=='ai'})||null,
   repeatLabel:repeatDayLabel(task),
-  // Never invent an exact deadline from inferred prose or a missing PDF field.
-  dueDay:task.repeatDay||task.dueDay||null
+  // Keep the PDF's original dueDay unchanged for the shared homework fingerprint.
+  // A repeated weekday is already represented by repeatDay; replacing dueDay
+  // would produce a different key from the guardian and reject cloud writes.
+  effectiveDueDay:task.repeatDay||task.dueDay||null
  })).filter(item=>groupApplies(item,child));
 }
 export function scopedPackingItems(plan,child,day){

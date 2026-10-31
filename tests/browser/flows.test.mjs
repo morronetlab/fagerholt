@@ -1107,7 +1107,9 @@ test('Family activities can be added, edited, repeated and persist locally witho
  assert.match(await page.locator('#family-activity-list').innerText(),/Ukentlig/);
  assert.match(await page.locator('#family-activity-list').innerText(),/Pappa/);
  await page.reload({waitUntil:'domcontentloaded'});
- await page.locator('#family-toggle').click();
+ // The family section now restores directly after reload, without a detour.
+ await page.locator('#family-view').waitFor({state:'visible'});
+ assert.equal(await page.locator('#family-toggle').getAttribute('aria-pressed'),'true');
  await page.locator('#family-activity-manage > summary').click();
  await page.locator('#family-activity-list').getByText('Korpsøvelse').waitFor();
  await page.locator('[data-activity-edit]').first().click();
