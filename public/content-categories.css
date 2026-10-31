@@ -1,0 +1,54 @@
+/* Four consistent, text-labelled content types across the entire app.
+   Color is supplementary: icon + explicit category are always visible. */
+:root{
+ --type-homework:#795515;--type-homework-bg:#fff4d8;--type-homework-border:#c89e48;
+ --type-practical:#245d78;--type-practical-bg:#e9f5fc;--type-practical-border:#4c93b1;
+ --type-activity:#17654b;--type-activity-bg:#e3f5ed;--type-activity-border:#328973;
+ --type-municipal:#783e55;--type-municipal-bg:#fae9ef;--type-municipal-border:#a65c76;
+}
+.content-type-label{
+ display:inline-flex;align-items:center;gap:5px;max-width:100%;
+ width:fit-content;padding:4px 9px;border:1px solid transparent;
+ border-radius:7px;font-size:11px;font-weight:850;letter-spacing:.1px;
+ line-height:1.4;white-space:normal;overflow-wrap:anywhere;
+}
+.content-type-label.content-kind-homework{color:var(--type-homework);background:var(--type-homework-bg);border-color:#ecd7a5}
+.content-type-label.content-kind-practical{color:var(--type-practical);background:var(--type-practical-bg);border-color:#beddeb}
+.content-type-label.content-kind-activity{color:var(--type-activity);background:var(--type-activity-bg);border-color:#b2dfce}
+.content-type-label.content-kind-municipal{color:var(--type-municipal);background:var(--type-municipal-bg);border-color:#e6bbcb}
+
+/* Calendar uses shape and tinted surfaces, not a single thin color line. */
+.family-agenda-key .content-type-label::before{content:none!important}
+.family-agenda-item{border-left-width:5px;gap:7px}
+.family-agenda-item.content-kind-homework{border-color:var(--type-homework-border);background:#fffbf1}
+.family-agenda-item.content-kind-practical{border-color:var(--type-practical-border);background:#f3faff}
+.family-agenda-item.content-kind-activity{border-color:var(--type-activity-border);background:#f2fbf6}
+.family-agenda-item.content-kind-municipal{border-color:var(--type-municipal-border);background:#fff5f8}
+.family-agenda-item .family-agenda-type{font-size:11px;font-weight:850;align-self:flex-start}
+.family-agenda-item strong{font-size:13px;line-height:1.5}
+.family-agenda-item.checked{opacity:.78}
+.family-agenda-item.checked .content-type-label{opacity:1}
+
+/* Parents: keep information source unmistakable in alert and checklist sections. */
+.family-reminder.content-kind-practical{border-left:5px solid var(--type-practical-border);background:#f4faff}
+.family-reminder.content-kind-municipal{border-left:5px solid var(--type-municipal-border);background:#fff5f8}
+.family-reminder .content-type-label{display:table;margin-bottom:6px}
+.family-checklist li.content-kind-homework{border-left:4px solid var(--type-homework-border);padding-left:8px;background:#fffbf2;border-radius:6px}
+.family-child-columns>div:first-child{border-top:3px solid var(--type-homework-border);padding-top:9px}
+.family-child-columns>div:nth-child(2){border-top:3px solid var(--type-practical-border);padding-top:9px}
+.family-activity-card.content-kind-activity{border-left:5px solid var(--type-activity-border);background:#f2fbf6}
+.family-activity-card .content-type-label{margin-bottom:5px}
+
+/* The child's weekly plan and the normal school plan have the same palette. */
+#homework-list .checkrow{border-left:4px solid var(--type-homework-border);background:#fffbf1;border-radius:9px;padding-left:10px}
+#bag-list .checkrow{border-left:4px solid var(--type-practical-border);background:#f3faff;border-radius:9px;padding-left:10px}
+#notices-list p,#day-notes-list p{border-left:4px solid var(--type-practical-border);background:#f3faff;padding:9px 11px;border-radius:7px}
+#plan-day-activity-list .plan-day-activity{border-left:4px solid var(--type-activity-border);background:#f2fbf6;padding:11px;border-radius:9px}
+#plan-day-activity-list .content-type-label{margin:0 0 5px}
+#day-program .event{border-left:4px solid var(--type-practical-border);background:#f7fbfe;border-radius:9px}
+@media(max-width:700px){
+ .family-agenda-key{gap:7px}
+ .family-agenda-key .content-type-label{font-size:11px}
+ .family-agenda-item{padding:12px 13px}
+ .family-agenda-item strong{font-size:14px}
+}
