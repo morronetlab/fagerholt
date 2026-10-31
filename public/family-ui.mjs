@@ -19,6 +19,7 @@ import {practicalDigest} from './shared/practical-digest.mjs';
 import {calendarHighlights} from './shared/school-calendar-highlights.mjs';
 import {buildFamilyWeekAgenda} from './shared/family-week-agenda.mjs';
 import {focusedFamilyCalendar} from './shared/family-calendar-viewport.mjs';
+import {initFamilyMobileUI} from './family-mobile.mjs';
 import {familyAgendaMarkup,familyAgendaItemHtml} from './shared/family-week-agenda-html.mjs';
 import {importantFamilyNotices} from './shared/family-important-notices.mjs';
 import {FAMILY_OVERVIEW_BATCH_MS,holdInitialHighlights,readCalendarCache,storeCalendarCache,cacheableCalendar,stableHighlightOrder,highlightIdentity} from './shared/family-overview-load.mjs';
@@ -50,6 +51,8 @@ function wordStatus(profile,plan,calendar){
 }
 export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIssue}){
  let active=false,profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
+ const mobileUI=initFamilyMobileUI();
+ let mobileMoreOpen=new Set();
  let cloud=null,cloudChecks=new Map(),bagChecks=new Map(),focus='next',lastSynced=null,syncError='';
  const plans=new Map(),loading=new Set(),errors=new Map();
  // Public municipal dates are independent of individual PDF availability.
@@ -307,6 +310,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const markup=familyAgendaMarkup(visible,{today:now.today});
   setHtml('family-agenda-days',markup.days);
   setHtml('family-agenda-undated-list',markup.undated);
+  mobileUI.refreshDays();
   const weekend=el('family-agenda-weekend-toggle');
   weekend.hidden=visible.weekendCount===0;
   weekend.setAttribute('aria-expanded',String(visible.weekendVisible));
@@ -381,7 +385,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    (aiLabel?'<p class="family-ai-label" role="status">'+escape(aiLabel)+'</p>':'')+
    details+'<div class="family-child-actions">'+
    (plan?.aiStatus==='failed'?'<button type="button" class="family-soft" data-family-retry="'+escape(pairOf(p))+'">Prøv AI-tolkning igjen</button>':'')+
-   '<button type="button" class="family-open" data-family-open="'+escape(p.id)+'">Åpne ukeplan →</button>'+
+   '<button type="button" class="family-open" data-family-open="'+escape(p.id)+'">Åpne ukeplan →</button>'+ 
+   '<button type="button" class="family-mobile-more" data-family-more="'+escape(p.id)+'" aria-expanded="'+String(mobileMoreOpen.has(p.id))+'">⋯ Flere</button>'+
    (cloud?'<button type="button" class="family-child-invite" data-family-pair="'+escape(p.id)+'">📱 Inviter barnet (QR)</button>':'')+
    '<button type="button" class="family-soft" data-family-edit="'+escape(p.id)+'">Endre</button>'+
    '<button type="button" class="family-remove" data-family-remove="'+escape(p.id)+'">Fjern</button>'+
@@ -417,9 +422,13 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   // Preserve manually expanded child details after a checkbox saves progress.
   // The content is refreshed but the parent's place in the UI is retained.
   const presentCards=[...el('family-cards').querySelectorAll('.family-child[data-child-id]')];
+  if(presentCards.length)mobileMoreOpen=new Set(presentCards.filter(card=>
+   card.classList.contains('mobile-more-open')).map(card=>card.dataset.childId));
   if(presentCards.length)expandedChildren=new Set(presentCards.filter(card=>
    card.querySelector('.family-child-extra')?.open).map(card=>card.dataset.childId));
   setHtml('family-cards',profiles.map(p=>childCard(p,summaries.get(p.id),now)).join(''));
+  for(const card of el('family-cards').querySelectorAll('.family-child[data-child-id]'))
+   card.classList.toggle('mobile-more-open',mobileMoreOpen.has(card.dataset.childId));
   const {next}=schoolDayIndices(now);
   const shownFocus=now.upcoming?'week':focus;
   const tabs=document.querySelector('.family-focus-tabs');
@@ -918,6 +927,14 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   });
  });
  el('family-cards').addEventListener('click',e=>{
+  const more=e.target.closest('[data-family-more]');
+  if(more){
+   const id=more.dataset.familyMore;
+   if(mobileMoreOpen.has(id))mobileMoreOpen.delete(id);else mobileMoreOpen.add(id);
+   more.setAttribute('aria-expanded',String(mobileMoreOpen.has(id)));
+   more.closest('.family-child')?.classList.toggle('mobile-more-open',mobileMoreOpen.has(id));
+   return;
+  }
   const retry=e.target.closest('[data-family-retry]');
   if(retry){
    autoRetries.delete(retry.dataset.familyRetry);
