@@ -333,7 +333,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const taskList=(p,items,message)=>items.length?
   '<ul class="family-checklist">'+items.map(x=>
     '<li><label><input type="checkbox" data-family-check="'+escape(p.id)+'" data-family-index="'+x.index+'" '+
-    ((cloud?bagChecks.get(p.id)?.get(bagKey(p,x,now,day)):x.checked)?'checked ':'')+'aria-label="Marker lekse ferdig for '+escape(p.name)+'"><span>'+
+    (x.checked?'checked ':'')+'aria-label="Marker lekse ferdig for '+escape(p.name)+'"><span>'+
     escape((x.subject?x.subject+': ':'')+x.text)+'</span></label></li>').join('')+'</ul>':
   '<p class="family-muted">'+escape(message)+'</p>';
  function childCard(p,s,now){
@@ -348,7 +348,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const packingList=(items,day)=>items.length?
    '<ul class="family-checklist">'+items.map(x=>'<li><label>'+
     '<input type="checkbox" data-family-bag="'+escape(p.id)+'" data-family-bag-day="'+escape(day)+'" '+
-    'data-family-bag-key="'+escape(bagKey(p,x,now,day))+'" '+(x.checked?'checked ':'')+
+    'data-family-bag-key="'+escape(bagKey(p,x,now,day))+'" '+((cloud?bagChecks.get(p.id)?.get(bagKey(p,x,now,day)):x.checked)?'checked ':'')+
     (!cloud?'disabled ':'')+'aria-label="Pakket '+escape(x.label)+' for '+escape(p.name)+'">'+
     '<span>'+escape(x.label)+'</span></label></li>').join('')+'</ul>':
    '<p class="family-muted">Ingen ekstra utstyr denne dagen</p>';
