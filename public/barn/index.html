@@ -40,13 +40,52 @@
   </div>
   <nav id="child-days" class="child-days" aria-label="Velg skoledag"></nav>
   <section class="child-panel" aria-labelledby="child-events-heading"><div class="child-panel-heading"><span aria-hidden="true">📚</span><h2 id="child-events-heading">Dette skjer på skolen</h2></div>
-   <div id="child-events"></div><div id="child-notes"></div></section>
+   <div id="child-events"></div><div id="child-attendance"></div><div id="child-notes"></div>
+   <details id="child-other-groups" class="child-secondary-groups" hidden>
+    <summary>Hva skal de andre gruppene gjøre?</summary><div id="child-other-events"></div>
+   </details></section>
   <section class="child-panel child-activities" aria-labelledby="child-activities-heading"><div class="child-panel-heading"><span aria-hidden="true">⚽</span><h2 id="child-activities-heading">Mine aktiviteter</h2></div>
    <div id="child-activities"></div></section>
   <section class="child-panel" aria-labelledby="child-bag-heading"><div class="child-panel-heading"><span aria-hidden="true">🎒</span><h2 id="child-bag-heading">Husk i sekken</h2></div>
-   <div id="child-bag"></div></section>
+   <div id="child-bag"></div><p id="child-bag-progress" class="child-check-progress" aria-live="polite"></p>
+   <p class="child-local-note">✓ Pakkestatus huskes på denne enheten.</p></section>
   <section class="child-panel" aria-labelledby="child-homework-heading"><div class="child-panel-heading"><span aria-hidden="true">✏️</span><h2 id="child-homework-heading">Lekser denne uka</h2></div>
-   <div id="child-homework"></div></section>
+   <p class="child-check-progress" id="child-homework-progress" aria-live="polite"></p>
+   <div id="child-homework"></div><p class="child-local-note">Lekser du krysser av her huskes på denne enheten. Synkronisering med foresatte kommer senere.</p></section>
+  <section class="child-panel child-quiz-panel" id="child-quiz-section" hidden aria-labelledby="child-quiz-title">
+   <div class="child-panel-heading"><span aria-hidden="true">🎮</span><h2 id="child-quiz-title">Ordøving og quiz</h2></div>
+   <p class="child-quiz-intro">Øv på ukas gloser og norske ord fra skolens ukeplan.</p>
+   <div id="child-quiz-choose" class="child-quiz-choose"></div>
+   <div id="child-quiz-game" hidden>
+    <p id="child-quiz-progress" class="child-check-progress" aria-live="polite"></p>
+    <div id="child-quiz-question" class="child-quiz-question"></div>
+    <button id="child-quiz-peek" type="button" class="child-outline" hidden>👀 Se ordet i 4 sekunder</button>
+    <p id="child-quiz-preview" class="child-quiz-preview" hidden></p>
+    <div id="child-quiz-options" class="child-quiz-choices" hidden></div>
+    <form id="child-quiz-form" class="child-quiz-form" hidden>
+     <label for="child-quiz-answer">Ditt svar</label>
+     <input id="child-quiz-answer" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="80" required>
+     <button type="submit" class="child-primary">Sjekk svaret</button>
+    </form>
+    <p id="child-quiz-feedback" role="status" aria-live="polite"></p>
+    <button id="child-quiz-next" type="button" class="child-primary" hidden>Neste oppgave →</button>
+    <button id="child-quiz-pause" type="button" class="child-link">Tilbake til ordøving</button>
+   </div>
+   <p class="child-local-note">Quizfremdrift lagres på denne enheten. Ikke alle ukeplaner inneholder øveord.</p>
+  </section>
+  <dialog id="child-helper" class="child-helper" aria-labelledby="child-helper-title">
+   <div class="child-helper-top"><h2 id="child-helper-title">✨ Leksehjelper</h2>
+    <button id="child-helper-close" type="button" class="child-close" aria-label="Lukk leksehjelper">✕</button></div>
+   <p id="child-helper-task" class="child-helper-task"></p>
+   <p>Velg en forklaring eller et hint. Du skal løse oppgaven selv.</p>
+   <div class="child-helper-actions">
+    <button type="button" data-child-help="explain" class="child-outline">💡 Forklar oppgaven</button>
+    <button type="button" data-child-help="hint" class="child-outline">🧩 Gi meg et hint</button>
+   </div>
+   <p id="child-helper-status" role="status" aria-live="polite"></p>
+   <div id="child-helper-result" class="child-helper-result"></div>
+   <p class="child-local-note">AI kan ta feil. Ikke oppgi navn eller private opplysninger.</p>
+  </dialog>
   <p class="child-source" id="child-source"></p>
   <div class="child-footer-actions">
    <button id="child-refresh" type="button" class="child-outline">↻ Oppdater ukeplan</button>
