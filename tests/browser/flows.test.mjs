@@ -248,12 +248,17 @@ test('V2 family overview combines two children and keeps completion independentl
  await addFamilyChild(page,'Barn A');
  await addFamilyChild(page,'Barn B');
  assert.equal(await page.locator('#family-cards .family-child').count(),2);
+ assert.equal(await page.locator('#family-practical-details').evaluate(el=>el.open),false);
+ await ensurePracticalOpen(page);
  assert.equal(await page.locator('#family-reminders').isVisible(),true);
+ await ensurePracticalOpen(page);
  await page.locator('[data-family-focus="week"]').click();
  assert.equal(await page.locator('[data-family-focus="week"]').getAttribute('aria-pressed'),'true');
+ await ensurePracticalOpen(page);
  await page.locator('#family-reminders').getByText(/Gymtøy/).first().waitFor({state:'visible'});
  assert.match(await page.locator('#family-reminders').innerText(),/Gymtøy/);
  assert.doesNotMatch(await page.locator('#family-reminders').innerText(),/Les en bok fra skolen/);
+ await ensurePracticalOpen(page);
  await page.locator('[data-family-focus="today"]').click();
  assert.equal(await page.locator('[data-family-focus="today"]').getAttribute('aria-pressed'),'true');
  await page.locator('#family-cards [data-family-open]').first().click();
@@ -263,8 +268,10 @@ test('V2 family overview combines two children and keeps completion independentl
  await page.locator('#family-cards .family-child').first().locator('.family-child-progress').waitFor();
  assert.match(await page.locator('#family-cards .family-child').first().locator('.family-child-progress').innerText(),/1 \/ 2/);
  assert.match(await page.locator('#family-cards .family-child').nth(1).locator('.family-child-progress').innerText(),/0 \/ 2/);
+ await page.locator('#family-cards .family-child').nth(1).locator('.family-child-extra > summary').click();
  await page.locator('#family-cards .family-child').nth(1).locator('input[data-family-check]').first().check();
  assert.match(await page.locator('#family-cards .family-child').nth(1).locator('.family-child-progress').innerText(),/1 \/ 2/);
+ await page.locator('#family-cards .family-child').first().locator('.family-child-extra > summary').click();
  await page.locator('#family-cards .family-child').first().locator('input[data-family-index="0"]').uncheck();
  assert.match(await page.locator('#family-cards .family-child').first().locator('.family-child-progress').innerText(),/0 \/ 2/);
  assert.match(await page.locator('#family-cards .family-child').nth(1).locator('.family-child-progress').innerText(),/1 \/ 2/);
@@ -384,7 +391,9 @@ test('Next-week family dashboard shows new weekly tasks with the correct week on
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
  assert.match(await page.locator('#family-cards').innerText(),/Lekser i uke/);
+ await page.locator('#family-cards .family-child-extra > summary').click();
  assert.match(await page.locator('#family-cards').innerText(),/Les til mandag NESTE UKE/);
+ await ensurePracticalOpen(page);
  await page.locator('#family-reminders').getByText(/Gymtøy for neste uke/).first().waitFor({state:'visible'});
  assert.match(await page.locator('#family-reminders').innerText(),/Gymtøy for neste uke/);
  assert.match(await page.locator('.family-child-week').innerText(),new RegExp('UKE '+shown.week));
@@ -407,6 +416,7 @@ test('Before Friday 14:00 Oslo the family overview still uses the current week',
  });
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
+ await ensurePracticalOpen(page);
  assert.equal(await page.locator('.family-focus-tabs').isVisible(),true);
  assert.equal(requested.every(x=>x===null),true);
  assert.match(await page.locator('.family-child-week').innerText(),new RegExp('UKE '+now.week));
@@ -427,6 +437,7 @@ test('Practical overview limits notices to five, expands without an AI call, and
   return reply(route,p);
  });
  await page.reload({waitUntil:'domcontentloaded'});
+ await ensurePracticalOpen(page);
  await page.locator('[data-family-focus="week"]').click();
  await page.locator('.family-reminder').first().waitFor({state:'visible'});
  assert.equal(await page.locator('.family-reminder').count(),5);
@@ -470,6 +481,7 @@ test('Family AI ranks advance preparations first, visually highlights them, and 
  });
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
+ await ensurePracticalOpen(page);
  await page.locator('[data-family-focus="week"]').click();
  await page.locator('.family-reminder-priority').filter({hasText:important})
   .waitFor({state:'visible',timeout:15000});
@@ -521,10 +533,13 @@ test('Family workday changes and vaccinations outrank homework and even conflict
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
  // The default "Neste skoledag" tab must not hide an upcoming Friday SFO closure.
+ await ensurePracticalOpen(page);
  await page.locator('.family-reminder-workday').first().waitFor({state:'visible'});
  assert.match(await page.locator('#family-reminders').innerText(),/SFO er stengt/);
  assert.match(await page.locator('#family-reminders').innerText(),/Vaksine/);
+ await ensurePracticalOpen(page);
  await page.locator('[data-family-focus="week"]').click();
+ await ensurePracticalOpen(page);
  await page.locator('.family-reminder-workday').first().waitFor({state:'visible'});
  assert.equal(await page.locator('.family-reminder-workday').count(),2);
  const items=await page.locator('.family-reminder').allInnerTexts();
@@ -565,6 +580,7 @@ test('Family notices have a short source-extractive headline, verified date, ful
  });
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-cards .family-child-progress').waitFor({state:'visible'});
+ await ensurePracticalOpen(page);
  await page.locator('[data-family-focus="week"]').click();
  const card=page.locator('.family-reminder').filter({hasText:'planleggingsdag'});
  await card.locator('.family-reminder-date').waitFor({state:'visible'});
@@ -595,6 +611,7 @@ test('Family practical reminder can be reported without sending private child pr
    body:JSON.stringify({status:'received'})});
  });
  await page.reload({waitUntil:'domcontentloaded'});
+ await ensurePracticalOpen(page);
  await page.locator('#family-reminders .family-reminder').first().waitFor({state:'visible'});
  const card=page.locator('.family-reminder').filter({hasText:/Vaksine/}).first();
  await card.locator('[data-family-report]').click();
@@ -715,6 +732,7 @@ test('Friday after 14:00: next week shows municipality school-free date even whe
  await page.route('**/api/plan?**',route=>reply(route,{status:'unpublished',
   schoolId:'fagerholt',grade:'3',week:45,year:2026,aiStatus:'disabled',pdf:null}));
  await page.reload({waitUntil:'domcontentloaded'});
+ await ensurePracticalOpen(page);
  await page.locator('.family-reminder-municipal').waitFor({state:'visible'});
  const card=page.locator('.family-reminder-municipal');
  assert.match(await card.innerText(),/fredag 6. november/i);
@@ -749,6 +767,7 @@ test('School-calendar reminder comes before vaccine from school PDF; multiple ch
    Onsdag:[{text:'Vaksine onsdag morgen.'}]};return reply(route,p);
  });
  await page.reload({waitUntil:'domcontentloaded'});
+ await ensurePracticalOpen(page);
  await page.locator('.family-reminder-municipal').waitFor({state:'visible'});
  const list=page.locator('#family-reminders .family-reminder');
  assert.ok(await list.count()>=2);
@@ -779,6 +798,7 @@ test('Explicit municipal SFO closure says closed; other holiday dates do not imp
  await page.reload({waitUntil:'domcontentloaded'});
  const first=page.locator('.family-reminder-municipal').filter({hasText:'21. desember'});
  const closure=page.locator('.family-reminder-municipal').filter({hasText:'24. desember'});
+ await ensurePracticalOpen(page);
  await closure.waitFor({state:'visible'});
  assert.match(await closure.innerText(),/SFO: kommunen bekrefter stengt/);
  assert.match(await first.innerText(),/ikke oppgitt/);
@@ -1074,17 +1094,20 @@ test('Family activities can be added, edited, repeated and persist locally witho
  await page.locator('#family-activity-location').fill('Musikkrommet');
  await page.locator('#family-activity-responsible').fill('Pappa');
  await page.locator('#family-activity-save').click();
+ await page.locator('#family-activity-manage > summary').click();
  await page.locator('#family-activity-list').getByText('Korpsøvelse').waitFor();
  assert.match(await page.locator('#family-activity-list').innerText(),/17:00–18:30/);
  assert.match(await page.locator('#family-activity-list').innerText(),/Ukentlig/);
  assert.match(await page.locator('#family-activity-list').innerText(),/Pappa/);
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-toggle').click();
+ await page.locator('#family-activity-manage > summary').click();
  await page.locator('#family-activity-list').getByText('Korpsøvelse').waitFor();
  await page.locator('[data-activity-edit]').first().click();
  assert.equal(await page.locator('#family-activity-repeat').inputValue(),'weekly');
  await page.locator('#family-activity-name').fill('Korps og noter');
  await page.locator('#family-activity-save').click();
+ await page.locator('#family-activity-manage > summary').click();
  await page.locator('#family-activity-list').getByText('Korps og noter').waitFor();
  assert.doesNotMatch(await page.locator('#family-activity-list').innerText(),/Korpsøvelse/);
  page.once('dialog',dialog=>dialog.accept());
@@ -1147,6 +1170,8 @@ test('Skoleuka 2.1 merges school PDF tasks, municipality and weekend family even
  assert.match(await page.locator('#family-agenda-days').innerText(),/Felles middag/);
  assert.equal(await page.locator('#family-agenda-days .family-agenda-item.kind-family').count(),2);
  assert.equal(await page.locator('#family-agenda-days a[href*="minskole.no"]').count()>0,true);
+ assert.equal(await page.locator('#family-agenda-undated').evaluate(el=>el.open),false);
+ await page.locator('#family-agenda-undated > summary').click();
  await page.locator('#family-agenda-undated').getByText('Øv på gangetabellen').first().waitFor();
  assert.equal(await page.locator('#family-agenda-undated').isVisible(),true);
  await page.locator('#family-agenda-child').selectOption(profiles[1].id);
@@ -1188,3 +1213,9 @@ test('Editing a family event in the combined week immediately updates the timeli
  await page.locator('#family-agenda-days').getByText('Fotball – ny tid').waitFor();
  assert.deepEqual(errors,[]);
 });
+
+async function ensurePracticalOpen(page){
+ const detail=page.locator('#family-practical-details');
+ if(await detail.count()&&!(await detail.evaluate(el=>el.open)))
+  await detail.locator('summary').click();
+}
