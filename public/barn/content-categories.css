@@ -1,0 +1,31 @@
+/* Shared categories in the child PWA. Labels always accompany color. */
+:root{
+ --type-homework:#795515;--type-homework-bg:#fff4d8;--type-homework-border:#c89e48;
+ --type-practical:#245d78;--type-practical-bg:#e9f5fc;--type-practical-border:#4c93b1;
+ --type-activity:#17654b;--type-activity-bg:#e3f5ed;--type-activity-border:#328973;
+ --type-municipal:#783e55;--type-municipal-bg:#fae9ef;--type-municipal-border:#a65c76;
+}
+.content-type-label{display:inline-flex;width:fit-content;max-width:100%;
+ align-items:center;gap:5px;padding:4px 8px;margin:0 0 6px;border:1px solid transparent;
+ border-radius:7px;font-size:11px;font-weight:850;line-height:1.4;white-space:normal}
+.content-type-label.content-kind-homework{color:var(--type-homework);background:var(--type-homework-bg);border-color:#ecd7a5}
+.content-type-label.content-kind-practical{color:var(--type-practical);background:var(--type-practical-bg);border-color:#beddeb}
+.content-type-label.content-kind-activity{color:var(--type-activity);background:var(--type-activity-bg);border-color:#b2dfce}
+.content-type-label.content-kind-municipal{color:var(--type-municipal);background:var(--type-municipal-bg);border-color:#e6bbcb}
+.child-type-key{display:flex;flex-wrap:wrap;gap:7px;margin:-3px 0 17px}
+.child-timeblock.content-kind-practical{border-left:4px solid var(--type-practical-border);
+ padding-left:10px;background:#f5fbfe;border-radius:8px;margin-bottom:8px}
+.child-timeblock .content-type-label{font-size:10px}
+.child-row.content-kind-activity{border-left:4px solid var(--type-activity-border);
+ background:#f2fbf6;border-radius:9px;padding:12px;margin:8px 0}
+.child-note.content-kind-practical{background:#f1f9fe;border-left:4px solid var(--type-practical-border);
+ color:#315e74;display:block}
+.child-note .content-type-label{margin-right:6px}
+.child-check-row.content-kind-practical{background:#f4faff;border-left:4px solid var(--type-practical-border)}
+.child-homework-item.content-kind-homework{border-left:5px solid var(--type-homework-border);background:#fffbf1}
+.child-homework-item.content-kind-homework .child-check-row{background:transparent}
+.child-check-content>.content-type-label{margin:0 0 7px}
+.child-panel:has(#child-homework){border-top:5px solid var(--type-homework-border)}
+.child-panel:has(#child-bag){border-top:5px solid var(--type-practical-border)}
+.child-panel:has(#child-activities){border-top:5px solid var(--type-activity-border)}
+@media(max-width:600px){.child-type-key{gap:6px}.content-type-label{font-size:10px}}
