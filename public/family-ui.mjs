@@ -310,12 +310,13 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const details=s.ready?[
    '<div class="family-child-progress"><div><span>Lekser i uke '+now.week+'</span><b>'+s.done+' / '+s.total+' fullført</b></div>',
    '<div class="family-progress-track" role="progressbar" aria-label="Fullført for '+escape(p.name)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><span style="width:'+pct+'%"></span></div></div>',
+   '<details class="family-child-extra"><summary>Se lekser, pakkeliste og ordøving</summary><div class="family-child-extra-content">',
    now.upcoming?
     '<div class="family-child-columns"><div><h4>📚 Lekser i uke '+now.week+'</h4>'+taskList(p,s.tasks,'Ingen lekser registrert')+'</div>'+
     '<div><h4>🎒 Pakk til mandag</h4>'+packingList(s.todayBag)+'</div></div>':
     '<div class="family-child-columns"><div><h4>📚 I dag</h4>'+taskList(p,s.today,'Ingen lekser med frist i dag')+'</div>'+
     '<div><h4>🎒 Neste skoledag</h4>'+taskList(p,s.next,s.nextIndex==null?'Neste uke er ikke hentet ennå':'Ingen lekser med frist')+'</div></div>',
-   '<p class="family-word-state">'+(practice?'✦ Ordøving: '+practice.attempted+' / '+practice.total+(practice.weak?', '+practice.weak+' trenger øving':''):'✦ Ingen ordøving i denne ukeplanen')+'</p>'
+   '<p class="family-word-state">'+(practice?'✦ Ordøving: '+practice.attempted+' / '+practice.total+(practice.weak?', '+practice.weak+' trenger øving':''):'✦ Ingen ordøving i denne ukeplanen')+'</p></div></details>'
   ].join(''):'<div class="family-not-ready" role="status">'+escape(
     plan?.status==='unpublished'||plan?.status==='unavailable'?
      'Ukeplan for uke '+now.week+' er ikke tilgjengelig ennå. Skolen har ikke publisert PDF for denne uka.':
