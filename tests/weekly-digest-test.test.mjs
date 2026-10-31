@@ -78,6 +78,22 @@ test('Saturday immediate preview goes to authenticated verified email with corre
  assert.equal(p.mail.length,1);
  assert.equal(JSON.stringify([...p.store.map]).includes('parent@example.no'),false);
 });
+test('Upgraded HTML can be tested once even when the previous template was sent today',async()=>{
+ const store=storage(),mail=[];
+ // Existing production marker from the old plain-text test of the same day.
+ store.map.set('sent/test-mail/'+userId,{at:when().toISOString(),providerId:'previous'});
+ const p=base({store,mail});
+ const first=await p.handler(req());
+ assert.equal(first.status,202);
+ assert.equal(mail.length,1);
+ assert.match(mail[0].html,/<!doctype html>/);
+ assert.match(mail[0].idempotencyKey,/skoleuka-test-rich-html-v2-/);
+ assert.notEqual(mail[0].idempotencyKey,'skoleuka-test-2026-10-31-'+userId);
+ assert.equal((await p.handler(req())).status,429);
+ assert.equal(mail.length,1);
+ assert.equal(store.map.has('sent/test-mail/'+userId),true);
+ assert.equal(store.map.has('sent/test-mail/rich-html-v2/'+userId),true);
+});
 test('Provider failure is an error and releases claim so user can retry',async()=>{
  const store=storage();let fails=0;
  const p=base({store,sendImpl:async()=>{fails++;throw Error('provider down')}});

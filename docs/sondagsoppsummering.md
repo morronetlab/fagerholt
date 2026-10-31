@@ -72,3 +72,7 @@ For hvert skolebarn vises dokumenterte lekser og frister, utstyr som skal tas me
 Ordinær søndagsutsending utsettes hvis minst én ukeplan ikke er ferdig behandlet og kildekontrollert. Den neste planlagte kjøringen prøver på nytt innenfor sendetidsvinduet. Hvis en plan fortsatt ikke er klar når vinduet er over, sendes ingen e-post den uken; testmail kan likevel vise delvis innhold tydelig merket. Se etter manglende kildebehandling i driftslogger og på Skoleuka. Ikke fjern kildekrav for å omgå dette.
 
 Testmail sender HTML med tydelig TEST-merking, men beholder begrensningen én godkjent testmail per foreldrekonto per 24 timer. Manuell visuell verifisering i Gmail/Outlook (desktop og mobil) anbefales før ordinær utrulling.
+
+### Ny test ved vesentlig endret e-postmal
+
+Testmailens 24-timersbegrensning gjelder per innlogget forelder og **malversjon**. Etter innføringen av HTML-malen `rich-html-v2` er det derfor mulig å sende én ny test, selv om samme konto sendte en test av den gamle malen tidligere samme dag. De gamle sendemarkørene slettes ikke, og begge versjoner har uavhengige Resend-idempotensnøkler. Flere tester av samme HTML-versjon er fortsatt begrenset til én godkjent utsending per 24 timer. Dette er ikke en generell reset-knapp eller et unntak for andre mottakere.
