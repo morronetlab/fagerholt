@@ -10,6 +10,7 @@ import {childTaskKey,checkedProgress,importCandidates} from './child-progress.mj
 import {packingFingerprint} from '../shared/packing-fingerprint.mjs';
 import {initChildHelper,openChildHelper} from './child-helper.mjs';
 import {activityOccurrences,activityTimeLabel} from '../shared/family-activities.mjs';
+import {contentCategoryLabel} from '../shared/content-categories.mjs';
 
 const $=id=>document.getElementById(id);
 const KEY='skoleuka.child.device.v1';
@@ -31,9 +32,10 @@ const packStore=()=>childCheckedKey(state.child,state.calendar.year,state.calend
 const homeworkStore=()=>childCheckedKey(state.child,state.calendar.year,state.calendar.week,'homework');
 const checks=key=>{try{return readChildChecks(localStorage,key);}catch{return {};}};
 const timeline=events=>events.map(block=>
- '<div class="child-timeblock">'+(block.time?'<time class="child-time">'+esc(block.time)+'</time>':'<span class="child-time">📌</span>')+
+ '<div class="child-timeblock content-kind-practical">'+(block.time?'<time class="child-time">'+esc(block.time)+'</time>':'<span class="child-time">📌</span>')+
  '<div class="child-timeentries">'+block.entries.map(item=>
    '<div class="child-timeentry">'+groupBadge(item.group)+
+   '<span class="content-type-label content-kind-practical">'+contentCategoryLabel('practical')+'</span>'+
    '<strong>'+esc(item.title||'Skoleaktivitet')+'</strong>'+
    (item.endTime?'<small>'+esc(item.endTime)+'</small>':'')+
    (item.description?'<small>'+esc(item.description)+'</small>':'')+
@@ -80,7 +82,9 @@ function render(){
   empty('Ingen spesielle hendelser for din gruppe denne dagen.')):
   empty('Ukeplanen er ikke publisert eller ferdig tolket. Prøv «Oppdater».');
  $('child-notes').innerHTML=details.notes.map(note=>
-  '<p class="child-note">'+(note.important?'⚠️ ':'📌 ')+
+  '<p class="child-note content-kind-practical">'+
+  '<span class="content-type-label content-kind-practical">'+contentCategoryLabel('practical')+'</span> '+
+  (note.important?'⚠️ ':'')+
    groupBadge(note.group)+esc(note.text)+'</p>').join('');
  $('child-attendance').innerHTML=details.attendance.length?
   '<div class="child-attendance"><strong>⏰ Særskilt oppmøte</strong>'+
@@ -91,8 +95,8 @@ function render(){
  const activityRows=activityOccurrences(state.activities,calendar.year,calendar.week)
   .filter(x=>x.date===schoolDay(state.day)&&(!x.child_id||x.child_id===child.id));
  $('child-activities').innerHTML=activityRows.length?activityRows.map(x=>
-  '<article class="child-row"><span class="child-row-time">'+esc(activityTimeLabel(x))+
-  '</span><span><strong>'+esc(x.title)+'</strong>'+
+  '<article class="child-row content-kind-activity"><span class="child-row-time">'+esc(activityTimeLabel(x))+
+  '</span><span><span class="content-type-label content-kind-activity">'+contentCategoryLabel('activity')+'</span><strong>'+esc(x.title)+'</strong>'+
   (x.location?'<small>'+esc(x.location)+'</small>':'')+
   (x.notes?'<small>'+esc(x.notes)+'</small>':'')+
   '</span></article>').join(''):empty('Ingen familieaktiviteter denne dagen.');
@@ -103,10 +107,10 @@ function render(){
    year:calendar.year,week:calendar.week,day,item}))===true:bagDone[item.key]===true;
  const bagCount=state.bag.filter(bagIsDone).length;
  $('child-bag').innerHTML=state.bag.length?'<div class="child-check-list">'+
-  state.bag.map(item=>'<label class="child-check-row '+(bagIsDone(item)?'is-done':'')+'">'+
+  state.bag.map(item=>'<label class="child-check-row content-kind-practical '+(bagIsDone(item)?'is-done':'')+'">'+
    '<input type="checkbox" data-child-bag="'+esc(item.key)+'" '+(bagIsDone(item)?'checked':'')+
    (state.packing instanceof Map&&!state.packingBusy?'':' disabled')+
-   '><span class="child-check-content">'+groupBadge(item.group)+
+   '><span class="child-check-content"><span class="content-type-label content-kind-practical">'+contentCategoryLabel('practical')+'</span>'+groupBadge(item.group)+
    '<strong>'+esc(item.label)+'</strong>'+(item.note?'<small>'+esc(item.note)+'</small>':'')+
    '</span></label>').join('')+'</div>':empty('Ingen ekstra utstyr denne dagen.');
  $('child-bag-progress').textContent=state.bag.length?bagCount+' av '+state.bag.length+' pakket':'';
@@ -131,10 +135,10 @@ function render(){
   state.homework.map(item=>{
    const checked=isDone(item);
    const label=item.dueLabel||(item.repeatLabel?'':'Frist ikke oppgitt i ukeplanen');
-   return '<article class="child-homework-item"><label class="child-check-row '+(checked?'is-done':'')+'">'+
+   return '<article class="child-homework-item content-kind-homework"><label class="child-check-row '+(checked?'is-done':'')+'">'+
     '<input type="checkbox" data-child-homework="'+item.index+'" '+(checked?'checked':'')+
     (shared&&!state.progressBusy?'':' disabled')+'>'+
-    '<span class="child-check-content">'+groupBadge(item.group)+
+    '<span class="child-check-content"><span class="content-type-label content-kind-homework">'+contentCategoryLabel('homework')+'</span>'+groupBadge(item.group)+
     (label?'<span class="child-homework-due">📅 '+esc(label)+'</span>':'')+
     (item.repeatLabel?'<small>'+esc(item.repeatLabel)+'</small>':'')+
     (item.subject?'<small class="child-homework-subject">'+esc(item.subject)+'</small>':'')+
