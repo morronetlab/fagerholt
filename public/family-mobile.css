@@ -227,7 +227,8 @@
 /* PR #99: mobile overview is a dashboard, not an administration form.
    These rules are intentionally restricted to the family Overview tab. */
 .family-mobile-overview-heading,.family-child-compact,
-#family-mobile-add,#family-mobile-admin-toggle{display:none}
+#family-mobile-add,#family-mobile-admin-toggle,
+#family-mobile-important-more{display:none}
 .family-mobile-admin-panel{display:contents}
 @media(max-width:700px){
  #family-view[data-family-mobile-view=overview] .family-overview-top{display:none!important}
