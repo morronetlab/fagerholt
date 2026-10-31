@@ -49,4 +49,4 @@ Ukeplanen er kildegrunnlaget. E-postinnholdet skal ikke fylle inn manglende dato
 - Resend-avsender og domenekontroll
 - Manuell produksjonstest med `WEEKLY_DIGEST_SEND_ENABLED=false` og deretter én testbruker med sann innmelding
 
-PR #70 bygger på PR #69. Merge #69 først; så oppdater base for #70 til `main` før merge.
+PR #70 er rettet mot `main`, men inneholder også endringene fra PR #69 inntil #69 er merget. **Merge #69 først**, og kontroller deretter at PR #70 bare viser de nye e-postendringene før den merges.
