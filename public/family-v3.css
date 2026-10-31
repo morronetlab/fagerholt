@@ -267,3 +267,84 @@
  .family-activity-fields{grid-template-columns:1fr}
  .family-activity-fields label{grid-column:1/-1}
 }
+
+/* Skoleuka 2.1 – one sourced school-and-family weekly timeline */
+.family-agenda{margin:0 0 24px;padding:25px 27px 22px;
+ background:#fff;border:1px solid #dce9e0;border-radius:22px;
+ box-shadow:0 8px 28px #1746320a}
+.family-agenda-top{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.family-agenda-top h2{font-size:clamp(21px,2.7vw,29px);line-height:1.23;
+ margin:2px 0 8px;color:#1d523e;letter-spacing:-.5px}
+.family-agenda-subtitle{margin:0;color:#617b69;font-size:13px;line-height:1.55}
+.family-agenda-filter{display:grid;gap:7px;min-width:185px;color:#436856;
+ font-size:12px;font-weight:800}
+.family-agenda-filter select{padding:11px 13px;min-height:44px;width:100%;
+ border:1px solid #c8ddcd;border-radius:11px;color:#1e533f;background:#fff;
+ font-size:14px}
+.family-agenda-filter select:focus-visible{outline:3px solid #76be94;outline-offset:2px}
+.family-agenda-key{display:flex;flex-wrap:wrap;gap:8px 15px;margin:20px 0 14px}
+.family-agenda-key span{display:inline-flex;align-items:center;gap:7px;
+ font-size:11px;color:#486759;font-weight:750}
+.family-agenda-key span::before{content:'';width:9px;height:9px;border-radius:3px;background:#a8bdb1}
+.family-agenda-key-school::before{background:#4c93b1!important}
+.family-agenda-key-homework::before{background:#bf9a49!important}
+.family-agenda-key-family::before{background:#328973!important}
+.family-agenda-key-municipal::before{background:#ac6a62!important}
+.family-agenda-status{font-size:12px;color:#627f6c;margin:0 0 17px;min-height:0}
+.family-agenda-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px}
+.family-agenda-day{min-width:0;background:#f9fcf9;border:1px solid #e1ece3;
+ border-radius:15px;padding:13px 11px;display:flex;flex-direction:column;gap:11px}
+.family-agenda-day h3{font-size:12px;line-height:1.4;margin:0;text-transform:capitalize;
+ color:#2a624b;font-weight:850}
+.family-agenda-day.today{border-color:#75b294;background:#f1f8f2}
+.family-agenda-day.is-empty{background:#fbfcfb}
+.family-agenda-item{min-width:0;border-left:3px solid #8aa898;border-radius:8px;
+ padding:9px 8px;background:#fff;display:flex;flex-direction:column;gap:5px;
+ box-shadow:0 1px 5px #184c2d0a}
+.family-agenda-item.kind-school{border-color:#4c93b1}
+.family-agenda-item.kind-homework{border-color:#bf9a49}
+.family-agenda-item.kind-family{border-color:#328973}
+.family-agenda-item.kind-municipal{border-color:#ac6a62}
+.family-agenda-item strong{font-size:12px;line-height:1.4;overflow-wrap:anywhere;color:#244837}
+.family-agenda-item.checked strong{text-decoration:line-through;color:#71907a}
+.family-agenda-item small{font-size:10px;line-height:1.45;color:#617968;overflow-wrap:anywhere}
+.family-agenda-type{font-size:10px;font-weight:850;color:#477560}
+.family-agenda-type.kind-municipal{color:#a2554e}
+.family-agenda-type.kind-homework{color:#957233}
+.family-agenda-type.kind-school{color:#347d9a}
+.family-agenda-meta{font-size:10px;color:#657a69;line-height:1.5;overflow-wrap:anywhere}
+.family-agenda-source{font-size:10px;font-weight:800;color:#1c7761;text-decoration:underline;
+ text-underline-offset:2px;overflow-wrap:anywhere}
+.family-agenda-source:focus-visible,.family-agenda-edit:focus-visible{outline:3px solid #76be94;outline-offset:2px}
+.family-agenda-edit{font-size:10px;font-weight:850;color:#1e765f;border:1px solid #b9d9c7;
+ background:#f4faf5;border-radius:7px;padding:7px;min-height:32px;cursor:pointer}
+.family-agenda-quiet{margin:0;color:#8da497;font-size:12px}
+.family-agenda-undated{border-top:1px solid #e4ece4;margin-top:20px;padding:16px 0 0}
+.family-agenda-undated[hidden],.family-agenda-missing[hidden]{display:none!important}
+.family-agenda-undated h3{font-size:14px;font-weight:850;color:#356451;margin:0 0 11px}
+.family-agenda-undated-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.family-agenda-missing{font-size:12px;border:1px solid #f2dfb7;background:#fffaf0;
+ color:#775b2a;border-radius:11px;padding:11px 14px;line-height:1.6;margin-top:16px}
+.family-agenda-footnote{font-size:11px;color:#688171;line-height:1.65;
+ margin:16px 1px 0}
+@media(min-width:1050px){
+ .family-agenda-days{grid-template-columns:repeat(7,minmax(0,1fr))}
+}
+@media(max-width:1049px){
+ .family-agenda-days{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(max-width:700px){
+ .family-agenda{padding:19px 15px;border-radius:18px}
+ .family-agenda-top{align-items:flex-start;flex-direction:column;gap:15px}
+ .family-agenda-filter{width:100%}
+ .family-agenda-key{margin:15px 0 13px}
+ .family-agenda-days{grid-template-columns:1fr;gap:10px}
+ .family-agenda-day{padding:12px 14px;gap:8px}
+ .family-agenda-day h3{font-size:13px}
+ .family-agenda-day.is-empty{padding:10px 14px}
+ .family-agenda-item{padding:11px 13px}
+ .family-agenda-item strong{font-size:14px}
+ .family-agenda-item small,.family-agenda-type,.family-agenda-meta,.family-agenda-source,
+ .family-agenda-edit{font-size:12px}
+ .family-agenda-undated-list{grid-template-columns:1fr}
+}

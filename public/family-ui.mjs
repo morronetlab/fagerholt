@@ -12,6 +12,8 @@ import {practicalHighlights} from './shared/practical-highlights.mjs';
 import {priorityKey,applyPracticalPriority} from './shared/practical-priority.mjs';
 import {practicalDigest} from './shared/practical-digest.mjs';
 import {calendarHighlights} from './shared/school-calendar-highlights.mjs';
+import {buildFamilyWeekAgenda} from './shared/family-week-agenda.mjs';
+import {familyAgendaMarkup} from './shared/family-week-agenda-html.mjs';
 import {FAMILY_OVERVIEW_BATCH_MS,holdInitialHighlights,readCalendarCache,storeCalendarCache,cacheableCalendar,stableHighlightOrder,highlightIdentity} from './shared/family-overview-load.mjs';
 
 const el=id=>document.getElementById(id);
@@ -65,6 +67,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const pendingJobs=new Map(),pollTimers=new Map(),autoRetries=new Map();
  const priorityStates=new Map(),priorityTimers=new Map();
  let run=0,editing=null,gradeRun=0,lastPlanCheckAt=0,loadedWeekKey=null,showAllHighlights=false;
+ let agendaChildId='';
  let reportCards=[];
  const AUTO_CHECK_MS=15*60_000, RETRY_COOLDOWN_MS=5*60_000+5000;
  const pairOf=p=>p.school+'|'+p.grade;
@@ -116,7 +119,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  }
 
  const calendar=()=>familyWeekCalendar(new Date(),'Europe/Oslo');
- const activityUI=initFamilyActivitiesUI({getProfiles:()=>profiles,getCloud:()=>cloud,getCalendar:calendar});
+ const activityUI=initFamilyActivitiesUI({getProfiles:()=>profiles,getCloud:()=>cloud,getCalendar:calendar,
+  onChange:()=>{if(active)render();}});
  const weekKey=now=>now.year+'-'+String(now.week).padStart(2,'0');
  async function refreshSourceHealth(){
   if(!active||sourceHealthBusy||Date.now()-sourceHealthFetchedAt<20*60_000)return;
@@ -234,6 +238,27 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   for(const p of profiles)summaries.set(p.id,profileSummary(p,plans.get(p.id),now,read,cloud?cloudIsChecked:null));
   return {now,summaries};
  }
+ function renderAgenda(now,summaries){
+  const filter=el('family-agenda-child'),selected=agendaChildId;
+  const option='<option value="">Alle i familien</option>'+
+   profiles.map(p=>'<option value="'+escape(p.id)+'">'+escape(p.name)+'</option>').join('');
+  if(filter.innerHTML!==option)filter.innerHTML=option;
+  agendaChildId=profiles.some(p=>p.id===selected)?selected:'';
+  filter.value=agendaChildId;
+  const model=buildFamilyWeekAgenda({profiles,summaries,plans,calendars,
+   activities:activityUI.getRows(),calendar:now,childId:agendaChildId});
+  const markup=familyAgendaMarkup(model,{today:now.today});
+  setHtml('family-agenda-days',markup.days);
+  setHtml('family-agenda-undated',markup.undated);
+  el('family-agenda-undated').hidden=!model.undated.length;
+  el('family-agenda-status').textContent=
+   model.count+' hendelser i uke '+now.week+
+   (agendaChildId?' for '+(profiles.find(p=>p.id===agendaChildId)?.name||'valgt barn'):' for familien');
+  const pending=model.missingProfiles;
+  el('family-agenda-missing').hidden=!pending.length;
+  el('family-agenda-missing').textContent=pending.length?
+   'Ukeplan ikke klar for '+pending.join(', ')+'. Skolens opplysninger kan mangle. Sjekk original-PDF-en.':'';
+ }
  const taskList=(p,items,message)=>items.length?
   '<ul class="family-checklist">'+items.slice(0,2).map(x=>
     '<li><label><input type="checkbox" data-family-check="'+escape(p.id)+'" data-family-index="'+x.index+'" '+
@@ -300,6 +325,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    'Opplysninger hentes fra skolens egne ukeplaner. Ved tvil er original-PDF fasit. Lekseavkrysninger synkroniseres, mens ordøving lagres lokalt.':
    'Opplysninger hentes fra skolens egne ukeplaner. Ved tvil er original-PDF fasit. Uten familiekonto lagres avkrysningene bare på denne enheten.';
   activityUI.render();
+  renderAgenda(now,summaries);
   el('family-add').disabled=profiles.length>=FAMILY_MAX_PROFILES;
   el('family-add').textContent=profiles.length>=FAMILY_MAX_PROFILES?'Maks seks barn':'+ Legg til barn';
   el('family-empty').hidden=profiles.length!==0;
@@ -705,6 +731,15 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const contexts=reportingContexts();
   if(contexts.length)onReportIssue?.({contexts,kind:'missing_notice'});
  });
+ el('family-agenda-child').addEventListener('change',event=>{
+  agendaChildId=event.target.value;render();
+ });
+ for(const id of ['family-agenda-days','family-agenda-undated']){
+  el(id).addEventListener('click',event=>{
+   const button=event.target.closest('[data-family-agenda-edit]');
+   if(button)activityUI.editActivity(button.dataset.familyAgendaEdit);
+  });
+ }
  el('family-reminders').addEventListener('click',e=>{
   if(e.target.closest('#family-reminders-more')){
    showAllHighlights=!showAllHighlights;render();return;

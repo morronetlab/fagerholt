@@ -150,6 +150,30 @@
     <section id="family-view" class="family-view" hidden aria-labelledby="family-title">
       <div class="family-overview-top"><div><p class="family-eyebrow">FAMILIEOVERSIKT</p><h1 id="family-title" tabindex="-1">God oversikt over skoleuka</h1><p id="family-week-context" class="family-overview-subtitle">Lekser, pakkeliste og beskjeder for barna.</p></div><div class="family-overview-stats"><span id="family-week">Uke —</span><strong id="family-week-progress">—</strong><small id="family-count">0 barn</small></div></div>
       <div class="family-overview-meta"><span id="family-storage-label">🔒 Kun på denne enheten</span><span id="family-sync-status" role="status" aria-live="polite"></span></div>
+      <section class="family-agenda" aria-labelledby="family-agenda-title">
+        <div class="family-agenda-top">
+          <div><p class="family-eyebrow">SKOLE · FRITID · AVTALER</p>
+            <h2 id="family-agenda-title">Hele familiens uke</h2>
+            <p class="family-agenda-subtitle">Skolebeskjeder, leksefrister og egne aktiviteter samlet dag for dag.</p>
+          </div>
+          <label class="family-agenda-filter">Vis aktiviteter for
+            <select id="family-agenda-child" aria-label="Filtrer ukeoversikten etter barn">
+              <option value="">Alle i familien</option>
+            </select>
+          </label>
+        </div>
+        <div class="family-agenda-key" aria-label="Forklaring av farger">
+          <span class="family-agenda-key-school">Skole og beskjeder</span>
+          <span class="family-agenda-key-homework">Leksefrist</span>
+          <span class="family-agenda-key-family">Familieaktivitet</span>
+          <span class="family-agenda-key-municipal">Skolerute</span>
+        </div>
+        <p id="family-agenda-status" class="family-agenda-status" role="status" aria-live="polite"></p>
+        <div id="family-agenda-days" class="family-agenda-days"></div>
+        <div id="family-agenda-undated" class="family-agenda-undated" hidden></div>
+        <p id="family-agenda-missing" class="family-agenda-missing" hidden></p>
+        <p class="family-agenda-footnote">Skoleinformasjon kommer fra publiserte ukeplaner og kommunens skolerute. Familiens avtaler er registrert av dere. Sjekk skolens originalkilde ved avvik.</p>
+      </section>
       <section class="family-tomorrow" aria-labelledby="family-tomorrow-title">
         <div class="family-tomorrow-top"><div><p class="family-eyebrow">PRAKTISK HUSKELISTE</p><h2 id="family-tomorrow-title">Praktisk å huske <span id="family-next-day"></span></h2></div><span class="family-tomorrow-icon" aria-hidden="true">🎒</span></div>
         <div class="family-focus-tabs" role="group" aria-label="Huskeliste for">

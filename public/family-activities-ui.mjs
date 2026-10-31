@@ -27,7 +27,7 @@ const fieldMap={
  repeat_until:'family-activity-until',location:'family-activity-location',
  responsible:'family-activity-responsible',notes:'family-activity-notes'
 };
-export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar}){
+export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar,onChange=()=>{}}){
  let active=false,rows=localRead(),editing=null,loading=false,status='',request=0,weekKey='';
  const form=$('family-activity-form'),save=$('family-activity-save'),
   panel=$('family-activity-list');
@@ -99,16 +99,16 @@ export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar}){
   if(!active)return;
   const seq=++request,c=getCalendar(),key=getWeek(),cloud=getCloud();
   weekKey=key;
-  if(!cloud){rows=localRead();loading=false;setMessage('');render();return;}
+  if(!cloud){rows=localRead();loading=false;setMessage('');render();onChange();return;}
   loading=true;setMessage('');render();
   try{
    const data=await cloud.client.activities(cloud.familyId,c.year,c.week);
    if(seq!==request||getCloud()!==cloud||getWeek()!==key||!active)return;
-   rows=Array.isArray(data)?data:[];loading=false;setMessage('');render();
+   rows=Array.isArray(data)?data:[];loading=false;setMessage('');render();onChange();
   }catch(error){
    if(seq!==request||getCloud()!==cloud||!active)return;
    loading=false;rows=[];setMessage('Kunne ikke hente aktivitetene: '+error.message);
-   render();
+   render();onChange();
   }
  }
  function changedFamily(){
@@ -141,7 +141,7 @@ export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar}){
     if(!id&&rows.length>=FAMILY_ACTIVITY_MAX)throw Error('Maks '+FAMILY_ACTIVITY_MAX+' lokale aktiviteter.');
     const saved={...draft,id:id||crypto.randomUUID(),created_at:existing?.created_at||new Date().toISOString()};
     rows=id?rows.map(x=>x.id===id?saved:x):[...rows,saved];
-    localWrite(rows);resetForm();setMessage('Aktiviteten er lagret på denne enheten.');render();
+    localWrite(rows);resetForm();setMessage('Aktiviteten er lagret på denne enheten.');render();onChange();
    }
   }catch(error){formStatus('Kunne ikke lagre: '+error.message);}
   finally{save.disabled=false;}
@@ -164,14 +164,16 @@ export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar}){
    rows=rows.filter(x=>x.id!==id);
    try{localWrite(rows);setMessage('Aktiviteten er slettet.');}
    catch(error){setMessage('Kunne ikke lagre slettingen: '+error.message);}
-   render();
+   render();onChange();
   }
  });
  window.addEventListener('storage',event=>{
   if(!active||isCloud()||event.key!==LOCAL_ACTIVITY_KEY)return;
-  rows=localRead();render();
+  rows=localRead();render();onChange();
  });
  return {
+  getRows:()=>weekKey===getWeek()?rows:[],
+  editActivity:id=>{const found=rows.find(item=>item.id===id);if(found)openForm(found);},
   enter(){active=true;void refresh();},
   leave(){active=false;request++;resetForm();},
   onFamilyChanged:changedFamily,
