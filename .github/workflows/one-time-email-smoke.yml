@@ -80,3 +80,26 @@ jobs:
             process.exitCode=1;
           }
           NODE
+
+      - name: Diagnose custom domain DNS and TLS (no secrets)
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import dns from 'node:dns/promises';
+          for(const host of ['skoleuk.no','www.skoleuk.no','ukeplanen.netlify.app']){
+            const x={host};
+            for(const [key,fn] of [['lookup',()=>dns.lookup(host)],
+              ['A',()=>dns.resolve4(host)],['AAAA',()=>dns.resolve6(host)]]){
+              try{
+                const res=await fn();
+                x[key]=key==='lookup'?{address:res.address,family:res.family}:res;
+              }catch(e){x[key]=e.code||String(e.message).slice(0,60)}
+            }
+            try{
+              const u=await fetch('https://'+host+'/api/digest-config',{
+                signal:AbortSignal.timeout(10000)});
+              x.http=u.status;x.responseHost=new URL(u.url).hostname;
+            }catch(e){x.httpError=String(e.cause?.code||e.message||'fetch').slice(0,80)}
+            console.log('DOMAIN_DNS_PROBE '+JSON.stringify(x));
+          }
+          NODE
