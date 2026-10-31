@@ -201,7 +201,8 @@ function checklist(items,section,day='all'){
     const repeatBadge=section==='homework'&&repeatDayLabel(item)?`<span class="homework-repeat">${safe(repeatDayLabel(item))}</span>`:'';
     const displayLabel=section==='bag'?packingText(label):label;
     const category=section==='homework'?'homework':'practical';
-    const typeLabel=`<span class="content-type-label content-kind-${category}">${contentCategoryLabel(category)}</span>`;
+    // The section heading already identifies homework; keep a type badge only for packing.
+    const typeLabel=section==='homework'?'':`<span class="content-type-label content-kind-${category}">${contentCategoryLabel(category)}</span>`;
     if(section==='homework')return `<div class="homework-assist-row"><label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${dueBadge}${repeatBadge}${typeLabel}${meta}${safe(displayLabel)}${hint}</span></label>${needsHomeworkHelp(item)?`<button type="button" class="helper-open" data-helper-task="${i}" aria-label="Få hjelp til denne leksen">✨ Få hjelp</button>`:''}</div>`;
     return `<label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${dueBadge}${repeatBadge}${typeLabel}${meta}${safe(displayLabel)}${hint}</span></label>`;
   }).join('');
