@@ -31,8 +31,9 @@ async function open(t,query='',{redeem=true}={}){
  await page.route('**/api/child-access**',route=>{
   const url=new URL(route.request().url());
   calls.push({method:route.request().method(),url:url.pathname+url.search,headers:route.request().headers(),body:route.request().postDataJSON?.()});
-  const isRedeem=route.request().method()==='POST';
-  const data=isRedeem?redeem?{session,expiresAt:'2027-01-01T00:00:00Z'}:
+  const action=route.request().method()==='POST'?route.request().postDataJSON()?.action:null;
+  const isRedeem=action==='redeem',isSelfRevoke=action==='self-revoke';
+  const data=isSelfRevoke?{revoked:true}:isRedeem?redeem?{session,expiresAt:'2027-01-01T00:00:00Z'}:
     {error:'Denne QR-koden er utløpt.'}:
    {child:{id:child,name:'Barn A',school:'fagerholt',grade:'3',group:'Rød'},
     activities:[
@@ -87,6 +88,8 @@ test('Child session persists after reload without rescanning QR, and can be remo
  page.once('dialog',dialog=>dialog.accept());
  await page.locator('#child-remove').click();
  await page.locator('#child-setup').waitFor({state:'visible'});
+ assert.ok(calls.some(x=>x.body?.action==='self-revoke'),
+  'Removing the child app must revoke the device capability on the server');
  assert.equal(await page.evaluate(()=>localStorage.getItem('skoleuka.child.device.v1')),null);
  assert.deepEqual(errors,[]);
 });
