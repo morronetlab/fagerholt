@@ -854,6 +854,13 @@ test('Verified parent can explicitly enable and disable Sunday email without a s
   enabled:true,url:endpoint+'/',publishableKey:'sb_publishable_test_not_a_real_key'
  }));
  await page.route('**/api/digest-config*',route=>reply(route,{available:true}));
+ const testMailRequests=[];
+ await page.route('**/api/digest-send-test*',route=>{
+  testMailRequests.push({method:route.request().method(),
+   authorization:route.request().headers().authorization});
+  return route.fulfill({status:202,contentType:'application/json',
+   body:JSON.stringify({status:'accepted',year:2026,week:45})});
+ });
  await page.addInitScript(()=>{
   const original=window.fetch.bind(window);
   let enabled=false;
@@ -898,9 +905,15 @@ test('Verified parent can explicitly enable and disable Sunday email without a s
  assert.deepEqual(await page.evaluate(()=>window.__digestWrites),[{
   user_id:'guardian-one',enabled:true
  }]);
+ const preview=page.locator('#account-digest-send-test');
+ await page.waitForFunction(()=>!document.getElementById('account-digest-send-test').disabled);
+ await preview.click();
+ await page.getByText(/E-postleverandøren har godtatt testmailen/).waitFor();
+ assert.deepEqual(testMailRequests,[{method:'POST',authorization:'Bearer parent-access-token'}]);
  await check.uncheck();
  await page.getByText(/E-postoppsummeringen er slått av/).waitFor();
  assert.equal(await check.isChecked(),false);
+ await page.waitForFunction(()=>document.getElementById('account-digest-send-test').disabled);
  assert.deepEqual(errors,[]);
 });
 
