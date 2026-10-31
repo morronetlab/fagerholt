@@ -51,7 +51,10 @@
    <p class="child-local-note">✓ Pakkestatus huskes på denne enheten.</p></section>
   <section class="child-panel" aria-labelledby="child-homework-heading"><div class="child-panel-heading"><span aria-hidden="true">✏️</span><h2 id="child-homework-heading">Lekser denne uka</h2></div>
    <p class="child-check-progress" id="child-homework-progress" aria-live="polite"></p>
-   <div id="child-homework"></div><p class="child-local-note">Lekser du krysser av her huskes på denne enheten. Synkronisering med foresatte kommer senere.</p></section>
+   <div id="child-homework"></div>
+   <p class="child-sync-note" id="child-homework-sync" role="status" aria-live="polite">Henter felles lekseprogresjon …</p>
+   <button type="button" id="child-import-homework" class="child-outline" hidden>Overfør tidligere avkrysninger</button>
+   <p class="child-local-note">Lekser synkroniseres med familiekontoen. Pakkelisten og quizfremdriften lagres fortsatt bare på denne enheten.</p></section>
   <section class="child-panel child-quiz-panel" id="child-quiz-section" hidden aria-labelledby="child-quiz-title">
    <div class="child-panel-heading"><span aria-hidden="true">🎮</span><h2 id="child-quiz-title">Ordøving og quiz</h2></div>
    <p class="child-quiz-intro">Øv på ukas gloser og norske ord fra skolens ukeplan.</p>

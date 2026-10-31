@@ -14,7 +14,7 @@ const now=()=>new Date('2026-10-31T15:00:00Z');
 const ok=(payload,status=200)=>new Response(payload==null?null:JSON.stringify(payload),{
  status,headers:{'Content-Type':'application/json'}});
 function fixture({authStatus=200}={}){
- const pairs=[],devices=[],calls=[];let sequence=0;
+ const pairs=[],devices=[],calls=[],progress=[];let sequence=0;
  const secret=()=>String(++sequence).padStart(64,'a');
  const fetchImpl=async(raw,options={})=>{
   const url=new URL(raw),pathname=url.pathname,params=url.searchParams;
@@ -64,6 +64,23 @@ function fixture({authStatus=200}={}){
    if(hash)return ok(devices.filter(x=>x.secret_hash===hash&&!x.revoked_at));
    return ok(devices.filter(x=>!x.revoked_at));
   }
+  if(pathname==='/rest/v1/homework_progress'){
+   const matches=row=>row.child_id===child&&row.family_id===family&&
+    row.school_year===Number(params.get('school_year')?.replace('eq.',''))&&
+    row.school_week===Number(params.get('school_week')?.replace('eq.',''));
+   if(options.method==='POST'){
+    const row=JSON.parse(options.body);
+    assert.equal(row.family_id,family,'Server must determine family, never trust client');
+    assert.equal(row.child_id,child,'Server must determine child, never trust client');
+    assert.equal(row.updated_by_device,devices[0]?.id,'Device attribution must be enforced');
+    const existing=progress.find(x=>x.task_key===row.task_key&&
+     x.school_year===row.school_year&&x.school_week===row.school_week);
+    if(existing)Object.assign(existing,row);
+    else progress.push({...row});
+    return ok([{task_key:row.task_key,completed:row.completed}],201);
+   }
+   return ok(progress.filter(matches).map(x=>({task_key:x.task_key,completed:x.completed})));
+  }
   if(pathname==='/rest/v1/family_activities'){
    return ok([
     {id:'family',child_id:null,title:'Felles middag',occurs_on:'2026-11-02',repeat_rule:'none'},
@@ -77,12 +94,12 @@ function fixture({authStatus=200}={}){
  const handler=createChildAccessHandler({env,fetchImpl,now,secret});
  const request=(action,body=null,{token=jwt,origin='https://skoleuka.no'}={})=>
   handler(new Request('https://skoleuka.no/api/child-access'+
-    (body===null?'?action='+action+'&childId='+child+(action==='child'?'&year=2026&week=45':''):''),{
+    (body===null?'?action='+action+'&childId='+child+(['child','progress'].includes(action)?'&year=2026&week=45':''):''),{
    method:body===null?'GET':'POST',
    headers:{Origin:origin,Authorization:'Bearer '+token, ...(body!==null?{'Content-Type':'application/json'}:{})},
    body:body===null?undefined:JSON.stringify({action,...body})
   }));
- return {request,pairs,devices,calls};
+ return {request,pairs,devices,calls,progress};
 }
 test('A confirmed guardian may mint one-use 10-minute QR; data and QR SVG never expose service key',async()=>{
  const f=fixture(),r=await f.request('create',{childId:child});
@@ -192,4 +209,83 @@ test('Service-only activity read migration is recorded and does not broaden clie
  const sql=readFileSync(new URL('../supabase/migrations/20261031170017_child_access_read_family_activities.sql',import.meta.url),'utf8');
  assert.match(sql,/grant select on public\.family_activities to service_role/i);
  assert.doesNotMatch(sql,/grant\s+select[^;]+to\s+(?:anon|authenticated)/i);
+});
+
+const taskKey='a1b2c3d4e5f60708';
+async function childLogin(f){
+ const invite=await (await f.request('create',{childId:child})).json();
+ const redeemed=await f.request('redeem',{token:invite.link.split('pair=')[1]});
+ assert.equal(redeemed.status,201);
+ return (await redeemed.json()).session;
+}
+test('QR child updates only their own shared homework row and guardian can read it',async()=>{
+ const f=fixture(),token=await childLogin(f);
+ const write=await f.request('set-progress',{
+  year:2026,week:45,taskKey,completed:true,childId:other,familyId:other
+ },{token});
+ assert.equal(write.status,200);
+ assert.deepEqual(await write.json(),{key:taskKey,completed:true});
+ assert.equal(f.progress.length,1);
+ assert.equal(f.progress[0].child_id,child);
+ assert.equal(f.progress[0].family_id,family);
+ const read=await f.request('progress',null,{token});
+ assert.equal(read.status,200);
+ assert.deepEqual((await read.json()).progress,[{key:taskKey,completed:true}]);
+ assert.ok(!JSON.stringify(await f.request('progress',null,{token})).includes('secret'));
+ assert.ok(!f.calls.filter(c=>c.path==='/rest/v1/homework_progress')
+  .some(c=>JSON.stringify(c.query||'').includes(other)));
+ assert.ok(!f.calls.filter(c=>c.path==='/rest/v1/homework_progress')
+  .some(c=>JSON.stringify(c.body||'').includes(other)));
+ const undone=await f.request('set-progress',{year:2026,week:45,taskKey,completed:false},{token});
+ assert.equal(undone.status,200);
+ assert.equal(f.progress.length,1,'Upsert must update instead of duplicate');
+ assert.equal(f.progress[0].completed,false);
+});
+test('Missing, malformed or revoked QR sessions cannot read or write shared progress',async()=>{
+ const f=fixture(),token=await childLogin(f);
+ const attempts=[
+  f.request('set-progress',{year:2026,week:45,taskKey,completed:true},{token:''}),
+  f.request('set-progress',{year:2026,week:45,taskKey:'bad',completed:true},{token}),
+  f.request('set-progress',{year:2026,week:45,taskKey,completed:'true'},{token}),
+  f.request('set-progress',{year:2026,week:1,taskKey,completed:true},{token}),
+  f.request('set-progress',{year:2026,week:45,taskKey,completed:true},{token,
+   origin:'https://other.example'})
+ ];
+ const responses=await Promise.all(attempts);
+ assert.deepEqual(responses.map(x=>x.status),[401,400,400,400,403]);
+ assert.equal(f.progress.length,0);
+ assert.equal((await f.request('revoke',{childId:child,deviceId:f.devices[0].id})).status,200);
+ assert.equal((await f.request('progress',null,{token})).status,401);
+ assert.equal((await f.request('set-progress',{year:2026,week:45,taskKey,completed:true},{token})).status,401);
+ assert.equal(f.progress.length,0);
+});
+test('Child progress queries and writes have one-child/family scoping, no bypass token sent to client',async()=>{
+ const f=fixture(),token=await childLogin(f);
+ await f.request('progress',null,{token});
+ await f.request('set-progress',{year:2026,week:45,taskKey,completed:true},{token});
+ const calls=f.calls.filter(c=>c.path==='/rest/v1/homework_progress');
+ assert.ok(calls.length>=3);
+ for(const call of calls){
+  if(call.method==='GET'){
+   assert.match(call.query,/family_id=eq\./);
+   assert.match(call.query,/child_id=eq\./);
+   assert.match(call.query,/school_year=eq\.2026/);
+   assert.match(call.query,/school_week=eq\.45/);
+  }
+  assert.equal(call.headers?.apikey,env.SUPABASE_SERVICE_ROLE_KEY);
+ }
+ const json=JSON.stringify(await (await f.request('progress',null,{token})).json());
+ assert.doesNotMatch(json,/family_id|child_id|sb_secret_|device|Authorization/);
+});
+test('Homework migration keeps parents RLS and grants only service role the required actions',()=>{
+ const sql=readFileSync(new URL('../supabase/migrations/20261031180805_child_homework_progress_sync.sql',import.meta.url),'utf8');
+ assert.match(sql,/alter column updated_by drop not null/i);
+ assert.match(sql,/updated_by_device uuid/i);
+ assert.match(sql,/grant select, insert, update on public\.homework_progress to service_role/i);
+ assert.match(sql,/d\.child_id = new\.child_id/i);
+ assert.match(sql,/d\.family_id = new\.family_id/i);
+ assert.match(sql,/d\.revoked_at is null/i);
+ assert.match(sql,/d\.expires_at > now\(\)/i);
+ assert.doesNotMatch(sql,/grant [^;]+ to (?:anon|authenticated)\s*;/i);
+ assert.doesNotMatch(sql,/drop policy|disable row level security/i);
 });

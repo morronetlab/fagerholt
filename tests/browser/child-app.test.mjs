@@ -3,6 +3,7 @@ import test,{before,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {startStaticServer} from './static-server.mjs';
+import {taskFingerprint} from '../../public/shared/task-fingerprint.mjs';
 let browser,server;
 before(async()=>{server=await startStaticServer();browser=await chromium.launch({headless:true,args:['--no-sandbox']});});
 after(async()=>{await browser?.close();await server?.close();});
@@ -21,7 +22,7 @@ const plan={status:'ok',parser:'ai',aiStatus:'ready',year:2026,week:44,
   {text:'Blå gruppes hemmelige lekse',subject:'Norsk',group:'Blå',dueDay:'Fredag'}],
  vocabulary:[{category:'engelske gloser',text:'apple - eple; dog - hund'},
   {category:'norske øveord',text:'skole, sol'}],notices:[]};
-async function open(t,query='',{redeem=true}={}){
+async function open(t,query='',{redeem=true,sharedProgress=null,saveReject=false,readReject=false}={}){
  const context=await browser.newContext({viewport:{width:390,height:790},locale:'nb-NO',timezoneId:'Europe/Oslo'});
  t.after(()=>context.close());
  const page=await context.newPage(),errors=[];
@@ -31,12 +32,28 @@ async function open(t,query='',{redeem=true}={}){
   class MockDate extends D{constructor(...args){super(...(args.length?args:[fixed]));}static now(){return +fixed;}}
   window.Date=MockDate;
  });
- const calls=[];
+ const calls=[],progress=sharedProgress||new Map();
  await page.route('**/api/child-access**',route=>{
   const url=new URL(route.request().url());
   calls.push({method:route.request().method(),url:url.pathname+url.search,headers:route.request().headers(),body:route.request().postDataJSON?.()});
   const action=route.request().method()==='POST'?route.request().postDataJSON()?.action:null;
-  const isRedeem=action==='redeem',isSelfRevoke=action==='self-revoke';
+  const isRedeem=action==='redeem',isSelfRevoke=action==='self-revoke',
+   isProgress=url.searchParams.get('action')==='progress',isSave=action==='set-progress';
+  if(isProgress&&readReject)return route.fulfill({status:503,contentType:'application/json',
+   body:JSON.stringify({error:'Midlertidig utilgjengelig'})});
+  if(isProgress)return route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify({progress:[...progress].map(([key,completed])=>({key,completed}))})});
+  if(isSave){
+   if(saveReject)return route.fulfill({status:503,contentType:'application/json',
+    body:JSON.stringify({error:'Lagringen mislyktes'})});
+   const body=route.request().postDataJSON();
+   assert.equal(route.request().headers().authorization,'Bearer '+session);
+   assert.equal(body.childId,undefined,'QR client may not choose sibling ID');
+   assert.equal(body.familyId,undefined,'QR client may not choose family ID');
+   progress.set(body.taskKey,body.completed);
+   return route.fulfill({status:200,contentType:'application/json',
+    body:JSON.stringify({key:body.taskKey,completed:body.completed})});
+  }
   const data=isSelfRevoke?{revoked:true}:isRedeem?redeem?{session,expiresAt:'2027-01-01T00:00:00Z'}:
     {error:'Denne QR-koden er utløpt.'}:
    {child:{id:child,name:'Barn A',school:'fagerholt',grade:'3',group:'Rød'},
@@ -56,7 +73,7 @@ async function open(t,query='',{redeem=true}={}){
   return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(plan)});
  });
  await page.goto(server.baseURL+'/barn/index.html'+query,{waitUntil:'domcontentloaded'});
- return {page,calls,errors};
+ return {page,calls,errors,progress};
 }
 test('One QR activates isolated child app and hides sibling content',async t=>{
  const {page,calls,errors}=await open(t,'?pair='+pair);
@@ -109,8 +126,8 @@ test('Unpaired or expired QR never presents someone else’s profile',async t=>{
  assert.deepEqual(two.errors,[]);
 });
 
-test('Child sees class-group details and dated assignments, marks bag and homework locally across reload',async t=>{
- const {page,errors}=await open(t,'?pair='+pair);
+test('Child sees groups and deadlines; packing is local while homework syncs with family progress',async t=>{
+ const {page,errors,progress}=await open(t,'?pair='+pair);
  await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor({state:'visible'});
  assert.match(await page.locator('#child-events').innerText(),/Rød/);
  assert.match(await page.locator('#child-attendance').innerText(),/08:45/);
@@ -125,6 +142,10 @@ test('Child sees class-group details and dated assignments, marks bag and homewo
  assert.equal(await page.locator('#child-bag input[type=checkbox]').count(),1);
  await page.locator('#child-bag input[type=checkbox]').check();
  await page.locator('#child-homework input[data-child-homework="1"]').check();
+ await page.locator('#child-homework-sync').getByText(/deles med foresatte/).waitFor();
+ const fingerprint=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:44,
+  task:plan.homework[1]});
+ assert.equal(progress.get(fingerprint),true,'Guardian cloud progress should have the same task key');
  assert.match(await page.locator('#child-bag-progress').innerText(),/1 av 1/);
  assert.match(await page.locator('#child-homework-progress').innerText(),/1 av 2/);
  await page.reload({waitUntil:'domcontentloaded'});
@@ -173,5 +194,69 @@ test('Child can complete the actual PDF-grounded English quiz and Norwegian word
  assert.match(await page.locator('#child-quiz-question').innerText(),/Se ordet kort/);
  await page.locator('#child-quiz-peek').click();
  assert.equal(await page.locator('#child-quiz-preview').isVisible(),true);
+ assert.deepEqual(errors,[]);
+});
+
+test('Guardian-shared completion appears on another child device, including unchecked state',async t=>{
+ const sharedProgress=new Map();
+ const a=await open(t,'?pair='+pair,{sharedProgress});
+ await a.page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ await a.page.locator('#child-homework input[data-child-homework="1"]').check();
+ await a.page.locator('#child-homework-sync').getByText(/deles med foresatte/).waitFor();
+ const key=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:44,task:plan.homework[1]});
+ assert.equal(sharedProgress.get(key),true);
+ const b=await open(t,'?pair='+pair,{sharedProgress});
+ await b.page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ assert.equal(await b.page.locator('#child-homework input[data-child-homework="1"]').isChecked(),true);
+ await b.page.locator('#child-homework input[data-child-homework="1"]').uncheck();
+ await b.page.locator('#child-homework-sync').getByText(/deles med foresatte/).waitFor();
+ assert.equal(sharedProgress.get(key),false);
+ await a.page.reload({waitUntil:'domcontentloaded'});
+ await a.page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ assert.equal(await a.page.locator('#child-homework input[data-child-homework="1"]').isChecked(),false);
+ assert.deepEqual(a.errors,[]);assert.deepEqual(b.errors,[]);
+});
+test('Failed shared homework save rolls checkbox back and shows an unsaved warning',async t=>{
+ const {page,errors,progress}=await open(t,'?pair='+pair,{saveReject:true});
+ await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ // .check() waits for a durable checked state and retries after intentional
+ // rollback. A plain click correctly tests the failed-save transition.
+ await page.locator('#child-homework input[data-child-homework="1"]').click();
+ await page.locator('#child-homework-sync').getByText(/ble ikke lagret/i).waitFor();
+ assert.equal(await page.locator('#child-homework input[data-child-homework="1"]').isChecked(),false);
+ assert.equal(progress.size,0);
+ assert.deepEqual(errors,[]);
+});
+test('Offline shared status disables homework writes, not unrelated child packing',async t=>{
+ const {page,errors}=await open(t,'?pair='+pair,{readReject:true});
+ await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ assert.match(await page.locator('#child-homework-sync').innerText(),/Synkronisering er utilgjengelig/);
+ assert.equal(await page.locator('#child-homework input[data-child-homework="1"]').isDisabled(),true);
+ await page.locator('#child-bag input[type=checkbox]').check();
+ assert.equal(await page.locator('#child-bag input[type=checkbox]').isChecked(),true);
+ assert.deepEqual(errors,[]);
+});
+test('Previously checked local homework needs explicit import and never overwrites guardian false',async t=>{
+ const sharedProgress=new Map();
+ const parentKey=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:44,
+  task:plan.homework[0]});
+ sharedProgress.set(parentKey,false);
+ const {page,calls,errors}=await open(t,'?pair='+pair,{sharedProgress});
+ await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ await page.evaluate((id)=>{
+  localStorage.setItem('skoleuka.child.checked.v1.'+id+'.2026.44.homework.all',
+   JSON.stringify({'0':true,'1':true}));
+ },child);
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ assert.match(await page.locator('#child-import-homework').innerText(),/1 tidligere avkrysning/);
+ assert.equal(await page.locator('#child-homework input[data-child-homework="0"]').isChecked(),false);
+ await page.locator('#child-import-homework').click();
+ const key=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:44,task:plan.homework[1]});
+ await page.locator('#child-homework input[data-child-homework="1"]:checked').waitFor();
+ await page.locator('#child-homework-sync').getByText(/deles med foresatte/).waitFor();
+ assert.equal(sharedProgress.get(parentKey),false);
+ assert.equal(sharedProgress.get(key),true);
+ assert.equal(calls.filter(x=>x.body?.action==='set-progress').length,1);
  assert.deepEqual(errors,[]);
 });

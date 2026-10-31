@@ -6,6 +6,7 @@ import {needsHomeworkHelp} from '../shared/homework-help-eligibility.mjs';
 import {scopedHomeworkItems,scopedPackingItems,childSchoolDayDetails,
  childCheckedKey,readChildChecks,setChildCheck,homeworkItemKey} from './child-learning.mjs';
 import {renderChildQuiz,initChildQuiz} from './child-quiz.mjs';
+import {childTaskKey,checkedProgress,importCandidates} from './child-progress.mjs';
 import {initChildHelper,openChildHelper} from './child-helper.mjs';
 import {activityOccurrences,activityTimeLabel} from '../shared/family-activities.mjs';
 
@@ -15,7 +16,8 @@ const esc=s=>String(s??'').replace(/[&<>"']/gu,c=>({
  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
 }[c]));
 const safeURL=raw=>{try{const u=new URL(raw);return u.protocol==='https:'?u.href:null;}catch{return null;}};
-const state={child:null,plan:null,activities:[],day:0,calendar:null,session:null,installer:null,homework:[],bag:[]};
+const state={child:null,plan:null,activities:[],day:0,calendar:null,session:null,installer:null,
+ homework:[],bag:[],progress:null,progressBusy:false,progressError:''};
 const getToken=()=>{try{return localStorage.getItem(KEY);}catch{return null;}};
 function setToken(token){
  try{if(token)localStorage.setItem(KEY,token);else localStorage.removeItem(KEY);}catch{}
@@ -45,7 +47,8 @@ async function get(path,{method='GET',body,token=null}={}){
  return data;
 }
 function setup(message){
- state.child=null;state.plan=null;state.activities=[];
+ state.child=null;state.plan=null;state.activities=[];state.progress=null;
+ state.progressBusy=false;state.progressError='';
  $('child-ready').hidden=true;$('child-setup').hidden=false;
  $('child-setup-message').textContent=message||
   'Be en foresatt åpne «Inviter barn» under din profil og skann QR-koden med denne enheten.';
@@ -101,16 +104,29 @@ function render(){
    '</span></label>').join('')+'</div>':empty('Ingen ekstra utstyr denne dagen.');
  $('child-bag-progress').textContent=state.bag.length?bagCount+' av '+state.bag.length+' pakket':'';
  state.homework=ok?scopedHomeworkItems(plan,child):[];
- const done=checks(homeworkStore());
- const homeworkDone=state.homework.filter(task=>done[homeworkItemKey(task)]).length;
+ const oldChecks=checks(homeworkStore());
+ const shared=state.progress instanceof Map;
+ const isDone=task=>shared?state.progress.get(childTaskKey(child,calendar,task))===true:
+  oldChecks[homeworkItemKey(task)]===true;
+ const homeworkDone=state.homework.filter(isDone).length;
+ const imports=importCandidates(state.homework,child,calendar,state.progress,oldChecks);
+ $('child-import-homework').hidden=!shared||!imports.length||state.progressBusy;
+ $('child-import-homework').textContent='Overfør '+imports.length+
+  ' tidligere '+(imports.length===1?'avkrysning':'avkrysninger')+' fra denne enheten';
+ $('child-homework-sync').textContent=state.progressBusy?'☁️ Lagrer lekseprogresjon …':
+  state.progressError?'⚠️ '+state.progressError:
+  shared?'☁️ Lekseprogresjon deles med foresatte og andre enheter.':
+   '⚠️ Kun tidligere lokale avkrysninger vises. Felles lekseprogresjon kan ikke hentes akkurat nå.';
+
  $('child-homework-progress').textContent=state.homework.length?
   '⭐ '+homeworkDone+' av '+state.homework.length+' lekser fullført':'';
  $('child-homework').innerHTML=state.homework.length?'<div class="child-check-list">'+
   state.homework.map(item=>{
-   const checked=done[homeworkItemKey(item)]===true;
+   const checked=isDone(item);
    const label=item.dueLabel||(item.repeatLabel?'':'Frist ikke oppgitt i ukeplanen');
    return '<article class="child-homework-item"><label class="child-check-row '+(checked?'is-done':'')+'">'+
-    '<input type="checkbox" data-child-homework="'+item.index+'" '+(checked?'checked':'')+'>'+
+    '<input type="checkbox" data-child-homework="'+item.index+'" '+(checked?'checked':'')+
+    (shared&&!state.progressBusy?'':' disabled')+'>'+
     '<span class="child-check-content">'+groupBadge(item.group)+
     (label?'<span class="child-homework-due">📅 '+esc(label)+'</span>':'')+
     (item.repeatLabel?'<small>'+esc(item.repeatLabel)+'</small>':'')+
@@ -130,7 +146,9 @@ function render(){
   'Noen skoleopplysninger mangler for denne uka.');
 }
 async function load(){
+ if(state.progressBusy)return; // Keep in-flight writes from being overwritten by a refresh.
  state.session=getToken();
+ state.progress=null;state.progressError='';
  if(!state.session||!/^[a-f0-9]{64}$/u.test(state.session)){setup();return;}
  status('Henter ukeplanen din …');
  const cal=familyWeekCalendar(new Date(),'Europe/Oslo');
@@ -145,6 +163,15 @@ async function load(){
   const url='/api/plan?school='+encodeURIComponent(child.school)+'&grade='+
    encodeURIComponent(child.grade)+(cal.upcoming?'&nextWeek=1':'');
   try{state.plan=await get(url);}catch{state.plan=null;}
+  try{
+   const result=await get('/api/child-access?action=progress&year='+cal.year+'&week='+cal.week,
+    {token:state.session});
+   state.progress=checkedProgress(result.progress);
+  }catch(error){
+   if(error.status===401||error.status===403)throw error;
+   state.progress=null;
+   state.progressError='Synkronisering er utilgjengelig. Prøv «Oppdater ukeplan» igjen.';
+  }
   state.day=cal.weekday;
   render();
   showInstall();
@@ -192,13 +219,45 @@ $('child-bag').addEventListener('change',event=>{
  try{setChildCheck(localStorage,packStore(),el.dataset.childBag,el.checked);render();}
  catch{status('Kunne ikke lagre pakkestatus på denne enheten.');}
 });
-$('child-homework').addEventListener('change',event=>{
+$('child-homework').addEventListener('change',async event=>{
  const el=event.target.closest('[data-child-homework]');
- if(!el||!state.child||!state.calendar)return;
+ if(!el||!state.child||!state.calendar||state.progressBusy)return;
  const item=state.homework.find(x=>x.index===Number(el.dataset.childHomework));
- if(!item)return;
- try{setChildCheck(localStorage,homeworkStore(),homeworkItemKey(item),el.checked);render();}
- catch{status('Kunne ikke lagre lekseprogresjon på denne enheten.');}
+ if(!item||!(state.progress instanceof Map)){render();return;}
+ const key=childTaskKey(state.child,state.calendar,item),previous=state.progress.get(key);
+ const checked=el.checked,year=state.calendar.year,week=state.calendar.week,token=state.session;
+ state.progressBusy=true;state.progressError='';state.progress.set(key,checked);render();
+ try{
+  await get('/api/child-access',{method:'POST',token,
+   body:{action:'set-progress',year,week,taskKey:key,completed:checked}});
+ }catch(error){
+  if(error.status===401||error.status===403){
+   setToken(null);setup('Enhetens tilgang er avsluttet. Be en foresatt lage en ny QR-kode.');return;
+  }
+  if(previous===undefined)state.progress.delete(key);else state.progress.set(key,previous);
+  state.progressError='Endringen ble ikke lagret i familiekontoen. Prøv igjen.';
+ }finally{state.progressBusy=false;if(state.child)render();}
+});
+$('child-import-homework').addEventListener('click',async()=>{
+ if(!(state.progress instanceof Map)||state.progressBusy||!state.child)return;
+ const items=importCandidates(state.homework,state.child,state.calendar,
+  state.progress,checks(homeworkStore()));
+ if(!items.length)return;
+ const year=state.calendar.year,week=state.calendar.week,token=state.session;
+ state.progressBusy=true;state.progressError='';render();
+ try{
+  for(const item of items){
+   const taskKey=childTaskKey(state.child,state.calendar,item);
+   await get('/api/child-access',{method:'POST',token,
+    body:{action:'set-progress',year,week,taskKey,completed:true}});
+   state.progress.set(taskKey,true);
+  }
+ }catch(error){
+  if(error.status===401||error.status===403){
+   setToken(null);setup('Enhetens tilgang er avsluttet. Be en foresatt lage en ny QR-kode.');return;
+  }
+  state.progressError='Noen eldre avkrysninger kunne ikke overføres. Prøv igjen.';
+ }finally{state.progressBusy=false;if(state.child)render();}
 });
 $('child-homework').addEventListener('click',event=>{
  const btn=event.target.closest('[data-child-help-task]');

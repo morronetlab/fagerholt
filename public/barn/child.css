@@ -144,3 +144,8 @@ dialog.child-helper::backdrop{background:#0b3526a8}
  .child-helper-actions button{width:100%}
  .child-quiz-choices{grid-template-columns:1fr}
  dialog.child-helper{padding:19px 15px}}
+
+/* Shared homework: clear, non-misleading sync state and legacy transfer. */
+.child-sync-note{font-size:12px;font-weight:750;color:#416e5a;line-height:1.5;margin:14px 0 8px}
+#child-import-homework{font-size:12px;min-height:42px;margin:5px 0 8px}
+.child-homework-item input:disabled{opacity:.45;cursor:wait}

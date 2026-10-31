@@ -764,13 +764,18 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  // Recheck when the parent returns to the tab; automatically inspect
  // the source every 15 minutes while the family screen stays visible.
  document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='hidden')stopPollTimers();
-  else resumeAnalysis();
- });
+   if(document.visibilityState==='hidden')stopPollTimers();
+   else{
+    resumeAnalysis();
+    if(active&&cloud)void syncCloud();
+   }
+  });
  setInterval(()=>{
-  if(active&&document.visibilityState==='visible'&&
-    (weekKey(calendar())!==loadedWeekKey||Date.now()-lastPlanCheckAt>=AUTO_CHECK_MS))
-   api.refresh();
+  if(active&&document.visibilityState==='visible'){
+   if(cloud&&(!lastSynced||Date.now()-lastSynced.getTime()>55_000))void syncCloud();
+   if(weekKey(calendar())!==loadedWeekKey||Date.now()-lastPlanCheckAt>=AUTO_CHECK_MS)
+    api.refresh();
+  }
  },60_000);
  const reportingContexts=()=>[...new Map(profiles.map(p=>{
   const cal=calendar(),plan=plans.get(p.id);
