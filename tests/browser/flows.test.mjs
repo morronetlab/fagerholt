@@ -1193,7 +1193,7 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  assert.equal(await page.locator('#account-verify-email').innerText(),'parent@example.no');
  assert.match(await page.locator('[data-account-screen="verify"]').innerText(),/søppelpost/i);
  assert.equal(await page.locator('[data-onboard-step="1"]').getAttribute('aria-current'),'step');
- assert.match(await page.locator('#account-message').textContent(),/sendt/i,
+ assert.match(await page.locator('#account-message').textContent(),/sjekk e-posten/i,
    'OTP response missing. Account mode: '+await page.locator('#account-panel').innerText());
  assert.equal(await page.locator('#account-resend-code').isVisible(),true);
  await page.locator('#account-resend-code').click();
@@ -1273,6 +1273,9 @@ test('Mobile guardian invitation guides a signed-in newcomer to join rather than
   };
  });
  await page.goto(server.baseURL+'/#invite='+'a'.repeat(64),{waitUntil:'domcontentloaded'});
+ // A hash-only navigation on the already-loaded test page does not re-run
+ // the bootstrap. A real opened invitation link loads a fresh document.
+ await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#account-invite-prompt').waitFor({state:'visible'});
  assert.match(await page.locator('#account-heading').innerText(),/Godta familieinvitasjonen/);
  assert.equal(await page.locator('#account-empty-family').isVisible(),false);
