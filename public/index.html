@@ -49,6 +49,11 @@
     </div>
     <div data-account-screen="signed" hidden>
       <p class="account-signed-in">Innlogget som <strong id="account-user-email"></strong></p>
+      <div id="account-invite-prompt" class="account-invite-prompt" hidden>
+        <strong>Du er invitert til en familie</strong>
+        <p>Du trenger ikke opprette en ny familie. Godta invitasjonen for å bli med.</p>
+        <button id="account-invite-accept" type="button" class="family-add-button">Godta familieinvitasjonen →</button>
+      </div>
       <p id="account-selected-family-row">Valgt familie: <strong id="account-current-family">Ingen</strong></p>
       <label class="account-family-picker" id="account-family-picker-row">Bytt familie<select id="account-family-picker"><option value="">Velg familie</option></select></label>
       <div id="account-empty-family">
@@ -77,11 +82,6 @@
         <p id="account-digest-status" role="status" aria-live="polite"></p>
         <p class="account-muted">Frivillig. Du kan slå av når som helst her. Ukeplanene kan mangle enkelte beskjeder, så skolens original er alltid fasit.</p>
       </section>
-      <div id="account-invite-prompt" class="account-invite-prompt" hidden>
-        <strong>Du er invitert til en familie</strong>
-        <p>Du trenger ikke opprette en ny familie. Godta invitasjonen for å bli med.</p>
-        <button id="account-invite-accept" type="button" class="family-add-button">Godta familieinvitasjonen →</button>
-      </div>
       <div class="account-danger-zone">
         <button id="account-leave-family" type="button" class="account-danger" hidden>Forlat familien</button>
         <button id="account-delete-family" type="button" class="account-danger" hidden>Slett hele familien og all progresjon</button>
@@ -109,7 +109,7 @@
       </form>
       <button id="onboard-add-another" type="button" class="family-light-button" hidden>+ Legg til et barn til</button>
       <div class="onboard-actions">
-        <button id="onboard-children-back" type="button" class="family-text-button">← Tilbake</button>
+        <button id="onboard-children-back" type="button" class="family-text-button">← Familieinnstillinger</button>
         <button id="onboard-children-next" type="button" class="family-add-button">Fortsett →</button>
       </div>
     </div>
