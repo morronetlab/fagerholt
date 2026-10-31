@@ -449,3 +449,22 @@ details.family-agenda-undated>summary:focus-visible{outline:3px solid #78b795;ou
  .family-agenda-day.is-empty h3{font-size:12px}
  .family-activities{padding:14px 13px}
 }
+
+/* Weekday-first event calendar: five schooldays, weekends only on demand. */
+.family-agenda-days{grid-template-columns:repeat(5,minmax(0,1fr))}
+.family-agenda-weekend-toggle{display:inline-flex;align-items:center;justify-content:center;
+ min-height:42px;margin:14px 0 1px;padding:10px 16px;background:#f4faf5;
+ color:#216e52;border:1px solid #bddcc7;border-radius:10px;cursor:pointer;
+ font-size:13px;font-weight:800}
+.family-agenda-weekend-toggle[hidden]{display:none!important}
+.family-agenda-weekend-toggle:focus-visible{outline:3px solid #7eb89d;outline-offset:3px}
+@media(min-width:1050px){
+ .family-agenda-days{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
+@media(min-width:701px) and (max-width:1049px){
+ .family-agenda-days{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:700px){
+ .family-agenda-days{grid-template-columns:1fr}
+ .family-agenda-weekend-toggle{width:100%;margin-top:9px}
+}
