@@ -103,3 +103,23 @@ jobs:
             console.log('DOMAIN_DNS_PROBE '+JSON.stringify(x));
           }
           NODE
+
+      - name: Public mail DNS presence test (not a Resend-account verification)
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import dns from 'node:dns/promises';
+          const probes=[
+            ['DKIM TXT','resend._domainkey.skoleuka.no',()=>dns.resolveTxt('resend._domainkey.skoleuka.no')],
+            ['DKIM CNAME','resend._domainkey.skoleuka.no',()=>dns.resolveCname('resend._domainkey.skoleuka.no')],
+            ['Return path SPF','send.skoleuka.no',()=>dns.resolveTxt('send.skoleuka.no')],
+            ['Return path MX','send.skoleuka.no',()=>dns.resolveMx('send.skoleuka.no')],
+            ['DMARC','_dmarc.skoleuka.no',()=>dns.resolveTxt('_dmarc.skoleuka.no')]
+          ];
+          for(const [kind,host,fn] of probes){
+            try{
+              const data=await fn();
+              console.log('MAIL_DNS_PRESENCE '+JSON.stringify({kind,host,present:Array.isArray(data)&&data.length>0}));
+            }catch(e){console.log('MAIL_DNS_PRESENCE '+JSON.stringify({kind,host,present:false,error:e.code||'lookup'}));}
+          }
+          NODE
