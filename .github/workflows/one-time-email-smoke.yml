@@ -17,7 +17,7 @@ jobs:
         shell: bash
         run: |
           node --input-type=module <<'NODE'
-          const sites=['https://skoleuk.no','https://ukeplanen.netlify.app'];
+          const sites=['https://skoleuka.no','https://ukeplanen.netlify.app'];
           const statuses=[];
           async function req(base,path,{method='GET'}={}){
             const u=new URL(path,base);
