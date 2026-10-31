@@ -1,0 +1,26 @@
+{
+  "id": "/barn/",
+  "name": "Min Skoleuka – Ukeplanen min",
+  "short_name": "Min Skoleuka",
+  "description": "Din skoleuke, lekser og aktiviteter på hjemskjermen.",
+  "lang": "nb",
+  "start_url": "/barn/",
+  "scope": "/barn/",
+  "display": "standalone",
+  "background_color": "#f2f7f1",
+  "theme_color": "#1b5a4c",
+  "icons": [
+    {
+      "src": "/barn/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/barn/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

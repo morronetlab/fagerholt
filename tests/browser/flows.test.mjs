@@ -63,7 +63,10 @@ async function chooseSchoolGrade(page,grade){
 test('New landing presents a family-first choice and keeps guest access visible',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.locator('#welcome-view').waitFor({state:'visible'});
- assert.match(await page.locator('#welcome-title').innerText(),/Hele familiens skoleuke/);
+ assert.match(await page.locator('#welcome-title').innerText(),/Skole, lekser og fritid/);
+ assert.equal(await page.locator('.welcome-choice').count(),3);
+ assert.equal(await page.locator('a[href="/barn/"]').isVisible(),true);
+ assert.equal(await page.locator('.welcome-explain > div').count(),4);
  assert.equal(await page.locator('#landing-create-family').isVisible(),true);
  assert.equal(await page.locator('#landing-open-plan').isVisible(),true);
  assert.equal(await page.locator('#school-gate').isVisible(),false);
@@ -1313,5 +1316,39 @@ test('2.2 family administration is minimized and opens the correct editor from c
  assert.equal(await page.locator('#family-activity-form').isVisible(),true);
  await page.locator('#family-activity-cancel').click();
  assert.equal(await page.locator('#family-activity-form').isVisible(),false);
+ assert.deepEqual(errors,[]);
+});
+
+test('Opening a saved child plan hides school/grade switching and shows only that child’s daily family events',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:760,mockNow:'2026-10-28T10:00:00Z'});
+ const child1='saved-child-a-001',child2='saved-child-b-002';
+ await page.evaluate(([a,b])=>{
+  localStorage.setItem('ukeplanen.family.v2',JSON.stringify({version:2,profiles:[
+   {id:a,name:'Barn A',school:'sjostrand',grade:'2',group:'Rød'},
+   {id:b,name:'Barn B',school:'sjostrand',grade:'2',group:'Blå'}
+  ]}));
+  localStorage.setItem('ukeplanen.family.activities.v1',JSON.stringify([
+   {id:'a',title:'Korps etter skolen',child_id:a,occurs_on:'2026-10-28',
+    repeat_rule:'weekly',repeat_until:null,start_time:'17:00',location:'Musikkrommet'},
+   {id:'b',title:'Søskenets aktivitet',child_id:b,occurs_on:'2026-10-28',
+    repeat_rule:'none',repeat_until:null,start_time:'18:00'},
+   {id:'all',title:'Felles middag',child_id:null,occurs_on:'2026-10-28',
+    repeat_rule:'none',repeat_until:null,start_time:'19:00'}
+  ]));
+ },[child1,child2]);
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-cards [data-family-open]').first().click();
+ await page.locator('#app-view').waitFor({state:'visible'});
+ await page.locator('#plan-day-activities').waitFor({state:'visible'});
+ assert.equal(await page.locator('#change-school').isVisible(),false);
+ assert.equal(await page.locator('#change-grade').isVisible(),false);
+ assert.equal(await page.locator('#mobile-selection-menu').isVisible(),false);
+ assert.equal(await page.locator('#plan-back-family').isVisible(),true);
+ assert.match(await page.locator('#plan-welcome-title').innerText(),/Barn A/);
+ assert.match(await page.locator('#plan-day-activity-list').innerText(),/Korps etter skolen/);
+ assert.match(await page.locator('#plan-day-activity-list').innerText(),/Felles middag/);
+ assert.doesNotMatch(await page.locator('#plan-day-activity-list').innerText(),/Søskenets aktivitet/);
+ await page.locator('#plan-back-family').click();
+ await page.locator('#family-view').waitFor({state:'visible'});
  assert.deepEqual(errors,[]);
 });
