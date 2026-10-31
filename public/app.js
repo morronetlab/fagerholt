@@ -13,6 +13,7 @@ import {planFeedback} from './shared/plan-feedback.mjs';
 import {normalizeVisualRegion,adjustableVisualRegion,visualCropGeometry,fullPageGeometry} from './shared/visual-region.mjs';
 import {homeworkProgress,groupColorClass} from './shared/group-scope.mjs';
 import {expandHomework,repeatDayLabel} from './shared/homework-view.mjs';
+import {contentCategoryLabel} from './shared/content-categories.mjs';
 import {dueDayLabel,packingText} from './shared/plan-display.mjs';
 import {uniqueDayEvents,groupSimultaneousEvents,notesWithImportantEvents,isVaccineNotice,noDayScheduleMessage} from './shared/day-view.mjs';
 import {estimateAiSeconds,estimatedPercent} from './shared/ai-estimate.mjs';
@@ -199,8 +200,10 @@ function checklist(items,section,day='all'){
     const dueBadge=due?`<span class="homework-due">📅 ${safe(due)}</span>`:'';
     const repeatBadge=section==='homework'&&repeatDayLabel(item)?`<span class="homework-repeat">${safe(repeatDayLabel(item))}</span>`:'';
     const displayLabel=section==='bag'?packingText(label):label;
-    if(section==='homework')return `<div class="homework-assist-row"><label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${dueBadge}${repeatBadge}${meta}${safe(displayLabel)}${hint}</span></label>${needsHomeworkHelp(item)?`<button type="button" class="helper-open" data-helper-task="${i}" aria-label="Få hjelp til denne leksen">✨ Få hjelp</button>`:''}</div>`;
-    return `<label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${dueBadge}${repeatBadge}${meta}${safe(displayLabel)}${hint}</span></label>`;
+    const category=section==='homework'?'homework':'practical';
+    const typeLabel=`<span class="content-type-label content-kind-${category}">${contentCategoryLabel(category)}</span>`;
+    if(section==='homework')return `<div class="homework-assist-row"><label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${dueBadge}${repeatBadge}${typeLabel}${meta}${safe(displayLabel)}${hint}</span></label>${needsHomeworkHelp(item)?`<button type="button" class="helper-open" data-helper-task="${i}" aria-label="Få hjelp til denne leksen">✨ Få hjelp</button>`:''}</div>`;
+    return `<label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${dueBadge}${repeatBadge}${typeLabel}${meta}${safe(displayLabel)}${hint}</span></label>`;
   }).join('');
 }
 function empty(msg){return `<p class="empty"><span aria-hidden="true">ℹ️</span> ${safe(msg)}</p>`;}
@@ -287,7 +290,7 @@ function renderContent(){
     </span></div>`).join(''):
     empty(state.loading?'Henter dagsprogram …':noDayScheduleMessage({hasNotes:notes.length>0,complete:p?.status==='ok'&&p?.parser==='ai'}));
   $('day-notes').hidden=!notes.length;
-  $('day-notes-list').innerHTML=notes.map(x=>`<p class="${x.important?'day-note-critical':''}">${x.important?'<strong>💉 Viktig: Vaksinasjon</strong>':''}${groupBadge(x.group)}${safe(x.text)}</p>`).join('');
+  $('day-notes-list').innerHTML=notes.map(x=>`<p class="${x.important?'day-note-critical':''}"><span class="content-type-label content-kind-practical">${contentCategoryLabel('practical')}</span> ${x.important?'<strong>💉 Viktig: Vaksinasjon</strong>':''}${groupBadge(x.group)}${safe(x.text)}</p>`).join('');
   const attendance=(p?.attendance||[]).filter(x=>x.day===DAYS[state.day]&&x.group&&x.time);
   $('day-attendance').hidden=!attendance.length;
   $('day-attendance').innerHTML=attendance.length?`<div class="attendance-heading">⏰ Særskilt oppmøte for enkelte grupper</div>${attendance.map(x=>`<div class="attendance-entry">${groupBadge(x.group)}<strong>Kl. ${safe(x.time)}</strong><span>${safe(x.text)}</span></div>`).join('')}`:'';
@@ -301,7 +304,7 @@ function renderContent(){
   $('plan-day-activity-list').innerHTML=activities.map(x=>
    '<article class="plan-day-activity"><span class="plan-day-activity-time">'+
    safe(String(x.start_time||'').slice(0,5)||'Etter skolen')+'</span>'+
-   '<div><strong>'+safe(x.title)+'</strong>'+
+   '<div><span class="content-type-label content-kind-activity">'+contentCategoryLabel('activity')+'</span><strong>'+safe(x.title)+'</strong>'+
    (x.location?'<small>'+safe(x.location)+'</small>':'')+
    (x.responsible?'<small>Ansvarlig: '+safe(x.responsible)+'</small>':'')+
    (x.notes?'<p>'+safe(x.notes)+'</p>':'')+'</div></article>').join('');
@@ -346,7 +349,7 @@ function renderContent(){
   $('notices-panel').classList.toggle('compact-empty',!notices.length);
   $('notices-empty-hint').hidden=Boolean(notices.length);
   if(!notices.length)$('notices-panel').open=false;
-  $('notices-list').innerHTML=notices.length?notices.map(x=>`<p>${groupBadge(x?.group)}${safe(typeof x==='string'?x:x?.text||x?.detail||x?.title)}</p>`).join(''):empty('Ingen beskjeder ble funnet i PDF-en.');
+  $('notices-list').innerHTML=notices.length?notices.map(x=>`<p><span class="content-type-label content-kind-practical">${contentCategoryLabel('practical')}</span> ${groupBadge(x?.group)}${safe(typeof x==='string'?x:x?.text||x?.detail||x?.title)}</p>`).join(''):empty('Ingen beskjeder ble funnet i PDF-en.');
   const goals=features.learningGoals?p?.learningGoals||[]:[];
   $('goals-panel').hidden=!features.learningGoals;
   $('goals-panel').classList.toggle('compact-empty',!goals.length);

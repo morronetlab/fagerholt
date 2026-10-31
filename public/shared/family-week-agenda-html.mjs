@@ -2,18 +2,18 @@
 const esc=s=>String(s??'').replace(/[&<>"']/gu,c=>({
  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
 }[c]));
-const icon={homework:'📖',school:'📌',municipal:'📅',family:'🎵'};
-const label={homework:'Leksefrist',school:'Skolen',municipal:'Skolerute',family:'Familieaktivitet'};
+import {contentCategory,contentCategoryLabel} from './content-categories.mjs';
 const link=url=>{try{
  const u=new URL(url);
  return u.protocol==='https:'&&!u.username&&!u.password?u.href:null;
 }catch{return null;}};
 export function familyAgendaItemHtml(item){
- const kind=Object.hasOwn(label,item.kind)?item.kind:'school';
+ const kind=['homework','school','municipal','family'].includes(item.kind)?item.kind:'school';
+ const category=contentCategory(kind);
  const source=link(item.source?.url);
  const title=esc(item.title);
- return '<article class="family-agenda-item kind-'+kind+(item.checked?' checked':'')+'">'+
-  '<span class="family-agenda-type kind-'+kind+'">'+icon[kind]+' '+label[kind]+
+ return '<article class="family-agenda-item kind-'+kind+' content-kind-'+category+(item.checked?' checked':'')+'">'+
+  '<span class="family-agenda-type kind-'+kind+' content-type-label content-kind-'+category+'">'+contentCategoryLabel(kind)+
   (item.kind==='family'&&item.timeLabel?' · '+esc(item.timeLabel):'')+'</span>'+
   '<strong>'+title+'</strong>'+
   '<small>'+esc(item.scope||'')+'</small>'+

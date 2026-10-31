@@ -38,20 +38,23 @@ const activities=[
 const agenda=childId=>buildFamilyWeekAgenda({
  profiles:[red,blue],summaries,plans,calendars,activities,calendar,childId
 });
-test('Seven-day source model holds school notices, municipal dates and family events without homework or gear',()=>{
+test('Seven-day agenda separates verified homework, practical notices, municipal dates and activities without gear',()=>{
  const result=agenda('');
  assert.deepEqual(result.days.map(x=>x.date),[
   '2026-10-26','2026-10-27','2026-10-28','2026-10-29','2026-10-30','2026-10-31','2026-11-01']);
  const tuesday=result.days[1].items;
  assert.ok(tuesday.some(x=>x.kind==='school'&&/Vaksinasjon/.test(x.title)));
  assert.ok(tuesday.some(x=>x.kind==='family'&&/middag/.test(x.title)));
- assert.ok(!result.days.flatMap(x=>x.items).some(x=>x.kind==='homework'||x.details==='Husk utstyr'));
+ assert.ok(result.days[3].items.some(x=>x.kind==='homework'&&/Les sidene/.test(x.title)));
+ assert.ok(result.days[4].items.some(x=>x.kind==='homework'&&/Lær tre gloser/.test(x.title)));
+ assert.ok(!result.days.flatMap(x=>x.items).some(x=>x.details==='Husk utstyr'));
+ assert.ok(!result.days.flatMap(x=>x.items).some(x=>/Øv på gangetabellen/.test(x.title)));
  assert.ok(result.days[4].items.some(x=>x.kind==='municipal'&&/Planleggingsdag/.test(x.title)));
  assert.ok(result.days[6].items.some(x=>x.kind==='family'&&/Korpskonsert/.test(x.title)));
  assert.equal(result.days[5].date,'2026-10-31','Weekend is present even without school events');
  assert.ok(result.undated.some(x=>x.kind==='school'&&/Foreldremøte/.test(x.title)));
- assert.ok(!result.undated.some(x=>x.kind==='homework'));
- assert.ok(!result.days.flatMap(x=>x.items).some(x=>/Gymtøy|gangetabellen|sidene 20/.test(x.title)));
+ assert.ok(!result.undated.some(x=>x.kind==='homework'),'Do not invent a date for homework with no deadline');
+ assert.ok(!result.days.flatMap(x=>x.items).some(x=>/Gymtøy|gangetabellen/.test(x.title)));
  assert.ok(result.undated.every(x=>x.date===null));
  assert.match(result.days[4].items.find(x=>x.kind==='municipal').details,/reserveversjon/);
  assert.equal(result.missingProfiles.length,0);
@@ -68,8 +71,11 @@ test('Child filter includes all-family activities and right school; never leaks 
  assert.ok(!allBlue.some(x=>/Korpskonsert/.test(x.title)));
  assert.ok(allBlue.some(x=>/Tennis/.test(x.title)));
  assert.ok(!allRed.some(x=>/Tennis/.test(x.title)));
- assert.ok(!allBlue.some(x=>x.kind==='homework'));
- assert.ok(!allRed.some(x=>x.kind==='homework'));
+ assert.ok(allBlue.some(x=>x.kind==='homework'&&/gloser/.test(x.title)));
+ assert.ok(!allBlue.some(x=>x.kind==='homework'&&/Les sidene/.test(x.title)));
+ assert.ok(allRed.some(x=>x.kind==='homework'&&/Les sidene/.test(x.title)));
+ assert.ok(!allRed.some(x=>x.kind==='homework'&&/gloser/.test(x.title)));
+ assert.ok(!allRed.some(x=>x.kind==='homework'&&/gangetabellen/.test(x.title)));
  assert.ok(!allBlue.some(x=>x.details==='Husk utstyr'));
  assert.ok(!allRed.some(x=>x.details==='Husk utstyr'));
  assert.ok(allRed.some(x=>x.kind==='municipal'),'School calendar remains available under both siblings');
@@ -84,7 +90,7 @@ test('Unready school plan is marked unavailable, never presented as no homework'
   calendars,activities,calendar});
  assert.deepEqual(result.missingProfiles,['Barn Rød']);
  assert.ok(result.days[1].items.some(x=>x.kind==='family'));
- assert.ok(!result.days.some(day=>day.items.some(x=>x.kind==='homework')));
+ assert.ok(!result.days.some(day=>day.items.some(x=>x.kind==='homework')),'No unready homework in calendar');
 });
 test('Output shows official PDF links and safely escapes user and AI text',()=>{
  const html=familyAgendaMarkup(agenda(''),{today:'2026-10-28'});
@@ -94,7 +100,8 @@ test('Output shows official PDF links and safely escapes user and AI text',()=>{
  assert.match(html.days,/data-family-agenda-edit="red-sunday"/);
  assert.match(html.days,/Hele familien/);
  assert.match(html.undated,/Foreldremøte uten dato/);
- assert.doesNotMatch(html.days+html.undated,/Les sidene|Øv på gangetabellen|Gymtøy/);
+ assert.match(html.days,/Les sidene/);
+ assert.doesNotMatch(html.days+html.undated,/Øv på gangetabellen|Gymtøy/);
  const injected=familyAgendaItemHtml({kind:'family',title:'<img src=x onerror=alert(1)>',
   details:'<script>bad</script>',scope:'<unsafe>',
   activityId:'abc" onclick="evil()',source:{url:'javascript:alert(1)'}});
@@ -106,4 +113,31 @@ test('Output shows official PDF links and safely escapes user and AI text',()=>{
 test('Null or malformed calendar never invents an event date',()=>{
  assert.deepEqual(buildFamilyWeekAgenda({profiles:[red]}),{
   days:[],undated:[],missingProfiles:[],count:0});
+});
+
+test('Every calendar entry has an explicit readable source category and style',()=>{
+ const model=agenda(''),html=familyAgendaMarkup(model,{today:'2026-10-28'});
+ for(const [kind,label] of [
+  ['homework','Lekse'],['school','Praktisk fra ukeplanen'],
+  ['family','Aktivitet'],['municipal','Skoleruta']
+ ]){
+  assert.match(html.days+html.undated,new RegExp('kind-'+kind+'[^>]*'));
+  assert.ok(html.days.includes(label)||html.undated.includes(label),label+' is visible');
+ }
+ assert.match(html.days,/content-kind-homework/);
+ assert.match(html.days,/content-kind-practical/);
+ assert.match(html.days,/content-kind-activity/);
+ assert.match(html.days,/content-kind-municipal/);
+});
+test('Recurring homework occurs only on actual assigned weekdays, without inventing dates',()=>{
+ const planWithRepeat={...plan,homework:[
+  {subject:'Norsk',text:'Les ti minutter',repeatDays:['Mandag','Onsdag']},
+  {subject:'Engelsk',text:'Skriv gloser uten frist'}
+ ]};
+ const one=new Map([[red.id,planWithRepeat]]);
+ const sum=new Map([[red.id,profileSummary(red,planWithRepeat,calendar)]]);
+ const r=buildFamilyWeekAgenda({profiles:[red],summaries:sum,plans:one,calendars,activities:[],calendar});
+ const all=r.days.flatMap(day=>day.items).filter(item=>item.kind==='homework');
+ assert.deepEqual(all.map(x=>x.date),['2026-10-26','2026-10-28']);
+ assert.equal(r.undated.some(x=>x.kind==='homework'),false);
 });

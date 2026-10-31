@@ -108,6 +108,26 @@ test('One QR activates isolated child app and hides sibling content',async t=>{
  assert.ok(calls.some(c=>c.url.includes('action=child')&&c.headers.authorization==='Bearer '+session));
  assert.deepEqual(errors,[]);
 });
+test('Child uses distinct labels and shows only school-specific verified skolerute changes',async t=>{
+ const {page,errors}=await open(t,'?pair='+pair);
+ await page.route('**/api/school-calendar?**',route=>route.fulfill({
+  status:200,contentType:'application/json',body:JSON.stringify({
+   schoolId:'fagerholt',year:2026,week:44,sourceStatus:'live',
+   events:[{date:'2026-10-28',label:'Planleggingsdag – skolefri',
+    schoolFree:true,sfoClosed:false}]
+  })
+ }));
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#child-municipal-section').waitFor({state:'visible'});
+ assert.match(await page.locator('#child-municipal').innerText(),/Planleggingsdag/);
+ for(const [selector,label] of [
+  ['#child-homework','Lekse'],['#child-bag','Praktisk fra ukeplanen'],
+  ['#child-activities','Aktivitet'],['#child-municipal','Skoleruta']
+ ]){
+  assert.match(await page.locator(selector).innerText(),new RegExp(label));
+ }
+ assert.deepEqual(errors,[]);
+});
 test('Child session persists after reload without rescanning QR, and can be removed',async t=>{
  const {page,calls,errors}=await open(t,'?pair='+pair);
  await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();

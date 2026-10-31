@@ -39,14 +39,16 @@ test('Default calendar is five weekdays and can reveal weekend event without los
  assert.equal(open.count,compact.count+1);
  assert.equal(source().days[6].items.length,1);
 });
-test('No duplicate homework or packing anywhere in school event cards or undated summary',()=>{
+test('School notices, dated homework and activities remain separate, with packing outside calendar',()=>{
  const model=source(),all=[...model.days.flatMap(d=>d.items),...model.undated];
  assert.ok(all.some(e=>e.kind==='school'&&/Vaksinasjon/.test(e.title)));
  assert.ok(all.some(e=>e.kind==='school'&&/Foreldremøte/.test(e.title)));
  assert.ok(all.some(e=>e.kind==='family'&&/Tennis/.test(e.title)));
- assert.ok(all.every(e=>e.kind!=='homework'&&e.details!=='Husk utstyr'));
+ assert.ok(all.some(e=>e.kind==='homework'&&/Les til torsdag/.test(e.title)));
+ assert.ok(all.every(e=>e.details!=='Husk utstyr'));
  const html=familyAgendaMarkup(focusedFamilyCalendar(model,{showWeekend:true}));
- assert.doesNotMatch(html.days+html.undated,/Gymtøy|Svømmetøy|Les til torsdag/);
+ assert.doesNotMatch(html.days+html.undated,/Gymtøy|Svømmetøy/);
+ assert.match(html.days,/Les til torsdag/);
  assert.match(html.days,/Kilde: Skolens PDF/);
  assert.match(html.days,/Lagt inn av familien/);
  assert.match(html.undated,/Foreldremøte/);

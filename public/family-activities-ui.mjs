@@ -4,6 +4,7 @@
  */
 import {activityDayLabel,activityOccurrences,activityScopeLabel,activityTimeLabel,
  familyActivityWeekDates,normalizeActivityDraft,FAMILY_ACTIVITY_MAX} from './shared/family-activities.mjs';
+import {contentCategoryLabel} from './shared/content-categories.mjs';
 
 export const LOCAL_ACTIVITY_KEY='ukeplanen.family.activities.v1';
 const $=id=>document.getElementById(id);
@@ -63,9 +64,9 @@ export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar,onChang
   panel.innerHTML=[...groups].map(([date,list])=>
    '<div class="family-activity-day"><h3>'+esc(activityDayLabel(date))+'</h3>'+
    list.map(item=>
-    '<article class="family-activity-card">'+
+    '<article class="family-activity-card content-kind-activity">'+
      '<div class="family-activity-clock">'+esc(activityTimeLabel(item))+'</div>'+
-     '<div class="family-activity-details"><strong>'+esc(item.title)+'</strong>'+
+     '<div class="family-activity-details"><span class="content-type-label content-kind-activity">'+contentCategoryLabel('activity')+'</span><strong>'+esc(item.title)+'</strong>'+
      '<span>'+esc(activityScopeLabel(item,profiles))+
        (item.repeat_rule==='weekly'?' · Ukentlig ↻':'')+'</span>'+
      (item.location?'<p>📍 '+esc(item.location)+'</p>':'')+

@@ -4,6 +4,7 @@
  */
 import {DAYS,dayDate} from './calendar.mjs';
 import {practicalHighlights} from './practical-highlights.mjs';
+import {contentCategory} from './content-categories.mjs';
 import {schoolNoticeDate,sourcePdfLink} from './practical-digest.mjs';
 import {calendarHighlights} from './school-calendar-highlights.mjs';
 import {activityOccurrences,activityScopeLabel,activityTimeLabel} from './family-activities.mjs';
@@ -24,7 +25,7 @@ const provenance=(profile,plan,page)=>{
  const school=siteConfig.schools[profile.school];
  return {name:'Skolens nettside',url:safeLink(plan?.source)||safeLink(school?.homepage)};
 };
-const categoryRank={municipal:0,school:1,family:2};
+const categoryRank={municipal:0,school:1,homework:2,family:3};
 export function buildFamilyWeekAgenda({profiles=[],summaries=new Map(),plans=new Map(),
  calendars=new Map(),activities=[],calendar,childId=''}={}){
  if(!calendar||!Number.isInteger(calendar.year)||!Number.isInteger(calendar.week))
@@ -38,6 +39,22 @@ export function buildFamilyWeekAgenda({profiles=[],summaries=new Map(),plans=new
   if(!summaries.get(p.id)?.ready)missingProfiles.push(p.name);
  }
  const selectedPlans=new Map(visible.map(p=>[p.id,plans.get(p.id)]));
+ // Only confirmed date-bound homework appears on the calendar. Never assign
+ // an invented weekday to an undated lesson; one repeating day is one entry.
+ for(const p of visible){
+  const summary=summaries.get(p.id),plan=plans.get(p.id);
+  if(!summary?.ready||!Array.isArray(summary.tasks))continue;
+  for(const task of summary.tasks){
+   const weekday=task.repeatDay||task.dueDay;
+   if(!DAYS.includes(weekday))continue;
+   const date=dates[DAYS.indexOf(weekday)];
+   if(!range.has(date))continue;
+   items.push({key:'homework|'+p.id+'|'+task.index,
+    kind:'homework',category:contentCategory('homework'),date,title:[task.subject||'',task.text||''].filter(Boolean).join(': '),
+    childId:p.id,scope:p.name,details:task.repeatDay?'Daglig oppgave':'Leveres / gjøres '+weekday.toLowerCase(),
+    time:null,checked:task.checked===true,source:provenance(p,plan),important:false});
+  }
+ }
  for(const [i,note] of practicalHighlights({profiles:visible,summaries,plans:selectedPlans,
   calendar,focus:'week'}).entries()){
   const p=visible.find(x=>x.id===note.id);
@@ -46,7 +63,7 @@ export function buildFamilyWeekAgenda({profiles=[],summaries=new Map(),plans=new
   if(!p||note.kind==='gear')continue;
   const date=schoolNoticeDate(note,calendar.year,calendar.week);
   const source=provenance(p,plans.get(p.id),note.sourcePage);
-  items.push({key:'practical|'+p.id+'|'+i,kind:'school',date:date&&range.has(date)?date:null,
+  items.push({key:'practical|'+p.id+'|'+i,kind:'school',category:contentCategory('school'),date:date&&range.has(date)?date:null,
    title:trimDay(note.label),childId:p.id,scope:p.name,
    details:note.kind==='gear'?'Husk utstyr':note.kind==='event'?'Skoleaktivitet':'Praktisk å huske',
    source,time:null,checked:false,
@@ -54,7 +71,7 @@ export function buildFamilyWeekAgenda({profiles=[],summaries=new Map(),plans=new
  }
  for(const [i,item] of calendarHighlights({profiles:visible,calendars,calendar,focus:'week'}).entries()){
   if(!range.has(item.date))continue;
-  items.push({key:'municipal|'+item.schoolId+'|'+item.date+'|'+i,kind:'municipal',
+  items.push({key:'municipal|'+item.schoolId+'|'+item.date+'|'+i,kind:'municipal',category:contentCategory('municipal'),
    date:item.date,title:trimDay(item.label),childId:null,
    scope:siteConfig.schools[item.schoolId]?.name||item.name,
    details:item.sourceStatus==='snapshot'?
@@ -65,7 +82,7 @@ export function buildFamilyWeekAgenda({profiles=[],summaries=new Map(),plans=new
  }
  for(const event of activityOccurrences(activities,calendar.year,calendar.week)){
   if(event.child_id&&!visible.some(p=>p.id===event.child_id))continue;
-  items.push({key:'activity|'+event.key,kind:'family',date:event.date,
+  items.push({key:'activity|'+event.key,kind:'family',category:contentCategory('family'),date:event.date,
    title:event.title,childId:event.child_id||null,
    scope:activityScopeLabel(event,profileList),
    details:[event.location||'',event.responsible?'Ansvarlig: '+event.responsible:'',event.notes||'']
