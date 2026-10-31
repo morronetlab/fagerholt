@@ -10,6 +10,7 @@ import {quizItems,buildQuizRounds} from './shared/word-quiz-core.mjs';
 import {practiceKey,restorePractice,practiceSummary} from './shared/word-practice-core.mjs';
 import {taskFingerprint} from './shared/cloud-account.mjs';
 import {packingFingerprint} from './shared/packing-fingerprint.mjs';
+import {scopedPackingItems} from './barn/child-learning.mjs';
 import {expandHomework} from './shared/homework-view.mjs';
 import {practicalHighlights} from './shared/practical-highlights.mjs';
 import {priorityKey,applyPracticalPriority} from './shared/practical-priority.mjs';
@@ -332,7 +333,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const taskList=(p,items,message)=>items.length?
   '<ul class="family-checklist">'+items.map(x=>
     '<li><label><input type="checkbox" data-family-check="'+escape(p.id)+'" data-family-index="'+x.index+'" '+
-    (x.checked?'checked ':'')+'aria-label="Marker lekse ferdig for '+escape(p.name)+'"><span>'+
+    ((cloud?bagChecks.get(p.id)?.get(bagKey(p,x,now,day)):x.checked)?'checked ':'')+'aria-label="Marker lekse ferdig for '+escape(p.name)+'"><span>'+
     escape((x.subject?x.subject+': ':'')+x.text)+'</span></label></li>').join('')+'</ul>':
   '<p class="family-muted">'+escape(message)+'</p>';
  function childCard(p,s,now){
@@ -351,6 +352,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     (!cloud?'disabled ':'')+'aria-label="Pakket '+escape(x.label)+' for '+escape(p.name)+'">'+
     '<span>'+escape(x.label)+'</span></label></li>').join('')+'</ul>':
    '<p class="family-muted">Ingen ekstra utstyr denne dagen</p>';
+  const allPacking=plan?DAYS.map(day=>({day,items:scopedPackingItems(plan,p,day)})):[];
   const details=s.ready?[
    '<div class="family-child-progress"><div><span>Lekser i uke '+now.week+'</span><b>'+s.done+' / '+s.total+' fullført</b></div>',
    '<div class="family-progress-track" role="progressbar" aria-label="Fullført for '+escape(p.name)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><span style="width:'+pct+'%"></span></div></div>',
@@ -362,6 +364,9 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     '<div><h4>🎒 Pakk til '+(s.nextIndex==null?'neste skoledag':DAYS[s.nextIndex])+'</h4>'+
      (s.nextIndex==null?'<p class="family-muted">Neste uke er ikke hentet ennå</p>':
       packingList(s.bag,DAYS[s.nextIndex]))+'</div></div>',
+   '<details class="family-packing-week"><summary>🎒 Se og kryss av utstyr alle dager</summary>'+
+    allPacking.map(({day,items})=>'<section><h4>'+escape(day)+'</h4>'+
+      packingList(items,day)+'</section>').join('')+'</details>'+
    '<p class="family-word-state">'+(practice?'✦ Ordøving: '+practice.attempted+' / '+practice.total+(practice.weak?', '+practice.weak+' trenger øving':''):'✦ Ingen ordøving i denne ukeplanen')+'</p></div></details>'
   ].join(''):'<div class="family-not-ready" role="status">'+escape(
     plan?.status==='unpublished'||plan?.status==='unavailable'?
@@ -900,9 +905,9 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   if(!input||!cloud)return;
   const p=byId(input.dataset.familyBag),day=input.dataset.familyBagDay;
   if(!p)return;
-  const summary=getSummaries().summaries.get(p.id);
-  const list=calendar().upcoming?summary?.todayBag:summary?.bag;
-  const item=list?.find(x=>bagKey(p,x,calendar(),day)===input.dataset.familyBagKey);
+  const plan=plans.get(p.id);
+  const item=plan&&DAYS.includes(day)?scopedPackingItems(plan,p,day).find(x=>
+   bagKey(p,x,calendar(),day)===input.dataset.familyBagKey):null;
   if(!item)return;
   void updateBag(p,item,day,input.checked).catch(error=>{
    el('family-load-status').textContent='Pakkestatus ble ikke lagret: '+error.message;
