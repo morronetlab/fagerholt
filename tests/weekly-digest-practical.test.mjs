@@ -27,7 +27,7 @@ test('Vaccine and planning day from Praktisk å huske are verified independently
  assert.ok(evidence.some(item=>item.kind==='notice'&&/vaksinasjon/i.test(item.label)));
  assert.ok(evidence.some(item=>item.kind==='event'&&/planleggingsdag/i.test(item.label)));
  assert.ok(evidence.every(item=>item.sourcePage===1));
- const digest=buildWeeklyDigest({profiles:[profile],now,plans:new Map([
+ const digest=buildWeeklyDigest({profiles:[profile],now:now(),plans:new Map([
   ['fagerholt|3',{...plan,digestPracticalEvidenceVersion:DIGEST_PRACTICAL_EVIDENCE_VERSION,
    digestPracticalHighlights:evidence}]])});
  assert.equal(digest.readyPlans,1,'Important notices alone can make a partial family summary useful');
@@ -57,7 +57,7 @@ test('Source evidence is populated from original PDF once for legacy caches',()=
  assert.equal(needsCachedEvidenceRefresh(result.plan),false);
 });
 test('No proof in an attention audit means no sensitive school notice in email',()=>{
- const result=buildWeeklyDigest({profiles:[profile],now,plans:new Map([
+ const result=buildWeeklyDigest({profiles:[profile],now:now(),plans:new Map([
   ['fagerholt|3',{...plan,digestPracticalEvidenceVersion:DIGEST_PRACTICAL_EVIDENCE_VERSION,
     digestPracticalHighlights:[]}]])});
  assert.equal(result.readyPlans,0);
