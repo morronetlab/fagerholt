@@ -78,7 +78,10 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
    const day=DAYS.indexOf(note.day);
    return day>=Math.max(0,today)&&adultImpactType(note.text);
   });
-  const notices=allDays?s.weeklyNotices:[
+  // The full-week view must include structured, group-scoped notices too.
+  // profileSummary.weeklyNotices contains string notices and day notes, but
+  // legacy/AI structured notice objects exist only in plan.notices.
+  const notices=allDays?[...globalNotices,...(s.weeklyNotices||[])]:[
    ...globalNotices,
    ...(selected===today?s.todayNotes:s.notices||[])
     .map(text=>({day:DAYS[selected],text})),
