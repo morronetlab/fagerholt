@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {buildWeeklyDigest,nextSundayDigestWeek} from '../lib/weekly-digest.mjs';
 import {runWeeklyDigestDispatch,dispatchWindow,serviceConfigured,
- getPublicData} from '../lib/weekly-digest-dispatch.mjs';
+ makeDigestService,getPublicData} from '../lib/weekly-digest-dispatch.mjs';
 import {digestAvailable} from '../netlify/functions/digest-config.mjs';
 
 const now=()=>new Date('2026-11-01T17:45:00.000Z');
@@ -29,6 +29,48 @@ function blob(){
   db.set(key,val);return{modified:true};
  },async delete(key){db.delete(key);}};
 }
+test('New Supabase sb_secret_ authenticates with apikey only, legacy service_role keeps Bearer header',async()=>{
+ const calls=[];
+ const fetchImpl=async(url,options)=>{
+  calls.push({url,headers:options.headers});
+  return {ok:true,json:async()=>[]};
+ };
+ await makeDigestService({fetchImpl,env}).subscribers();
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].headers.apikey,env.SUPABASE_SERVICE_ROLE_KEY);
+ assert.equal(calls[0].headers.Authorization,undefined);
+ const legacyPayload=Buffer.from(JSON.stringify({role:'service_role'})).toString('base64url');
+ const legacyEnv={...env,SUPABASE_SERVICE_ROLE_KEY:'eyJ.'+legacyPayload+'.signature'};
+ await makeDigestService({fetchImpl,env:legacyEnv}).subscribers();
+ assert.equal(calls[1].headers.Authorization,'Bearer '+legacyEnv.SUPABASE_SERVICE_ROLE_KEY);
+});
+test('Canary mode only delivers to the specifically allowlisted opted-in user',async()=>{
+ const other='00000000-0000-4000-8000-000000000002',db=blob(),sent=[];
+ const targetEnv={...env,WEEKLY_DIGEST_CANARY_USER_ID:other};
+ const service={
+  subscribers:async()=>[{user_id:user},{user_id:other}],
+  memberFamilies:async()=>[{family_id:'00000000-0000-4000-8000-000000000099'}],
+  children:async()=>[{school_id:'fagerholt',grade:'3',group_name:''}],
+  user:async id=>({id,email:id===other?'canary@example.com':'unwanted@example.com',
+   email_confirmed_at:'2026-10-30'}),
+  isSubscribed:async()=>true
+ };
+ const res=await runWeeklyDigestDispatch({env:targetEnv,now,
+  serviceFactory:()=>service,storeFactory:async()=>db,
+  loadSources:async()=>({municipal:cal,plan}),
+  fetchImpl:async()=>({ok:true,json:async()=>({status:'verified',stale:false})}),
+  send:async message=>{sent.push(message);return 'delivered-id';}
+ });
+ assert.equal(res.sent,1);
+ assert.deepEqual(sent.map(m=>m.to),['canary@example.com']);
+ assert.equal(db.db.has('sent/2026-45/'+user),false);
+ assert.equal(db.db.has('sent/2026-45/'+other),true);
+ const invalid=await runWeeklyDigestDispatch({env:{...env,
+  WEEKLY_DIGEST_CANARY_USER_ID:'not-a-user-uuid'},now,
+  serviceFactory:()=>{throw Error('must not access protected data');}});
+ assert.equal(invalid.status,'invalid-canary');
+ assert.equal(invalid.sent,0);
+});
 test('Sunday digest produces next week with school-free and honest SFO uncertainty',()=>{
  const week=nextSundayDigestWeek(now());
  assert.deepEqual([week.year,week.week,week.today],[2026,45,'2026-11-02']);
