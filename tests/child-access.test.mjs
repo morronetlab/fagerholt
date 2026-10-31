@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createChildAccessHandler,PAIRING_VALID_MS,DEVICE_VALID_MS} from '../lib/child-access.mjs';
+import {taskFingerprint} from '../public/shared/task-fingerprint.mjs';
 const family='00000000-0000-4000-8000-000000000011';
 const child='00000000-0000-4000-8000-000000000022';
 const parent='00000000-0000-4000-8000-000000000033';
@@ -11,15 +12,31 @@ const env={SUPABASE_URL:'https://testproject.supabase.co',
  SUPABASE_SERVICE_ROLE_KEY:'sb_secret_'+'s'.repeat(40)};
 const jwt='eyJ.'+'a'.repeat(60)+'.sig';
 const now=()=>new Date('2026-10-31T15:00:00Z');
+const schoolPlan={year:2026,week:45,grade:'3',schoolId:'fagerholt',
+ parser:'ai',aiStatus:'ready',status:'ready',homework:[
+  {text:'Les kapittel 1',subject:'Norsk',group:'Rød',dueDay:'Torsdag'},
+  {text:'Regn side 12',subject:'Matte',group:'Blå',dueDay:'Fredag'}
+ ]};
+const taskKey=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:45,
+ task:schoolPlan.homework[0]});
+const otherGroupKey=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:45,
+ task:schoolPlan.homework[1]});
 const ok=(payload,status=200)=>new Response(payload==null?null:JSON.stringify(payload),{
  status,headers:{'Content-Type':'application/json'}});
-function fixture({authStatus=200}={}){
+function fixture({authStatus=200,planError=false}={}){
  const pairs=[],devices=[],calls=[],progress=[];let sequence=0;
  const secret=()=>String(++sequence).padStart(64,'a');
  const fetchImpl=async(raw,options={})=>{
   const url=new URL(raw),pathname=url.pathname,params=url.searchParams;
   calls.push({path:pathname,method:options.method||'GET',query:url.search,
    headers:options.headers,body:options.body&&JSON.parse(options.body)});
+  if(pathname==='/api/plan'){
+   assert.equal(url.origin,'https://skoleuka.no');
+   assert.equal(params.get('school'),'fagerholt');
+   assert.equal(params.get('grade'),'3');
+   assert.equal(params.get('nextWeek'),'1');
+   return planError?ok({error:'Ukeplan ikke klar'},503):ok(schoolPlan);
+  }
   if(pathname==='/auth/v1/user')return authStatus===200?ok({
    id:parent,email_confirmed_at:'2026-01-01T00:00:00Z',is_anonymous:false}):
    ok({code:'session_not_found'},authStatus);
@@ -211,7 +228,6 @@ test('Service-only activity read migration is recorded and does not broaden clie
  assert.doesNotMatch(sql,/grant\s+select[^;]+to\s+(?:anon|authenticated)/i);
 });
 
-const taskKey='a1b2c3d4e5f60708';
 async function childLogin(f){
  const invite=await (await f.request('create',{childId:child})).json();
  const redeemed=await f.request('redeem',{token:invite.link.split('pair=')[1]});
@@ -288,4 +304,26 @@ test('Homework migration keeps parents RLS and grants only service role the requ
  assert.match(sql,/d\.expires_at > now\(\)/i);
  assert.doesNotMatch(sql,/grant [^;]+ to (?:anon|authenticated)\s*;/i);
  assert.doesNotMatch(sql,/drop policy|disable row level security/i);
+});
+
+test('Server rejects fabricated keys and another school group before writing homework',async()=>{
+ const f=fixture(),token=await childLogin(f);
+ const fake=await f.request('set-progress',{year:2026,week:45,
+  taskKey:'deadbeefdeadbeef',completed:true},{token});
+ assert.equal(fake.status,403);
+ const wrongGroup=await f.request('set-progress',{year:2026,week:45,
+  taskKey:otherGroupKey,completed:true},{token});
+ assert.equal(wrongGroup.status,403);
+ const priorWeek=await f.request('set-progress',{year:2026,week:44,
+  taskKey,completed:true},{token});
+ assert.equal(priorWeek.status,400);
+ assert.equal(f.progress.length,0);
+ assert.equal(f.calls.filter(x=>x.path==='/rest/v1/homework_progress'&&x.method==='POST').length,0);
+});
+test('Server fails closed if authoritative school plan cannot be loaded',async()=>{
+ const f=fixture({planError:true}),token=await childLogin(f);
+ const attempt=await f.request('set-progress',{year:2026,week:45,
+  taskKey,completed:true},{token});
+ assert.equal(attempt.status,503);
+ assert.equal(f.progress.length,0);
 });
