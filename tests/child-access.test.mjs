@@ -368,7 +368,7 @@ test("Shared packing checks use the child's real group, can be undone, and rejec
   taskKey:packingKey,completed:true},{token})).status,401);
 });
 test('Packing policy migration limits guardian access and device stamp checks family and child',()=>{
- const sql=readFileSync(new URL('../supabase/migrations/20261031190000_packing_progress_sync.sql',import.meta.url),'utf8');
+ const sql=readFileSync(new URL('../supabase/migrations/20261031184318_packing_progress_sync.sql',import.meta.url),'utf8');
  assert.match(sql,/packing_progress enable row level security/i);
  assert.match(sql,/d\.child_id=new\.child_id/);
  assert.match(sql,/d\.family_id=new\.family_id/);
