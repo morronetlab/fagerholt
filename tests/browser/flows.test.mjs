@@ -317,6 +317,31 @@ test('Mobile family dashboard uses compact tabs, focused calendar day and fewer 
  assert.equal(await page.locator('.family-agenda').isVisible(),false);
  assert.deepEqual(errors,[]);
 });
+test('320px calendar shows five dates without scrolling and retains source details on demand',async t=>{
+ const {page,errors}=await openPage(t,{width:320,height:700});
+ await page.locator('#family-toggle').click();
+ await addFamilyChild(page,'Barn på mobil');
+ await page.locator('[data-family-mobile-tab="calendar"]').click();
+ await page.locator('#family-agenda-days .family-agenda-item:visible').first().waitFor();
+ const bounds=await page.locator('#family-mobile-days').evaluate(el=>{
+  const parent=el.getBoundingClientRect(),tiles=[...el.querySelectorAll('button')].map(x=>x.getBoundingClientRect());
+  return {count:tiles.length,allFit:tiles.every(t=>t.left>=parent.left-1&&t.right<=parent.right+1),
+   scroll:el.scrollWidth>el.clientWidth+1,dates:[...el.querySelectorAll('.family-mobile-day-date')]
+    .map(x=>x.textContent)};
+ });
+ assert.equal(bounds.count,5);
+ assert.equal(bounds.allFit,true,'All five date tiles must fit on a 320px screen');
+ assert.equal(bounds.scroll,false,'Date picker must not require sideways scrolling');
+ assert.ok(bounds.dates.every(d=>/^\\d{1,2}$/.test(d)),'Dates must be visible');
+ const card=page.locator('#family-agenda-days .family-agenda-item:visible').first();
+ assert.equal(await card.locator('.family-agenda-item-more').isVisible(),false);
+ assert.equal(await card.locator('.family-agenda-compact-icon').isVisible(),true);
+ assert.equal(await card.locator('.family-agenda-expand').isVisible(),true);
+ await card.locator('.family-agenda-expand').click();
+ assert.equal(await card.locator('.family-agenda-item-more').isVisible(),true);
+ assert.equal(await card.locator('.family-agenda-expand').getAttribute('aria-expanded'),'true');
+ assert.deepEqual(errors,[]);
+});
 test('Desktop family layout remains complete after the mobile navigation redesign',async t=>{
  const {page,errors}=await openPage(t,{width:1280,height:850});
  await page.locator('#family-toggle').click();
