@@ -314,7 +314,7 @@ test('Server rejects fabricated keys and another school group before writing hom
  const wrongGroup=await f.request('set-progress',{year:2026,week:45,
   taskKey:otherGroupKey,completed:true},{token});
  assert.equal(wrongGroup.status,403);
- const priorWeek=await f.request('set-progress',{year:2026,week:44,
+ const priorWeek=await f.request('set-progress',{year:2026,week:43,
   taskKey,completed:true},{token});
  assert.equal(priorWeek.status,400);
  assert.equal(f.progress.length,0);
