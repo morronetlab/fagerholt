@@ -278,7 +278,7 @@ test('Child progress queries and writes have one-child/family scoping, no bypass
  assert.doesNotMatch(json,/family_id|child_id|sb_secret_|device|Authorization/);
 });
 test('Homework migration keeps parents RLS and grants only service role the required actions',()=>{
- const sql=readFileSync(new URL('../supabase/migrations/20261101010000_child_progress_sync.sql',import.meta.url),'utf8');
+ const sql=readFileSync(new URL('../supabase/migrations/20261031180805_child_homework_progress_sync.sql',import.meta.url),'utf8');
  assert.match(sql,/alter column updated_by drop not null/i);
  assert.match(sql,/updated_by_device uuid/i);
  assert.match(sql,/grant select, insert, update on public\.homework_progress to service_role/i);
