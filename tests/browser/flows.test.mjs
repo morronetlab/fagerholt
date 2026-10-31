@@ -251,7 +251,7 @@ test('V2 family overview combines two children and keeps completion independentl
  assert.equal(await page.locator('#family-reminders').isVisible(),true);
  await page.locator('[data-family-focus="week"]').click();
  assert.equal(await page.locator('[data-family-focus="week"]').getAttribute('aria-pressed'),'true');
- await page.locator('#family-reminders').getByText(/Gymtøy/).waitFor({state:'visible'});
+ await page.locator('#family-reminders').getByText(/Gymtøy/).first().waitFor({state:'visible'});
  assert.match(await page.locator('#family-reminders').innerText(),/Gymtøy/);
  assert.doesNotMatch(await page.locator('#family-reminders').innerText(),/Les en bok fra skolen/);
  await page.locator('[data-family-focus="today"]').click();
