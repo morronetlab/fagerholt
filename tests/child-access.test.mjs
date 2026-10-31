@@ -282,6 +282,10 @@ test('Homework migration keeps parents RLS and grants only service role the requ
  assert.match(sql,/alter column updated_by drop not null/i);
  assert.match(sql,/updated_by_device uuid/i);
  assert.match(sql,/grant select, insert, update on public\.homework_progress to service_role/i);
+ assert.match(sql,/d\.child_id = new\.child_id/i);
+ assert.match(sql,/d\.family_id = new\.family_id/i);
+ assert.match(sql,/d\.revoked_at is null/i);
+ assert.match(sql,/d\.expires_at > now\(\)/i);
  assert.doesNotMatch(sql,/grant [^;]+ to (?:anon|authenticated)\s*;/i);
  assert.doesNotMatch(sql,/drop policy|disable row level security/i);
 });
