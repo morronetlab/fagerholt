@@ -436,6 +436,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   activityUI.render();
   renderAgenda(now,summaries);
   el('family-add').disabled=profiles.length>=FAMILY_MAX_PROFILES;
+  el('family-mobile-add').disabled=profiles.length>=FAMILY_MAX_PROFILES;
   el('family-add').textContent=profiles.length>=FAMILY_MAX_PROFILES?'Maks seks barn':'+ Legg til barn';
   el('family-empty').hidden=profiles.length!==0;
   // Preserve manually expanded child details after a checkbox saves progress.
