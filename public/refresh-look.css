@@ -1,0 +1,49 @@
+/* Skoleuka – clearer onboarding and calmer individual school plans. */
+.welcome-start{grid-template-columns:1.15fr 1fr 1fr;gap:14px}
+.welcome-choice{padding:26px 23px 21px;border-radius:20px}
+.welcome-choice h2{font-size:21px}
+.welcome-choice>p:not(.welcome-helper){font-size:13px}
+.welcome-child-choice{background:linear-gradient(145deg,#f3f9ec,#fff);border-color:#d7e8c9}
+.welcome-button{min-width:0;text-decoration:none}
+.welcome-child-choice .welcome-choice-icon{background:#e7f3d7!important}
+.welcome-explain{grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}
+.welcome-explain>div{padding:14px 11px;background:#fff;border-radius:15px;border:1px solid #e4ede5}
+#app-view .plan-context{margin-top:15px;border-radius:17px;padding:13px 17px;
+ background:#fdfefb;border-color:#d3e5da}
+#app-view .plan-context-name strong{font-size:18px}
+#app-view .hero{border-radius:24px;gap:19px}
+#app-view .hero-intro h1{font-size:clamp(29px,4.5vw,42px);letter-spacing:-1.6px}
+#app-view .weather{border-radius:17px;min-height:0}
+#app-view .day{transition:background .12s,transform .12s;border-radius:13px;min-height:71px;
+ border-color:#dceadf}
+#app-view .day.active{background:#206b55;color:#fff;box-shadow:0 5px 13px #246f4e34}
+#app-view .panel{border-radius:17px;border-color:#e2ece3;padding:24px}
+#app-view .panel-head{margin-bottom:15px}
+#app-view .columns{gap:16px}
+#app-view .panel h2{font-size:20px;color:#205d47}
+#app-view .items{gap:8px}
+#app-view .checkrow{border-radius:12px;background:#f9fcf9}
+#app-view .event{border-bottom-color:#e4eee6}
+.plan-day-activities{background:linear-gradient(115deg,#fff,#f9fcf7);border-color:#cce4d1!important}
+.plan-day-activity{display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:start;
+ padding:12px 4px;border-bottom:1px solid #e3ece5}
+.plan-day-activity:last-child{border-bottom:0}
+.plan-day-activity-time{color:#256c51;font-size:12px;font-weight:850}
+.plan-day-activity strong{font-size:15px;color:#285541;display:block}
+.plan-day-activity small,.plan-day-activity p{font-size:12px;color:#617f6f;display:block;margin:4px 0}
+#plan-back-family{background:#e8f6eb;border-color:#bddac7;color:#24614a}
+@media(max-width:900px){.welcome-start{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .welcome-choice-main{grid-column:1/-1}
+ .welcome-explain{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.welcome-start{grid-template-columns:1fr}
+ .welcome-choice-main{grid-column:auto}
+ .welcome-explain{grid-template-columns:1fr;gap:9px}
+ .welcome-explain>div{padding:12px 14px}
+ #app-view .plan-context{gap:10px;padding:13px}
+ #app-view .plan-context-actions{flex-wrap:wrap}
+ #app-view .hero{margin-top:13px}
+ #app-view .hero-intro h1{font-size:31px}
+ #app-view .panel{padding:18px 16px}
+ #app-view .day{min-height:64px}
+ .plan-day-activity{grid-template-columns:75px 1fr}
+}
