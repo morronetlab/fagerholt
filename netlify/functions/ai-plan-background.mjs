@@ -3,6 +3,7 @@ import {siteConfig} from '../../public/site-config.mjs';
 import {pdfPages} from './plan.mjs';
 import {interpretPdfWithAI} from '../../lib/ai-plan.mjs';
 import {auditPracticalSource} from '../../lib/practical-source-audit.mjs';
+import {DIGEST_PRACTICAL_EVIDENCE_VERSION,verifyPracticalDigestHighlights} from '../../lib/digest-practical-evidence.mjs';
 import {recordSourceAlert} from '../../lib/issue-report-core.mjs';
 import {aiConfigured,cacheKey,digestPdf,openAIStore,validSignature,releaseJob,failureKey} from '../../lib/ai-runtime.mjs';
 import {getSchool,validGradeCode,isSchoolSectionUrl} from '../../lib/schools.mjs';
@@ -56,7 +57,11 @@ export function createAIBackgroundHandler({fetchImpl=fetch,storeFactory=openAISt
        console.warn('ukeplan.critical_pdf_audit',JSON.stringify({
          school:school.id,grade,year,week,...sourceAudit
        }));
-     await store.setJSON(key,{...normalized,sourceAudit,schoolId:school.id,schoolName:school.name,createdAt:new Date().toISOString(),model:env.OPENAI_MODEL||'gpt-4.1-mini',pdfSizeBytes:bytes.length,pdfPageCount:pages.length||null});
+     const digestPracticalHighlights=verifyPracticalDigestHighlights({...normalized,schoolId:school.id},pages);
+     await store.setJSON(key,{...normalized,sourceAudit,
+       digestPracticalEvidenceVersion:DIGEST_PRACTICAL_EVIDENCE_VERSION,digestPracticalHighlights,
+       schoolId:school.id,schoolName:school.name,createdAt:new Date().toISOString(),
+       model:env.OPENAI_MODEL||'gpt-4.1-mini',pdfSizeBytes:bytes.length,pdfPageCount:pages.length||null});
      // A source audit alert is diagnostic, not a fabricated user-facing notice.
      // Storage failures must not prevent the verified plan from being served.
      if(sourceAudit.status==='attention')try{

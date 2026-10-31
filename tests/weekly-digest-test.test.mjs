@@ -87,12 +87,12 @@ test('Upgraded HTML can be tested once even when the previous template was sent 
  assert.equal(first.status,202);
  assert.equal(mail.length,1);
  assert.match(mail[0].html,/<!doctype html>/);
- assert.match(mail[0].idempotencyKey,/skoleuka-test-rich-html-v3-/);
+ assert.match(mail[0].idempotencyKey,/skoleuka-test-rich-html-v4-/);
  assert.notEqual(mail[0].idempotencyKey,'skoleuka-test-2026-10-31-'+userId);
  assert.equal((await p.handler(req())).status,429);
  assert.equal(mail.length,1);
  assert.equal(store.map.has('sent/test-mail/'+userId),true);
- assert.equal(store.map.has('sent/test-mail/rich-html-v3/'+userId),true);
+ assert.equal(store.map.has('sent/test-mail/rich-html-v4/'+userId),true);
 });
 test('Provider failure is an error and releases claim so user can retry',async()=>{
  const store=storage();let fails=0;

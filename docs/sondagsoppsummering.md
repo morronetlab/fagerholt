@@ -86,3 +86,11 @@ Ved manglende PDF for ett trinn viser e-posten en presis melding og lenker til t
 Søndagsplanen sjekkes hvert kvarter 17:00–20:45 UTC, men selve utsendingsvinduet begrenses fortsatt til lokal søndag kl. 18–21. Ny test av den korrigerte e-postmalen bruker malversjonen `rich-html-v3` og forstyrrer ikke tidligere sendemarkører. Før normal utrulling kontrolleres både 3. trinns lekser mot PDF-kilden og 7. trinns eventuelt senere publisering.
 
 Ved `sourceAudit: attention` kan kun lekser som er individuelt kontrollert mot original-PDF-ens tekstlag inngå i en delvis oppsummering. Gamle AI-poster uten kildepeker må ha en tilstrekkelig presis og lokal tekstmatch i dokumentet. Ikke-verifiserte lekser utelates, og en ikke dokumentert frist vises ikke som bekreftet. Den uavklarte viktige beskjeden markeres tydelig både i HTML og ren tekst, uten at beskjeden gjettes. Ukeplaner med ingen pålitelige detaljer regnes fortsatt som ikke klare.
+
+## «Praktisk å huske» i e-posten (PR #76)
+
+Den samme `practicalHighlights`-listen som familievisningen bruker, danner kandidater til e-postens «Viktig å huske». Ulike typer informasjon kan inngå: planleggingsdag/skolefri, endret oppmøte, vaksinasjon som er oppgitt offentlig for klassen, spesielle aktiviteter og særskilt utstyr. Beskjeder settes høyt i e-posten foran lekser, og kommunal skolerute vises tidlig.
+
+**Hvert enkelt punkt** i e-posten skal kunne sammenholdes med tekstlaget i den originale PDF-en. Til hver ferdigbehandlet PDF lagres en kort, kildekontrollert liste `digestPracticalHighlights` i AI-cache. Gamle cachedata etterkontrolleres uten ny AI-kjøring. Når global `sourceAudit` har status `attention`, inkluderes fortsatt hver enkelt verifisert praktisk beskjed. Ikke-kontrollerte kandidater utelates, mens advarselen om ufullstendig kildekontroll blir stående. Et automatisk forbud mot ordet «vaksine» er fjernet for klassevis, offentlig skoleinformasjon; ingen private elevprofiler eller individuelle medisinske data føres inn i e-posten. Original-PDF-en har alltid forrang.
+
+Den nye varianten bruker testmal-id `rich-html-v4` for at forelderen skal kunne sende én ny testmail selv om forrige mal ble testet samme dag. Den eksisterende 24-timerssperren for den samme malversjonen gjelder fortsatt.
