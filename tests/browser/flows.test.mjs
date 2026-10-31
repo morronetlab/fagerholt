@@ -256,6 +256,18 @@ test('Header Ukeplan opens an existing child and reloading its plan stays on tha
  assert.deepEqual(errors,[]);
 });
 
+test('An explicitly selected welcome page survives reload even when family profiles exist',async t=>{
+ const {page,errors}=await openPage(t);
+ await page.locator('#family-toggle').click();
+ await addFamilyChild(page,'Barn med egen profil');
+ await page.locator('#nav-home').click();
+ await page.locator('#welcome-view').waitFor({state:'visible'});
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#welcome-view').waitFor({state:'visible'});
+ assert.equal(await page.locator('#family-view').isVisible(),false);
+ assert.deepEqual(errors,[]);
+});
+
 test('V2 family overview combines two children and keeps completion independently',async t=>{
  // Friday before the family dashboard cutoff: homework due Friday is visible
  // in the "I dag" checklist, so it can be checked and unchecked per child.
