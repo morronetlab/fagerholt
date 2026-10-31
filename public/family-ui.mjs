@@ -3,7 +3,7 @@ import {siteConfig} from './site-config.mjs';
 import {initChildPairingUI} from './child-pairing-ui.mjs';
 import {activityOccurrences} from './shared/family-activities.mjs';
 import {initFamilyActivitiesUI} from './family-activities-ui.mjs';
-import {familyWeekCalendar,DAYS} from './shared/calendar.mjs';
+import {familyWeekCalendar,schoolCalendar,DAYS} from './shared/calendar.mjs';
 import {FAMILY_STORAGE_KEY,FAMILY_MAX_PROFILES,readFamily,familyDocument,putProfile,profileSummary,
  familyHighlights,schoolDayIndices,childProgressKey} from './shared/family-core.mjs';
 import {quizItems,buildQuizRounds} from './shared/word-quiz-core.mjs';
@@ -19,6 +19,7 @@ import {practicalDigest} from './shared/practical-digest.mjs';
 import {calendarHighlights} from './shared/school-calendar-highlights.mjs';
 import {buildFamilyWeekAgenda} from './shared/family-week-agenda.mjs';
 import {focusedFamilyCalendar} from './shared/family-calendar-viewport.mjs';
+import {buildTomorrowBriefing} from './shared/tomorrow-briefing.mjs';
 import {initFamilyMobileUI} from './family-mobile.mjs';
 import {familyAgendaMarkup,familyAgendaItemHtml} from './shared/family-week-agenda-html.mjs';
 import {importantFamilyNotices} from './shared/family-important-notices.mjs';
@@ -77,7 +78,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const pendingJobs=new Map(),pollTimers=new Map(),autoRetries=new Map();
  const priorityStates=new Map(),priorityTimers=new Map();
  let run=0,editing=null,gradeRun=0,lastPlanCheckAt=0,loadedWeekKey=null,showAllHighlights=false;
- let agendaChildId='',showWeekend=false;
+ let agendaChildId='',showWeekend=false,showAllTomorrow=false,lastTomorrowBriefing=null;
  let expandedChildren=new Set();
  let reportCards=[];
  const AUTO_CHECK_MS=15*60_000, RETRY_COOLDOWN_MS=5*60_000+5000;
@@ -301,6 +302,36 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    'Vis komplette skolebeskjeder · '+notices.remaining+' flere viktige':
    'Vis alle praktiske beskjeder og ekstra utstyr';
  }
+ function renderTomorrowBriefing(now,summaries,fullAgenda){
+  const section=el('family-tomorrow-brief');
+  section.hidden=!profiles.length;
+  if(!profiles.length){lastTomorrowBriefing=null;return;}
+  const actualToday=schoolCalendar(new Date(),'Europe/Oslo').today;
+  const next=buildTomorrowBriefing({actualToday,calendar:now,agenda:fullAgenda,
+   profiles,summaries,activities:activityUI.getRows()});
+  if(lastTomorrowBriefing?.date!==next.date)showAllTomorrow=false;
+  lastTomorrowBriefing=next;
+  const count=next.items.length,completed=next.completed||0;
+  el('family-tomorrow-brief-date').textContent=next.label;
+  el('family-tomorrow-brief-count').textContent=
+   count+' punkt'+(count===1?'':'er')+(completed?' · '+completed+' ferdig':'');
+  const status=el('family-tomorrow-brief-notice');
+  if(status.textContent!==next.notice)status.textContent=next.notice||'';
+  const visible=showAllTomorrow?next.items:next.items.slice(0,4);
+  const icons={municipal:'🏫',school:'📌',family:'⚽',homework:'📚',packing:'🎒'};
+  setHtml('family-tomorrow-brief-items',visible.map(item=>{
+   const meta=[item.time||'',item.scope||'',item.checked?'✓ Ferdig':''].filter(Boolean).join(' · ');
+   return '<li class="kind-'+escape(item.kind)+(item.checked?' is-checked':'')+'">'+
+    '<span class="tomorrow-item-icon" aria-hidden="true">'+(icons[item.kind]||'📌')+'</span>'+
+    '<span class="tomorrow-item-body"><strong>'+escape(item.title)+'</strong>'+
+    '<small'+(item.checked?' class="is-done"':'')+'>'+escape(meta||'Skoleinformasjon')+'</small></span></li>';
+  }).join(''));
+  const more=el('family-tomorrow-brief-more');
+  more.hidden=count<=4;
+  more.setAttribute('aria-expanded',String(showAllTomorrow));
+  more.textContent=showAllTomorrow?'Vis færre':'Vis alle '+count+' punkter';
+  el('family-tomorrow-brief-calendar').hidden=!next.inDisplayedWeek;
+ }
  function renderAgenda(now,summaries){
   const filter=el('family-agenda-child'),selected=agendaChildId;
   const option='<option value="">Alle i familien</option>'+
@@ -334,6 +365,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const fullModel=agendaChildId?buildFamilyWeekAgenda({profiles,summaries,plans,calendars,
    activities:activityUI.getRows(),calendar:now,childId:''}):model;
   renderImportantNotices(fullModel);
+  renderTomorrowBriefing(now,summaries,fullModel);
   const pending=model.missingProfiles;
   el('family-agenda-missing').hidden=!pending.length;
   el('family-agenda-missing').textContent=pending.length?
@@ -709,7 +741,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const targetKey=weekKey(now);
   if(loadedWeekKey!==targetKey){
    loadedWeekKey=targetKey;plans.clear();autoRetries.clear();cloudChecks.clear();bagChecks.clear();
-   priorityStates.clear();showAllHighlights=false;
+   priorityStates.clear();showAllHighlights=false;showAllTomorrow=false;
    if(cloud)void syncCloud();
   }
   lastPlanCheckAt=Date.now();
@@ -837,6 +869,19 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   el('family-mobile-admin-toggle').setAttribute('aria-expanded',String(expanded));
  });
  el('family-empty-add').addEventListener('click',()=>openForm());
+ el('family-tomorrow-brief-more').addEventListener('click',()=>{
+  showAllTomorrow=!showAllTomorrow;render();
+ });
+ el('family-tomorrow-brief-calendar').addEventListener('click',()=>{
+  const briefing=lastTomorrowBriefing;
+  if(!briefing?.inDisplayedWeek)return;
+  if(briefing.weekend){showWeekend=true;render();}
+  mobileUI.selectView('calendar',{scroll:true});
+  if(briefing.weekend)mobileUI.showAllDays();
+  else mobileUI.selectCalendarDate(briefing.date);
+  if(!window.matchMedia('(max-width:700px)').matches)
+   el('family-agenda-title').scrollIntoView({behavior:'auto',block:'start'});
+ });
  el('family-mobile-important-more').addEventListener('click',()=>{
   const section=document.querySelector('#family-view .family-tomorrow');
   const expanded=section.classList.toggle('mobile-important-expanded');
