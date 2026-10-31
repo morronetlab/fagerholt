@@ -79,3 +79,9 @@
   to = "/.netlify/functions/source-health"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/digest-config"
+  to = "/.netlify/functions/digest-config"
+  status = 200
+  force = true
