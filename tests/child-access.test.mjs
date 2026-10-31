@@ -53,10 +53,11 @@ function fixture(){
      created_at:now().toISOString()});return ok(null,201);
    }
    if(options.method==='PATCH'){
-    const id=params.get('id')?.replace('eq.','');
-    const d=devices.find(x=>x.id===id);
+    const id=params.get('id')?.replace('eq.',''),hash=params.get('secret_hash')?.replace('eq.','');
+    const d=devices.find(x=>!x.revoked_at&&
+      (id?x.id===id:hash?x.secret_hash===hash:false));
     if(d)d.revoked_at=JSON.parse(options.body).revoked_at;
-    return ok(null,204);
+    return options.headers?.Prefer==='return=representation'?ok(d?[{id:d.id}]:[]):ok(null,204);
    }
    const hash=params.get('secret_hash')?.replace('eq.','');
    if(hash)return ok(devices.filter(x=>x.secret_hash===hash&&!x.revoked_at));
