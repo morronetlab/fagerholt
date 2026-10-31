@@ -11,7 +11,7 @@ const pdf='https://www.minskole.no/DynamicContent/Documents/uke45.pdf';
 const profile={school:'fagerholt',grade:'3',group:''};
 const user='00000000-0000-4000-8000-000000000001';
 const env={WEEKLY_DIGEST_SEND_ENABLED:'true',SUPABASE_URL:'https://qxejliyfgfeigvxsqupg.supabase.co',
- SUPABASE_SERVICE_ROLE_KEY:'s'.repeat(40),RESEND_API_KEY:'re_12345678901234567890123456789',
+ SUPABASE_SERVICE_ROLE_KEY:'sb_secret_'+'s'.repeat(40),RESEND_API_KEY:'re_12345678901234567890123456789',
  EMAIL_FROM:'Skoleuka <noreply@example.com>',URL:'https://skoleuk.no'};
 const cal={schoolId:'fagerholt',year:2026,week:45,sourceStatus:'snapshot',sourceUrl:source,
  schoolUrl:'https://www.minskole.no/fagerholt',checkedAt:'2026-10-30',
