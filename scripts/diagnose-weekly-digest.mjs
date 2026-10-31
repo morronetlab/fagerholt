@@ -2,6 +2,7 @@
 import {pdfPages} from '../netlify/functions/plan.mjs';
 import {auditPracticalSource} from '../lib/practical-source-audit.mjs';
 import {findPdfLinks} from '../lib/plan-core.mjs';
+import {markVerifiedHomework} from '../lib/homework-email-evidence.mjs';
 const origin='https://www.skoleuka.no';
 for (const grade of ['3','7']) {
   try {
@@ -24,6 +25,11 @@ for (const grade of ['3','7']) {
         const pages=await pdfPages(new Uint8Array(await pdfRes.arrayBuffer()));
         const audit=auditPracticalSource(plan,pages.map(p=>p.items.map(i=>i.text).join(' ')));
         console.log('DIGEST_AUDIT',JSON.stringify({grade,afterBackfill:audit}));
+        const annotated=markVerifiedHomework(plan,pages);
+        console.log('DIGEST_HOMEWORK',JSON.stringify({grade,count:annotated.length,
+         verified:annotated.filter(x=>x.digestSourceVerified).length,
+         hasQuote:annotated.map(x=>Boolean(x.sourceQuote)),
+         hasPage:annotated.map(x=>Number.isInteger(x.sourcePage))}));
       }
     }
     if(grade==='7'&&plan.status==='unpublished'&&plan.source){
