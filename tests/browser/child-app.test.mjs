@@ -74,7 +74,7 @@ test('One QR activates isolated child app and hides sibling content',async t=>{
  assert.equal(await page.locator('#child-install-box').isVisible(),true);
  assert.match(await page.locator('#child-source').innerText(),/Se originalen/);
  assert.ok(calls.some(c=>c.method==='POST'&&c.url==='/api/child-access'));
- assert.ok(calls.some(c=>c.url.includes('action=child')&&c.headers.Authorization==='Bearer '+session));
+ assert.ok(calls.some(c=>c.url.includes('action=child')&&c.headers.authorization==='Bearer '+session));
  assert.deepEqual(errors,[]);
 });
 test('Child session persists after reload without rescanning QR, and can be removed',async t=>{
