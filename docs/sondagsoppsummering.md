@@ -14,7 +14,7 @@ Denne innstillingen bruker Supabase Auth og `public.weekly_digest_subscriptions`
    - `SUPABASE_URL` – eksisterende prosjektadresse
    - `SUPABASE_SERVICE_ROLE_KEY` – hemmelig nøkkel, **aldri** publiserbar eller klienteksponert
    - `RESEND_API_KEY` – fra e-postleverandør
-   - `EMAIL_FROM` – verifisert avsenderadresse på eget domene, f.eks. `Skoleuka <varsler@skoleuk.no>`
+   - `EMAIL_FROM` – verifisert avsenderadresse på eget domene, f.eks. `Skoleuka <varsler@skoleuka.no>`
    - `WEEKLY_DIGEST_SEND_ENABLED=true` – **siste bryter**, skal forbli `false` frem til alle testene er godkjent.
 4. Konfigurer SPF, DKIM og eventuelt DMARC for domenet hos avsenderleverandøren. Test levering til egen bekreftet foreldrekonto før utsending til andre.
 5. Kontroller at Netlify viser `sunday-digest` som Scheduled Function med tidsplan. Den kjøres hver 15. minutt søndag 17:00–18:45 UTC, altså omtrent kl. 18–20 norsk vintertid og kl. 19–21 sommertid.

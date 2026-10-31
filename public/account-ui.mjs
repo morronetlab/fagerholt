@@ -49,6 +49,7 @@ export function initAccountUI({familyUI}){
   const section=$('account-digest-settings'),checkbox=$('account-digest-optin');
   section.hidden=!client?.isSignedIn()||!familyId;
   checkbox.disabled=true;
+  $('account-digest-send-test').disabled=true;
   if(section.hidden)return;
   try{
    const [config,enabled]=await Promise.all([
@@ -59,6 +60,7 @@ export function initAccountUI({familyUI}){
    if(seq!==digestRequest)return;
    checkbox.checked=enabled;
    checkbox.disabled=!config.available;
+   $('account-digest-send-test').disabled=!config.available||!enabled;
    $('account-digest-availability').textContent=config.available?
     'Utsendingen er aktiv. Oppsummeringen sendes søndag kveld når neste ukes kilder er tilgjengelige.':
     'E-postutsending er foreløpig ikke aktivert av driftsansvarlig. Påmelding er sperret.';
@@ -80,6 +82,23 @@ export function initAccountUI({familyUI}){
   }catch(error){
    checkbox.checked=!desired;
    $('account-digest-status').textContent='Kunne ikke lagre valget: '+error.message;
+  }finally{void refreshDigestSettings();}
+ });
+ $('account-digest-send-test').addEventListener('click',async()=>{
+  const button=$('account-digest-send-test');
+  if(!client?.isSignedIn()||!familyId||!$('account-digest-optin').checked)return;
+  button.disabled=true;
+  $('account-digest-status').textContent='Sender testmail til den bekreftede e-postadressen din …';
+  try{
+   await client.ensureSession();
+   const res=await fetch('/api/digest-send-test',{method:'POST',cache:'no-store',headers:{
+    Authorization:'Bearer '+client.session.access_token,Accept:'application/json'
+   }});
+   const data=await res.json().catch(()=>null);
+   if(!res.ok)throw Error(data?.error||'Testutsending mislyktes.');
+   $('account-digest-status').textContent='E-postleverandøren har godtatt testmailen. Sjekk innboksen og søppelpost.';
+  }catch(error){
+   $('account-digest-status').textContent='Kunne ikke sende testmail: '+String(error.message).slice(0,170);
   }finally{void refreshDigestSettings();}
  });
  async function syncFamilies(preferred=null,{screen='signed'}={}){
