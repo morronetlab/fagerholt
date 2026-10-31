@@ -11,7 +11,9 @@ test('Family route is recovered before fallback plan selection at startup',()=>{
  const local=boot.indexOf('validSchool(savedSchool');
  assert.ok(route>=0&&local>route,
   'Family route must win over school/plan fallback while cloud auth restores');
- assert.match(boot,/history\.state\?\.\[NAV_KEY\]/);
+ assert.match(boot,/const initialRoute=savedRoute\(\)/);
+ assert.match(app,/const fromHistory=history\.state/);
+ assert.match(app,/sessionStorage\.getItem\(LAST_ROUTE_KEY\)/);
  assert.match(boot,/sessionStorage\.getItem\(LAST_VIEW_KEY\)/);
  assert.match(boot,/document\.documentElement\.classList\.add\('skoleuka-route-ready'\)/);
 });
