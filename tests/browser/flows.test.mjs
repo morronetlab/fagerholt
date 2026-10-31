@@ -1275,7 +1275,8 @@ test('Editing a family event in the combined week immediately updates the timeli
  await page.locator('#family-activity-save').click();
  await page.locator('#family-agenda-days').getByText('Fotball – ny tid').waitFor();
  assert.match(await page.locator('#family-agenda-days').innerText(),/Foreldremøte/);
- assert.doesNotMatch(await page.locator('#family-agenda-days').innerText(),/Les leksa/);
+ assert.match(await page.locator('#family-agenda-days').innerText(),/Les leksa/);
+ assert.equal(await page.locator('#family-agenda-days .family-agenda-item.content-kind-homework').count(),1);
  assert.match(await page.locator('#family-agenda-days').innerText(),/18:00/);
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-agenda-days').getByText('Fotball – ny tid').waitFor();
