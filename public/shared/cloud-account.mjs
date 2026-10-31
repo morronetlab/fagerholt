@@ -1,6 +1,7 @@
 /** Minimal Supabase Auth/PostgREST client for a static Netlify frontend.
  * Only the publishable/anon key is ever exposed. All access relies on RLS.
  */
+import {familyActivityWeekDates} from './family-activities.mjs';
 export const SESSION_KEY='ukeplanen.cloud.session.v1';
 export function validSupabaseConfig(config){
  try {
@@ -167,6 +168,29 @@ export class CloudAccount {
    method:'POST',auth:true,body:{user_id:user.id,enabled:true},
    headers:{Prefer:'resolution=merge-duplicates,return=representation'}});
   return true;
+ }
+ async activities(familyId,year,week){
+  const {start,end}=familyActivityWeekDates(year,week);
+  const base='select=id,family_id,child_id,title,occurs_on,start_time,end_time,repeat_rule,repeat_until,location,responsible,notes,created_at,updated_at'+
+   '&family_id=eq.'+encodeURIComponent(familyId);
+  const [single,weekly]=await Promise.all([
+   this.rows('family_activities',base+'&repeat_rule=eq.none&occurs_on=gte.'+start+
+    '&occurs_on=lte.'+end+'&order=occurs_on.asc&limit=100'),
+   this.rows('family_activities',base+'&repeat_rule=eq.weekly&occurs_on=lte.'+end+
+    '&or=(repeat_until.is.null,repeat_until.gte.'+start+')&order=occurs_on.asc&limit=100')
+  ]);
+  return [...(single||[]),...(weekly||[])];
+ }
+ createActivity(familyId,values){
+  return this.insert('family_activities',{...values,family_id:familyId});
+ }
+ updateActivity(familyId,id,values){
+  return this.patch('family_activities','id=eq.'+encodeURIComponent(id)+
+   '&family_id=eq.'+encodeURIComponent(familyId),values);
+ }
+ deleteActivity(familyId,id){
+  return this.remove('family_activities','id=eq.'+encodeURIComponent(id)+
+   '&family_id=eq.'+encodeURIComponent(familyId));
  }
  inviteParent(familyId,email){return this.rpc('invite_guardian',{p_family:familyId,p_email:email});}
  acceptInvite(code){return this.rpc('accept_guardian_invite',{p_token:code});}
