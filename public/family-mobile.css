@@ -1,0 +1,116 @@
+/* Mobile-first family overview. Desktop intentionally unaffected. */
+.family-mobile-nav,.family-mobile-days,.family-mobile-more{display:none}
+@media(max-width:700px){
+ #family-view{scroll-margin-top:8px}
+ #family-view .family-overview-top{
+  margin:4px 0 5px!important;padding:12px 14px!important;border-radius:14px;
+  flex-direction:row;align-items:center;gap:9px;min-height:0;
+ }
+ #family-view .family-overview-top h1{font-size:21px;line-height:1.15}
+ #family-view .family-overview-top .family-eyebrow,
+ #family-view .family-overview-subtitle{display:none}
+ #family-view .family-overview-stats{min-width:0!important;width:auto!important;
+  flex-direction:column!important;padding:6px 9px!important;gap:0!important;
+  align-items:center;white-space:nowrap}
+ #family-view .family-overview-stats strong{font-size:12px}
+ #family-view .family-overview-stats small{font-size:10px}
+ #family-view .family-overview-stats span{font-size:10px}
+ #family-view .family-overview-meta{margin:5px 3px 8px!important;gap:0}
+ #family-view .family-overview-meta span{font-size:10px}
+ #family-view #family-storage-label{display:none}
+ .family-mobile-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;
+  background:#eff5ef;padding:5px;border:1px solid #ddebe0;border-radius:14px;
+  position:sticky;top:5px;z-index:8;margin:8px 0 11px}
+ .family-mobile-nav button{border:0;border-radius:10px;min-width:0;min-height:45px;
+  padding:8px 4px;background:transparent;color:#456c58;font-size:12px;font-weight:850}
+ .family-mobile-nav button[aria-pressed=true]{color:#205d46;background:white;
+  box-shadow:0 2px 8px #244c3423}
+ .family-mobile-nav button:focus-visible,
+ .family-mobile-days button:focus-visible,.family-mobile-more:focus-visible{
+  outline:3px solid #b97b37;outline-offset:2px
+ }
+ #family-view[data-family-mobile-view=overview] > .family-agenda,
+ #family-view[data-family-mobile-view=overview] > #family-activity-section,
+ #family-view[data-family-mobile-view=calendar] > #family-children,
+ #family-view[data-family-mobile-view=calendar] > .family-tomorrow,
+ #family-view[data-family-mobile-view=calendar] > #family-activity-section,
+ #family-view[data-family-mobile-view=activities] > #family-children,
+ #family-view[data-family-mobile-view=activities] > .family-tomorrow,
+ #family-view[data-family-mobile-view=activities] > .family-agenda{display:none!important}
+ #family-view .family-bottom{margin-top:12px;padding:0 4px}
+ #family-view .family-bottom-note{font-size:10px}
+ #family-view #family-children{padding:10px 12px 12px!important;margin:0 0 10px}
+ #family-view .family-toolbar{margin:0 0 8px!important;gap:8px;align-items:center}
+ #family-view .family-toolbar h2{font-size:19px;line-height:1.2}
+ #family-view .family-toolbar p{display:none}
+ #family-view .family-toolbar-actions{display:flex;gap:5px}
+ #family-view .family-toolbar-actions button{min-height:35px;font-size:11px;padding:6px 8px}
+ #family-view .family-cards{grid-template-columns:1fr;gap:8px}
+ #family-view .family-child{border-radius:13px;box-shadow:none}
+ #family-view .family-child-heading{padding:9px 12px 3px;gap:9px}
+ #family-view .family-child-heading h3{font-size:16px;margin:0}
+ #family-view .family-child-heading p{font-size:11px;margin:2px 0}
+ #family-view .family-avatar{width:34px;height:34px;min-width:34px;font-size:15px}
+ #family-view .family-child-week{display:none}
+ #family-view .family-ai-label{font-size:10px;margin:2px 12px}
+ #family-view .family-child-progress{padding:5px 12px 0}
+ #family-view .family-child-progress>div:first-child{font-size:11px}
+ #family-view .family-progress-track{margin:5px 0 3px;height:5px}
+ #family-view .family-child-extra{margin:5px 12px!important}
+ #family-view .family-child-extra>summary{padding:7px 8px;font-size:11px}
+ #family-view .family-child-extra-content{padding:8px}
+ #family-view .family-child-columns{margin:5px 0;gap:6px}
+ #family-view .family-child-columns>div{padding:8px}
+ #family-view .family-child-actions{padding:7px 10px 10px;display:grid;
+  grid-template-columns:1fr auto;gap:6px;align-items:stretch}
+ #family-view .family-child-actions [data-family-open]{grid-column:1;grid-row:1;
+  min-height:38px;font-size:12px;padding:7px 10px;width:100%}
+ .family-mobile-more{display:block;grid-column:2;grid-row:1;min-height:38px;
+  border:1px solid #c9dccd;background:#fff;color:#2e6a50;
+  border-radius:9px;padding:6px 9px;font-size:11px;font-weight:800}
+ #family-view .family-child-actions [data-family-pair],
+ #family-view .family-child-actions [data-family-edit],
+ #family-view .family-child-actions [data-family-remove],
+ #family-view .family-child-actions [data-family-retry]{display:none}
+ #family-view .family-child.mobile-more-open .family-child-actions [data-family-pair],
+ #family-view .family-child.mobile-more-open .family-child-actions [data-family-edit],
+ #family-view .family-child.mobile-more-open .family-child-actions [data-family-remove],
+ #family-view .family-child.mobile-more-open .family-child-actions [data-family-retry]{
+  display:block;grid-column:1/-1;min-height:39px
+ }
+ #family-view .family-tomorrow{padding:12px 13px;margin:0 0 9px;border-radius:14px}
+ #family-view .family-important-heading{margin:0 0 8px;gap:10px}
+ #family-view .family-important-heading h2{font-size:19px}
+ #family-view .family-important-subtitle,.family-important-heading .family-eyebrow{display:none}
+ #family-view .family-important-icon{width:27px;height:27px;font-size:14px}
+ #family-view .family-important-cards{gap:6px}
+ #family-view .family-important-entry{padding:8px 9px;gap:7px}
+ #family-view .family-important-entry .family-agenda-item{padding:7px 8px}
+ #family-view .family-disclosure{margin-top:8px}
+ #family-view .family-disclosure>summary{font-size:12px;padding:10px}
+ #family-view .family-agenda{padding:13px 12px;margin:0 0 10px;border-radius:14px}
+ #family-view .family-agenda-top{gap:7px;align-items:center}
+ #family-view .family-agenda-top h2{font-size:21px}
+ #family-view .family-agenda-subtitle,#family-view .family-agenda-top .family-eyebrow{display:none}
+ #family-view .family-agenda-filter{font-size:11px}
+ #family-view .family-agenda-key{display:flex;flex-wrap:nowrap;gap:6px;
+  overflow-x:auto;scrollbar-width:thin;padding-bottom:5px;margin:10px 0 7px}
+ #family-view .family-agenda-key .content-type-label{flex-shrink:0;white-space:nowrap}
+ .family-mobile-days{display:flex;overflow-x:auto;gap:5px;margin:6px 0 11px;
+  padding-bottom:4px;scrollbar-width:thin}
+ .family-mobile-days button{border:1px solid #d5e5d8;min-height:40px;
+  padding:7px 10px;border-radius:9px;background:#fff;color:#34614c;
+  font-size:12px;font-weight:800;white-space:nowrap;flex-shrink:0}
+ .family-mobile-days button[aria-pressed=true]{background:#236b52;color:#fff;border-color:#236b52}
+ .family-mobile-day-count{font-size:10px;opacity:.76}
+ #family-view .family-agenda-day.family-mobile-day-hidden{display:none!important}
+ #family-view .family-agenda-days{display:block}
+ #family-view .family-agenda-day{padding:10px;gap:7px}
+ #family-view .family-agenda-day h3{font-size:14px}
+ #family-view .family-agenda-item{padding:9px 11px;margin:0 0 6px}
+ #family-view .family-agenda-footnote{font-size:10px;margin-top:9px}
+ #family-view .family-agenda-status{font-size:11px;margin-bottom:8px}
+ #family-view #family-activity-section{padding:13px 12px;margin:0 0 10px;border-radius:14px}
+ #family-view #family-activity-section .family-activity-head h2{font-size:20px}
+ #family-view #family-activity-section .family-activity-head p{display:none}
+}
