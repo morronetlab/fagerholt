@@ -8,6 +8,15 @@
 - Uten innlogging: kun lokal nettleserlagring (`ukeplanen.family.activities.v1`). Lokale aktiviteter overføres **ikke automatisk** til en familiekonto.
 - Med innlogging: kun Supabase/PostgREST via foreldrenes JWT og RLS, delt for alle foresatte som har tilgang til **samme familie**.
 
+## Status 31. oktober 2026 – rettelse for manglende tabell
+- Det var bare **ett** tilkoblet Supabase-prosjekt (`ukeplanen`), ingen separat staging-database.
+- PR #79 sin migrasjon ble kjørt via Supabase-migrasjonsverktøyet på dette prosjektet etter at feil om manglende `public.family_activities` ble rapportert. En ekstra `NOTIFY pgrst, 'reload schema'` er inkludert for Data API.
+- Kontroll etter migrasjon: tabell finnes, RLS aktiv, 4 policyer, `anon` har ikke SELECT/INSERT, `authenticated` har nødvendige SELECT/INSERT/DELETE/kolonneoppdateringer, og kan **ikke** oppdatere `family_id`.
+- Supabase sikkerhetsrådgiver ga ingen nye varsler for `family_activities`; øvrige varsler gjelder eksisterende, andre deler av databasen.
+- Transaksjonelle autorisasjonstester med simulerte JWT-kontekster ble utført og rullet tilbake; ingen testaktiviteter er lagret. Det gjenstår å teste samhandling mellom **to faktiske ulike foreldre-/familiekontoer**.
+- **PR er fortsatt draft, frontend ikke merget i main.** Bruk Netlify deploy-preview for ny test etter oppfriskning.
+- Ved senere opprettelse av stagingmiljø: migrasjonen må gjøres der også; statusen her betyr ikke at staging ble verifisert.
+
 ## Databasen – bevisst deploy-rekkefølge
 1. Kjør migrasjonen `supabase/migrations/20261031_family_activities_v1.sql` først i **staging/test** og kontroller migrasjonen manuelt.
 2. Verifiser RLS med *to forskjellige* innloggede foresatte i samme familie samt en tredje bruker uten medlemskap:
