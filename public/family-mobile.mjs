@@ -84,5 +84,10 @@ export function initFamilyMobileUI(){
  });
  paintTabs();
  return {refreshDays,view:()=>view,selectView,
+  selectCalendarDate:date=>{
+   const index=days().findIndex(el=>el.dataset.date===date);
+   if(index<0)return false;
+   day=String(index);save();refreshDays();return true;
+  },
   showAllDays:()=>{day='all';save();refreshDays();}};
 }
