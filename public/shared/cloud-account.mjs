@@ -151,6 +151,23 @@ export class CloudAccount {
   return this.request('/rest/v1/homework_progress?on_conflict=child_id,school_year,school_week,task_key',{
    method:'POST',body:values,auth:true,headers:{Prefer:'resolution='+(ignoreDuplicates?'ignore':'merge')+'-duplicates,return=representation'}});
  }
+ async weeklyDigestPreference(){
+  const data=await this.rows('weekly_digest_subscriptions','select=user_id,enabled');
+  return data?.[0]?.enabled===true;
+ }
+ async setWeeklyDigest(enabled){
+  await this.ensureSession();
+  const user=this.session.user;
+  if(!user?.id)throw Error('Kan ikke lagre før innloggingen er bekreftet.');
+  if(!enabled){
+   await this.remove('weekly_digest_subscriptions','user_id=eq.'+encodeURIComponent(user.id));
+   return false;
+  }
+  await this.request('/rest/v1/weekly_digest_subscriptions?on_conflict=user_id',{
+   method:'POST',auth:true,body:{user_id:user.id,enabled:true},
+   headers:{Prefer:'resolution=merge-duplicates,return=representation'}});
+  return true;
+ }
  inviteParent(familyId,email){return this.rpc('invite_guardian',{p_family:familyId,p_email:email});}
  acceptInvite(code){return this.rpc('accept_guardian_invite',{p_token:code});}
  deleteFamily(id){return this.rpc('delete_family',{p_family:id});}
