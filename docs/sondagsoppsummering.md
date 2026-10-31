@@ -50,3 +50,15 @@ Ukeplanen er kildegrunnlaget. E-postinnholdet skal ikke fylle inn manglende dato
 - Manuell produksjonstest med `WEEKLY_DIGEST_SEND_ENABLED=false` og deretter én testbruker med sann innmelding
 
 PR #70 er rettet mot `main`, men inneholder også endringene fra PR #69 inntil #69 er merget. **Merge #69 først**, og kontroller deretter at PR #70 bare viser de nye e-postendringene før den merges.
+
+## Sikker test med én mottaker (PR #71)
+
+Før ordinær sending, sett `WEEKLY_DIGEST_CANARY_USER_ID` til **UUID for testforelderens Supabase Auth-bruker**. Denne ID-en kan finnes under Supabase → Authentication → Users, men **ikke del ID eller hemmelige nøkler offentlig**. Om variabelen er satt til en ugyldig UUID, sendes ingen e-post. Hvis den er korrekt, blir kun akkurat denne kontoen vurdert – selv om andre foreldre har meldt seg på.
+
+Dette gjør det mulig å prøve produksjonsjobben søndag kveld med `WEEKLY_DIGEST_SEND_ENABLED=true` og **en eksplisitt begrenset mottakergruppe på én**. Kontroller at kontoen selv har slått på abonnementet i Min konto, at Resend viser én levering og at e-posten kommer frem. Slå av abonnementet og bekreft at tilhørende rad for denne brukeren forsvinner fra `weekly_digest_subscriptions`. Kontroller også at ingen andre er tilsendt e-post. De samme `sent/`-markørene hindrer flere like e-poster samme skoleuke.
+
+Før utsending til alle: slå `WEEKLY_DIGEST_SEND_ENABLED=false`, fjern `WEEKLY_DIGEST_CANARY_USER_ID` i Netlify, kontroller og gjennomfør en ny deploy, og aktiver vanlig utsending først etter en bevisst beslutning.
+
+`SUPABASE_SERVICE_ROLE_KEY` beholder sitt eksisterende navn i Skoleuka, men kan settes til en nyere `sb_secret_...` nøkkel. Denne sendes **kun i HTTP-headeren `apikey`**, aldri som `Authorization: Bearer`. Den eldre `service_role` JWT-en krever `Authorization: Bearer`. Bruk helst en dedikert ny servernøkkel som kan roteres separat, ikke den offentlige `sb_publishable_`-nøkkelen.
+
+**Viktig:** Scheduled Function er tidsstyrt, og normal utsending krever søndag kveld i Europe/Oslo. Vanlig manuell invokering utenfor sendetidsvinduet sender ingenting. For å teste mailleverandør og domenet isolert kan Resend-dashboardet brukes før søndagstesten av Skoleuka.
