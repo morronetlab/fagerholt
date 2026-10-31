@@ -345,7 +345,7 @@ test('Server fails closed if authoritative school plan cannot be loaded',async()
  assert.equal(f.progress.length,0);
 });
 
-test('Shared packing checks use the child's real group, can be undone, and reject forged keys',async()=>{
+test("Shared packing checks use the child's real group, can be undone, and reject forged keys",async()=>{
  const f=fixture(),token=await childLogin(f);
  const forged=await f.request('set-packing',{year:2026,week:45,
   taskKey:'deadbeefdeadbeef',completed:true},{token});
