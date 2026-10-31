@@ -18,7 +18,7 @@ const invitationsFromUrl=()=>{
 };
 export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudRestored=()=>false}){
  let client=null,accountReady=false,requestedEmail='',familyId=null,families=[],children=[],invitation=invitationsFromUrl(),nextCodeRequestAt=0;
- let currentScreen='login',gradeRun=0,restoring=true,digestRequest=0;
+ let currentScreen='login',gradeRun=0,restoring=true,digestRequest=0,onboardingIntent=false;
  const status=(msg,error=false)=>{$('account-message').textContent=msg||'';$('account-message').dataset.error=String(error);};
  const show=id=>{
   currentScreen=id;
@@ -26,16 +26,21 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
    section.hidden=section.dataset.accountScreen!==id;
   // E-post er innlogging for både nye og eksisterende foresatte. Vis
   // først onboarding-steg når vi vet at familien faktisk må settes opp.
-  const step=id==='signed'&&!familyId?2:id==='children'?3:id==='completed'?4:0;
+  const step=(id==='login'||id==='verify')&&onboardingIntent?1:
+   id==='signed'&&!familyId?2:id==='children'?3:id==='completed'?4:0;
   $('account-steps').hidden=!step;
   for(const el of $('account-steps').querySelectorAll('[data-onboard-step]')){
    el.classList.toggle('current',Number(el.dataset.onboardStep)===step);
    el.classList.toggle('done',Number(el.dataset.onboardStep)<step);
+   if(Number(el.dataset.onboardStep)===step)el.setAttribute('aria-current','step');
+   else el.removeAttribute('aria-current');
   }
-  $('account-heading').textContent=id==='login'?'Logg inn på Skoleuka':
+  $('account-heading').textContent=id==='login'?(onboardingIntent?'Kom i gang med Skoleuka':'Logg inn på Skoleuka'):
    id==='verify'?'Bekreft e-postadressen':id==='children'?'Legg til barna':
    id==='completed'?'Familien er klar!':id==='signed'&&!familyId?'Opprett familien din':
    id==='signed'?'Familieinnstillinger':'Familien på alle enheter';
+  // On phones the dialog scrolls internally; a screen change must start at its top.
+  $('account-panel').scrollTop=0;
  };
  const button=$('account-button');
  const unconfigured=()=>{
@@ -45,6 +50,9 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
   button.textContent='Min konto';
   $('account-user-email').textContent=client.session?.user?.email||requestedEmail||'Innlogget forelder';
   $('account-current-family').textContent=familyId&&families.find(f=>f.id===familyId)?.name||'Ingen familie valgt';
+  $('account-selected-family-row').hidden=!familyId;
+  $('account-family-picker-row').hidden=!familyId||families.length<2;
+  $('account-open-family').hidden=!familyId;
  }
  async function refreshDigestSettings(){
   const seq=++digestRequest;
@@ -111,7 +119,8 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
   $('account-family-picker').replaceChildren(new Option('Velg familie',''));
   for(const f of families)$('account-family-picker').add(new Option(f.name,f.id));
   $('account-family-picker').value=familyId||'';
-  $('account-empty-family').hidden=Boolean(familyId);
+  $('account-empty-family').hidden=Boolean(familyId)||Boolean(invitation);
+  $('account-invite-prompt').hidden=!invitation;
   $('account-family-tools').hidden=!familyId;
   $('account-invite-accept').hidden=!invitation;
   const owner=familyId&&families.find(f=>f.id===familyId)?.created_by===client.session?.user?.id;
@@ -137,10 +146,12 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
    item.append(title,info);$('onboard-children-list').append(item);
   }
   $('onboard-child-save').disabled=children.length>=6;
+  $('onboard-child-form').hidden=Boolean(children.length)||children.length>=6;
+  $('onboard-add-another').hidden=!children.length||children.length>=6;
   $('onboard-child-save').textContent=children.length>=6?'Maks seks barn':'+ Legg til barn';
   const local=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
   $('onboard-import-row').hidden=!local.length||!familyId;
-  $('onboard-children-next').textContent=children.length?'Fortsett →':'Gå til familieoversikten →';
+  $('onboard-children-next').textContent=children.length?'Fullfør oppsettet →':'Fortsett uten barn →';
   $('onboard-complete-description').textContent=children.length?
    children.length+' barn er lagt til. Nå kan dere følge skoleuka fra samme familiekonto.':
    'Familien er opprettet. Legg til barn fra familieoversikten når du ønsker.';
@@ -163,8 +174,9 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
  const panel=$('account-panel');
  let returnFocus=null,returnScrollY=0,returnToPage=true;
  let originalLockTop='';
- function open(){
+ function open({onboarding=false}={}){
   if(panel.open)return;
+  if(onboarding)onboardingIntent=true;
   returnFocus=document.activeElement;
   returnScrollY=window.scrollY;
   returnToPage=true;
@@ -210,7 +222,13 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
  $('account-request-form').addEventListener('submit',async e=>{
   e.preventDefault();
   const email=$('account-email').value.trim(),submit=$('account-send-code');submit.disabled=true;
-  try{await client.sendCode(email);requestedEmail=email;nextCodeRequestAt=Date.now()+60000;show('verify');status('Vi har sendt en engangskode til '+email+'.');}
+  try{
+   await client.sendCode(email);requestedEmail=email;nextCodeRequestAt=Date.now()+60000;
+   $('account-verify-email').textContent=email;
+   $('account-code').value='';show('verify');
+   status('Sjekk e-posten din for innloggingskoden.');
+   $('account-code').focus({preventScroll:true});
+  }
   catch(error){status(error.message,true);}finally{submit.disabled=false;}
  });
  $('account-verify-form').addEventListener('submit',async e=>{
@@ -237,13 +255,13 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
   }catch(error){status('Kunne ikke sende ny kode: '+error.message,true);}
   finally{submit.disabled=false;}
  });
- $('account-back-email').addEventListener('click',()=>{show('login');status('');});
+ $('account-back-email').addEventListener('click',()=>{show('login');status('');$('account-email').focus({preventScroll:true});});
  $('account-family-create').addEventListener('submit',async e=>{
   e.preventDefault();const submit=$('account-create');submit.disabled=true;
   try{
    const id=await client.createFamily($('account-family-name').value.trim());
    await syncFamilies(id,{screen:'children'});
-   status('Familien er opprettet. Legg til barna, eller fortsett uten barn.');
+   status('Familien er opprettet. Legg til det første barnet, eller fortsett uten barn.');
    $('onboard-child-name').focus();
   }catch(error){status(error.message,true);}finally{submit.disabled=false;}
  });
@@ -363,10 +381,15 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
    if(!created?.[0]?.id)throw Error('Serveren bekreftet ikke barneprofilen.');
    await syncFamilies(familyId,{screen:'children'});
    $('onboard-child-name').value='';$('onboard-child-group').value='';
-   status('Barnet er lagt til. Du kan legge til flere, eller fortsette.');
-   $('onboard-child-name').focus();
+   status('Barnet er lagt til. Du kan legge til flere, eller fullføre oppsettet.');
+   $('onboard-children-next').focus({preventScroll:true});
   }catch(error){status('Kunne ikke legge til barnet: '+error.message,true);}
   finally{submit.disabled=children.length>=6;}
+ });
+ $('onboard-add-another').addEventListener('click',()=>{
+  $('onboard-child-form').hidden=false;
+  $('onboard-add-another').hidden=true;
+  $('onboard-child-name').focus({preventScroll:true});
  });
  $('onboard-children-back').addEventListener('click',()=>show('signed'));
  $('onboard-children-next').addEventListener('click',()=>{show('completed');status('');});
