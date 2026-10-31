@@ -70,3 +70,19 @@ og import uten å overstyre foreldres eksplisitte avmerking.
 
 Fysisk iOS/Android- og reell foresatt-til-barn-test er ikke erstattet
 av CI-testene; gjennomfør punktene over etter produksjonsutrulling.
+
+## Avgrensning / sikkerhetsoppfølging før bred utrulling
+En 16-tegns `taskKey` er et deterministisk fingeravtrykk, ikke et autentisert
+bevis på at oppgaven finnes i den publiserte PDF-en. Den nåværende
+`set-progress`-ruten begrenser skriving til en gyldig, ikke-tilbakekalt
+enhet for **eget barn**, nærliggende skoleuker og maks ca. 100 ulike nøkler
+per uke, men en modifisert klient kan likevel sende oppdiktede leksenøkler
+for dette barnet. Antallsgrensen kontrolleres ikke atomisk ved parallell
+skriving. Dette gir ingen direkte tilgang til søsken eller andre familier,
+men er en integritetsbegrensning. Ikke beskriv rutens formatkontroll som
+serververifisering mot faktiske skolelekser.
+
+Før løsningen tilbys mange familier: innfør serververifiserte oppgavebevis
+bundet til skole, trinn, uke, gruppe og oppgave, eller en autoritativ
+server-side allowlist fra validert ukeplan. Test også parallell skriving
+og ratebegrensning, uten å overføre ekstra rettigheter til barneenheter.
