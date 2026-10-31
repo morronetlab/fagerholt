@@ -300,6 +300,49 @@ test('An explicitly selected welcome page survives reload even when family profi
  assert.deepEqual(errors,[]);
 });
 
+test('Tomorrow overview shows Thursday homework and packing, then opens that exact calendar day',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.route('**/api/plan?**',route=>{
+  const plan=basePlan('2');
+  plan.homework=[{subject:'Norsk',text:'Les 10 minutter på torsdag',dueDay:'Torsdag'}];
+  plan.days.Torsdag.bring=[{label:'Drikkeflaske'}];
+  return reply(route,plan);
+ });
+ await page.locator('#family-toggle').click();
+ await addFamilyChild(page,'Ailin');
+ await page.locator('#family-tomorrow-brief').waitFor({state:'visible'});
+ await page.locator('#family-tomorrow-brief-items').getByText(/Les 10 minutter/).waitFor();
+ await page.locator('#family-tomorrow-brief-items').getByText(/Drikkeflaske/).waitFor();
+ assert.match(await page.locator('#family-tomorrow-brief-date').innerText(),/torsdag 29. oktober/i);
+ assert.equal(await page.locator('#family-tomorrow-brief-count').innerText().then(x=>x.includes('punkt')),true);
+ await page.locator('#family-tomorrow-brief-calendar').click();
+ assert.equal(await page.locator('[data-family-mobile-tab="calendar"]').getAttribute('aria-pressed'),'true');
+ assert.equal(await page.locator('#family-tomorrow-brief').isVisible(),false);
+ assert.equal(await page.locator('#family-agenda-days .family-agenda-day:visible').count(),1);
+ assert.equal(await page.locator('#family-agenda-days .family-agenda-day:visible').getAttribute('data-date'),'2026-10-29');
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-agenda-days .family-agenda-day[data-date="2026-10-29"]').waitFor({state:'visible'});
+ assert.equal(await page.locator('#family-agenda-days .family-agenda-day:visible').count(),1);
+ assert.deepEqual(errors,[]);
+});
+test('Friday afternoon: tomorrow means Saturday family activities, never next Monday lessons',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844,mockNow:'2026-10-30T14:00:00Z'});
+ await page.locator('#family-toggle').click();
+ await addFamilyChild(page,'Ailin');
+ await page.locator('[data-family-mobile-tab="activities"]').click();
+ await page.locator('#family-activity-add').click();
+ await page.locator('#family-activity-name').fill('Lørdagsfotball');
+ await page.locator('#family-activity-date').fill('2026-10-31');
+ await page.locator('#family-activity-start').fill('12:00');
+ await page.locator('#family-activity-save').click();
+ await page.locator('[data-family-mobile-tab="overview"]').click();
+ await page.locator('#family-tomorrow-brief-items').getByText('Lørdagsfotball').waitFor();
+ assert.match(await page.locator('#family-tomorrow-brief-date').innerText(),/lørdag 31. oktober/i);
+ assert.doesNotMatch(await page.locator('#family-tomorrow-brief-items').innerText(),/Mandagslekse|Neste mandag/);
+ assert.equal(await page.locator('#family-tomorrow-brief-calendar').isVisible(),false);
+ assert.match(await page.locator('#family-tomorrow-brief-notice').innerText(),/annen uke/);
+ assert.deepEqual(errors,[]);
+});
 test('Mobile family overview shows two compact tappable children, hides administration and keeps desktop intact',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.locator('#family-toggle').click();
