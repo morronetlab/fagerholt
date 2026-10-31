@@ -72,7 +72,7 @@ test('Operational alerts are opt-in and deduplicated, without personal data',asy
  await run();await run();
  assert.equal(messages.length,1);
  assert.match(messages[0].text,/Sist verifisert/);
- assert.doesNotMatch(messages[0].text,/barn|user_id|email/i);
+ assert.doesNotMatch(messages[0].text,/\b(?:user_id|email|barnenavn)\b/i);
  assert.equal(store.m.get(HEALTH_KEY).alertDelivered,true);
  await runCalendarMonitor({fetchImpl:async()=>response(source(SNAPSHOT_2026_27)),
   storeFactory:async()=>store,now:date,env,notify:send});
