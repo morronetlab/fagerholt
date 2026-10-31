@@ -163,6 +163,34 @@
         <a id="family-calendar-source" class="family-calendar-source" href="https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/skoleruta/" target="_blank" rel="noopener noreferrer" hidden>Se kommunens skolerute ↗</a>
         <button type="button" id="family-report-missing" class="family-report-missing">Mangler det en viktig beskjed? Rapporter feil</button>
       </section>
+      <section id="family-activity-section" class="family-activities" aria-labelledby="family-activity-title">
+        <div class="family-activity-head">
+          <div><p class="family-eyebrow">FRITID OG AVTALER</p><h2 id="family-activity-title">Familiens aktiviteter</h2>
+            <p>Trening, korps, avtaler og andre planer – samlet med skoleuka.</p></div>
+          <button type="button" id="family-activity-add" class="family-add-button">+ Ny aktivitet</button>
+        </div>
+        <p id="family-activity-status" class="family-activity-status" role="status" aria-live="polite"></p>
+        <form id="family-activity-form" class="family-activity-form" hidden aria-labelledby="family-activity-form-title">
+          <div class="family-form-head"><h3 id="family-activity-form-title">Ny aktivitet</h3>
+            <button type="button" id="family-activity-cancel" class="family-form-close" aria-label="Lukk aktivitetsskjema">✕</button></div>
+          <div class="family-activity-fields">
+            <label class="family-activity-wide">Aktivitet<input id="family-activity-name" type="text" maxlength="120" placeholder="F.eks. Korpsøvelse" required></label>
+            <label>Hvem gjelder det?<select id="family-activity-child"><option value="">Hele familien</option></select></label>
+            <label>Dato<input id="family-activity-date" type="date" min="2020-01-01" max="2100-12-31" required></label>
+            <label>Starttid (valgfritt)<input id="family-activity-start" type="time"></label>
+            <label>Sluttid (valgfritt)<input id="family-activity-end" type="time"></label>
+            <label>Gjentakelse<select id="family-activity-repeat"><option value="none">Kun denne dagen</option><option value="weekly">Hver uke</option></select></label>
+            <label id="family-activity-until-wrap" hidden>Gjentakelsen slutter (valgfritt)<input id="family-activity-until" type="date" min="2020-01-01" max="2100-12-31"></label>
+            <label>Sted (valgfritt)<input id="family-activity-location" type="text" maxlength="120" placeholder="F.eks. gymsalen"></label>
+            <label>Ansvarlig (valgfritt)<input id="family-activity-responsible" type="text" maxlength="80" placeholder="F.eks. Mamma eller pappa"></label>
+            <label class="family-activity-wide">Merknad (valgfritt)<textarea id="family-activity-notes" maxlength="600" rows="2" placeholder="F.eks. husk instrument eller utstyr"></textarea></label>
+          </div>
+          <p class="family-activity-help">Med familiekonto deles aktivitetene mellom foresatte. Uten innlogging lagres de kun på denne enheten. Endringer i en gjentakende aktivitet gjelder hele serien.</p>
+          <p id="family-activity-form-status" class="family-form-status" role="status" aria-live="polite"></p>
+          <button id="family-activity-save" type="submit" class="family-add-button">Lagre aktivitet</button>
+        </form>
+        <div id="family-activity-list" class="family-activity-list" aria-live="polite"></div>
+      </section>
       <div class="family-toolbar">
         <div><h2>Barna mine</h2><p>Hvert barn har sin egen ukeplan og lekseprogresjon.</p></div>
         <div class="family-toolbar-actions"><button id="family-refresh" type="button" class="family-light-button">↻ Oppdater</button>
