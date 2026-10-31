@@ -38,7 +38,7 @@ export function familyAgendaItemHtml(item){
 export function familyAgendaMarkup(model,{today=''}={}){
  const days=model.days.map(d=>
   '<section class="family-agenda-day'+(today===d.date?' today':'')+
-   (!d.items.length?' is-empty':'')+'" aria-label="'+esc(d.title)+'">'+
+   (!d.items.length?' is-empty':'')+'" data-date="'+esc(d.date)+'" aria-label="'+esc(d.title)+'">'+
    '<h3>'+esc(d.title)+'</h3>'+
    (d.items.length?d.items.map(familyAgendaItemHtml).join(''):
     '<p class="family-agenda-quiet">Ingen registrerte hendelser</p>')+
