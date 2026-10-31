@@ -286,7 +286,7 @@ test('Mobile family dashboard uses compact tabs, focused calendar day and fewer 
  await page.locator('[data-family-mobile-tab="calendar"]').click();
  assert.equal(await page.locator('.family-agenda').isVisible(),true);
  assert.equal(await page.locator('#family-children').isVisible(),false);
- await page.locator('.family-agenda-day').first().waitFor({state:'visible'});
+ await page.locator('.family-agenda-day:visible').first().waitFor({state:'visible'});
  assert.equal(await page.locator('.family-agenda-day:visible').count(),1);
  await page.locator('[data-family-mobile-day="all"]').click();
  assert.equal(await page.locator('.family-agenda-day:visible').count(),5);
@@ -947,6 +947,7 @@ test('Family grade selection, edited profiles and single-class navigation surviv
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.locator('#family-toggle').click();
  await addFamilyChild(page,'Min profil','5A');
+ await page.locator('[data-family-more]').first().click();
  await page.locator('[data-family-edit]').click();
  await page.locator('#family-name').fill('Oppdatert profil');
  await page.locator('#family-save').click();
@@ -1173,6 +1174,7 @@ test('Account opens as a blocking modal and X or Escape restores underlying posi
 test('Family activities can be added, edited, repeated and persist locally without an account',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:740});
  await page.locator('#family-toggle').click();
+ await page.locator('[data-family-mobile-tab="activities"]').click();
  await page.locator('#family-activity-add').click();
  await page.locator('#family-activity-name').fill('Korpsøvelse');
  await page.locator('#family-activity-date').fill('2026-10-26');
@@ -1253,6 +1255,8 @@ test('Family calendar displays four typed sources, verified homework, optional w
   ]
  }));
  await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('[data-family-mobile-tab="calendar"]').click();
+ await page.locator('[data-family-mobile-day="all"]').click();
  await page.locator('#family-agenda-days .family-agenda-item').first().waitFor();
  assert.equal(await page.locator('.family-agenda-day').count(),5);
  assert.equal(await page.locator('#family-agenda-weekend-toggle').isVisible(),true);
@@ -1315,11 +1319,15 @@ test('Editing a family event in the combined week immediately updates the timeli
   dayNotes:{Torsdag:[{text:'Foreldremøte torsdag – kl. 18'}]}
  }));
  await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('[data-family-mobile-tab="calendar"]').click();
+ await page.locator('[data-family-mobile-day="all"]').click();
  await page.locator('#family-agenda-days [data-family-agenda-edit]').first().waitFor();
  await page.locator('#family-agenda-days [data-family-agenda-edit]').click();
+ assert.equal(await page.locator('#family-activity-section').isVisible(),true);
  await page.locator('#family-activity-name').fill('Fotball – ny tid');
  await page.locator('#family-activity-start').fill('18:00');
  await page.locator('#family-activity-save').click();
+ await page.locator('[data-family-mobile-tab="calendar"]').click();
  await page.locator('#family-agenda-days').getByText('Fotball – ny tid').waitFor();
  assert.match(await page.locator('#family-agenda-days').innerText(),/Foreldremøte/);
  assert.match(await page.locator('#family-agenda-days').innerText(),/Les leksa/);
@@ -1363,8 +1371,9 @@ test('Skoleuka 2.2 mobile hierarchy makes children and critical notices prominen
    activity:document.querySelector('#family-activity-manage').open,
    undated:document.querySelector('#family-agenda-undated').open};
  });
- assert.ok(snapshot.people<snapshot.alerts&&snapshot.alerts<snapshot.week&&
-  snapshot.week<snapshot.manage);
+ assert.ok(snapshot.people<snapshot.alerts);
+ assert.equal(await page.locator('.family-agenda').isVisible(),false);
+ assert.equal(await page.locator('#family-activity-section').isVisible(),false);
  assert.equal(snapshot.extra,false);
  assert.equal(snapshot.reminders,false);
  assert.equal(snapshot.activity,false);
@@ -1373,9 +1382,11 @@ test('Skoleuka 2.2 mobile hierarchy makes children and critical notices prominen
  assert.equal(await page.locator('#family-cards [data-family-open]').isVisible(),true);
  assert.equal(await page.locator('#family-important-cards a[href*="minskole.no"]').count()>0,true);
  assert.match(await page.locator('#family-agenda-undated-summary').innerText(),/viktig/);
+ await page.locator('[data-family-mobile-tab="calendar"]').click();
  await page.locator('#family-agenda-undated>summary').click();
  assert.equal(await page.locator('#family-agenda-undated').evaluate(el=>el.open),true);
  assert.match(await page.locator('#family-agenda-undated-list').innerText(),/Vaksinasjon/);
+ await page.locator('[data-family-mobile-tab="overview"]').click();
  await page.locator('#family-practical-details>summary').click();
  assert.equal(await page.locator('#family-practical-details').evaluate(el=>el.open),true);
  await page.locator('#family-reminders').getByText(/Vaksinasjon/).first().waitFor({state:'visible'});
@@ -1394,20 +1405,26 @@ test('2.2 family administration is minimized and opens the correct editor from c
   ]));
  });
  await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('[data-family-mobile-tab="calendar"]').click();
+ await page.locator('[data-family-mobile-day="all"]').click();
  await page.locator('#family-agenda-days').getByText('Korpsøvelse').waitFor({state:'visible'});
  assert.equal(await page.locator('#family-activity-manage').evaluate(el=>el.open),false);
  assert.match(await page.locator('#family-activity-manage-summary').innerText(),/1 aktivitet/);
  assert.equal(await page.locator('#family-activity-form').isVisible(),false);
+ await page.locator('[data-family-mobile-tab="activities"]').click();
  await page.locator('#family-activity-manage>summary').click();
  await page.locator('#family-activity-list').getByText('Korpsøvelse').waitFor({state:'visible'});
+ await page.locator('[data-family-mobile-tab="calendar"]').click();
  await page.locator('#family-agenda-days [data-family-agenda-edit]').click();
  assert.equal(await page.locator('#family-activity-manage').evaluate(el=>el.open),false);
  assert.equal(await page.locator('#family-activity-form').isVisible(),true);
  await page.locator('#family-activity-name').fill('Korps – ny øving');
  await page.locator('#family-activity-save').click();
+ await page.locator('[data-family-mobile-tab="calendar"]').click();
  await page.locator('#family-agenda-days').getByText('Korps – ny øving').waitFor({state:'visible'});
  assert.equal(await page.locator('#family-activity-form').isVisible(),false);
  assert.equal(await page.locator('#family-activity-manage').evaluate(el=>el.open),false);
+ await page.locator('[data-family-mobile-tab="activities"]').click();
  await page.locator('#family-activity-add').click();
  assert.equal(await page.locator('#family-activity-form').isVisible(),true);
  await page.locator('#family-activity-cancel').click();
