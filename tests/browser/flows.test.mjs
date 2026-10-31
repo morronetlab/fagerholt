@@ -1154,7 +1154,8 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  // test and we exercise the real account UI + client state transitions.
  await page.addInitScript(()=>{
   const original=window.fetch.bind(window);
-  let families=[],children=[];
+  let families=JSON.parse(localStorage.getItem('__testFamilies')||'[]');
+  let children=JSON.parse(localStorage.getItem('__testChildren')||'[]');
   window.__otpRequests=0;
   window.fetch=(input,init={})=>{
    const url=typeof input==='string'?input:input.url;
@@ -1164,11 +1165,12 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
    else if(url.includes('/auth/v1/verify'))data={access_token:'access-token',
     refresh_token:'refresh-token',expires_in:3600,user:{id:'guardian-one',email:'parent@example.no'}};
    else if(url.includes('/rest/v1/rpc/create_family')){
-    families=[{id:'family-1',name:'Min familie',created_by:'guardian-one'}];data='family-1';
+    families=[{id:'family-1',name:'Min familie',created_by:'guardian-one'}];
+    localStorage.setItem('__testFamilies',JSON.stringify(families));data='family-1';
    }else if(url.includes('/rest/v1/families'))data=families;
    else if(url.includes('/rest/v1/children')&&init.method==='POST'){
     const child=JSON.parse(init.body);children.push({...child,id:'child-'+(children.length+1)});
-    data=[children.at(-1)];
+    localStorage.setItem('__testChildren',JSON.stringify(children));data=[children.at(-1)];
    }
    else if(url.includes('/rest/v1/children'))data=children;
    else if(url.includes('/rest/v1/homework_progress'))data=[];
