@@ -1175,7 +1175,7 @@ test('Family activity dates and optional end time are validated before saving',a
  assert.deepEqual(errors,[]);
 });
 
-test('Family calendar shows weekdays and events only, with optional weekend and sibling filter',async t=>{
+test('Family calendar displays four typed sources, verified homework, optional weekend and sibling filter',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844,mockNow:'2026-10-28T10:00:00Z'});
  const profiles=[
   {id:'child-agenda-red-001',name:'Barn Rød',school:'sjostrand',grade:'2',group:'Rød'},
@@ -1213,7 +1213,13 @@ test('Family calendar shows weekdays and events only, with optional weekend and 
  assert.doesNotMatch(await page.locator('#family-agenda-days').innerText(),/Søndagskonsert/);
  assert.match(await page.locator('#family-agenda-days').innerText(),/Planleggingsdag/);
  assert.match(await page.locator('#family-agenda-days').innerText(),/Vaksinasjon/);
- assert.doesNotMatch(await page.locator('#family-agenda-days').innerText(),/Les sidene 30|Lær gloser|Gymtøy/);
+ assert.match(await page.locator('#family-agenda-days').innerText(),/Les sidene 30/);
+ assert.match(await page.locator('#family-agenda-days').innerText(),/Lær gloser/);
+ assert.doesNotMatch(await page.locator('#family-agenda-days').innerText(),/Gymtøy|Øv på gangetabellen/);
+ for(const kind of ['homework','practical','activity','municipal']){
+  assert.ok(await page.locator('#family-agenda-days .family-agenda-item.content-kind-'+kind).count()>0,
+   'Expected separate calendar type: '+kind);
+ }
  assert.match(await page.locator('#family-agenda-days').innerText(),/Felles middag/);
  assert.equal(await page.locator('#family-agenda-days .family-agenda-item.kind-family').count(),1);
  await page.locator('#family-agenda-weekend-toggle').click();
@@ -1231,7 +1237,8 @@ test('Family calendar shows weekdays and events only, with optional weekend and 
  assert.equal(await page.locator('#family-agenda-undated').isVisible(),true);
  await page.locator('#family-agenda-child').selectOption(profiles[1].id);
  const filtered=await page.locator('#family-agenda-days').innerText();
- assert.doesNotMatch(filtered,/Lær gloser|Les sidene 30|Gymtøy/);
+ assert.match(filtered,/Lær gloser/);
+ assert.doesNotMatch(filtered,/Les sidene 30|Gymtøy/);
  assert.match(filtered,/Felles middag/);
  assert.match(filtered,/Planleggingsdag/);
  assert.doesNotMatch(filtered,/Søndagskonsert|Les sidene 30|Vaksinasjon/);
