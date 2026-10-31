@@ -268,6 +268,53 @@ test('An explicitly selected welcome page survives reload even when family profi
  assert.deepEqual(errors,[]);
 });
 
+test('Mobile family dashboard uses compact tabs, focused calendar day and fewer child actions',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.locator('#family-toggle').click();
+ await addFamilyChild(page,'Barn A');
+ await addFamilyChild(page,'Barn B');
+ assert.equal(await page.locator('#family-mobile-nav').isVisible(),true);
+ assert.equal(await page.locator('#family-children').isVisible(),true);
+ assert.equal(await page.locator('.family-tomorrow').isVisible(),true);
+ assert.equal(await page.locator('.family-agenda').isVisible(),false);
+ assert.equal(await page.locator('#family-activity-section').isVisible(),false);
+ const card=page.locator('#family-cards .family-child').first();
+ assert.equal(await card.locator('[data-family-open]').isVisible(),true);
+ assert.equal(await card.locator('[data-family-edit]').isVisible(),false);
+ await card.locator('[data-family-more]').click();
+ assert.equal(await card.locator('[data-family-edit]').isVisible(),true);
+ await page.locator('[data-family-mobile-tab="calendar"]').click();
+ assert.equal(await page.locator('.family-agenda').isVisible(),true);
+ assert.equal(await page.locator('#family-children').isVisible(),false);
+ await page.locator('.family-agenda-day').first().waitFor({state:'visible'});
+ assert.equal(await page.locator('.family-agenda-day:visible').count(),1);
+ await page.locator('[data-family-mobile-day="all"]').click();
+ assert.equal(await page.locator('.family-agenda-day:visible').count(),5);
+ await page.locator('[data-family-mobile-day="2"]').click();
+ assert.equal(await page.locator('.family-agenda-day:visible').count(),1);
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('.family-agenda-day:visible').first().waitFor();
+ assert.equal(await page.locator('[data-family-mobile-tab="calendar"]').getAttribute('aria-pressed'),'true');
+ assert.equal(await page.locator('.family-agenda-day:visible').count(),1);
+ assert.equal(await page.locator('[data-family-mobile-day="2"]').getAttribute('aria-pressed'),'true');
+ await page.locator('[data-family-mobile-tab="activities"]').click();
+ assert.equal(await page.locator('#family-activity-section').isVisible(),true);
+ assert.equal(await page.locator('.family-agenda').isVisible(),false);
+ assert.deepEqual(errors,[]);
+});
+test('Desktop family layout remains complete after the mobile navigation redesign',async t=>{
+ const {page,errors}=await openPage(t,{width:1280,height:850});
+ await page.locator('#family-toggle').click();
+ await addFamilyChild(page,'Barn desktop');
+ assert.equal(await page.locator('#family-mobile-nav').isVisible(),false);
+ assert.equal(await page.locator('#family-children').isVisible(),true);
+ assert.equal(await page.locator('.family-tomorrow').isVisible(),true);
+ assert.equal(await page.locator('.family-agenda').isVisible(),true);
+ assert.equal(await page.locator('#family-activity-section').isVisible(),true);
+ assert.equal(await page.locator('#family-cards [data-family-edit]').first().isVisible(),true);
+ assert.deepEqual(errors,[]);
+});
+
 test('V2 family overview combines two children and keeps completion independently',async t=>{
  // Friday before the family dashboard cutoff: homework due Friday is visible
  // in the "I dag" checklist, so it can be checked and unchecked per child.
