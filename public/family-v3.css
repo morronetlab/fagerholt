@@ -203,3 +203,14 @@
  .family-reminder .family-reminder-actions button{padding:5px 9px}
  .issue-report-dialog{padding:18px 17px}
 }
+
+/* Official Kristiansand school calendar: separate provenance from PDF interpretation. */
+.family-reminder-municipal{border-left:5px solid #476f9e;background:#f0f6fc}
+.family-reminder-municipal .family-reminder-importance{background:#d6e7f8;color:#254e78}
+.family-municipal-context{font-weight:590;color:#345575!important;margin-top:7px!important}
+.family-municipal-caution{font-size:11px!important;color:#6c776a!important;margin-top:7px!important}
+.family-municipal-source{display:block;margin:7px 0 4px;font-size:11px;color:#50687f}
+.family-calendar-status{margin:11px 0 3px;font-size:12px;line-height:1.5;color:#5e7667}
+.family-calendar-status:empty{display:none}
+.family-calendar-source{font-size:12px;color:#38658b;text-decoration:underline;text-underline-offset:3px}
+.family-calendar-source:focus-visible{outline:3px solid #edb974;outline-offset:3px}

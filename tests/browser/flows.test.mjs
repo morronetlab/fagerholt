@@ -693,6 +693,96 @@ test('Unavailable school PDF still offers issue reporting from the fallback pane
  assert.deepEqual(errors,[]);
 });
 
+test('Friday after 14:00: next week shows municipality school-free date even when PDF unavailable',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844,mockNow:'2026-10-30T14:15:00Z'});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[{id:'calendar-school-01',name:'Barn A',school:'fagerholt',grade:'3',group:''}]
+ })));
+ let calls=0;
+ await page.route('**/api/school-calendar?**',async route=>{
+  const params=new URL(route.request().url()).searchParams;
+  calls++;
+  assert.equal(params.get('school'),'fagerholt');
+  assert.equal(params.get('week'),'45');
+  return reply(route,{schoolId:'fagerholt',year:2026,week:45,
+   sourceStatus:'live',sourceUrl:'https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/skoleruta/',
+   schoolUrl:'https://www.minskole.no/fagerholt',checkedAt:'2026-10-30',
+   events:[{date:'2026-11-06',schoolFree:true,sfoClosed:false,sfoStatus:'unknown',
+    label:'Fridag (Sørlandsk lærerstevne)'}]});
+ });
+ await page.route('**/api/plan?**',route=>reply(route,{status:'unpublished',
+  schoolId:'fagerholt',grade:'3',week:45,year:2026,aiStatus:'disabled',pdf:null}));
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('.family-reminder-municipal').waitFor({state:'visible'});
+ const card=page.locator('.family-reminder-municipal');
+ assert.match(await card.innerText(),/fredag 6. november/i);
+ assert.match(await card.innerText(),/Fridag \(Sørlandsk lærerstevne\)/);
+ assert.match(await card.innerText(),/SFO.*ikke oppgitt/i);
+ assert.match(await card.innerText(),/lokale avvik/i);
+ assert.equal(await card.locator('a').first().getAttribute('href'),
+  'https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/skoleruta/');
+ assert.equal(await page.locator('.family-reminder-municipal').count(),1);
+ assert.equal(calls,1,'One municipal fetch per school/week, not per child');
+ assert.deepEqual(errors,[]);
+});
+
+test('School-calendar reminder comes before vaccine from school PDF; multiple children share one municipal alert',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844,mockNow:'2026-11-02T07:20:00Z'});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[
+   {id:'calendar-child-001',name:'Barn A',school:'fagerholt',grade:'3',group:''},
+   {id:'calendar-child-002',name:'Barn B',school:'fagerholt',grade:'7',group:''}
+  ]
+ })));
+ await page.route('**/api/school-calendar?**',route=>reply(route,{
+  schoolId:'fagerholt',year:2026,week:45,sourceStatus:'live',
+  sourceUrl:'https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/skoleruta/',
+  schoolUrl:'https://www.minskole.no/fagerholt',checkedAt:'2026-11-02',
+  events:[{date:'2026-11-06',schoolFree:true,sfoStatus:'unknown',
+   label:'Fridag (Sørlandsk lærerstevne)'}]
+ }));
+ await page.route('**/api/plan?**',route=>{
+  const p=basePlan('2');p.week=45;p.year=2026;p.grade='3';p.dayNotes={
+   Onsdag:[{text:'Vaksine onsdag morgen.'}]};return reply(route,p);
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('.family-reminder-municipal').waitFor({state:'visible'});
+ const list=page.locator('#family-reminders .family-reminder');
+ assert.ok(await list.count()>=2);
+ assert.match(await list.first().innerText(),/Fridag.*Sørlandsk/);
+ assert.equal(await page.locator('.family-reminder-municipal').count(),1);
+ await page.locator('.family-reminder-municipal [data-family-report]').click();
+ await page.locator('#issue-report-dialog').waitFor({state:'visible'});
+ assert.equal(await page.locator('#issue-report-source').isVisible(),true);
+ assert.deepEqual(errors,[]);
+});
+
+test('Explicit municipal SFO closure says closed; other holiday dates do not imply SFO closure',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844,mockNow:'2026-12-18T15:15:00Z'});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[{id:'calendar-child-sfo',name:'Barn A',
+   school:'fagerholt',grade:'3',group:''}]
+ })));
+ await page.route('**/api/plan?**',route=>reply(route,{
+  status:'unpublished',schoolId:'fagerholt',grade:'3',year:2026,week:52,pdf:null
+ }));
+ await page.route('**/api/school-calendar?**',route=>reply(route,{
+  schoolId:'fagerholt',year:2026,week:52,sourceStatus:'snapshot',checkedAt:'2026-10-30',
+  events:[
+   {date:'2026-12-21',label:'Juleferie',schoolFree:true,sfoStatus:'unknown'},
+   {date:'2026-12-24',label:'Juleferie',schoolFree:true,sfoClosed:true,sfoStatus:'closed'}
+  ]
+ }));
+ await page.reload({waitUntil:'domcontentloaded'});
+ const first=page.locator('.family-reminder-municipal').filter({hasText:'21. desember'});
+ const closure=page.locator('.family-reminder-municipal').filter({hasText:'24. desember'});
+ await closure.waitFor({state:'visible'});
+ assert.match(await closure.innerText(),/SFO: kommunen bekrefter stengt/);
+ assert.match(await first.innerText(),/ikke oppgitt/);
+ assert.match(await page.locator('#family-calendar-status').innerText(),/sist kontrollerte kilde/i);
+ assert.deepEqual(errors,[]);
+});
+
 test('Opening a ready AI family plan is instant and browser Back and Forward restore views',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({

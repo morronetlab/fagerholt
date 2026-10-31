@@ -10,6 +10,7 @@ import {expandHomework} from './shared/homework-view.mjs';
 import {practicalHighlights} from './shared/practical-highlights.mjs';
 import {priorityKey,applyPracticalPriority} from './shared/practical-priority.mjs';
 import {practicalDigest} from './shared/practical-digest.mjs';
+import {calendarHighlights} from './shared/school-calendar-highlights.mjs';
 
 const el=id=>document.getElementById(id);
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -40,6 +41,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  let active=false,profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
  let cloud=null,cloudChecks=new Map(),focus='next',lastSynced=null,syncError='';
  const plans=new Map(),loading=new Set(),errors=new Map();
+ // Public municipal dates are independent of individual PDF availability.
+ const calendars=new Map(),calendarFetchAt=new Map(),calendarInFlight=new Set();
  // Poll one server-side AI job per unique school/grade, not once per child.
  const pendingJobs=new Map(),pollTimers=new Map(),autoRetries=new Map();
  const priorityStates=new Map(),priorityTimers=new Map();
@@ -96,6 +99,38 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
 
  const calendar=()=>familyWeekCalendar(new Date(),'Europe/Oslo');
  const weekKey=now=>now.year+'-'+String(now.week).padStart(2,'0');
+ async function fetchCalendars(){
+  if(!active||!profiles.length)return;
+  const now=calendar(),week=weekKey(now);
+  for(const school of new Set(profiles.map(p=>p.school))){
+   const marker=school+'|'+week;
+   const current=calendars.get(school);
+   if(calendarInFlight.has(marker)||
+     current?.year===now.year&&current?.week===now.week&&
+     Date.now()-(calendarFetchAt.get(marker)||0)<60*60_000)continue;
+   calendarInFlight.add(marker);
+   void (async()=>{
+    try{
+     const response=await getJson('/api/school-calendar?school='+encodeURIComponent(school)+
+      '&year='+now.year+'&week='+now.week,12500);
+     if(!active||weekKey(calendar())!==week)return;
+     if(response.schoolId===school&&response.year===now.year&&response.week===now.week){
+      calendars.set(school,response);
+      calendarFetchAt.set(marker,Date.now());
+     }
+    }catch{
+     if(active&&weekKey(calendar())===week){
+      calendars.set(school,{schoolId:school,year:now.year,week:now.week,
+       sourceStatus:'unavailable',events:[]});
+      calendarFetchAt.set(marker,Date.now()-50*60_000);
+     }
+    }finally{
+     calendarInFlight.delete(marker);
+     if(active)render();
+    }
+   })();
+  }
+ }
  const byId=id=>profiles.find(p=>p.id===id);
  function cachedReadyPlan(p){
   const plan=plans.get(p.id),now=calendar();
@@ -229,16 +264,57 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   el('family-next-day').textContent=now.upcoming?'i uke '+now.week:
    shownFocus==='today'?'i dag':
    shownFocus==='week'?'denne uka':next==null?'neste skoleuke':'til '+DAYS[next].toLocaleLowerCase('nb-NO');
-  const candidates=now.upcoming||!(shownFocus==='next'&&next==null)?
+  const pdfCandidates=now.upcoming||!(shownFocus==='next'&&next==null)?
    practicalHighlights({profiles,summaries,plans,calendar:now,focus:shownFocus}):[];
-  const cards=applyPracticalPriority(candidates,item=>{
+  const municipalCandidates=calendarHighlights({profiles,calendars,calendar:now,focus:shownFocus});
+  const cards=applyPracticalPriority([...municipalCandidates,...pdfCandidates],item=>{
    const p=byId(item.id),state=p&&priorityStates.get(pairOf(p));
    return state?.status==='ready'?state.scores?.[priorityKey(item)]:null;
   });
   reportCards=cards;
+  const statuses=[...new Set(profiles.map(p=>p.school))]
+   .map(school=>calendars.get(school))
+   .filter(x=>x&&x.year===now.year&&x.week===now.week);
+  const absent=profiles.length&&statuses.length<new Set(profiles.map(p=>p.school)).size;
+  const unusable=statuses.some(x=>x.sourceStatus==='unavailable');
+  const snapshots=statuses.filter(x=>x.sourceStatus==='snapshot');
+  el('family-calendar-source').hidden=!profiles.length;
+  el('family-calendar-status').textContent=!profiles.length?'':absent?
+   'Sjekker den offisielle skoleruta for aktuelle skoler …':
+   unusable?'Skoleruta er ikke tilgjengelig for alle skoler. Sjekk kommunens oversikt direkte.':
+   snapshots.length?'Kommunal skolerute: enkelte datoer er hentet fra sist kontrollerte kilde. Lokale avvik kan forekomme.':
+   'Kommunal skolerute er kontrollert. Lokale avvik kan forekomme.';
   el('family-report-missing').hidden=profiles.length===0;
   const limit=5,displayed=showAllHighlights?cards:cards.slice(0,limit);
   const reminderMarkup=displayed.map(x=>{
+   if(x.sourceType==='municipal'){
+    const dateLabel=new Date(x.date+'T12:00:00Z').toLocaleDateString('nb-NO',{
+     timeZone:'UTC',weekday:'long',day:'numeric',month:'long'});
+    const authority='https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/skoleruta/';
+    const schoolLink=siteConfig.schools[x.schoolId]?.homepage||authority;
+    const sfo=x.sfoStatus==='closed'?
+     'SFO: kommunen bekrefter stengt denne dagen.':
+     'SFO: åpning eller stenging er ikke oppgitt for denne dagen. Sjekk skolens SFO.';
+    const summary=x.schoolFree?'Elevene har fri ifølge kommunens skolerute.':'SFO er stengt ifølge kommunens skolerute.';
+    const sourceName=x.sourceStatus==='snapshot'?'Kommunal skolerute (sist kontrollert '+escape(x.checkedAt||'2026-10-30')+')':
+     'Kommunal skolerute';
+    return '<article class="family-reminder family-reminder-priority family-reminder-workday family-reminder-municipal">'+
+     '<span aria-hidden="true">📅</span><div><strong>'+escape(x.name)+'</strong>'+
+     '<span class="family-reminder-importance">Påvirker arbeidsdagen</span>'+
+     '<span class="family-reminder-date">'+escape(dateLabel)+'</span>'+
+     '<p class="family-reminder-short">'+escape(x.label.replace(/^\\S+\\s*:\\s*/u,''))+'</p>'+
+     '<p class="family-municipal-context">'+escape(summary)+' '+escape(sfo)+'</p>'+
+     '<p class="family-municipal-caution">Kommunal standard: skolen kan ha lokale avvik.</p>'+
+     '<span class="family-municipal-source">'+sourceName+'</span>'+
+     '<a class="family-reminder-pdf" href="'+escape(authority)+
+     '" target="_blank" rel="noopener noreferrer">Se offisiell skolerute ↗</a> · '+
+     '<a class="family-reminder-pdf" href="'+escape(schoolLink)+
+     '" target="_blank" rel="noopener noreferrer">Se skolens nettside ↗</a>'+
+     '</div><div class="family-reminder-actions">'+
+     '<button type="button" data-family-open="'+escape(x.id)+'">Se ukeplan →</button>'+
+     '<button type="button" class="family-report-button" data-family-report="'+cards.indexOf(x)+'">Rapporter feil</button>'+
+     '</div></article>';
+   }
    const impact=x.adultImpact;
    const emphasized=Boolean(impact)||x.aiImportance===3;
    const tag=impact==='workday'?'Påvirker arbeidsdagen':
@@ -410,6 +486,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  }
  async function fetchPlans(){
   if(!active)return;
+  void fetchCalendars();
   const sequence=++run,now=calendar();
   const targetKey=weekKey(now);
   if(loadedWeekKey!==targetKey){
@@ -499,7 +576,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   refreshCloud:syncCloud,
   enter:()=>{
     if(active)return;
-    active=true;render();onModeChange();
+    active=true;render();onModeChange();void fetchCalendars();
     // Returning from an already-open child plan should restore instantly,
     // not re-download the same school PDF seconds later.
     const now=calendar();
