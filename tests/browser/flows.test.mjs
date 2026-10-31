@@ -1245,6 +1245,20 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  assert.equal(await page.locator('#family-cards .family-child').count(),1);
  assert.equal(await page.locator('#account-current-family').textContent(),'Min familie');
  assert.match(await page.locator('#family-storage-label').textContent(),/Synkronisert familie/);
+ assert.equal(await page.locator('#family-first-run').isVisible(),true);
+ assert.match(await page.locator('#family-first-run-next').innerText(),/Åpne ukeplanen til Testbarn/);
+ assert.equal(await page.locator('[data-first-run-step="family"].is-done').count(),1);
+ assert.equal(await page.locator('[data-first-run-step="child"].is-done').count(),1);
+ assert.equal(await page.locator('[data-first-run-step="plan"].is-done').count(),0);
+ // Guide survives an accidental reload during the first visit.
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-first-run').waitFor({state:'visible'});
+ await page.locator('#family-first-run-dismiss').click();
+ assert.equal(await page.locator('#family-first-run').isVisible(),false);
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-view').waitFor({state:'visible'});
+ assert.equal(await page.locator('#family-first-run').isVisible(),false,
+  'A dismissed onboarding tip must not return to an existing family');
  assert.deepEqual(errors,[]);
 });
 
