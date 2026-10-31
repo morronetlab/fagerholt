@@ -69,6 +69,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const priorityStates=new Map(),priorityTimers=new Map();
  let run=0,editing=null,gradeRun=0,lastPlanCheckAt=0,loadedWeekKey=null,showAllHighlights=false;
  let agendaChildId='';
+ let expandedChildren=new Set();
  let reportCards=[];
  const AUTO_CHECK_MS=15*60_000, RETRY_COOLDOWN_MS=5*60_000+5000;
  const pairOf=p=>p.school+'|'+p.grade;
@@ -310,7 +311,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const details=s.ready?[
    '<div class="family-child-progress"><div><span>Lekser i uke '+now.week+'</span><b>'+s.done+' / '+s.total+' fullført</b></div>',
    '<div class="family-progress-track" role="progressbar" aria-label="Fullført for '+escape(p.name)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><span style="width:'+pct+'%"></span></div></div>',
-   '<details class="family-child-extra"><summary>Se lekser, pakkeliste og ordøving</summary><div class="family-child-extra-content">',
+   '<details class="family-child-extra"'+(expandedChildren.has(p.id)?' open':'')+'><summary>Se lekser, pakkeliste og ordøving</summary><div class="family-child-extra-content">',
    now.upcoming?
     '<div class="family-child-columns"><div><h4>📚 Lekser i uke '+now.week+'</h4>'+taskList(p,s.tasks,'Ingen lekser registrert')+'</div>'+
     '<div><h4>🎒 Pakk til mandag</h4>'+packingList(s.todayBag)+'</div></div>':
@@ -321,7 +322,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     plan?.status==='unpublished'||plan?.status==='unavailable'?
      'Ukeplan for uke '+now.week+' er ikke tilgjengelig ennå. Skolen har ikke publisert PDF for denne uka.':
      errors.get(p.id)||s.reason||'Henter ukeplan for uke '+now.week+' …')+'</div>';
-  return '<article class="family-child"><div class="family-child-heading">'+
+  return '<article class="family-child" data-child-id="'+escape(p.id)+'"><div class="family-child-heading">'+
    '<span class="family-avatar" aria-hidden="true">'+escape(p.name.slice(0,1).toUpperCase())+'</span>'+
    '<div><h3>'+escape(p.name)+'</h3><p>'+escape(school?.name||'Skole')+' · '+escape(p.grade)+'. klasse'+(p.group?' · '+escape(p.group):'')+'</p>'+
    '<span class="family-child-week">UKE '+now.week+' · '+now.year+(now.upcoming?' · NESTE UKE':'')+'</span></div></div>'+
@@ -360,6 +361,11 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   el('family-add').disabled=profiles.length>=FAMILY_MAX_PROFILES;
   el('family-add').textContent=profiles.length>=FAMILY_MAX_PROFILES?'Maks seks barn':'+ Legg til barn';
   el('family-empty').hidden=profiles.length!==0;
+  // Preserve manually expanded child details after a checkbox saves progress.
+  // The content is refreshed but the parent's place in the UI is retained.
+  const presentCards=[...el('family-cards').querySelectorAll('.family-child[data-child-id]')];
+  if(presentCards.length)expandedChildren=new Set(presentCards.filter(card=>
+   card.querySelector('.family-child-extra')?.open).map(card=>card.dataset.childId));
   setHtml('family-cards',profiles.map(p=>childCard(p,summaries.get(p.id),now)).join(''));
   const {next}=schoolDayIndices(now);
   const shownFocus=now.upcoming?'week':focus;
