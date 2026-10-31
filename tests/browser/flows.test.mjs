@@ -398,6 +398,9 @@ test('Desktop family layout remains complete after the mobile navigation redesig
  assert.equal(await page.locator('.family-tomorrow').isVisible(),true);
  assert.equal(await page.locator('.family-agenda').isVisible(),true);
  assert.equal(await page.locator('#family-activity-section').isVisible(),true);
+ // Even if three or more notices unhide the mobile-only toggle, desktop must not show it.
+ await page.locator('#family-mobile-important-more').evaluate(el=>{el.hidden=false;});
+ assert.equal(await page.locator('#family-mobile-important-more').isVisible(),false);
  assert.equal(await page.locator('#family-cards [data-family-edit]').first().isVisible(),true);
  assert.deepEqual(errors,[]);
 });
