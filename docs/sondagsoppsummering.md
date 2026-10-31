@@ -76,3 +76,13 @@ Testmail sender HTML med tydelig TEST-merking, men beholder begrensningen én go
 ### Ny test ved vesentlig endret e-postmal
 
 Testmailens 24-timersbegrensning gjelder per innlogget forelder og **malversjon**. Etter innføringen av HTML-malen `rich-html-v2` er det derfor mulig å sende én ny test, selv om samme konto sendte en test av den gamle malen tidligere samme dag. De gamle sendemarkørene slettes ikke, og begge versjoner har uavhengige Resend-idempotensnøkler. Flere tester av samme HTML-versjon er fortsatt begrenset til én godkjent utsending per 24 timer. Dette er ikke en generell reset-knapp eller et unntak for andre mottakere.
+
+## Kildekontroll og delvise søndagsbrev (PR #75)
+
+Tidligere AI-resultater uten feltet `sourceAudit` blir kontrollert på nytt mot den **samme offisielle PDF-en**, direkte ved vanlig lesing av ukeplanen. AI-en kjøres ikke på nytt og en uverifisert PDF gis aldri en vellykket status automatisk. En godkjent kontroll med `sourceFacts: 0` er gyldig: det betyr bare at PDF-en ikke inneholder bestemte typer ekstraordinære beskjeder, ikke at ukeplanen mangler innhold.
+
+Ved manglende PDF for ett trinn viser e-posten en presis melding og lenker til trinnets offisielle side. I den planlagte søndagsjobben forsøkes nye lesninger frem til klokken 20 lokal tid. Hvis minst én annen barneprofil er kontrollert og klar, sendes en tydelig merket **delvis** oppsummering fra klokken 20 og utover. Hvis ingen av profilene er klare, sendes ingenting. Sendemarkører og foreldrenes frivillige påmelding fungerer uendret.
+
+Søndagsplanen sjekkes hvert kvarter 17:00–20:45 UTC, men selve utsendingsvinduet begrenses fortsatt til lokal søndag kl. 18–21. Ny test av den korrigerte e-postmalen bruker malversjonen `rich-html-v3` og forstyrrer ikke tidligere sendemarkører. Før normal utrulling kontrolleres både 3. trinns lekser mot PDF-kilden og 7. trinns eventuelt senere publisering.
+
+Ved `sourceAudit: attention` kan kun lekser som er individuelt kontrollert mot original-PDF-ens tekstlag inngå i en delvis oppsummering. Gamle AI-poster uten kildepeker må ha en tilstrekkelig presis og lokal tekstmatch i dokumentet. Ikke-verifiserte lekser utelates, og en ikke dokumentert frist vises ikke som bekreftet. Den uavklarte viktige beskjeden markeres tydelig både i HTML og ren tekst, uten at beskjeden gjettes. Ukeplaner med ingen pålitelige detaljer regnes fortsatt som ikke klare.

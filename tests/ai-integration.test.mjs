@@ -160,8 +160,9 @@ test('invalid signature and forged public background requests are blocked',async
  assert.equal(invalid.status,401);
  assert.equal(validSignature(JSON.stringify(body),signJob(JSON.stringify(body),env.AI_JOB_SECRET),env.AI_JOB_SECRET),true);
 });
-test('cached AI result is served without PDF.js and without re-dispatch',async()=>{
- const store=memoryStore();store.map.set(key,{...normalizeAIPlan(aiRaw,meta),model:'gpt-4.1-mini',homeworkSourceVersion:1});
+test('already audited cached AI result is served without PDF.js and without re-dispatch',async()=>{
+ const store=memoryStore();store.map.set(key,{...normalizeAIPlan(aiRaw,meta),model:'gpt-4.1-mini',homeworkSourceVersion:1,
+  sourceAudit:{status:'ok',sourceFacts:0,missing:0,unsupported:0}});
  let parseCount=0,queueCount=0;
  const handler=createPlanHandler({env,now:()=>new Date('2026-10-27T12:00:00Z'),storeFactory:async()=>store,
   parsePdfPages:async()=>{parseCount++;return [];},queueJob:async()=>{queueCount++;},
