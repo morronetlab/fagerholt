@@ -2,7 +2,7 @@
  * Homework and packing remain in the per-child plan and are never calendar events.
  * Date-less school notices are not assigned invented weekdays.
  */
-import {dayDate} from './calendar.mjs';
+import {DAYS,dayDate} from './calendar.mjs';
 import {practicalHighlights} from './practical-highlights.mjs';
 import {schoolNoticeDate,sourcePdfLink} from './practical-digest.mjs';
 import {calendarHighlights} from './school-calendar-highlights.mjs';
