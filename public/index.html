@@ -383,6 +383,22 @@
   </main>
   <footer>Skoleuka · <span id="footer-school">Kristiansand</span> · Uten familiekonto lagres valg på denne enheten. Med familiekonto deles lekseprogresjonen. <span class="footer-meta"><a href="https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/grunnskole/" target="_blank" rel="noopener noreferrer">Skoleoversikten ↗</a> · <a href="mailto:mortenronn@gmail.com?subject=Feilrapport%20Skoleuka">Rapporter feil: mortenronn@gmail.com</a> · <a id="git-version" href="#" target="_blank" rel="noopener noreferrer" hidden>Git-versjon</a></span></footer>
 </div>
+<dialog id="child-pair-dialog" class="child-pair-dialog" aria-labelledby="child-pair-title" aria-modal="true">
+ <header class="child-pair-header"><div><p class="family-eyebrow">MIN EGEN UKEPLAN</p>
+ <h2 id="child-pair-title">Inviter barnet med QR-kode</h2></div>
+ <button type="button" id="child-pair-close" class="family-form-close" aria-label="Lukk QR-invitasjon">✕</button></header>
+ <p id="child-pair-intro">Skann QR-koden med barnets telefon eller nettbrett. Barnet trenger ikke e-postadresse eller passord.</p>
+ <p id="child-pair-status" role="status" aria-live="polite"></p>
+ <div id="child-pair-result" hidden>
+   <img id="child-pair-qr" alt="QR-kode for barnets ukeplan" width="242" height="242">
+   <label class="child-pair-label">Invitasjonslenke<input id="child-pair-link" type="text" readonly aria-label="Privat invitasjonslenke til barnet"></label>
+   <button type="button" id="child-pair-copy" class="family-light-button">Kopier invitasjonslenke</button>
+   <p class="child-pair-hint">Koden kan bare brukes én gang og utløper etter 10 minutter. Hold den privat. Du kan oppheve tilgangen senere.</p>
+ </div>
+ <button type="button" id="child-pair-new" class="family-add-button">Lag ny QR-kode</button>
+ <details class="child-pair-devices"><summary>Administrer barnets enheter</summary>
+   <div id="child-pair-devices"></div></details>
+</dialog>
 <dialog id="issue-report-dialog" class="issue-report-dialog" aria-labelledby="issue-report-title" aria-describedby="issue-report-intro">
   <header class="issue-report-header">
     <div><p class="family-eyebrow">HJELP OSS Å BLI BEDRE</p><h2 id="issue-report-title">Rapporter feil i ukeplanen</h2></div>
