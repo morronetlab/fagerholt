@@ -13,7 +13,8 @@ import {priorityKey,applyPracticalPriority} from './shared/practical-priority.mj
 import {practicalDigest} from './shared/practical-digest.mjs';
 import {calendarHighlights} from './shared/school-calendar-highlights.mjs';
 import {buildFamilyWeekAgenda} from './shared/family-week-agenda.mjs';
-import {familyAgendaMarkup} from './shared/family-week-agenda-html.mjs';
+import {familyAgendaMarkup,familyAgendaItemHtml} from './shared/family-week-agenda-html.mjs';
+import {importantFamilyNotices} from './shared/family-important-notices.mjs';
 import {FAMILY_OVERVIEW_BATCH_MS,holdInitialHighlights,readCalendarCache,storeCalendarCache,cacheableCalendar,stableHighlightOrder,highlightIdentity} from './shared/family-overview-load.mjs';
 
 const el=id=>document.getElementById(id);
@@ -238,6 +239,26 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   for(const p of profiles)summaries.set(p.id,profileSummary(p,plans.get(p.id),now,read,cloud?cloudIsChecked:null));
   return {now,summaries};
  }
+ function renderImportantNotices(model){
+  const notices=importantFamilyNotices(model,{limit:3});
+  const html=notices.visible.map(item=>{
+   const when=item.date?new Intl.DateTimeFormat('nb-NO',{
+    timeZone:'UTC',weekday:'long',day:'numeric',month:'short'
+   }).format(new Date(item.date+'T12:00:00Z')):'Uten bestemt dag';
+   return '<div class="family-important-entry">'+
+    '<span class="family-important-date">'+escape(when)+'</span>'+
+    familyAgendaItemHtml(item)+'</div>';
+  }).join('');
+  const message=!profiles.length?'Legg til barn for å se viktige skolebeskjeder.':
+   model.missingProfiles.length?
+    'Skoleplaner lastes inn. Viktige beskjeder kan fortsatt mangle.':
+    'Ingen særskilte viktige beskjeder registrert for denne uka.';
+  setHtml('family-important-cards',html||
+   '<p class="family-important-empty">'+escape(message)+'</p>');
+  el('family-practical-label').textContent=notices.remaining?
+   'Vis komplette skolebeskjeder · '+notices.remaining+' flere viktige':
+   'Vis alle praktiske beskjeder og ekstra utstyr';
+ }
  function renderAgenda(now,summaries){
   const filter=el('family-agenda-child'),selected=agendaChildId;
   const option='<option value="">Alle i familien</option>'+
@@ -249,11 +270,20 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    activities:activityUI.getRows(),calendar:now,childId:agendaChildId});
   const markup=familyAgendaMarkup(model,{today:now.today});
   setHtml('family-agenda-days',markup.days);
-  setHtml('family-agenda-undated',markup.undated);
+  setHtml('family-agenda-undated-list',markup.undated);
   el('family-agenda-undated').hidden=!model.undated.length;
+  const importantUndated=model.undated.filter(item=>item.important).length;
+  el('family-agenda-undated-summary').textContent=model.undated.length+
+   ' punkt uten bestemt dag · Vis'+
+   (importantUndated?' · ⚠ '+importantUndated+' viktig'+(importantUndated===1?'':'e'):'');
   el('family-agenda-status').textContent=
    model.count+' hendelser i uke '+now.week+
    (agendaChildId?' for '+(profiles.find(p=>p.id===agendaChildId)?.name||'valgt barn'):' for familien');
+  // The overview alert strip always covers every child, regardless of
+  // which child is currently selected within the week calendar.
+  const fullModel=agendaChildId?buildFamilyWeekAgenda({profiles,summaries,plans,calendars,
+   activities:activityUI.getRows(),calendar:now,childId:''}):model;
+  renderImportantNotices(fullModel);
   const pending=model.missingProfiles;
   el('family-agenda-missing').hidden=!pending.length;
   el('family-agenda-missing').textContent=pending.length?
@@ -730,6 +760,12 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  el('family-report-missing').addEventListener('click',()=>{
   const contexts=reportingContexts();
   if(contexts.length)onReportIssue?.({contexts,kind:'missing_notice'});
+ });
+ el('family-practical-details').addEventListener('toggle',()=>{
+  if(!el('family-practical-details').open)return;
+  // The expanded view must include ALL critical notices, not only the
+  // original 'next school day' focus.
+  focus='week';showAllHighlights=true;render();
  });
  el('family-agenda-child').addEventListener('change',event=>{
   agendaChildId=event.target.value;render();
