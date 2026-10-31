@@ -348,3 +348,104 @@
  .family-agenda-edit{font-size:12px}
  .family-agenda-undated-list{grid-template-columns:1fr}
 }
+
+/* Skoleuka 2.2 – progressive disclosure, people before panels. */
+.family-children{margin:0 0 18px;padding:19px 22px 21px;border:1px solid #dae9dd;
+ border-radius:19px;background:#fff;box-shadow:0 7px 23px #214a3410}
+.family-children .family-toolbar{margin:0 0 12px;align-items:center}
+.family-children .family-toolbar h2{font-size:clamp(20px,2.5vw,25px);margin:0 0 3px}
+.family-children .family-toolbar p{font-size:12px;color:#6a8576;margin:0}
+.family-children .family-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:11px}
+.family-children .family-child{min-width:0;border:1px solid #deebe2;box-shadow:0 2px 9px #214a3410}
+.family-children .family-child-heading{padding:13px 15px 8px;gap:10px}
+.family-children .family-child-heading h3{font-size:18px}
+.family-children .family-child-week{font-size:10px;margin-top:5px;padding:4px 7px}
+.family-children .family-child-progress{padding:8px 15px 3px}
+.family-children .family-child-actions{padding:8px 12px 12px;gap:7px}
+.family-children .family-child-actions button{min-height:38px}
+.family-child-extra{margin:5px 14px 0;border-top:1px solid #e7efe8}
+.family-child-extra summary{cursor:pointer;min-height:36px;display:flex;align-items:center;
+ color:#427965;font-size:12px;font-weight:800;padding:8px 2px;list-style:none}
+.family-child-extra summary::-webkit-details-marker{display:none}
+.family-child-extra summary::after{content:'⌄';margin-left:auto;font-size:18px;line-height:1}
+.family-child-extra[open] summary::after{content:'⌃'}
+.family-child-extra .family-child-columns{margin:0 0 9px}
+.family-child-extra .family-word-state{margin:8px 0 10px}
+.family-child-extra summary:focus-visible{outline:3px solid #78b795;outline-offset:3px;border-radius:6px}
+
+/* High-value facts are first-class, but the full duplicate checklist stays tucked away. */
+.family-tomorrow.family-important{margin:0 0 19px;padding:20px 23px 18px;
+ border-radius:18px;border:1px solid #e2eadc;background:#fff;box-shadow:0 5px 16px #1745350d}
+.family-important-heading{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:15px}
+.family-important-heading h2{font-size:clamp(20px,2.6vw,25px);margin:2px 0 5px;color:#285841}
+.family-important-subtitle{font-size:12px;color:#6c8270;margin:0;line-height:1.55}
+.family-important-icon{display:flex;align-items:center;justify-content:center;
+ width:37px;height:37px;border-radius:12px;color:#855622;background:#fff1d7;
+ font-size:23px;font-weight:900;flex:none}
+.family-important-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));
+ gap:10px;margin-bottom:13px}
+.family-important-entry{min-width:0;background:#fffaf2;border:1px solid #f0e4cb;
+ border-radius:12px;padding:11px;display:flex;flex-direction:column;gap:6px}
+.family-important-date{font-size:11px;color:#885d2b;font-weight:800;text-transform:capitalize}
+.family-important-entry .family-agenda-item{box-shadow:none;border-radius:8px;padding:9px 10px}
+.family-important-entry .family-agenda-item strong{font-size:13px}
+.family-important-entry .family-agenda-item small{font-size:11px}
+.family-important-empty{margin:0;padding:12px 14px;background:#f6faf6;border-radius:10px;
+ color:#647c6e;font-size:12px;line-height:1.5}
+
+/* Native details keep the source, reporting and all actions accessible. */
+.family-disclosure{margin-top:11px;border-top:1px solid #e3ece4}
+.family-disclosure>summary{display:flex;align-items:center;gap:8px;min-height:45px;
+ color:#306951;font-size:13px;font-weight:800;cursor:pointer;list-style:none;padding:10px 3px}
+.family-disclosure>summary::-webkit-details-marker{display:none}
+.family-disclosure>summary::after{content:'⌄';margin-left:auto;font-size:20px;line-height:1}
+.family-disclosure[open]>summary::after{content:'⌃'}
+.family-disclosure>summary:focus-visible{outline:3px solid #7cbea0;outline-offset:2px;border-radius:7px}
+.family-disclosure-time{font-size:11px;font-weight:600;color:#688273}
+.family-disclosure-body{padding:10px 0 5px}
+.family-disclosure-body .family-focus-tabs{margin-top:0}
+.family-disclosure-body .family-reminders{margin-top:12px}
+.family-important .family-tomorrow-top{display:none}
+
+/* Undated homework remains available, with warnings visible in the summary. */
+details.family-agenda-undated{margin-top:13px;padding:0 12px;border:1px solid #e0eae1;
+ border-radius:11px;background:#f9fcf9}
+details.family-agenda-undated[hidden]{display:none!important}
+details.family-agenda-undated>summary{padding:12px 3px;list-style:none;
+ color:#536f5d;font-weight:800;font-size:12px;cursor:pointer}
+details.family-agenda-undated>summary::-webkit-details-marker{display:none}
+details.family-agenda-undated>summary::after{content:' ⌄';color:#47836b}
+details.family-agenda-undated[open]>summary::after{content:' ⌃'}
+details.family-agenda-undated>summary:focus-visible{outline:3px solid #78b795;outline-offset:2px}
+#family-agenda-undated-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:9px;padding:1px 0 12px}
+.family-agenda-day{gap:8px}
+.family-agenda-day.is-empty{opacity:.74}
+.family-agenda-item{gap:4px}
+.family-agenda-day .family-agenda-meta{font-size:10px}
+
+/* Family activity editing is a separate tool, not a second always-visible calendar. */
+.family-activities{padding:17px 21px;margin:16px 0 20px;border-radius:16px}
+.family-activities .family-activity-head h2{font-size:clamp(18px,2.3vw,22px)}
+.family-activities .family-activity-head p:not(.family-eyebrow){font-size:12px;margin-top:4px}
+.family-activities .family-activity-status{margin:8px 0;font-size:11px}
+.family-activity-manage{margin-top:8px}
+.family-activity-manage .family-activity-list{margin-top:8px}
+@media(max-width:700px){
+ .family-children{padding:15px 13px;margin-bottom:13px}
+ .family-children .family-toolbar{align-items:flex-start;gap:11px}
+ .family-children .family-toolbar-actions{gap:8px;flex-wrap:wrap}
+ .family-children .family-child-heading h3{font-size:17px}
+ .family-children .family-child-progress{padding:8px 12px 1px}
+ .family-children .family-child-actions{padding:7px 10px 11px}
+ .family-tomorrow.family-important{padding:16px 13px;margin-bottom:13px}
+ .family-important-heading{margin-bottom:10px}
+ .family-important-cards{grid-template-columns:1fr;gap:8px}
+ .family-important-entry{padding:9px}
+ #family-agenda-undated-list{grid-template-columns:1fr}
+ .family-agenda-day.is-empty{display:flex;flex-direction:row;align-items:center;
+  justify-content:space-between;gap:12px;padding:8px 12px}
+ .family-agenda-day.is-empty .family-agenda-quiet{font-size:11px}
+ .family-agenda-day.is-empty h3{font-size:12px}
+ .family-activities{padding:14px 13px}
+}
