@@ -70,3 +70,18 @@ og import uten å overstyre foreldres eksplisitte avmerking.
 
 Fysisk iOS/Android- og reell foresatt-til-barn-test er ikke erstattet
 av CI-testene; gjennomfør punktene over etter produksjonsutrulling.
+
+## Sikker validering av barneavkrysning (#89)
+Ved endring via et QR-registrert barn henter serveren autoritativ ukeplan fra
+`/api/plan` med barnets skole og trinn fra Supabase. Kun inneværende og neste
+skoleuke kan skrives; PDF-planen må være tilgjengelig og ferdig analysert.
+Serveren utvider gjentakende lekser, filtrerer til barnets gruppe og sammenligner
+`taskFingerprint` med hver faktisk lekse. Ukjente nøkler og lekser fra andre
+grupper avvises med 403. Hvis skolen eller AI-planen er utilgjengelig, svarer
+serveren 503 og oppdaterer ikke fremdriften. Foreldrenes eksisterende flyt og
+Supabase-policyer endres ikke.
+
+**Driftsbegrensning:** Hver skriveoperasjon krever at plan-endepunktet svarer.
+Dette kan gjøre lagring treg eller utilgjengelig ved problemer med skole-PDF,
+AI-jobb eller Netlify, men beskytter mot oppdiktede oppgaver. Senere kan en
+server-kontrollert, kortvarig allowlist-cache og atomisk ratebegrensning innføres.
