@@ -468,3 +468,30 @@ details.family-agenda-undated>summary:focus-visible{outline:3px solid #78b795;ou
  .family-agenda-days{grid-template-columns:1fr}
  .family-agenda-weekend-toggle{width:100%;margin-top:9px}
 }
+
+/* Parent-controlled QR pair dialog. No external QR image service is contacted. */
+dialog.child-pair-dialog{position:fixed;inset:0;box-sizing:border-box;
+ width:min(560px,calc(100% - 24px));max-width:560px;max-height:calc(100dvh - 30px);
+ margin:auto;background:#fff;border:1px solid #dce8dd;box-shadow:0 22px 70px #153c2b45;
+ border-radius:22px;padding:23px 28px;color:#22523e;overflow-y:auto;overscroll-behavior:contain}
+dialog.child-pair-dialog::backdrop{background:rgba(15,43,32,.69);backdrop-filter:blur(2px)}
+.child-pair-header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.child-pair-header h2{font-size:24px;letter-spacing:-.7px}
+.child-pair-dialog>p{font-size:13px;color:#607d69}
+#child-pair-qr{display:block;width:min(250px,100%);height:auto;aspect-ratio:1;margin:8px auto 16px;
+ background:#fff;border:12px solid #fff;box-shadow:0 4px 20px #1c57351b}
+.child-pair-label{display:grid;gap:5px;font-weight:750;font-size:12px;color:#396653}
+#child-pair-link{width:100%;min-height:42px;border:1px solid #c5dccc;border-radius:11px;padding:10px 12px;
+ font-size:11px;color:#315e4e;background:#f9fcfa}
+#child-pair-copy{margin-top:10px}.child-pair-hint{font-size:12px;line-height:1.6;color:#758274}
+#child-pair-new{margin:12px 0}.child-pair-devices{border-top:1px solid #e1ece4;margin-top:12px;padding-top:14px}
+.child-pair-devices>summary{font-size:13px;color:#31664f;font-weight:800;cursor:pointer;padding:8px 0}
+.child-pair-device{display:flex;justify-content:space-between;align-items:center;gap:12px;
+ padding:13px 0;border-bottom:1px solid #ecf1ec}
+.child-pair-device strong,.child-pair-device small{display:block}
+.child-pair-device small{font-size:11px;color:#6c8476}
+.child-pair-device button{border:1px solid #efd2cd;color:#9a5145;background:#fff9f8;
+ border-radius:10px;padding:9px 12px;cursor:pointer}
+.family-child-invite{background:#e8f5ec;border:1px solid #c5e2d0;color:#266f50;
+ border-radius:11px;padding:9px 13px;font-size:12px;font-weight:800;cursor:pointer}
+@media(max-width:700px){dialog.child-pair-dialog{padding:19px 16px}}
