@@ -51,7 +51,7 @@ function navigationSnapshot(){
 }
 function recordNavigation(mode='push'){
  if(!navigationReady||restoringRoute)return;
- const snapshot=navigationSnapshot(),previous=history.state;
+ const snapshot={...navigationSnapshot(),explicit:true},previous=history.state;
  try{
   sessionStorage.setItem(LAST_VIEW_KEY,snapshot.view);
   sessionStorage.setItem(LAST_ROUTE_KEY,JSON.stringify(snapshot));
@@ -677,7 +677,7 @@ function boot(){
     onCloudRestored:()=>{
       // A signed-in account must not redirect an explicit homepage or plan
       // route to the family dashboard merely because session restore finished.
-      if(initialRoute?.view==='welcome')return true;
+      if(initialRoute?.view==='welcome')return initialRoute.explicit===true;
       if(initialRoute?.view!=='plan')return false;
       if(!initialRoute.school){
         restoreNavigation(initialRoute);
@@ -784,7 +784,8 @@ function boot(){
   if(initialRoute?.view==='plan'&&initialRoute.school&&
      validSchool(initialRoute.school,siteConfig.schools)){
     restoreNavigation(initialRoute);
-  }else if(previousView==='family'||(previousView!=='welcome'&&familyUI.hasProfiles())){
+  }else if(previousView==='family'||(familyUI.hasProfiles()&&
+           (previousView!=='welcome'||initialRoute?.explicit!==true))){
     primaryView='plan';familyUI.enter();
   }else if(previousView==='welcome'){
     primaryView='welcome';renderShell();
@@ -793,18 +794,15 @@ function boot(){
   }else renderShell();
   document.documentElement.classList.add('skoleuka-route-ready');
   navigationReady=true;
+  const startupSnapshot=initialRoute?.view==='plan'&&initialRoute.profileId?
+    initialRoute:{...navigationSnapshot(),explicit:initialRoute?.explicit===true};
   try{
-    const snapshot=initialRoute?.view==='plan'&&initialRoute.profileId?
-      initialRoute:navigationSnapshot();
-    sessionStorage.setItem(LAST_VIEW_KEY,snapshot.view);
-    sessionStorage.setItem(LAST_ROUTE_KEY,JSON.stringify(snapshot));
+    sessionStorage.setItem(LAST_VIEW_KEY,startupSnapshot.view);
+    sessionStorage.setItem(LAST_ROUTE_KEY,JSON.stringify(startupSnapshot));
   }catch{}
   // The first entry is the in-app starting point. Later internal steps are
   // pushed, so the native browser Back button returns to the prior app view.
-  try{
-    history.replaceState(initialRoute?.view==='plan'&&initialRoute.profileId?
-      initialRoute:navigationSnapshot(),' ',location.href);
-  }catch{}
+  try{history.replaceState(startupSnapshot,' ',location.href);}catch{}
   // If a tablet or fridge display stays open, refresh on week/date rollover.
   setInterval(()=>{
     const next=schoolCalendar(new Date(),siteConfig.school.timezone);
