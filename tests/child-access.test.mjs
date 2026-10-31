@@ -75,7 +75,7 @@ function fixture(){
  const handler=createChildAccessHandler({env,fetchImpl,now,secret});
  const request=(action,body=null,{token=jwt,origin='https://skoleuka.no'}={})=>
   handler(new Request('https://skoleuka.no/api/child-access'+
-    (body===null?'?action='+action+'&childId='+child:''),{
+    (body===null?'?action='+action+'&childId='+child+(action==='child'?'&year=2026&week=45':''):''),{
    method:body===null?'GET':'POST',
    headers:{Origin:origin,Authorization:'Bearer '+token, ...(body!==null?{'Content-Type':'application/json'}:{})},
    body:body===null?undefined:JSON.stringify({action,...body})
