@@ -294,7 +294,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const sourceWarning=sourceHealth?.status==='changed'?
    'Endringer i kommunens kilde må kontrolleres. Reserveversjonen brukes der datoene er uavklarte.':
    sourceHealth?.stale?
-   'Kommunens kilde er ikke nylig verifisert. Datoer fra reserveversjonen kan være utdaterte.':
+   'Kommunens kilde er ikke nylig verifisert. Reserveversjonen fra sist kontrollerte kilde kan være utdatert.':
    '';
   el('family-calendar-status').textContent=!profiles.length?'':absent?
    'Sjekker den offisielle skoleruta for aktuelle skoler …':
