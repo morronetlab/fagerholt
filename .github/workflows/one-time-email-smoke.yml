@@ -86,7 +86,7 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           import dns from 'node:dns/promises';
-          for(const host of ['skoleuk.no','www.skoleuk.no','ukeplanen.netlify.app']){
+          for(const host of ['skoleuk.no','www.skoleuk.no','skoleuka.no','www.skoleuka.no','ukeplanen.netlify.app']){
             const x={host};
             for(const [key,fn] of [['lookup',()=>dns.lookup(host)],
               ['A',()=>dns.resolve4(host)],['AAAA',()=>dns.resolve6(host)]]){
