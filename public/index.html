@@ -172,6 +172,30 @@
       <div id="family-empty" class="family-empty"><span aria-hidden="true">🏠</span><h3>Legg til det første barnet</h3><p>Velg skole og klassetrinn, så finner vi ukeplanen.</p><button id="family-empty-add" type="button" class="family-add-button">+ Legg til første barn</button></div>
       <div id="family-cards" class="family-cards" aria-live="polite"></div>
       </section>
+      <section class="family-tomorrow family-important" aria-labelledby="family-tomorrow-title">
+        <div class="family-important-heading">
+          <div><p class="family-eyebrow">DET SOM KREVER OPPMERKSOMHET</p>
+            <h2 id="family-tomorrow-title">Viktig denne uka</h2>
+            <p class="family-important-subtitle">Fridager, vaksinasjon, endret skoledag og andre viktige beskjeder.</p></div>
+          <span aria-hidden="true" class="family-important-icon">!</span>
+        </div>
+        <div id="family-important-cards" class="family-important-cards" aria-live="polite"></div>
+        <details id="family-practical-details" class="family-disclosure">
+          <summary><span id="family-practical-label">Vis komplette skolebeskjeder og ekstra utstyr</span><span id="family-next-day" class="family-disclosure-time"></span></summary>
+          <div class="family-disclosure-body">
+        <div class="family-focus-tabs" role="group" aria-label="Huskeliste for">
+          <button type="button" data-family-focus="today" aria-pressed="false">I dag</button>
+          <button type="button" data-family-focus="next" aria-pressed="true">Neste skoledag</button>
+          <button type="button" data-family-focus="week" aria-pressed="false">Denne uka</button>
+        </div>
+        <p class="family-reminders-intro">Alle praktiske beskjeder og utstyr fra skolens ukeplan, med kildehenvisninger.</p>
+        <div id="family-reminders" class="family-reminders" aria-live="polite"></div>
+        <p id="family-calendar-status" class="family-calendar-status" role="status" aria-live="polite"></p>
+        <a id="family-calendar-source" class="family-calendar-source" href="https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/skoleruta/" target="_blank" rel="noopener noreferrer" hidden>Se kommunens skolerute ↗</a>
+        <button type="button" id="family-report-missing" class="family-report-missing">Mangler det en viktig beskjed? Rapporter feil</button>
+          </div>
+        </details>
+      </section>
       <section class="family-agenda" aria-labelledby="family-agenda-title">
         <div class="family-agenda-top">
           <div><p class="family-eyebrow">SKOLE · FRITID · AVTALER</p>
@@ -198,30 +222,6 @@
         </details>
         <p id="family-agenda-missing" class="family-agenda-missing" hidden></p>
         <p class="family-agenda-footnote">Skoleinformasjon kommer fra publiserte ukeplaner og kommunens skolerute. Familiens avtaler er registrert av dere. Sjekk skolens originalkilde ved avvik.</p>
-      </section>
-      <section class="family-tomorrow family-important" aria-labelledby="family-tomorrow-title">
-        <div class="family-important-heading">
-          <div><p class="family-eyebrow">DET SOM KREVER OPPMERKSOMHET</p>
-            <h2 id="family-tomorrow-title">Viktig denne uka</h2>
-            <p class="family-important-subtitle">Fridager, vaksinasjon, endret skoledag og andre viktige beskjeder.</p></div>
-          <span aria-hidden="true" class="family-important-icon">!</span>
-        </div>
-        <div id="family-important-cards" class="family-important-cards" aria-live="polite"></div>
-        <details id="family-practical-details" class="family-disclosure">
-          <summary><span id="family-practical-label">Vis komplette skolebeskjeder og ekstra utstyr</span><span id="family-next-day" class="family-disclosure-time"></span></summary>
-          <div class="family-disclosure-body">
-        <div class="family-focus-tabs" role="group" aria-label="Huskeliste for">
-          <button type="button" data-family-focus="today" aria-pressed="false">I dag</button>
-          <button type="button" data-family-focus="next" aria-pressed="true">Neste skoledag</button>
-          <button type="button" data-family-focus="week" aria-pressed="false">Denne uka</button>
-        </div>
-        <p class="family-reminders-intro">Alle praktiske beskjeder og utstyr fra skolens ukeplan, med kildehenvisninger.</p>
-        <div id="family-reminders" class="family-reminders" aria-live="polite"></div>
-        <p id="family-calendar-status" class="family-calendar-status" role="status" aria-live="polite"></p>
-        <a id="family-calendar-source" class="family-calendar-source" href="https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/skoleruta/" target="_blank" rel="noopener noreferrer" hidden>Se kommunens skolerute ↗</a>
-        <button type="button" id="family-report-missing" class="family-report-missing">Mangler det en viktig beskjed? Rapporter feil</button>
-          </div>
-        </details>
       </section>
       <section id="family-activity-section" class="family-activities" aria-labelledby="family-activity-title">
         <div class="family-activity-head">
