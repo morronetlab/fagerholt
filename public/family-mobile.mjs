@@ -47,7 +47,7 @@ export function initFamilyMobileUI(){
   const button=event.target.closest('[data-family-mobile-tab]');
   if(!button||!VIEWS.has(button.dataset.familyMobileTab))return;
   view=button.dataset.familyMobileTab;save();paintTabs();
-  if(mobile())root().scrollIntoView({block:'start',behavior:'instant'});
+  if(mobile())root().scrollIntoView({block:'start',behavior:'auto'});
  });
  dayNav().addEventListener('click',event=>{
   const button=event.target.closest('[data-family-mobile-day]');
