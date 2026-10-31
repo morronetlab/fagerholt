@@ -18,7 +18,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/gu,c=>({
  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
 }[c]));
 const safeURL=raw=>{try{const u=new URL(raw);return u.protocol==='https:'?u.href:null;}catch{return null;}};
-const state={child:null,plan:null,activities:[],day:0,calendar:null,session:null,installer:null,
+const state={child:null,plan:null,activities:[],municipal:null,day:0,calendar:null,session:null,installer:null,
  homework:[],bag:[],progress:null,progressBusy:false,progressError:'',
  packing:null,packingBusy:false,packingError:''};
 const getToken=()=>{try{return localStorage.getItem(KEY);}catch{return null;}};
@@ -51,7 +51,7 @@ async function get(path,{method='GET',body,token=null}={}){
  return data;
 }
 function setup(message){
- state.child=null;state.plan=null;state.activities=[];state.progress=null;
+ state.child=null;state.plan=null;state.activities=[];state.municipal=null;state.progress=null;
  state.progressBusy=false;state.progressError='';state.packing=null;state.packingBusy=false;state.packingError='';
  $('child-ready').hidden=true;$('child-setup').hidden=false;
  $('child-setup-message').textContent=message||
@@ -92,6 +92,19 @@ function render(){
    esc(item.text||'')+'</p>').join('')+'</div>':'';
  $('child-other-groups').hidden=!details.other.length;
  $('child-other-events').innerHTML=details.other.length?timeline(details.other):'';
+ const official=state.municipal;
+ const municipalRows=official?.schoolId===child.school&&official?.year===calendar.year&&
+  official?.week===calendar.week&&['live','snapshot'].includes(official.sourceStatus)?
+  (official.events||[]).filter(x=>x.date===schoolDay(state.day)&&
+   (x.schoolFree===true||x.sfoClosed===true)):[];
+ $('child-municipal-section').hidden=!municipalRows.length;
+ $('child-municipal').innerHTML=municipalRows.map(x=>
+  '<article class="child-municipal-row content-kind-municipal">'+
+  '<span class="content-type-label content-kind-municipal">'+contentCategoryLabel('municipal')+'</span>'+
+  '<strong>'+esc(x.label||'Endring i skoleruta')+'</strong>'+
+  '<small>'+(x.schoolFree?'Skolefri ifølge kommunen. ':'')+
+  (x.sfoClosed?'SFO er stengt.':'Sjekk SFO sine åpningstider hos skolen.')+'</small></article>'
+ ).join('');
  const activityRows=activityOccurrences(state.activities,calendar.year,calendar.week)
   .filter(x=>x.date===schoolDay(state.day)&&(!x.child_id||x.child_id===child.id));
  $('child-activities').innerHTML=activityRows.length?activityRows.map(x=>
@@ -159,7 +172,7 @@ function render(){
 async function load(){
  if(state.progressBusy)return; // Keep in-flight writes from being overwritten by a refresh.
  state.session=getToken();
- state.progress=null;state.progressError='';state.packing=null;state.packingError='';
+ state.progress=null;state.progressError='';state.packing=null;state.packingError='';state.municipal=null;
  if(!state.session||!/^[a-f0-9]{64}$/u.test(state.session)){setup();return;}
  status('Henter ukeplanen din …');
  const cal=familyWeekCalendar(new Date(),'Europe/Oslo');
@@ -194,6 +207,15 @@ async function load(){
   }
   state.day=cal.weekday;
   render();
+  // Public read-only school calendar; never delay the child's interactive plan.
+  const schoolId=child.school,year=cal.year,week=cal.week;
+  void get('/api/school-calendar?school='+encodeURIComponent(schoolId)+
+    '&year='+year+'&week='+week).then(municipal=>{
+   if(state.child?.id===child.id&&state.calendar?.year===year&&
+      state.calendar?.week===week&&municipal?.schoolId===schoolId){
+    state.municipal=municipal;render();
+   }
+  }).catch(()=>{ /* Municipal source is optional; do not invent school closures. */ });
   showInstall();
  }catch(e){
   if(e.status===401||e.status===403){setToken(null);state.session=null;}
