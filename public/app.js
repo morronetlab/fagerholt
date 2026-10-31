@@ -26,6 +26,7 @@ let accountUI=null;
 let primaryView="welcome";
 let navigationReady=false,restoringRoute=false;
 const NAV_KEY='skoleukaRouteV1';
+const LAST_VIEW_KEY='skoleuka.last-primary-view.v1';
 // SPA route changes begin at the top, but opening/closing the account modal
 // preserves the exact previous scroll position.
 function scrollNewViewToTop(){
@@ -41,6 +42,7 @@ function navigationSnapshot(){
 function recordNavigation(mode='push'){
  if(!navigationReady||restoringRoute)return;
  const snapshot=navigationSnapshot(),previous=history.state;
+ try{sessionStorage.setItem(LAST_VIEW_KEY,snapshot.view);}catch{}
  if(previous?.[NAV_KEY]&&JSON.stringify(previous)===JSON.stringify(snapshot))return;
  try{history[mode==='replace'?'replaceState':'pushState'](snapshot,'',location.href);}
  catch(error){console.warn('Kunne ikke lagre app-navigasjonen',error?.message);}
@@ -728,10 +730,16 @@ function boot(){
   $('reload').addEventListener('click',reload);
   $('feedback-retry').addEventListener('click',()=>state.plan?.aiStatus==='processing'?reload({quiet:true,statusOnly:true}):reload());
   const savedSchool=storageRead(schoolSelectionKey());
-  if(familyUI.hasProfiles()){primaryView='plan';familyUI.enter();}
+  // Route is known before cloud account restoration finishes. Keep the correct
+  // section visible instead of briefly painting the plan and welcome pages.
+  let previousView=history.state?.[NAV_KEY]===true?history.state.view:null;
+  if(!previousView)try{previousView=sessionStorage.getItem(LAST_VIEW_KEY);}catch{}
+  if(previousView==='family'||familyUI.hasProfiles()){primaryView='plan';familyUI.enter();}
   else if(validSchool(savedSchool,siteConfig.schools)){primaryView='plan';selectSchool(savedSchool,{restore:true});}
   else renderShell();
+  document.documentElement.classList.add('skoleuka-route-ready');
   navigationReady=true;
+  try{sessionStorage.setItem(LAST_VIEW_KEY,navigationSnapshot().view);}catch{}
   // The first entry is the in-app starting point. Later internal steps are
   // pushed, so the native browser Back button returns to the prior app view.
   try{history.replaceState(navigationSnapshot(),' ',location.href);}catch{}
