@@ -13,6 +13,7 @@
 <link rel="icon" type="image/svg+xml" href="/barn/icon.svg">
 <link rel="apple-touch-icon" href="/barn/icon-192.png">
 <link rel="stylesheet" href="/barn/child.css">
+<link rel="stylesheet" href="/barn/content-categories.css">
 <title>Min Skoleuka – ukeplanen min</title>
 </head>
 <body>
@@ -39,6 +40,12 @@
    <button id="child-install-dismiss" type="button" class="child-close" aria-label="Skjul installasjonsinfo">✕</button>
   </div>
   <nav id="child-days" class="child-days" aria-label="Velg skoledag"></nav>
+  <div class="child-type-key" aria-label="Typer innlegg i ukeplanen">
+   <span class="content-type-label content-kind-homework">📚 Lekse</span>
+   <span class="content-type-label content-kind-practical">📌 Praktisk fra ukeplanen</span>
+   <span class="content-type-label content-kind-activity">⚽ Aktivitet</span>
+   <span class="content-type-label content-kind-municipal">🏫 Skolerute</span>
+  </div>
   <section class="child-panel" aria-labelledby="child-events-heading"><div class="child-panel-heading"><span aria-hidden="true">📚</span><h2 id="child-events-heading">Dette skjer på skolen</h2></div>
    <div id="child-events"></div><div id="child-attendance"></div><div id="child-notes"></div>
    <details id="child-other-groups" class="child-secondary-groups" hidden>
@@ -48,13 +55,13 @@
    <div id="child-activities"></div></section>
   <section class="child-panel" aria-labelledby="child-bag-heading"><div class="child-panel-heading"><span aria-hidden="true">🎒</span><h2 id="child-bag-heading">Husk i sekken</h2></div>
    <div id="child-bag"></div><p id="child-bag-progress" class="child-check-progress" aria-live="polite"></p>
-   <p class="child-local-note">✓ Pakkestatus huskes på denne enheten.</p></section>
+   <p class="child-local-note">✓ Pakkestatus deles med foresatte når synkroniseringen er tilgjengelig.</p></section>
   <section class="child-panel" aria-labelledby="child-homework-heading"><div class="child-panel-heading"><span aria-hidden="true">✏️</span><h2 id="child-homework-heading">Lekser denne uka</h2></div>
    <p class="child-check-progress" id="child-homework-progress" aria-live="polite"></p>
    <div id="child-homework"></div>
    <p class="child-sync-note" id="child-homework-sync" role="status" aria-live="polite">Henter felles lekseprogresjon …</p>
    <button type="button" id="child-import-homework" class="child-outline" hidden>Overfør tidligere avkrysninger</button>
-   <p class="child-local-note">Lekser synkroniseres med familiekontoen. Pakkelisten og quizfremdriften lagres fortsatt bare på denne enheten.</p></section>
+   <p class="child-local-note">Lekser og pakkeliste synkroniseres med familiekontoen. Quizfremdriften lagres bare på denne enheten.</p></section>
   <section class="child-panel child-quiz-panel" id="child-quiz-section" hidden aria-labelledby="child-quiz-title">
    <div class="child-panel-heading"><span aria-hidden="true">🎮</span><h2 id="child-quiz-title">Ordøving og quiz</h2></div>
    <p class="child-quiz-intro">Øv på ukas gloser og norske ord fra skolens ukeplan.</p>
