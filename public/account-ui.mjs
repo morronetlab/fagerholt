@@ -49,7 +49,6 @@ export function initAccountUI({familyUI}){
   const section=$('account-digest-settings'),checkbox=$('account-digest-optin');
   section.hidden=!client?.isSignedIn()||!familyId;
   checkbox.disabled=true;
-  $('account-digest-status').textContent='';
   if(section.hidden)return;
   try{
    const [config,enabled]=await Promise.all([
