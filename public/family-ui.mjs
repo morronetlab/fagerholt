@@ -11,6 +11,7 @@ import {practiceKey,restorePractice,practiceSummary} from './shared/word-practic
 import {taskFingerprint} from './shared/cloud-account.mjs';
 import {packingFingerprint} from './shared/packing-fingerprint.mjs';
 import {scopedPackingItems} from './barn/child-learning.mjs';
+import {contentCategoryLabel} from './shared/content-categories.mjs';
 import {expandHomework} from './shared/homework-view.mjs';
 import {practicalHighlights} from './shared/practical-highlights.mjs';
 import {priorityKey,applyPracticalPriority} from './shared/practical-priority.mjs';
@@ -478,8 +479,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     const summary=x.schoolFree?'Elevene har fri ifølge kommunens skolerute.':'SFO er stengt ifølge kommunens skolerute.';
     const sourceName=x.sourceStatus==='snapshot'?'Kommunal skolerute (sist kontrollert '+escape(x.checkedAt||'2026-10-30')+')':
      'Kommunal skolerute';
-    return '<article class="family-reminder family-reminder-priority family-reminder-workday family-reminder-municipal">'+
-     '<span aria-hidden="true">📅</span><div><strong>'+escape(x.name)+'</strong>'+
+    return '<article class="family-reminder family-reminder-priority family-reminder-workday family-reminder-municipal content-kind-municipal">'+
+     '<span aria-hidden="true">🏫</span><div><span class="content-type-label content-kind-municipal">'+contentCategoryLabel('municipal')+'</span><strong>'+escape(x.name)+'</strong>'+
      '<span class="family-reminder-importance">Påvirker arbeidsdagen</span>'+
      '<span class="family-reminder-date">'+escape(dateLabel)+'</span>'+
      '<p class="family-reminder-short">'+escape(x.label.replace(/^\\S+\\s*:\\s*/u,''))+'</p>'+
@@ -510,9 +511,10 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    const details='<details class="family-reminder-detail"><summary>'+
     (shortened?'Les hele beskjeden':'Se kildedetaljer')+'</summary>'+
     '<p>'+escape(digest.fullText)+'</p>'+sourceQuote+pdfLink+'</details>';
-   return '<article class="family-reminder'+(emphasized?' family-reminder-priority':'')+
+   return '<article class="family-reminder content-kind-practical'+(emphasized?' family-reminder-priority':'')+
     (impact==='workday'?' family-reminder-workday':'')+'">'+
-    '<span aria-hidden="true">'+x.icon+'</span><div><strong>'+escape(x.name)+'</strong>'+
+    '<span aria-hidden="true">'+x.icon+'</span><div><span class="content-type-label content-kind-practical">'+
+    contentCategoryLabel('practical')+'</span><strong>'+escape(x.name)+'</strong>'+
     (tag?'<span class="family-reminder-importance">'+escape(tag)+'</span>':'')+
     (digest.dateLabel?'<span class="family-reminder-date">'+escape(digest.dateLabel)+'</span>':'')+
     '<p class="family-reminder-short">'+escape(digest.shortText)+'</p>'+
