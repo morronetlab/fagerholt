@@ -35,8 +35,6 @@ export function familyAgendaMarkup(model,{today=''}={}){
    (d.items.length?d.items.map(familyAgendaItemHtml).join(''):
     '<p class="family-agenda-quiet">Ingen registrerte hendelser</p>')+
   '</section>').join('');
- const undated=model.undated.length?
-  '<h3>Hele uka · ingen bestemt dag oppgitt</h3>'+
-  '<div class="family-agenda-undated-list">'+model.undated.map(familyAgendaItemHtml).join('')+'</div>':'';
+ const undated=model.undated.map(familyAgendaItemHtml).join('');
  return {days,undated};
 }
