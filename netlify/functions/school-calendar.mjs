@@ -53,7 +53,12 @@ export function createSchoolCalendarHandler({fetchImpl=fetch,now=()=>new Date(),
   if(new Date(first+'T00:00:00Z').getUTCFullYear()===2026&&
     Number(new Date(first+'T00:00:00Z').getUTCDay())===0)
    return reply({error:'Ugyldig uke'},400);
-  const html=await readPublicHtml();
+  // Fast, read-only first paint from the dated official snapshot. The browser
+  // concurrently requests the standard live-checked response and replaces the
+  // snapshot if the official municipality has published different facts.
+  // The normal endpoint remains authoritative and unchanged.
+  const snapshotOnly=q.get('mode')==='snapshot';
+  const html=snapshotOnly?null:await readPublicHtml();
   const years=[year-1,year];
   const events=new Map(),modes=[],verifiedDates=[];
   for(const startYear of years){
