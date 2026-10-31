@@ -1219,3 +1219,82 @@ async function ensurePracticalOpen(page){
  if(await detail.count()&&!(await detail.evaluate(el=>el.open)))
   await detail.locator('summary').click();
 }
+
+test('Skoleuka 2.2 mobile hierarchy makes children and critical notices prominent without losing original sources',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:740,mockNow:'2026-10-28T10:00:00Z'});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[{id:'child-2-2-red',name:'Barn Rød',school:'sjostrand',grade:'2',group:'Rød'}]
+ })));
+ await page.route('**/api/plan?**',route=>reply(route,{
+  ...basePlan('2'),year:2026,week:44,
+  notices:[{text:'Vaksinasjon denne uka – husk samtykkeskjema',group:'Rød'}],
+  homework:[{subject:'Norsk',text:'Les et kapittel',dueDay:'Torsdag',group:'Rød'}]
+ }));
+ await page.route('**/api/school-calendar?**',route=>reply(route,{
+  schoolId:'sjostrand',year:2026,week:44,sourceStatus:'live',events:[
+   {date:'2026-10-30',label:'Planleggingsdag – elevene har fri',schoolFree:true,sfoClosed:false}
+  ]
+ }));
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-important-cards').getByText(/Planleggingsdag/).waitFor({state:'visible'});
+ await page.locator('#family-important-cards').getByText(/Vaksinasjon/).waitFor({state:'visible'});
+ const snapshot=await page.evaluate(()=>{
+  const top=id=>document.querySelector(id).getBoundingClientRect().top;
+  return {people:top('#family-children'),alerts:top('.family-important'),
+   week:top('.family-agenda'),manage:top('#family-activity-section'),
+   extra:document.querySelector('#family-cards .family-child-extra').open,
+   reminders:document.querySelector('#family-practical-details').open,
+   activity:document.querySelector('#family-activity-manage').open,
+   undated:document.querySelector('#family-agenda-undated').open};
+ });
+ assert.ok(snapshot.people<snapshot.alerts&&snapshot.alerts<snapshot.week&&
+  snapshot.week<snapshot.manage);
+ assert.equal(snapshot.extra,false);
+ assert.equal(snapshot.reminders,false);
+ assert.equal(snapshot.activity,false);
+ assert.equal(snapshot.undated,false);
+ assert.equal(await page.locator('#family-cards .family-child-progress').count(),1);
+ assert.equal(await page.locator('#family-cards [data-family-open]').isVisible(),true);
+ assert.equal(await page.locator('#family-important-cards a[href*="minskole.no"]').count()>0,true);
+ assert.match(await page.locator('#family-agenda-undated-summary').innerText(),/viktig/);
+ await page.locator('#family-agenda-undated>summary').click();
+ assert.equal(await page.locator('#family-agenda-undated').evaluate(el=>el.open),true);
+ assert.match(await page.locator('#family-agenda-undated-list').innerText(),/Vaksinasjon/);
+ await page.locator('#family-practical-details>summary').click();
+ assert.equal(await page.locator('#family-practical-details').evaluate(el=>el.open),true);
+ await page.locator('#family-reminders').getByText(/Vaksinasjon/).first().waitFor({state:'visible'});
+ assert.deepEqual(errors,[]);
+});
+
+test('2.2 family administration is minimized and opens the correct editor from calendar',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:740,mockNow:'2026-10-28T10:00:00Z'});
+ await page.evaluate(()=>{
+  localStorage.setItem('ukeplanen.family.v2',JSON.stringify({version:2,profiles:[
+   {id:'child-2-2-act',name:'Barn A',school:'sjostrand',grade:'2',group:''}
+  ]}));
+  localStorage.setItem('ukeplanen.family.activities.v1',JSON.stringify([
+   {id:'2-2-activity-1',title:'Korpsøvelse',child_id:null,occurs_on:'2026-10-28',
+    repeat_rule:'weekly',repeat_until:null,start_time:'17:00',end_time:null}
+  ]));
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-agenda-days').getByText('Korpsøvelse').waitFor({state:'visible'});
+ assert.equal(await page.locator('#family-activity-manage').evaluate(el=>el.open),false);
+ assert.match(await page.locator('#family-activity-manage-summary').innerText(),/1 aktivitet/);
+ assert.equal(await page.locator('#family-activity-form').isVisible(),false);
+ await page.locator('#family-activity-manage>summary').click();
+ await page.locator('#family-activity-list').getByText('Korpsøvelse').waitFor({state:'visible'});
+ await page.locator('#family-agenda-days [data-family-agenda-edit]').click();
+ assert.equal(await page.locator('#family-activity-manage').evaluate(el=>el.open),false);
+ assert.equal(await page.locator('#family-activity-form').isVisible(),true);
+ await page.locator('#family-activity-name').fill('Korps – ny øving');
+ await page.locator('#family-activity-save').click();
+ await page.locator('#family-agenda-days').getByText('Korps – ny øving').waitFor({state:'visible'});
+ assert.equal(await page.locator('#family-activity-form').isVisible(),false);
+ assert.equal(await page.locator('#family-activity-manage').evaluate(el=>el.open),false);
+ await page.locator('#family-activity-add').click();
+ assert.equal(await page.locator('#family-activity-form').isVisible(),true);
+ await page.locator('#family-activity-cancel').click();
+ assert.equal(await page.locator('#family-activity-form').isVisible(),false);
+ assert.deepEqual(errors,[]);
+});
