@@ -440,6 +440,78 @@ test('Desktop family navigation and overview header remain unchanged',async t=>{
  assert.notEqual(await page.locator('.topbar').evaluate(x=>getComputedStyle(x).position),'sticky');
  assert.deepEqual(errors,[]);
 });
+test('Mobile family layout uses one week label and keeps child actions aligned at 320px',async t=>{
+ const {page,errors}=await openPage(t,{width:320,height:740});
+ await page.locator('#family-toggle').click();
+ await addFamilyChild(page,'Barn A');
+ assert.equal(await page.locator('#header-family-week').isVisible(),false);
+ assert.equal(await page.locator('#family-mobile-week').isVisible(),true);
+ assert.equal(await page.locator('#family-mobile-week').innerText(),'Uke 44');
+ const layout=await page.evaluate(()=>{
+  const box=selector=>document.querySelector(selector).getBoundingClientRect();
+  const title=box('#family-children-title'),add=box('#family-mobile-add'),
+   settings=box('#family-mobile-admin-toggle'),header=box('.family-toolbar'),
+   shell=box('#family-view');
+  return {titleY:title.top+title.height/2,addY:add.top+add.height/2,
+   settingsY:settings.top+settings.height/2,titleRight:title.right,
+   addLeft:add.left,settingsRight:settings.right,headerHeight:header.height,
+   shellRight:shell.right,scroll:document.documentElement.scrollWidth>innerWidth};
+ });
+ assert.equal(layout.scroll,false,'No horizontal overflow at 320px');
+ assert.ok(Math.abs(layout.titleY-layout.addY)<16,'Add child must stay on title row');
+ assert.ok(Math.abs(layout.titleY-layout.settingsY)<16,'Settings must stay on title row');
+ assert.ok(layout.titleRight<layout.addLeft,'Title and action controls must not overlap');
+ assert.ok(layout.settingsRight<=layout.shellRight+2,'Buttons must fit inside the card');
+ assert.ok(layout.headerHeight<65,'Child toolbar must not become a stacked block');
+ await page.locator('[data-family-mobile-tab="calendar"]').click();
+ assert.equal(await page.locator('#family-mobile-week').isVisible(),true);
+ assert.equal(await page.locator('#header-family-week').isVisible(),false);
+ await page.locator('[data-family-mobile-tab="activities"]').click();
+ assert.equal(await page.locator('#family-mobile-week').isVisible(),true);
+ assert.equal(await page.locator('#header-family-week').isVisible(),false);
+ assert.deepEqual(errors,[]);
+});
+test('Mobile Activities opens directly, has compact cards and retains edit actions',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:800});
+ await page.locator('#family-toggle').click();
+ await page.locator('[data-family-mobile-tab="activities"]').click();
+ assert.equal(await page.locator('#family-activity-manage').evaluate(el=>el.open),true);
+ assert.equal(await page.locator('#family-activity-manage>summary').isVisible(),false);
+ const heading=page.locator('#family-activity-title'),add=page.locator('#family-activity-add');
+ const header=await page.evaluate(()=>{
+  const title=document.querySelector('#family-activity-title').getBoundingClientRect();
+  const add=document.querySelector('#family-activity-add').getBoundingClientRect();
+  return {titleY:title.top+title.height/2,addY:add.top+add.height/2,
+   addWidth:add.width,within:add.right<=document.querySelector('#family-activity-section').getBoundingClientRect().right};
+ });
+ assert.ok(Math.abs(header.titleY-header.addY)<18,'Activity add button shares title row');
+ assert.ok(header.addWidth<135,'Activity action should be compact');
+ assert.equal(header.within,true);
+ await add.click();
+ await page.locator('#family-activity-name').fill('Korpsøvelse');
+ await page.locator('#family-activity-date').fill('2026-10-28');
+ await page.locator('#family-activity-start').fill('17:00');
+ await page.locator('#family-activity-end').fill('19:00');
+ await page.locator('#family-activity-repeat').selectOption('weekly');
+ await page.locator('#family-activity-location').fill('Wilds Minne');
+ await page.locator('#family-activity-responsible').fill('Pappa');
+ await page.locator('#family-activity-save').click();
+ await page.locator('#family-activity-list .family-activity-card').first().waitFor({state:'visible'});
+ const card=page.locator('#family-activity-list .family-activity-card').first();
+ assert.match(await card.innerText(),/Korpsøvelse/);
+ assert.equal(await card.locator('.content-type-label').isVisible(),false,
+  'The Activities tab already provides the event category');
+ assert.equal(await card.locator('[data-activity-edit]').isVisible(),true);
+ assert.equal(await card.locator('[data-activity-delete]').isVisible(),true);
+ const height=await card.evaluate(el=>el.getBoundingClientRect().height);
+ assert.ok(height<205,'Mobile activity card must be compact, actual height '+height);
+ await card.locator('[data-activity-edit]').click();
+ assert.equal(await page.locator('#family-activity-form').isVisible(),true);
+ await page.locator('#family-activity-cancel').click();
+ assert.equal(await page.locator('#family-activity-form').isVisible(),false);
+ assert.equal(await card.isVisible(),true,'Cancel returns to directly visible list');
+ assert.deepEqual(errors,[]);
+});
 test('Mobile family overview shows two compact tappable children, hides administration and keeps desktop intact',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.locator('#family-toggle').click();
