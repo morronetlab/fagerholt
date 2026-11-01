@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="nb">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#1D5C4B">
+  <title>Driftsstatus – Skoleuka</title>
+  <link rel="icon" href="/brand/skoleuka-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/drift/drift.css">
+</head>
+<body>
+  <main class="container">
+    <header class="top">
+      <img src="/brand/skoleuka-icon.svg" alt="" width="50" height="50">
+      <div><p class="overline">INTERN DRIFT</p><h1>Skoleuka · Kildeovervåking</h1>
+      <p>Offentlige skolekilder, PDF- og AI-status. Ingen familie- eller elevdata.</p></div>
+    </header>
+    <section class="panel" id="login">
+      <h2>Åpne driftsoversikten</h2>
+      <p>Bruk <code>OPS_DASHBOARD_TOKEN</code> fra Netlify. Nøkkelen beholdes bare i denne nettleserfanens minne.</p>
+      <form id="credentials">
+        <label for="ops-token">Tilgangsnøkkel</label>
+        <div class="formrow"><input id="ops-token" type="password" autocomplete="off" spellcheck="false" required minlength="24" placeholder="Minst 24 tegn"><button type="submit">Åpne oversikt</button></div>
+      </form>
+      <p id="auth-error" class="error" role="alert"></p>
+    </section>
+    <section id="dashboard" hidden>
+      <div class="toolbar"><p id="last-update" role="status"></p>
+        <div><button id="refresh" type="button">Oppdater</button><button id="logout" type="button" class="secondary">Lås oversikten</button></div></div>
+      <div class="metrics">
+        <article class="metric"><span>Skoler i registeret</span><strong id="schools-count">–</strong></article>
+        <article class="metric"><span>Kontrollerte trinn</span><strong id="grades-count">–</strong></article>
+        <article class="metric"><span>Trinn med problemer</span><strong id="attention-count">–</strong></article>
+      </div>
+      <section class="panel" aria-labelledby="calendar-heading">
+        <h2 id="calendar-heading">Kommunal skolerute</h2>
+        <p id="calendar-status"></p>
+        <p id="calendar-verified"></p>
+      </section>
+      <section class="panel">
+        <h2>Varsling</h2>
+        <p id="alert-info"></p>
+        <p class="hint">Feil varsles ved tre påfølgende, adskilte kontroller. Kilder uten kontroller vises som «Ikke kontrollert».</p>
+      </section>
+      <section class="panel" aria-labelledby="sources-heading">
+        <div class="sectionhead"><h2 id="sources-heading">Skoler og trinn</h2>
+          <label>Søk skole <input type="search" id="school-search" placeholder="Skolenavn"></label></div>
+        <div id="school-list" aria-live="polite"></div>
+      </section>
+      <p class="fineprint">Status viser observerte kildekontroller, ikke en garanti for at alle skolers PDF-er er publisert. «PDF-lenke funnet» betyr ikke at PDF er lastet ned eller tolket. Ekstra skoler og trinn kan legges til via <code>OPS_MONITOR_TARGETS</code>.</p>
+    </section>
+  </main>
+  <script type="module" src="/drift/drift.mjs"></script>
+</body>
+</html>

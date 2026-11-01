@@ -5,6 +5,7 @@ import {interpretPdfWithAI} from '../../lib/ai-plan.mjs';
 import {auditPracticalSource} from '../../lib/practical-source-audit.mjs';
 import {DIGEST_PRACTICAL_EVIDENCE_VERSION,verifyPracticalDigestHighlights} from '../../lib/digest-practical-evidence.mjs';
 import {recordSourceAlert} from '../../lib/issue-report-core.mjs';
+import {recordOperationsObservation} from '../../lib/operations-monitor.mjs';
 import {aiConfigured,cacheKey,digestPdf,openAIStore,validSignature,releaseJob,failureKey} from '../../lib/ai-runtime.mjs';
 import {getSchool,validGradeCode,isSchoolSectionUrl} from '../../lib/schools.mjs';
 
@@ -69,6 +70,9 @@ export function createAIBackgroundHandler({fetchImpl=fetch,storeFactory=openAISt
      }catch(error){
        console.warn('Source audit alert could not be stored',String(error?.message||'error').slice(0,100));
      }
+     // A genuine AI-success event is separate from finding the PDF link.
+     await recordOperationsObservation({school:school.id,grade:String(grade),
+      year,week,kind:'ai_ready',origin:'ai_worker'});
      mark('totalMs');
      console.info('ukeplan.background_timings',JSON.stringify({...measurements,school:school.id,grade,pdfBytes:bytes.length,pages:pages.length}));
      try{await store.delete(failureKey(key));}catch{}
@@ -76,6 +80,8 @@ export function createAIBackgroundHandler({fetchImpl=fetch,storeFactory=openAISt
    }catch(error){
      console.error('AI PDF parsing failed',{grade,week,reason:error?.message?.slice(0,180)});
      if(store)try{await store.setJSON(failureKey(key),{retryAt:Date.now()+5*60_000});}catch{}
+     await recordOperationsObservation({school:schoolId,grade:String(grade),
+      year,week,kind:'ai_failed',origin:'ai_worker'});
      return fail(500,'AI parsing failed');
    }finally{
      if(store)try{await releaseJob(store,key);}catch(error){console.error('AI job lock cleanup failed',error?.message);}

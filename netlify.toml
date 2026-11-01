@@ -81,6 +81,12 @@
   force = true
 
 [[redirects]]
+  from = "/api/operations-health"
+  to = "/.netlify/functions/operations-health"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/digest-config"
   to = "/.netlify/functions/digest-config"
   status = 200
@@ -116,3 +122,19 @@
     Cache-Control = "no-store, private"
     Referrer-Policy = "no-referrer"
     X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/drift/*"
+  [headers.values]
+    Cache-Control = "no-store, private"
+    Referrer-Policy = "no-referrer"
+    X-Robots-Tag = "noindex, nofollow"
+    X-Content-Type-Options = "nosniff"
+
+[[headers]]
+  for = "/api/operations-health"
+  [headers.values]
+    Cache-Control = "private, no-store"
+    Referrer-Policy = "no-referrer"
+    X-Robots-Tag = "noindex, nofollow"
+    X-Content-Type-Options = "nosniff"
