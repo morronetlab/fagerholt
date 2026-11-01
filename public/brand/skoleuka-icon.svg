@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="logo-title">
+  <title id="logo-title">Skoleuka – åpen ukeplanbok med sol</title>
+  <!-- Single source of truth for site favicon and both installable app icons. -->
+  <rect width="512" height="512" rx="112" fill="#1D5C4B"/>
+  <circle cx="379" cy="126" r="27" fill="#FFC76D"/>
+  <path d="M100 175 144 163 198 164 251 185 251 370 204 348 148 344 100 356Z" fill="#FFF8EF" stroke="#FFF8EF" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M261 185 314 164 368 163 412 175 412 356 364 344 308 348 261 370Z" fill="#D7F1DF" stroke="#D7F1DF" stroke-width="6" stroke-linejoin="round"/>
+  <!-- The little strokes are a five-day planner, not tiny unreadable text. -->
+  <path d="M136 218h65 M136 259h73 M136 300h57 M303 218h71 M303 259h68 M303 300h52" fill="none" stroke="#578D74" stroke-width="13" stroke-linecap="round"/>
+</svg>
