@@ -46,3 +46,43 @@ test('invalid PDF and suspicious redirect return error with no fake plan',async(
  const res=await handler(new Request('https://example.com/api/plan?grade=2'));
  assert.equal(res.status,502);assert.equal((await res.json()).status,'error');
 });
+
+test('source fetch outages are not reported as school choosing not to publish a PDF',async()=>{
+ const source=siteConfig.school.grades['3'];
+ const handler=createPlanHandler({now:DATE,env:{},fetchImpl:async url=>{
+  assert.equal(url,source);
+  return response('Unavailable',url,503);
+ }});
+ const res=await handler(new Request('https://app.example/api/plan?grade=3'));
+ assert.equal(res.status,502);
+ const body=await res.json();
+ assert.equal(body.status,'error');
+ assert.equal(body.errorCode,'school_page_failed');
+ assert.equal(body.source,source);
+ assert.equal(body.pdf,undefined);
+ assert.match(body.warning,/Dette betyr ikke at ukeplanen mangler/);
+});
+test('download and PDF parser failures preserve official PDF link and distinct error codes',async()=>{
+ const source=siteConfig.school.grades['3'];
+ const pdf='https://www.minskole.no/fagerholt/uke44.pdf';
+ const fetchImpl=async url=>url===source?
+  response('<a href="'+pdf+'">Uke 44</a>',source):
+  response('%PDF-1.7',pdf);
+ const failedDownload=createPlanHandler({now:DATE,env:{},fetchImpl:async url=>url===source?
+  response('<a href="'+pdf+'">Uke 44</a>',source):
+  response('Server failed',pdf,503)});
+ const downloadResponse=await failedDownload(new Request('https://app.example/api/plan?grade=3'));
+ assert.equal(downloadResponse.status,502);
+ const download=await downloadResponse.json();
+ assert.equal(download.errorCode,'pdf_download_failed');
+ assert.equal(download.pdf,pdf);
+ assert.match(download.warning,/kunne ikke lastes ned/i);
+ const failedParse=createPlanHandler({now:DATE,env:{},fetchImpl,
+  parsePdfPages:async()=>{throw Error('PDF parsing failed');}});
+ const parseResponse=await failedParse(new Request('https://app.example/api/plan?grade=3'));
+ assert.equal(parseResponse.status,502);
+ const parsed=await parseResponse.json();
+ assert.equal(parsed.errorCode,'pdf_parse_failed');
+ assert.equal(parsed.pdf,pdf);
+ assert.match(parsed.warning,/kunne ikke tolkes/i);
+});
