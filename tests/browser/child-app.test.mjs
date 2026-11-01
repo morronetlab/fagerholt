@@ -110,6 +110,9 @@ test('One QR activates isolated child app and hides sibling content',async t=>{
 });
 test('Child uses distinct labels and shows only school-specific verified skolerute changes',async t=>{
  const {page,errors}=await open(t,'?pair='+pair);
+ // The QR activation runs asynchronously after DOMContentLoaded. Waiting
+ // for it before reloading prevents a race with an unset device token.
+ await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
  await page.route('**/api/school-calendar?**',route=>route.fulfill({
   status:200,contentType:'application/json',body:JSON.stringify({
    schoolId:'fagerholt',year:2026,week:44,sourceStatus:'live',
