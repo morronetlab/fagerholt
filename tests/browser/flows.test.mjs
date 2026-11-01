@@ -768,7 +768,7 @@ test('Friday after school shows only next-week PDF status for each child, never 
  assert.match(await page.locator('#family-week').innerText(),new RegExp('Uke '+shown.week));
  assert.equal(await page.locator('.family-child-week').count(),2);
  assert.match(await page.locator('.family-child-week').first().innerText(),new RegExp('UKE '+shown.week));
- assert.match(await page.locator('#family-cards').innerText(),/Ukeplan ikke publisert/);
+ assert.match(await page.locator('#family-cards').innerText(),/Ukeplan ikke funnet på trinnsiden/);
  assert.equal(await page.locator('#family-cards .family-mobile-progress-track:visible').count(),0);
  assert.equal(await page.locator('.family-focus-tabs').isVisible(),false);
  assert.match(await page.locator('#family-week-progress').innerText(),/Avventer ukeplan/);
