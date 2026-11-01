@@ -88,6 +88,19 @@ test('Monitoring stores no user or document payload and never blocks on blob fai
  assert.equal(await recordOperationsObservation(row('ready',{school:'bogus'}),{
   storeFactory:async()=>db,now:()=>fixed,env:{}}),false);
 });
+test('Failures from last school week do not contaminate the next week, and old checks are stale',async()=>{
+ const start=nextOperationsSnapshot(null,row('source_error',{week:44}),fixed);
+ const second=nextOperationsSnapshot(start,row('source_error',{week:45}),fixed+30_000);
+ assert.ok(second,'New ISO week must not be hidden by five-minute dedupe');
+ assert.equal(second.consecutiveFailures,1);
+ assert.notEqual(start.lastFailureEpisodeAt,second.lastFailureEpisodeAt);
+ const db=store();
+ await db.setJSON('latest/fagerholt/3.json',start);
+ const view=await operationsSummary({storeFactory:async()=>db,
+  healthFactory:async()=>store(),now:()=>fixed+3*86400_000,env:{}});
+ assert.equal(view.schools.find(s=>s.id==='fagerholt').status,'attention');
+ assert.equal(view.schools.find(s=>s.id==='fagerholt').grades[0].stale,true);
+});
 test('Administrative health API is closed without a strong token and returns only aggregate data',async()=>{
  const db=store(),calendar=store();
  await recordOperationsObservation(row('pdf_found'),{
