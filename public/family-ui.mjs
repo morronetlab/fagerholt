@@ -481,6 +481,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   el('family-week').textContent='Uke '+now.week+' · '+now.year+(now.upcoming?' · neste uke':'');
   el('family-count').textContent=profiles.length+' barn';
   el('family-mobile-week').textContent='Uke '+now.week;
+  el('header-family-week').textContent='Uke '+now.week;
   el('family-storage-label').textContent=cloud?'☁ Synkronisert familie · lekser deles mellom foresatte':'🔒 Kun på denne enheten';
   const ready=[...summaries.values()].filter(x=>x.ready);
   const done=ready.reduce((n,x)=>n+x.done,0),total=ready.reduce((n,x)=>n+x.total,0);
