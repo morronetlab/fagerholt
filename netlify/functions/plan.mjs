@@ -71,7 +71,10 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
     const monitoredReply=async(body,status=200)=>{
       await recordOperationsObservation({
         school:school.id,grade,year,week,
-        status:body.status,errorCode:body.errorCode,aiStatus:body.aiStatus,
+        status:body.status,errorCode:body.errorCode,
+        // Status-only fallback returns "failed" even when AI is intentionally
+        // disabled. Do not create a false AI-incident in that configuration.
+        aiStatus:body.aiStatus==='failed'&&!aiConfigured(env)?'disabled':body.aiStatus,
         origin:'plan_api'
       },{env});
       return reply(body,status);
