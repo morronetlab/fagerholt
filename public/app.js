@@ -122,6 +122,11 @@ function renderShell(){
   const hasSchool=Boolean(state.school),chosen=Boolean(state.grade&&hasSchool),inFamily=Boolean(familyUI?.isActive());
   const welcome=primaryView==='welcome'&&!inFamily;
   const section=inFamily?'family':welcome?'welcome':'plan';
+  // Family tabs replace the generic fixed mobile navigation. Keep this state
+  // on the body so desktop and the child's own week-plan remain unchanged.
+  document.body.classList.toggle('family-dashboard-active',inFamily);
+  $('header-family-week').hidden=!inFamily;
+  $('home-link').setAttribute('aria-label',inFamily?'Gå til toppen av Min familie':'Gå til forsiden');
   $('welcome-view').hidden=!welcome;
   $('family-view').hidden=!inFamily;
   $('school-gate').hidden=inFamily||welcome||hasSchool;
@@ -701,7 +706,12 @@ function boot(){
 
   if('scrollRestoration' in history)history.scrollRestoration='manual';
   window.addEventListener('popstate',event=>restoreNavigation(event.state));
-  $('home-link').addEventListener('click',e=>{e.preventDefault();navigateTo('welcome');});
+  $('home-link').addEventListener('click',e=>{
+    e.preventDefault();
+    // On the guardian dashboard the logo is a safe "back to family top" action,
+    // never an accidental trip to the public registration landing page.
+    navigateTo(familyUI.isActive()?'family':'welcome');
+  });
   $('nav-home').addEventListener('click',()=>navigateTo('welcome'));
   $('nav-plan').addEventListener('click',()=>navigateTo('plan'));
   $('family-toggle').addEventListener('click',()=>navigateTo(familyUI.isActive()?'plan':'family'));

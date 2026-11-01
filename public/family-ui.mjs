@@ -59,6 +59,10 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  let firstRunFamilyId='';
  try{firstRunFamilyId=sessionStorage.getItem(FIRST_RUN_KEY)||'';}catch{}
  let cloud=null,cloudChecks=new Map(),bagChecks=new Map(),focus='next',lastSynced=null,syncError='';
+ // Public/guest family mode still needs the bottom navigation. Only a
+ // signed-in family account uses the three dashboard tabs exclusively.
+ const syncCloudChrome=()=>document.body.classList.toggle('family-cloud-active',
+  Boolean(active&&cloud?.familyId));
  const plans=new Map(),loading=new Set(),errors=new Map();
  // Public municipal dates are independent of individual PDF availability.
  const calendars=new Map(),calendarFetchAt=new Map(),calendarInFlight=new Set();
@@ -481,6 +485,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   el('family-week').textContent='Uke '+now.week+' · '+now.year+(now.upcoming?' · neste uke':'');
   el('family-count').textContent=profiles.length+' barn';
   el('family-mobile-week').textContent='Uke '+now.week;
+  el('header-family-week').textContent='Uke '+now.week;
   el('family-storage-label').textContent=cloud?'☁ Synkronisert familie · lekser deles mellom foresatte':'🔒 Kun på denne enheten';
   const ready=[...summaries.values()].filter(x=>x.ready);
   const done=ready.reduce((n,x)=>n+x.done,0),total=ready.reduce((n,x)=>n+x.total,0);
@@ -862,14 +867,14 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     await updateCloud(p,task,checked);
   },
   setCloud:async(client,familyId,remoteChildren)=>{
-    cloud={client,familyId};
+    cloud={client,familyId};syncCloudChrome();
     profiles=remoteChildren.map(x=>({id:x.id,name:x.nickname,school:x.school_id,
       grade:x.grade,group:x.group_name||''})).filter(x=>Object.hasOwn(siteConfig.schools,x.school));
     plans.clear();cloudChecks.clear();bagChecks.clear();loadedWeekKey=null;activityUI.onFamilyChanged();await syncCloud();
     if(active){render();void fetchPlans();}
   },
   clearCloud:()=>{
-    cloud=null;cloudChecks.clear();bagChecks.clear();lastSynced=null;syncError='';profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
+    cloud=null;syncCloudChrome();cloudChecks.clear();bagChecks.clear();lastSynced=null;syncError='';profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
     plans.clear();loadedWeekKey=null;activityUI.onFamilyChanged();if(active){render();void fetchPlans();}
   },
   refreshCloud:async()=>{await Promise.all([syncCloud(),activityUI.refresh()]);},
@@ -881,7 +886,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   },
   enter:()=>{
     if(active)return;
-    active=true;activityUI.enter();onModeChange();
+    active=true;syncCloudChrome();activityUI.enter();onModeChange();
     // Returning from an already-open child plan should restore instantly,
     // not re-download the same school PDF seconds later.
     const now=calendar();
@@ -893,7 +898,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     if(!recentlyChecked)void fetchPlans();
     else{render();void fetchCalendars();}
   },
-  leave:()=>{active=false;activityUI.leave();run++;clearOverviewTimer();overviewBatch=null;
+  leave:()=>{active=false;syncCloudChrome();activityUI.leave();run++;clearOverviewTimer();overviewBatch=null;
    stopPollTimers();pendingJobs.clear();autoRetries.clear();
     for(const [pair,state] of priorityStates)if(state.status!=='ready')priorityStates.delete(pair);
     loading.clear();onModeChange();},
