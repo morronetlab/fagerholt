@@ -1356,6 +1356,93 @@ test('Verified parent can explicitly enable and disable Sunday email without a s
  assert.deepEqual(errors,[]);
 });
 
+test('Returning guardian sees a neutral startup shell, never a temporary empty family on desktop or mobile',async t=>{
+ for(const width of [390,1280]){
+  const {page,errors}=await openPage(t,{width,height:850});
+  // A real signed-in family has a saved account session and returns to family.
+  await page.locator('#family-toggle').click();
+  await page.evaluate(()=>{
+   localStorage.setItem('ukeplanen.cloud.session.v1',JSON.stringify({
+    access_token:'guardian-access',refresh_token:'guardian-refresh',
+    expires_at:Math.floor(Date.now()/1000)+3600,
+    user:{id:'guardian-one',email:'parent@example.no'}
+   }));
+  });
+  await page.addInitScript(()=>{
+   const original=window.fetch.bind(window);
+   window.fetch=(input,init={})=>{
+    const url=typeof input==='string'?input:input.url;
+    if(!url.startsWith('https://testprojectabc.supabase.co/'))return original(input,init);
+    let rows=[];
+    if(url.includes('/auth/v1/user'))rows={id:'guardian-one',email:'parent@example.no'};
+    else if(url.includes('/rest/v1/families'))rows=[{
+     id:'family-1',name:'Familien',created_by:'guardian-one'
+    }];
+    else if(url.includes('/rest/v1/children'))rows=[
+     {id:'child-one',family_id:'family-1',nickname:'Første barn',
+      school_id:'sjostrand',grade:'2',group_name:''},
+     {id:'child-two',family_id:'family-1',nickname:'Andre barn',
+      school_id:'sjostrand',grade:'5A',group_name:''}
+    ];
+    return Promise.resolve(new Response(JSON.stringify(rows),{
+     status:200,headers:{'Content-Type':'application/json'}
+    }));
+   };
+  });
+  let releaseConfig;
+  const configHeld=new Promise(resolve=>{releaseConfig=resolve;});
+  await page.route('**/api/account-config*',async route=>{
+   await configHeld;
+   await reply(route,{
+    enabled:true,url:'https://testprojectabc.supabase.co/',
+    publishableKey:'sb_publishable_test_not_a_real_key'
+   });
+  });
+  await page.route('**/api/child-access**',route=>reply(route,{status:'not_invited'}));
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#startup-loading').waitFor({state:'visible'});
+  assert.equal(await page.locator('html').evaluate(el=>el.classList.contains('skoleuka-route-ready')),false);
+  assert.equal(await page.locator('#family-view').isVisible(),false,
+   'Do not paint 0-child local dashboard while cloud session is unresolved at '+width);
+  assert.equal(await page.locator('.primary-nav').isVisible(),false);
+  assert.equal(await page.locator('#account-button').isVisible(),false,
+   'Do not flash an incorrect Logg inn button during existing session recovery');
+  assert.match(await page.locator('#startup-loading').innerText(),/Åpner Skoleuka/);
+  releaseConfig();
+  await page.locator('#family-view').waitFor({state:'visible',timeout:20000});
+  await page.locator('#family-cards .family-child').nth(1).waitFor();
+  assert.equal(await page.locator('#startup-loading').isVisible(),false);
+  assert.equal(await page.locator('#family-cards .family-child').count(),2);
+  assert.equal(await page.locator('#account-button').innerText(),'Min konto');
+  assert.match(await page.locator('#family-cards').innerText(),/Første barn/);
+  assert.match(await page.locator('#family-cards').innerText(),/Andre barn/);
+  assert.equal(await page.locator('.primary-nav').isVisible(),width>700,
+   'Authenticated mobile dashboard has its own tabs, not generic bottom bar');
+  assert.deepEqual(errors,[]);
+  await page.close();
+ }
+});
+test('If a saved guardian session cannot be restored, the loading shell ends cleanly',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:800});
+ await page.locator('#family-toggle').click();
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.cloud.session.v1',
+  JSON.stringify({access_token:'stale',refresh_token:'stale',
+   expires_at:Math.floor(Date.now()/1000)+3600})));
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ await page.route('**/api/account-config*',async route=>{
+  await pending;
+  await reply(route,{enabled:false});
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#startup-loading').waitFor({state:'visible'});
+ assert.equal(await page.locator('#family-view').isVisible(),false);
+ release();
+ await page.locator('#family-view').waitFor({state:'visible'});
+ assert.equal(await page.locator('#startup-loading').isVisible(),false);
+ assert.equal(await page.locator('#family-cards .family-child').count(),0);
+ assert.deepEqual(errors,[]);
+});
 test('2.1 parent email OTP, create family and cloud-mode dashboard work with mocked Supabase',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  const endpoint='https://testprojectabc.supabase.co';
