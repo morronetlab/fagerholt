@@ -643,15 +643,26 @@ test('320px calendar shows five dates without scrolling and retains source detai
  assert.equal(await card.locator('.family-agenda-expand').getAttribute('aria-expanded'),'true');
  assert.deepEqual(errors,[]);
 });
-test('Desktop family layout remains complete after the mobile navigation redesign',async t=>{
+test('Desktop family tabs show each section and preserve child actions',async t=>{
  const {page,errors}=await openPage(t,{width:1280,height:850});
  await page.locator('#family-toggle').click();
  await addFamilyChild(page,'Barn desktop');
- assert.equal(await page.locator('#family-mobile-nav').isVisible(),false);
+ const nav=page.locator('#family-mobile-nav');
+ assert.equal(await nav.isVisible(),true);
+ assert.equal(await nav.locator('[data-family-mobile-tab]').count(),3);
  assert.equal(await page.locator('#family-children').isVisible(),true);
  assert.equal(await page.locator('.family-tomorrow').isVisible(),true);
+ assert.equal(await page.locator('.family-agenda').isVisible(),false);
+ assert.equal(await page.locator('#family-activity-section').isVisible(),false);
+ // Switching views must leave desktop calendar and activities reachable.
+ await nav.locator('[data-family-mobile-tab="calendar"]').click();
  assert.equal(await page.locator('.family-agenda').isVisible(),true);
+ assert.equal(await page.locator('#family-children').isVisible(),false);
+ await nav.locator('[data-family-mobile-tab="activities"]').click();
  assert.equal(await page.locator('#family-activity-section').isVisible(),true);
+ assert.equal(await page.locator('.family-agenda').isVisible(),false);
+ await nav.locator('[data-family-mobile-tab="overview"]').click();
+ assert.equal(await page.locator('#family-children').isVisible(),true);
  // Even if three or more notices unhide the mobile-only toggle, desktop must not show it.
  await page.locator('#family-mobile-important-more').evaluate(el=>{el.hidden=false;});
  assert.equal(await page.locator('#family-mobile-important-more').isVisible(),false);
@@ -1812,6 +1823,7 @@ test('Family activities can be added, edited, repeated and persist locally witho
 test('Family activity dates and optional end time are validated before saving',async t=>{
  const {page,errors}=await openPage(t);
  await page.locator('#family-toggle').click();
+ await page.locator('[data-family-mobile-tab="activities"]').click();
  await page.locator('#family-activity-add').click();
  await page.locator('#family-activity-name').fill('Turnering');
  await page.locator('#family-activity-date').fill('2026-10-28');

@@ -22,7 +22,9 @@ for(const width of [390,1280]){
   await page.route('**/api/account-config',r=>r.fulfill({status:200,contentType:'application/json',body:'{"enabled":false}'}));
   await page.goto(server.baseURL+'/',{waitUntil:'domcontentloaded'});
   await page.locator('#welcome-view').waitFor({state:'visible'});
-  await page.locator('#landing-other-options').click();
+  // Desktop exposes all landing choices already; mobile starts collapsed.
+  if(await page.locator('#landing-other-options').isVisible())
+   await page.locator('#landing-other-options').click();
   await page.locator('#landing-local-family').click();
   await page.locator('#family-view').waitFor({state:'visible'});
   const tabs=page.locator('#family-mobile-nav [data-family-mobile-tab]');
