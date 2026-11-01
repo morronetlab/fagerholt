@@ -41,9 +41,9 @@ export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar,onChang
   $('family-activity-manage-summary').textContent=items.length?
    'Vis og administrer '+items.length+' aktivitet'+(items.length===1?'':'er')+' denne uka':
    'Ingen aktiviteter denne uka · Vis administrasjon';
+  // Successful cloud sync is silent: keep loading, errors and local warnings.
   $('family-activity-status').textContent=status||
-   (loading?'Henter familiens aktiviteter …':isCloud()?
-    'Delt mellom foresatte i familiekontoen · trykk Oppdater for å hente endringer.':
+   (loading?'Henter familiens aktiviteter …':isCloud()?'': 
     'Lagres bare på denne enheten. Logg inn under Min konto for å dele aktiviteter.');
   const values=profiles.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>');
   const select=$('family-activity-child'),selected=select.value;
@@ -81,6 +81,10 @@ export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar,onChang
  function resetForm(){
   editing=null;form.reset();form.hidden=true;formStatus('');
   $('family-activity-until-wrap').hidden=true;
+  // The mobile Activities tab should return to the list after saving/cancelling.
+  if(window.matchMedia('(max-width:700px)').matches&&
+     $('family-view').dataset.familyMobileView==='activities')
+   $('family-activity-manage').open=true;
  }
  function openForm(item=null){
   editing=item?.id||null;

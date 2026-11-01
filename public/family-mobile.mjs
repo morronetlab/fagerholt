@@ -20,6 +20,10 @@ export function initFamilyMobileUI(){
   root().dataset.familyMobileView=view;
   for(const button of nav().querySelectorAll('[data-family-mobile-tab]'))
    button.setAttribute('aria-pressed',String(button.dataset.familyMobileTab===view));
+  // "Aktiviteter" is the dedicated list, not another nested menu. Expand it
+  // when entering the tab, but don't reopen over an active edit form.
+  if(view==='activities'&&mobile()&&document.getElementById('family-activity-form').hidden)
+   document.getElementById('family-activity-manage').open=true;
  }
  function refreshDays(){
   const list=days();

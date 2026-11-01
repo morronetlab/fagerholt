@@ -1,0 +1,227 @@
+/* November mobile polish. Only family-dashboard pages at phone widths.
+   Keep desktop and the separate /barn child PWA unchanged. */
+@media(max-width:700px){
+  /* Week belongs next to "Min familie", not in two places above the tabs. */
+  body.family-dashboard-active .header-family-week:not([hidden]){
+    display:none!important;
+  }
+  body.family-dashboard-active #family-view .family-mobile-overview-heading{
+    margin:2px 1px 7px;
+    padding:0 2px;
+    min-height:34px;
+    align-items:center;
+  }
+  body.family-dashboard-active #family-view .family-mobile-overview-heading h2{
+    font-size:19px;
+    letter-spacing:-.4px;
+  }
+  body.family-dashboard-active #family-view .family-mobile-overview-heading span{
+    font-size:12px;
+    color:#5d7a69;
+  }
+  body.family-dashboard-active #family-view .family-mobile-nav{
+    margin:0 0 10px;
+  }
+
+  /* A successful sync should not spend a whole row on every tab.
+     Keep loading, failures and guest/local-data notices visible. */
+  body.family-cloud-active #family-view .family-overview-meta:has(#family-sync-status[data-sync-state="ok"]){
+    display:none!important;
+  }
+
+  /* Counteract older "flex-direction:column" mobile rules on the child toolbar.
+     Name and both actions must stay on ONE line even on a 320px phone. */
+  #family-view[data-family-mobile-view=overview] #family-children .family-toolbar{
+    display:flex!important;
+    flex-direction:row!important;
+    justify-content:space-between!important;
+    align-items:center!important;
+    flex-wrap:nowrap!important;
+    gap:8px!important;
+    margin:0 2px 10px!important;
+  }
+  #family-view[data-family-mobile-view=overview] #family-children .family-toolbar>div:first-child{
+    flex:1 1 auto;
+    min-width:0;
+  }
+  #family-view[data-family-mobile-view=overview] #family-children .family-toolbar h2{
+    font-size:18px;
+    line-height:1.25;
+    text-align:left;
+    white-space:nowrap;
+  }
+  #family-view[data-family-mobile-view=overview] #family-children .family-toolbar-actions{
+    display:flex!important;
+    flex:0 0 auto;
+    flex-direction:row!important;
+    flex-wrap:nowrap!important;
+    justify-content:flex-end;
+    align-items:center;
+    gap:6px!important;
+    min-width:0;
+    position:relative;
+  }
+  #family-view[data-family-mobile-view=overview] #family-mobile-add{
+    white-space:nowrap;
+    flex:0 0 auto;
+    width:auto;
+    min-height:40px;
+    padding:8px 11px;
+    font-size:12px;
+  }
+  #family-view[data-family-mobile-view=overview] #family-mobile-admin-toggle{
+    flex:0 0 40px;
+    width:40px;
+    min-width:40px;
+    min-height:40px;
+    height:40px;
+    font-size:18px;
+  }
+
+  /* Calendar: trim stacked whitespace without sacrificing tap targets. */
+  #family-view[data-family-mobile-view=calendar] .family-agenda{
+    padding:10px 11px 12px;
+  }
+  #family-view[data-family-mobile-view=calendar] .family-mobile-day-tile{
+    min-height:59px;
+    padding:5px 1px;
+  }
+  #family-view[data-family-mobile-view=calendar] .family-mobile-calendar-options>summary{
+    min-height:59px;
+  }
+  #family-view[data-family-mobile-view=calendar] .family-mobile-day-status{
+    margin:8px 1px 9px;
+    font-size:12px;
+  }
+  #family-view[data-family-mobile-view=calendar] .family-agenda-day{
+    padding:7px;
+    gap:5px;
+  }
+  #family-view[data-family-mobile-view=calendar] .family-agenda-item{
+    padding:8px 9px;
+    margin-bottom:4px;
+  }
+
+  /* Activities is already a dedicated tab: lead with the activities instead
+     of an oversized full-width action and another management accordion. */
+  #family-view[data-family-mobile-view=activities] #family-activity-section{
+    padding:14px 12px;
+    margin-top:0;
+  }
+  #family-view[data-family-mobile-view=activities] .family-activity-head{
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:space-between;
+    flex-wrap:nowrap;
+    gap:10px;
+  }
+  #family-view[data-family-mobile-view=activities] .family-activity-head>div{
+    flex:1 1 auto;
+    min-width:0;
+  }
+  #family-view[data-family-mobile-view=activities] .family-activity-head h2{
+    font-size:19px;
+    line-height:1.2;
+  }
+  #family-view[data-family-mobile-view=activities] #family-activity-add{
+    flex:0 0 auto;
+    align-self:center;
+    width:auto;
+    max-width:none;
+    min-height:42px;
+    padding:9px 12px;
+    margin:0;
+    font-size:12px;
+    white-space:nowrap;
+    box-shadow:none;
+  }
+  #family-view[data-family-mobile-view=activities] .family-activity-status:empty{
+    display:none;
+  }
+  #family-view[data-family-mobile-view=activities] .family-activity-manage{
+    border-top:0;
+    margin:7px 0 0;
+  }
+  /* List is expanded when entering the mobile Activities tab. No second
+     "Vis og administrer" heading is needed in this context. */
+  #family-view[data-family-mobile-view=activities] .family-activity-manage>summary{
+    display:none;
+  }
+  #family-view[data-family-mobile-view=activities] .family-activity-list{
+    display:grid;
+    gap:12px;
+    margin:0;
+  }
+  #family-view[data-family-mobile-view=activities] .family-activity-day{
+    gap:7px;
+  }
+  #family-view[data-family-mobile-view=activities] .family-activity-day h3{
+    margin:3px 2px 1px;
+    font-size:12px;
+  }
+  #family-view[data-family-mobile-view=activities] .family-activity-card{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:5px 9px;
+    padding:12px 13px;
+    border-left:4px solid #328973;
+    border-radius:12px;
+    background:#f4faf6;
+  }
+  #family-view[data-family-mobile-view=activities] .family-activity-clock{
+    grid-column:1;
+    grid-row:1;
+    align-self:center;
+    font-size:13px;
+    color:#245b48;
+  }
+  #family-view[data-family-mobile-view=activities] .family-activity-details{
+    grid-column:1/-1;
+    grid-row:2;
+    gap:3px;
+  }
+  #family-view[data-family-mobile-view=activities] .family-activity-details>.content-type-label{
+    display:none!important;
+  }
+  #family-view[data-family-mobile-view=activities] .family-activity-details strong{
+    font-size:16px;
+    line-height:1.3;
+  }
+  #family-view[data-family-mobile-view=activities] .family-activity-details p{
+    margin:1px 0;
+    font-size:12px;
+    line-height:1.4;
+  }
+  #family-view[data-family-mobile-view=activities] .family-activity-actions{
+    grid-column:2;
+    grid-row:1;
+    margin:0;
+    display:flex;
+    flex-wrap:nowrap;
+    align-items:center;
+    justify-content:flex-end;
+    gap:5px;
+  }
+  #family-view[data-family-mobile-view=activities] .family-activity-actions button{
+    min-height:38px;
+    padding:7px 9px;
+    font-size:11px;
+    white-space:nowrap;
+  }
+}
+@media(max-width:350px){
+  #family-view[data-family-mobile-view=overview] #family-children .family-toolbar h2{
+    font-size:16px;
+  }
+  #family-view[data-family-mobile-view=overview] #family-mobile-add{
+    padding:8px 9px;
+    font-size:11px;
+  }
+  #family-view[data-family-mobile-view=activities] .family-activity-head h2{
+    font-size:17px;
+  }
+  #family-view[data-family-mobile-view=activities] #family-activity-add{
+    padding:8px 9px;
+  }
+}
