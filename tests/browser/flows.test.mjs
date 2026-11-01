@@ -1973,7 +1973,7 @@ test('Skoleuka 2.2 mobile hierarchy makes children and critical notices prominen
    activity:document.querySelector('#family-activity-manage').open,
    undated:document.querySelector('#family-agenda-undated').open};
  });
- assert.ok(snapshot.people<snapshot.alerts);
+ assert.ok(snapshot.alerts<snapshot.people,'Important notices precede children on mobile');
  assert.equal(await page.locator('.family-agenda').isVisible(),false);
  assert.equal(await page.locator('#family-activity-section').isVisible(),false);
  assert.equal(snapshot.extra,false);
