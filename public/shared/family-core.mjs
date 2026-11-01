@@ -2,6 +2,7 @@
 import {progressKey} from './selection.mjs';
 import {expandHomework} from './homework-view.mjs';
 import {DAYS,dayDate} from './calendar.mjs';
+import {planAvailability} from './plan-availability.mjs';
 
 export const FAMILY_STORAGE_KEY='ukeplanen.family.v2';
 export const FAMILY_MAX_PROFILES=6;
@@ -66,9 +67,10 @@ export function schoolDayIndices(cal){
 export function profileSummary(profile,plan,calendar,storage=()=>null,cloudChecked=null,cloudBagChecked=null){
  if(!plan||plan.status==='error'||plan.status==='unavailable'||plan.status==='unpublished'||
    plan.status==='unreadable'||plan.year!==calendar.year||plan.week!==calendar.week)
-  return {ready:false,reason:!plan?'Henter ukeplan …':plan.status==='unpublished'?'Ukeplanen er ikke publisert ennå.':
-    plan.year!==calendar.year||plan.week!==calendar.week?'Ukeplanen gjelder ikke denne uka.':
-    'Ukeplanen er ikke tilgjengelig.',tasks:[],total:0,done:0,today:[],next:[],bag:[],notices:[]};
+  return {ready:false,
+    reason:plan&&((plan.year!==calendar.year)||(plan.week!==calendar.week))?
+     'Ukeplanen gjelder ikke denne uka.':planAvailability({plan}).detail,
+    tasks:[],total:0,done:0,today:[],next:[],bag:[],notices:[]};
  if(plan.aiStatus==='processing')
   return {ready:false,reason:'PDF er funnet. AI-tolkingen pågår, og oversikten oppdateres automatisk.',tasks:[],total:0,done:0,today:[],next:[],bag:[],notices:[]};
  if(plan.aiStatus==='failed')
