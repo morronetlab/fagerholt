@@ -154,12 +154,16 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
    item.append(title,info);$('onboard-children-list').append(item);
   }
   $('onboard-child-save').disabled=children.length>=6;
-  $('onboard-child-form').hidden=Boolean(children.length)||children.length>=6;
-  $('onboard-add-another').hidden=!children.length||children.length>=6;
+  // Keep the entry form open after each save: parents can immediately add
+  // a sibling without discovering a secondary button or restarting onboarding.
+  $('onboard-child-form').hidden=children.length>=6;
+  $('onboard-child-form-title').textContent=children.length?
+   'Legg til et barn til (valgfritt)':'Legg til første barn';
   $('onboard-child-save').textContent=children.length>=6?'Maks seks barn':'+ Legg til barn';
   const local=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
   $('onboard-import-row').hidden=!local.length||!familyId;
-  $('onboard-children-next').textContent=children.length?'Fullfør oppsettet →':'Fortsett uten barn →';
+  $('onboard-children-next').textContent=children.length?
+   'Ferdig med barna →':'Fortsett uten barn →';
   $('onboard-complete-description').textContent=children.length?
    children.length+' barn er lagt til. Nå kan dere følge skoleuka fra samme familiekonto.':
    'Familien er opprettet. Legg til barn fra familieoversikten når du ønsker.';
@@ -392,15 +396,11 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
    if(!created?.[0]?.id)throw Error('Serveren bekreftet ikke barneprofilen.');
    await syncFamilies(familyId,{screen:'children'});
    $('onboard-child-name').value='';$('onboard-child-group').value='';
-   status('Barnet er lagt til. Du kan legge til flere, eller fullføre oppsettet.');
-   $('onboard-children-next').focus({preventScroll:true});
+   status('Barnet er lagt til. Du kan legge til et barn til, eller trykke «Ferdig med barna».');
+   if(children.length<6)$('onboard-child-name').focus({preventScroll:true});
+   else $('onboard-children-next').focus({preventScroll:true});
   }catch(error){status('Kunne ikke legge til barnet: '+error.message,true);}
   finally{submit.disabled=children.length>=6;}
- });
- $('onboard-add-another').addEventListener('click',()=>{
-  $('onboard-child-form').hidden=false;
-  $('onboard-add-another').hidden=true;
-  $('onboard-child-name').focus({preventScroll:true});
  });
  $('onboard-children-back').addEventListener('click',()=>show('signed'));
  $('onboard-children-next').addEventListener('click',()=>{show('completed');status('');});
