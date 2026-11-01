@@ -65,6 +65,7 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
     const targetDate=nextWeek?new Date(nowDate.getTime()+7*86400000):nowDate;
     const {year,week}=schoolCalendar(targetDate,school.timezone);
     const base={schoolId:school.id,schoolName:school.name,grade,week,year,checkedAt:new Date().toISOString()};
+    let phase='grade_lookup';
     try{
       let source=school.grades?.[grade];
       if(!source){
@@ -75,10 +76,14 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
       }
       if(!isSchoolSectionUrl(source,school,grade))throw new Error('Ugyldig trinnside');
       base.source=source;
+      phase='school_page';
       const html=await load(source,{fetchImpl});
       mark('schoolPageMs');
       const pdf=choosePdf(findPdfLinks(html,source,siteConfig.allowedSourceHosts),week);
       if(!pdf)return reply({...base,status:'unpublished',pdf:null,warning:`Ukeplan for uke ${week} er ikke publisert som PDF på trinnsiden.`});
+      // Preserve the verified PDF URL even if its download or parsing fails.
+      base.pdf=pdf.url;
+      phase='pdf_download';
       const bytes=await load(pdf.url,{pdf:true,fetchImpl});
       mark('pdfDownloadMs');
       let aiStatus='disabled',jobId=null;
@@ -148,6 +153,7 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
           warning:'AI analyserer original-PDF-en. Innholdet vises når analysen er ferdig.'});
       }
       let pages;
+      phase='pdf_parse';
       try{pages=await parsePdfPages(bytes);}
       catch(error){
         if(aiStatus==='processing'||aiStatus==='failed')return reply({...base,pdf:pdf.url,publishedWeek:pdf.week,aiStatus,
@@ -162,14 +168,23 @@ export function createPlanHandler({fetchImpl=fetch,parsePdfPages=pdfPages,now=()
           warning:aiStatus==='processing'?'AI analyserer original-PDF-en selv om den mangler et lesbart tekstlag.':aiStatus==='failed'?'AI-analysen feilet. PDF-en har heller ikke et lesbart tekstlag. Prøv igjen etter fem minutter eller åpne originalen.':'Ukeplan-PDF-en har ikke et lesbart tekstlag. Åpne original-PDF-en.',
           days:{},homework:[],learningGoals:[],notices:[],subjects:[],weekTheme:null,optionalMission:null,everyday:[]});
       }
+      phase='pdf_parse';
       const fallback=analyzePdfPages(pages,grade,pdf.url,week,year,source);
       mark('totalMs');
       console.info('ukeplan.initial_timings',JSON.stringify({...metrics,school:school.id,grade,pdfBytes:bytes.length,aiStatus}));
       if(aiStatus==='failed')fallback.warning='AI-analysen feilet. Viser foreløpig regelbasert utdrag. Automatisk nytt forsøk etter fem minutter. Sjekk original-PDF-en.';
       return reply({...base,...fallback,pdfPageCount:pages.length,pdfSizeBytes:bytes.length,publishedWeek:pdf.week,parser:'rules',aiStatus});
     }catch(error){
-      console.error('Failed to fetch published school PDF:',grade,error);
-      return reply({...base,status:'error',warning:'Klarte ikke hente eller lese skolens ukeplan. Prøv igjen, eller åpne trinnsiden.'},502);
+      const errorCode=phase==='grade_lookup'?'source_lookup_failed':
+       phase==='school_page'?'school_page_failed':
+       phase==='pdf_download'?'pdf_download_failed':'pdf_parse_failed';
+      console.error('Failed to fetch published school PDF:',{school:school.id,grade,phase,error:String(error?.message||error)});
+      const warning=errorCode==='pdf_parse_failed'?
+       'PDF-en ble funnet, men kunne ikke tolkes. Se original-PDF-en eller prøv igjen.':
+       errorCode==='pdf_download_failed'?
+       'Ukeplanens PDF-lenke ble funnet, men dokumentet kunne ikke lastes ned. Prøv igjen eller åpne originalen.':
+       'Skolens nettside kunne ikke kontrolleres. Dette betyr ikke at ukeplanen mangler. Prøv igjen.';
+      return reply({...base,status:'error',errorCode,warning},502);
     }
   };
 }
