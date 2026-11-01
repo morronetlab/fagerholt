@@ -22,3 +22,22 @@
 @media(max-width:700px){
   .logo small,#brand-subtitle{letter-spacing:.08em}
 }
+
+/* A single icon language across the three guardian mobile tabs. */
+.family-mobile-nav button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  white-space:nowrap;
+}
+.family-mobile-nav .family-nav-icon{
+  width:18px;
+  height:18px;
+  min-width:18px;
+  flex-shrink:0;
+}
+@media(max-width:350px){
+  .family-mobile-nav button{gap:4px;font-size:11px}
+  .family-mobile-nav .family-nav-icon{width:16px;height:16px;min-width:16px}
+}
