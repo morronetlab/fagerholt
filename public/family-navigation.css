@@ -1,0 +1,60 @@
+/* Skoleuka family app shell on phones. Desktop, public landing and a child's
+   individual week plan keep the existing global navigation unchanged. */
+.header-family-week{display:none}
+@media(max-width:700px){
+  /* The family tabs already provide the only three relevant destinations.
+     Reclaim the space taken by the fixed global bottom navigation. */
+  body.family-dashboard-active{
+    padding-bottom:env(safe-area-inset-bottom,0px)
+  }
+  body.family-dashboard-active .primary-nav{display:none!important}
+  body.family-dashboard-active .shell{padding-bottom:24px}
+
+  /* Keep the brand and account settings reachable while scrolling. */
+  body.family-dashboard-active .topbar{
+    position:sticky;top:0;z-index:30;
+    min-height:60px;height:60px;box-sizing:border-box;
+    padding:8px 0;margin-bottom:8px;
+    border-bottom:1px solid #dce9df;background:#f8faf6
+  }
+  body.family-dashboard-active .logo{min-width:0;gap:8px}
+  body.family-dashboard-active .logo strong{font-size:20px;letter-spacing:-.8px}
+  body.family-dashboard-active .brand-mark{
+    width:36px;height:36px;min-width:36px;border-radius:11px
+  }
+  body.family-dashboard-active .header-actions{gap:6px;flex-wrap:nowrap;min-width:0}
+  body.family-dashboard-active .account-nav{
+    min-height:38px;padding:8px 10px;font-size:12px;white-space:nowrap
+  }
+  body.family-dashboard-active .header-family-week:not([hidden]){
+    display:inline-flex;align-items:center;justify-content:center;
+    flex-shrink:0;padding:5px 8px;border:1px solid #d6e6dc;
+    border-radius:9px;background:#edf6ef;color:#2a614b;
+    font-size:11px;font-weight:850;white-space:nowrap
+  }
+
+  /* An earlier mobile layer hid the large hero ONLY on Overview, leaving
+     Calendar and Activities with a different header. Use the same compact
+     "Min familie · Uke NN" heading above the tabs in every view. */
+  body.family-dashboard-active #family-view .family-overview-top{
+    display:none!important
+  }
+  body.family-dashboard-active #family-view .family-mobile-overview-heading{
+    display:flex!important
+  }
+  body.family-dashboard-active #family-view .family-mobile-nav{
+    position:sticky;top:64px;z-index:20;
+    margin-top:4px
+  }
+  body.family-dashboard-active #family-view{
+    scroll-margin-top:70px
+  }
+  body.family-dashboard-active #family-view .family-agenda-day,
+  body.family-dashboard-active #family-view #family-activity-section{
+    scroll-margin-top:130px
+  }
+}
+@media(max-width:370px){
+  body.family-dashboard-active .header-family-week{display:none!important}
+  body.family-dashboard-active .logo small{display:none}
+}
