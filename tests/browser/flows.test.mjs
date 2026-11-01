@@ -315,6 +315,15 @@ test('Tomorrow overview shows Thursday homework and packing, then opens that exa
  await page.locator('#family-tomorrow-brief-items').getByText(/Drikkeflaske/).waitFor();
  assert.match(await page.locator('#family-tomorrow-brief-date').innerText(),/torsdag 29. oktober/i);
  assert.equal(await page.locator('#family-tomorrow-brief-count').innerText().then(x=>x.includes('punkt')),true);
+ // A parent can tap anywhere on a packing task without searching the child cards.
+ const packing=page.locator('#family-tomorrow-brief-items button[data-family-tomorrow-child]')
+  .filter({hasText:'Drikkeflaske'});
+ assert.match(await packing.getAttribute('aria-label'),/Åpne ukeplanen til Ailin/);
+ await packing.click();
+ await page.locator('#app-view').waitFor({state:'visible'});
+ assert.match(await page.locator('#plan-context-class').innerText(),/Ailin/);
+ await page.locator('#plan-back-family').click();
+ await page.locator('#family-tomorrow-brief').waitFor({state:'visible'});
  await page.locator('#family-tomorrow-brief-calendar').click();
  assert.equal(await page.locator('[data-family-mobile-tab="calendar"]').getAttribute('aria-pressed'),'true');
  assert.equal(await page.locator('#family-tomorrow-brief').isVisible(),false);
@@ -341,6 +350,8 @@ test('Friday afternoon: tomorrow means Saturday family activities, never next Mo
  assert.doesNotMatch(await page.locator('#family-tomorrow-brief-items').innerText(),/Mandagslekse|Neste mandag/);
  assert.equal(await page.locator('#family-tomorrow-brief-calendar').isVisible(),false);
  assert.match(await page.locator('#family-tomorrow-brief-notice').innerText(),/annen uke/);
+ assert.equal(await page.locator('#family-tomorrow-brief-items button[data-family-tomorrow-child]').count(),0,
+  'Family activities should not pretend to be school-plan shortcuts');
  assert.deepEqual(errors,[]);
 });
 test('Mobile family overview shows two compact tappable children, hides administration and keeps desktop intact',async t=>{

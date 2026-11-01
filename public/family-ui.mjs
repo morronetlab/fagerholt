@@ -325,10 +325,19 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const icons={municipal:'🏫',school:'📌',family:'⚽',homework:'📚',packing:'🎒'};
   setHtml('family-tomorrow-brief-items',visible.map(item=>{
    const meta=[item.time||'',item.scope||'',item.checked?'✓ Ferdig':''].filter(Boolean).join(' · ');
+   const child=item.childId?byId(item.childId):null;
+   // The whole homework/packing row opens the right child's plan.
+   // Family activities and municipal notices remain informational.
+   const actionable=child&&['homework','packing'].includes(item.kind);
+   const tag=actionable?'button':'span';
+   const attrs=actionable?' type="button" data-family-tomorrow-child="'+escape(child.id)+
+    '" aria-label="'+escape('Åpne ukeplanen til '+child.name+': '+item.title)+'"':'';
    return '<li class="kind-'+escape(item.kind)+(item.checked?' is-checked':'')+'">'+
+    '<'+tag+' class="tomorrow-item-content"'+attrs+'>'+
     '<span class="tomorrow-item-icon" aria-hidden="true">'+(icons[item.kind]||'📌')+'</span>'+
     '<span class="tomorrow-item-body"><strong>'+escape(item.title)+'</strong>'+
-    '<small'+(item.checked?' class="is-done"':'')+'>'+escape(meta||'Skoleinformasjon')+'</small></span></li>';
+    '<small'+(item.checked?' class="is-done"':'')+'>'+escape(meta||'Skoleinformasjon')+'</small></span>'+
+    '</'+tag+'></li>';
   }).join(''));
   const more=el('family-tomorrow-brief-more');
   more.hidden=count<=4;
@@ -916,6 +925,12 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   el('family-mobile-admin-toggle').setAttribute('aria-expanded',String(expanded));
  });
  el('family-empty-add').addEventListener('click',()=>openForm());
+ el('family-tomorrow-brief-items').addEventListener('click',event=>{
+  const target=event.target.closest('[data-family-tomorrow-child]');
+  if(!target)return;
+  const profile=byId(target.dataset.familyTomorrowChild);
+  if(profile)openChildProfile(profile);
+ });
  el('family-tomorrow-brief-more').addEventListener('click',()=>{
   showAllTomorrow=!showAllTomorrow;render();
  });
