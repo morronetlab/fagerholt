@@ -18,6 +18,15 @@
 .family-tomorrow-brief-items>li{display:flex;align-items:center;gap:9px;min-width:0;
  border:1px solid #dce9df;border-left-width:4px;border-radius:10px;
  padding:10px 12px;background:white}
+/* One tap target per actionable row, without adding a forest of buttons. */
+.family-tomorrow-brief-items .tomorrow-item-content{display:flex;align-items:center;gap:9px;
+ width:100%;min-width:0}
+.family-tomorrow-brief-items button.tomorrow-item-content{border:0;background:transparent;
+ padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.family-tomorrow-brief-items button.tomorrow-item-content::after{content:'›';margin-left:auto;
+ padding-left:4px;color:#39745a;font-size:21px;line-height:1}
+.family-tomorrow-brief-items button.tomorrow-item-content:focus-visible{outline:2px solid #287353;
+ outline-offset:4px;border-radius:5px}
 .family-tomorrow-brief-items .tomorrow-item-icon{width:29px;min-width:29px;
  height:29px;border-radius:8px;background:#ffffffbc;display:grid;
  place-items:center;font-size:16px}
