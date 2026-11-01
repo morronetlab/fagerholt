@@ -277,7 +277,11 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  parent.once('dialog',dialog=>dialog.accept());
  await parent.locator('#child-pair-devices [data-child-revoke]').first().click();
  await parent.locator('#child-pair-close').click();
- await parent.locator('#family-cards [data-setup-status="not_invited"]').first().waitFor();
+ await parent.locator('#family-cards .family-child').first()
+  .locator('.family-child-setup:not(.is-complete)').waitFor();
+ assert.equal(await parent.locator('#family-cards .family-child').first()
+  .locator('.family-child-qr').count(),1,
+  'Revoked app access must restore the QR setup action even if a new QR is pending');
  await childPage.locator('#child-refresh').click();
  await childPage.locator('#child-setup').waitFor({state:'visible'});
  assert.equal(backend.state.revoked.length,1);
