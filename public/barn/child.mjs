@@ -60,6 +60,20 @@ function setup(message){
 }
 const schoolDay=day=>dayDate(state.calendar.year,state.calendar.week,day);
 const isPresent=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+let confirmedToken=null;
+async function reportInstalled(fromInstallEvent=false){
+ // A QR scan only activates access. Installation is confirmed when launched
+ // from the standalone home-screen app or the OS fires appinstalled.
+ if(!state.child||(!fromInstallEvent&&!isPresent()))return;
+ const token=getToken();
+ if(!token||token===confirmedToken||!/^[a-f0-9]{64}$/u.test(token))return;
+ try{
+  await get('/api/child-access',{method:'POST',token,
+   body:{action:'mark-installed'}});
+  confirmedToken=token;
+ }catch{/* Offline or unsupported network: retry next time child app opens. */}
+}
+
 function render(){
  const {child,plan,calendar}=state;if(!child||!calendar)return;
  $('child-setup').hidden=true;$('child-ready').hidden=false;
@@ -217,6 +231,7 @@ async function load(){
    }
   }).catch(()=>{ /* Municipal source is optional; do not invent school closures. */ });
   showInstall();
+  void reportInstalled();
  }catch(e){
   if(e.status===401||e.status===403){setToken(null);state.session=null;}
   setup(e.message||'Kan ikke hente ukeplanen akkurat nå.');
@@ -244,7 +259,10 @@ function showInstall(){
 window.addEventListener('beforeinstallprompt',event=>{
  event.preventDefault();state.installer=event;showInstall();
 });
-window.addEventListener('appinstalled',()=>{$('child-install-box').hidden=true;});
+window.addEventListener('appinstalled',()=>{
+ $('child-install-box').hidden=true;
+ void reportInstalled(true);
+});
 $('child-install-button').addEventListener('click',async()=>{
  if(!state.installer){
   $('child-install-help').textContent='Åpne nettlesermenyen (⋮) og velg «Installer app» eller «Legg til på hjemskjermen».';
