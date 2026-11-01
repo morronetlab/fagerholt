@@ -354,13 +354,15 @@ test('Friday afternoon: tomorrow means Saturday family activities, never next Mo
   'Family activities should not pretend to be school-plan shortcuts');
  assert.deepEqual(errors,[]);
 });
-test('Mobile family dashboard has one persistent header, no fixed bottom bar and consistent tabs',async t=>{
+test('Mobile local family keeps guest navigation and shares persistent header across tabs',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  // Public pages and the individual child plan still use the generic navigation.
  assert.equal(await page.locator('.primary-nav').isVisible(),true);
  await page.locator('#family-toggle').click();
  await addFamilyChild(page,'Barn med familie');
- assert.equal(await page.locator('.primary-nav').isVisible(),false);
+ assert.equal(await page.locator('.primary-nav').isVisible(),true,
+  'The public bottom navigation must remain usable for a guest/local family');
+ assert.equal(await page.locator('body').evaluate(x=>x.classList.contains('family-cloud-active')),false);
  assert.equal(await page.locator('body').evaluate(x=>x.classList.contains('family-dashboard-active')),true);
  assert.equal(await page.locator('.topbar').evaluate(x=>getComputedStyle(x).position),'sticky');
  assert.equal(await page.locator('#header-family-week').innerText(),'Uke 44');
@@ -1372,6 +1374,10 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  assert.equal(await page.locator('[data-onboard-step="4"]').getAttribute('aria-current'),'step');
  await page.locator('#onboard-dashboard').click();
  await page.locator('#family-view').waitFor({state:'visible'});
+ assert.equal(await page.locator('body').evaluate(x=>x.classList.contains('family-cloud-active')),true,
+  'An authenticated family must activate the simplified mobile navigation');
+ assert.equal(await page.locator('.primary-nav').isVisible(),false,
+  'No Forside / Min familie / Ukeplan fixed bar for a signed-in family');
  assert.equal(await page.locator('#family-cards .family-child').count(),2);
  assert.equal(await page.locator('#account-current-family').textContent(),'Min familie');
  assert.match(await page.locator('#family-storage-label').textContent(),/Synkronisert familie/);
