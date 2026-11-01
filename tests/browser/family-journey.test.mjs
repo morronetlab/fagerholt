@@ -228,6 +228,9 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  // already-logged-in family. All API state is shared across browser contexts.
  const b=await openPage(t,backend,{width:1280}),second=b.page;
  await second.goto(invite,{waitUntil:'domcontentloaded'});
+ // A hash-only navigation on an already-open page doesn't re-run bootstrap.
+ // A real invitation is opened as a new document; emulate that explicitly.
+ await second.reload({waitUntil:'domcontentloaded'});
  await second.locator('#account-button').click();
  await login(second,'second@example.no');
  await second.locator('#account-invite-accept').waitFor({state:'visible'});
