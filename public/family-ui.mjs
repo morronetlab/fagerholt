@@ -1,6 +1,7 @@
 /** Device-local family UI; one source-grounded weekly plan per class. */
 import {siteConfig} from './site-config.mjs';
 import {initChildPairingUI} from './child-pairing-ui.mjs';
+import {childSetupInfo} from './shared/child-setup-state.mjs';
 import {activityOccurrences} from './shared/family-activities.mjs';
 import {initFamilyActivitiesUI} from './family-activities-ui.mjs';
 import {familyWeekCalendar,schoolCalendar,DAYS} from './shared/calendar.mjs';
@@ -51,7 +52,7 @@ function wordStatus(profile,plan,calendar){
  }
  return total?{total,attempted,weak}:null;
 }
-export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIssue}){
+export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIssue,onChildAppStatusChange=()=>{}}){
  let active=false,profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
  const mobileUI=initFamilyMobileUI();
  let mobileMoreOpen=new Set();
@@ -141,7 +142,10 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const calendar=()=>familyWeekCalendar(new Date(),'Europe/Oslo');
  const activityUI=initFamilyActivitiesUI({getProfiles:()=>profiles,getCloud:()=>cloud,getCalendar:calendar,
   onChange:()=>{if(active)render();}});
- const childPairingUI=initChildPairingUI({getCloud:()=>cloud});
+ const childPairingUI=initChildPairingUI({getCloud:()=>cloud,onStatusChange:()=>{
+  if(active)render();
+  onChildAppStatusChange();
+ }});
  const weekKey=now=>now.year+'-'+String(now.week).padStart(2,'0');
  async function refreshSourceHealth(){
   if(!active||sourceHealthBusy||Date.now()-sourceHealthFetchedAt<20*60_000)return;
@@ -395,6 +399,19 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     '<span class="content-type-label content-kind-homework">'+contentCategoryLabel('homework')+'</span> '+
     escape((x.subject?x.subject+': ':'')+x.text)+'</span></label></li>').join('')+'</ul>':
   '<p class="family-muted">'+escape(message)+'</p>';
+ function childSetupMarkup(p){
+  if(!cloud)return '';
+  const info=childSetupInfo(childPairingUI.getStatus(p.id));
+  return '<div class="family-child-setup'+(info.complete?' is-complete':'')+
+   '" data-setup-status="'+escape(info.status)+'">'+
+   '<span class="family-child-setup-info"><strong>'+(info.complete?'✓ ':'📱 ')+
+   escape(info.label)+'</strong>'+
+   (!info.complete?'<small>'+escape(info.description)+'</small>':'')+'</span>'+
+   (info.action?'<button type="button" class="family-child-qr" data-family-pair="'+
+   escape(p.id)+'" aria-label="Vis QR-kode og appoppsett for '+escape(p.name)+'">'+
+   escape(info.action)+'</button>':'')+
+   '</div>';
+ }
  function childCard(p,s,now){
   const school=siteConfig.schools[p.school],stored=plans.get(p.id);
   const plan=stored?.year===now.year&&stored?.week===now.week?stored:null;
@@ -445,7 +462,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    '<span class="family-mobile-progress">'+compactStatus+'</span>'+
    (s.ready?'<span class="family-mobile-progress-track" aria-hidden="true"><span style="width:'+pct+'%"></span></span>':'')+
    '</button>';
-  return '<article class="family-child" data-child-id="'+escape(p.id)+'">'+compact+'<div class="family-child-heading">'+
+  return '<article class="family-child" data-child-id="'+escape(p.id)+'">'+compact+
+   childSetupMarkup(p)+'<div class="family-child-heading">'+
    '<span class="family-avatar" aria-hidden="true">'+escape(p.name.slice(0,1).toUpperCase())+'</span>'+
    '<div><h3>'+escape(p.name)+'</h3><p>'+escape(school?.name||'Skole')+' · '+escape(p.grade)+'. klasse'+(p.group?' · '+escape(p.group):'')+'</p>'+
    '<span class="family-child-week">UKE '+now.week+' · '+now.year+(now.upcoming?' · NESTE UKE':'')+'</span></div></div>'+
@@ -454,7 +472,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    (plan?.aiStatus==='failed'?'<button type="button" class="family-soft" data-family-retry="'+escape(pairOf(p))+'">Prøv AI-tolkning igjen</button>':'')+
    '<button type="button" class="family-open" data-family-open="'+escape(p.id)+'">Åpne ukeplan →</button>'+ 
    '<button type="button" class="family-mobile-more" data-family-more="'+escape(p.id)+'" aria-expanded="'+String(mobileMoreOpen.has(p.id))+'">⋯ Flere</button>'+
-   (cloud?'<button type="button" class="family-child-invite" data-family-pair="'+escape(p.id)+'">📱 Inviter barnet (QR)</button>':'')+
+   (cloud&&childSetupInfo(childPairingUI.getStatus(p.id)).complete?
+    '<button type="button" class="family-child-invite" data-family-pair="'+escape(p.id)+'">Administrer barneapp</button>':'')+
    '<button type="button" class="family-soft" data-family-edit="'+escape(p.id)+'">Endre</button>'+
    '<button type="button" class="family-remove" data-family-remove="'+escape(p.id)+'">Fjern</button>'+
    '</div></article>';
@@ -863,6 +882,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    .filter(x=>x.date===date&&(!x.child_id||x.child_id===id)),
   cachedReadyPlan:id=>{const p=byId(id);return p?cachedReadyPlan(p):null;},
   isCloudProfile:id=>Boolean(cloud&&byId(id)),
+  childAppStatus:id=>childPairingUI.getStatus(id),
+  openChildInvite:id=>{const p=byId(id);if(cloud&&p)childPairingUI.open(p);},
   isHomeworkChecked:(id,task)=>{
     const p=byId(id);return Boolean(p&&cloud&&cloudIsChecked(p,task,calendar()));
   },
@@ -874,11 +895,12 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     cloud={client,familyId};syncCloudChrome();
     profiles=remoteChildren.map(x=>({id:x.id,name:x.nickname,school:x.school_id,
       grade:x.grade,group:x.group_name||''})).filter(x=>Object.hasOwn(siteConfig.schools,x.school));
+    void childPairingUI.loadStatuses(profiles);
     plans.clear();cloudChecks.clear();bagChecks.clear();loadedWeekKey=null;activityUI.onFamilyChanged();await syncCloud();
     if(active){render();void fetchPlans();}
   },
   clearCloud:()=>{
-    cloud=null;syncCloudChrome();cloudChecks.clear();bagChecks.clear();lastSynced=null;syncError='';profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
+    cloud=null;syncCloudChrome();childPairingUI.clearStatuses();cloudChecks.clear();bagChecks.clear();lastSynced=null;syncError='';profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
     plans.clear();loadedWeekKey=null;activityUI.onFamilyChanged();if(active){render();void fetchPlans();}
   },
   refreshCloud:async()=>{await Promise.all([syncCloud(),activityUI.refresh()]);},
@@ -891,6 +913,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   enter:()=>{
     if(active)return;
     active=true;syncCloudChrome();activityUI.enter();onModeChange();
+    if(cloud)void childPairingUI.loadStatuses(profiles);
     // Returning from an already-open child plan should restore instantly,
     // not re-download the same school PDF seconds later.
     const now=calendar();
@@ -906,7 +929,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    stopPollTimers();pendingJobs.clear();autoRetries.clear();
     for(const [pair,state] of priorityStates)if(state.status!=='ready')priorityStates.delete(pair);
     loading.clear();onModeChange();},
-  refresh:()=>{if(active){if(cloud)void syncCloud();void activityUI.refresh();void fetchPlans();}}
+  refresh:()=>{if(active){if(cloud){void syncCloud();void childPairingUI.loadStatuses(profiles);}
+   void activityUI.refresh();void fetchPlans();}}
  };
  el('family-first-run-dismiss').addEventListener('click',dismissFirstRunGuide);
  el('family-first-run-next').addEventListener('click',()=>{
@@ -1061,7 +1085,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     profiles=putProfile(profiles,{id:row.id,name:row.nickname,school:row.school_id,
      grade:row.grade,group:row.group_name||''},siteConfig.schools);
    }else{profiles=putProfile(profiles,p,siteConfig.schools);persist();}
-   closeForm();activityUI.render();render();void fetchPlans();
+   closeForm();activityUI.render();render();if(cloud)void childPairingUI.loadStatuses(profiles);
+   void fetchPlans();
   }catch(error){setStatus(error.message);}
   finally{button.disabled=false;}
  });
@@ -1125,7 +1150,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     if(cloud){
      void cloud.client.removeChild(p.id,cloud.familyId).then(()=>{
       profiles=profiles.filter(x=>x.id!==p.id);plans.delete(p.id);cloudChecks.delete(p.id);
-      activityUI.render();
+      activityUI.render();void childPairingUI.loadStatuses(profiles);
       render();void fetchPlans();
      }).catch(error=>{el('family-load-status').textContent=error.message;});
     }else{
