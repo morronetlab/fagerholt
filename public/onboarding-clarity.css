@@ -113,3 +113,8 @@
  dialog.account-panel .onboard-complete{padding:14px 0 0}
  dialog.account-panel .onboard-complete .family-light-button{width:100%;min-height:42px}
 }
+
+/* Keep code errors next to the field, even when the dialog scrolls on mobile. */
+.account-panel #account-code-error:not([hidden]){display:block;margin:5px 0 11px;
+ font-size:12px;line-height:1.45;color:#a12f35;font-weight:650}
+.account-panel #account-code[aria-invalid="true"]{border-color:#b84a4a;outline-color:#b84a4a}
