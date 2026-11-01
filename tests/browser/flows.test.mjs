@@ -384,6 +384,29 @@ test('Skoleuka shares the same branded header and install icons on parent and ch
  assert.match(await page.locator('.child-brand').innerText(),/Min Skoleuka/);
  assert.deepEqual(errors,[]);
 });
+test('Important this week renders above My children in family overview at phone and desktop widths',async t=>{
+ for(const width of [390,1280]){
+  const {page,errors}=await openPage(t,{width,height:850});
+  await page.locator('#family-toggle').click();
+  await page.locator('#family-view').waitFor({state:'visible'});
+  const actual=await page.evaluate(()=>{
+   const important=document.querySelector('.family-important');
+   const children=document.getElementById('family-children');
+   return {
+    first:important.compareDocumentPosition(children)&Node.DOCUMENT_POSITION_FOLLOWING,
+    importantTop:important.getBoundingClientRect().top,
+    childrenTop:children.getBoundingClientRect().top,
+    visible:getComputedStyle(important).display!=='none'
+   };
+  });
+  assert.ok(actual.first,'Important notices should precede children in document order');
+  assert.equal(actual.visible,true);
+  assert.ok(actual.importantTop<actual.childrenTop,
+   'Important notices must visually come before My children at '+width+'px');
+  assert.deepEqual(errors,[]);
+  await page.close();
+ }
+});
 test('Mobile local family keeps guest navigation and shares persistent header across tabs',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  // Public pages and the individual child plan still use the generic navigation.
