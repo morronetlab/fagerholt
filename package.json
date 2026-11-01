@@ -12,7 +12,8 @@
     "check": "npm run check:syntax && npm test",
     "check:syntax": "node scripts/check-syntax.mjs",
     "test:browser": "node --test tests/browser/*.test.mjs",
-    "pretest": "node scripts/generate-child-icons.mjs"
+    "pretest": "node scripts/generate-child-icons.mjs",
+    "pretest:browser": "node scripts/generate-child-icons.mjs"
   },
   "dependencies": {
     "pdfjs-dist": "4.10.38",
