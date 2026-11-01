@@ -273,6 +273,9 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  await parent.locator('#family-mobile-admin-toggle').click();
  await parent.locator('#family-cards .family-child').first().locator('[data-family-more]').click();
  await parent.locator('#family-cards .family-child').first().locator('[data-family-pair]').click();
+ await parent.locator('#child-pair-dialog').waitFor({state:'visible'});
+ // Device management is intentionally in a collapsed details block.
+ await parent.locator('#child-pair-dialog .child-pair-devices > summary').click();
  await parent.locator('#child-pair-devices [data-child-revoke]').first().waitFor();
  parent.once('dialog',dialog=>dialog.accept());
  await parent.locator('#child-pair-devices [data-child-revoke]').first().click();
