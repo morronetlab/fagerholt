@@ -405,6 +405,9 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
  $('onboard-children-back').addEventListener('click',()=>show('signed'));
  $('onboard-children-next').addEventListener('click',()=>{show('completed');status('');});
  $('onboard-dashboard').addEventListener('click',()=>{
+  // Registration is complete: reopening the account dialog must show family
+  // settings (especially "Invite another guardian"), not step 4 again.
+  show('signed');displaySignedIn();
   close({restorePage:false});onGoFamily();
   familyUI.showFirstRunGuide();
   $('family-title').focus({preventScroll:true});
