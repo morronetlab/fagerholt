@@ -1,0 +1,42 @@
+/* One set of three family tabs, on desktop as well as mobile. */
+@media(min-width:701px){
+  #family-view .family-mobile-nav{
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;
+    width:min(100%,740px);margin:16px 0 18px;padding:6px;
+    border:1px solid #dce9df;border-radius:16px;background:#eff5ef;
+  }
+  #family-view .family-mobile-nav button{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    min-height:50px;border:0;border-radius:11px;padding:10px 18px;
+    color:#456c58;background:transparent;font-size:15px;font-weight:800;
+    cursor:pointer;
+  }
+  #family-view .family-mobile-nav button[aria-pressed="true"]{
+    color:#205d46;background:#fff;box-shadow:0 2px 8px #244c3423;
+  }
+  #family-view .family-mobile-nav button:focus-visible{
+    outline:3px solid #b97b37;outline-offset:2px;
+  }
+  #family-view .family-mobile-nav .family-nav-icon{
+    width:21px;height:21px;flex-shrink:0;
+  }
+  #family-view[data-family-mobile-view="overview"] > .family-agenda,
+  #family-view[data-family-mobile-view="overview"] > #family-activity-section,
+  #family-view[data-family-mobile-view="calendar"] > .family-tomorrow,
+  #family-view[data-family-mobile-view="calendar"] > #family-tomorrow-brief,
+  #family-view[data-family-mobile-view="calendar"] > #family-children,
+  #family-view[data-family-mobile-view="calendar"] > #family-activity-section,
+  #family-view[data-family-mobile-view="activities"] > .family-tomorrow,
+  #family-view[data-family-mobile-view="activities"] > #family-tomorrow-brief,
+  #family-view[data-family-mobile-view="activities"] > #family-children,
+  #family-view[data-family-mobile-view="activities"] > .family-agenda{
+    display:none!important;
+  }
+  /* The activities tab is already the administrative context: no extra disclosure. */
+  #family-view[data-family-mobile-view="activities"] #family-activity-manage>summary{
+    display:none;
+  }
+  #family-view[data-family-mobile-view="activities"] #family-activity-manage{
+    border-top:0;
+  }
+}
