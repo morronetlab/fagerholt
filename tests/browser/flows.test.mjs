@@ -354,6 +354,58 @@ test('Friday afternoon: tomorrow means Saturday family activities, never next Mo
   'Family activities should not pretend to be school-plan shortcuts');
  assert.deepEqual(errors,[]);
 });
+test('Mobile family dashboard has one persistent header, no fixed bottom bar and consistent tabs',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ // Public pages and the individual child plan still use the generic navigation.
+ assert.equal(await page.locator('.primary-nav').isVisible(),true);
+ await page.locator('#family-toggle').click();
+ await addFamilyChild(page,'Barn med familie');
+ assert.equal(await page.locator('.primary-nav').isVisible(),false);
+ assert.equal(await page.locator('body').evaluate(x=>x.classList.contains('family-dashboard-active')),true);
+ assert.equal(await page.locator('.topbar').evaluate(x=>getComputedStyle(x).position),'sticky');
+ assert.equal(await page.locator('#header-family-week').innerText(),'Uke 44');
+ assert.equal(await page.locator('#home-link').getAttribute('aria-label'),'Gå til toppen av Min familie');
+ for(const tab of ['overview','calendar','activities']){
+  await page.locator('[data-family-mobile-tab="'+tab+'"]').click();
+  assert.equal(await page.locator('.family-mobile-overview-heading').isVisible(),true);
+  assert.equal(await page.locator('.family-overview-top').isVisible(),false,
+   'All family tabs must share the same compact header');
+  assert.equal(await page.locator('#family-mobile-nav').isVisible(),true);
+ }
+ // Scroll a long family view: both brand and tabs should remain in view.
+ await page.evaluate(()=>{
+  document.getElementById('family-view').style.minHeight='1700px';
+  window.scrollTo({top:600,behavior:'instant'});
+ });
+ await page.waitForTimeout(100);
+ const geometry=await page.evaluate(()=>{
+  const header=document.querySelector('.topbar').getBoundingClientRect();
+  const tabs=document.getElementById('family-mobile-nav').getBoundingClientRect();
+  return {headerTop:header.top,headerBottom:header.bottom,tabsTop:tabs.top,scroll:scrollY};
+ });
+ assert.ok(geometry.scroll>300,'Test must scroll far enough to check sticky behavior');
+ assert.ok(Math.abs(geometry.headerTop)<3,'Skoleuka logo and account header must stay visible');
+ assert.ok(geometry.tabsTop>=geometry.headerBottom-3 &&
+  geometry.tabsTop<=geometry.headerBottom+15,'Family tabs must not overlap the branded header');
+ await page.locator('#home-link').click();
+ assert.equal(await page.locator('#family-view').isVisible(),true,
+  'Clicking the brand inside a family must not open the public onboarding page');
+ await page.locator('[data-family-mobile-tab="overview"]').click();
+ await page.locator('#family-cards .family-child-compact').first().click();
+ await page.locator('#app-view').waitFor({state:'visible'});
+ assert.equal(await page.locator('.primary-nav').isVisible(),true,
+  'The regular bottom navigation remains available on child week plans');
+ assert.deepEqual(errors,[]);
+});
+test('Desktop family navigation and overview header remain unchanged',async t=>{
+ const {page,errors}=await openPage(t,{width:1280,height:850});
+ await page.locator('#family-toggle').click();
+ assert.equal(await page.locator('.primary-nav').isVisible(),true);
+ assert.equal(await page.locator('.family-overview-top').isVisible(),true);
+ assert.equal(await page.locator('#header-family-week').isVisible(),false);
+ assert.notEqual(await page.locator('.topbar').evaluate(x=>getComputedStyle(x).position),'sticky');
+ assert.deepEqual(errors,[]);
+});
 test('Mobile family overview shows two compact tappable children, hides administration and keeps desktop intact',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.locator('#family-toggle').click();
