@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="/family-navigation.css">
   <link rel="stylesheet" href="/brand/skoleuka-brand.css">
   <link rel="stylesheet" href="/family-mobile-polish.css">
+  <link rel="stylesheet" href="/child-app-setup.css">
 </head>
 <body>
 <a class="skip-link" href="#main-content">Hopp til innhold</a>
@@ -381,6 +382,14 @@
           <details id="mobile-selection-menu" class="mobile-selection-menu"><summary>Endre valg</summary><div class="mobile-selection-actions"><button id="mobile-change-grade" type="button">Bytt klassetrinn</button><button id="mobile-change-school" type="button">Bytt skole</button></div></details>
         </div>
       </div>
+      <section id="plan-child-app-setup" class="plan-child-app-setup" aria-labelledby="plan-child-app-setup-title" hidden>
+        <div class="plan-child-app-setup-copy">
+          <strong id="plan-child-app-setup-title">Legg Skoleuka på barnets telefon</strong>
+          <p id="plan-child-app-setup-description">Skann QR-koden og legg appen til på hjemskjermen.</p>
+          <span id="plan-child-app-setup-status" class="plan-child-app-setup-status">Barneapp ikke satt opp</span>
+        </div>
+        <button id="plan-child-app-qr" class="family-add-button" type="button">Vis QR-kode</button>
+      </section>
       <section class="hero" id="app-hero">
         <div class="hero-intro"><p class="eyebrow" id="school-name"></p><h1 id="plan-welcome-title">Morgenklar! <span aria-hidden="true">☀️</span></h1><p class="lead" id="welcome-description">Sjekk skoledagen og pakk sekken.</p>
           <div class="hero-actions"><span id="status-pill" class="state-pill">Henter ukeplan …</span><button type="button" id="reload" class="small-button">↻ Oppdater</button><a id="school-source" href="#" target="_blank" rel="noopener noreferrer">Skolens trinnside ↗</a></div>
@@ -482,8 +491,9 @@
  <header class="child-pair-header"><div><p class="family-eyebrow">MIN EGEN UKEPLAN</p>
  <h2 id="child-pair-title">Inviter barnet med QR-kode</h2></div>
  <button type="button" id="child-pair-close" class="family-form-close" aria-label="Lukk QR-invitasjon">✕</button></header>
- <p id="child-pair-intro">Skann QR-koden med barnets telefon eller nettbrett. Barnet trenger ikke e-postadresse eller passord.</p>
+ <p id="child-pair-intro">1. Skann QR-koden. 2. Legg appen på hjemskjermen. 3. Åpne appikonet for å bekrefte oppsettet.</p>
  <p id="child-pair-status" role="status" aria-live="polite"></p>
+ <p class="child-pair-install-note">Oppsettet markeres som ferdig først når barnet åpner den installerte appen fra hjemskjermen. En skannet QR-kode er ikke nok.</p>
  <div id="child-pair-result" hidden>
    <img id="child-pair-qr" alt="QR-kode for barnets ukeplan" width="242" height="242">
    <label class="child-pair-label">Invitasjonslenke<input id="child-pair-link" type="text" readonly aria-label="Privat invitasjonslenke til barnet"></label>
