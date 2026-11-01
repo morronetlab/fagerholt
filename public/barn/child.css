@@ -5,8 +5,8 @@ button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:
 [hidden]{display:none!important}.child-top{max-width:900px;margin:auto;padding:18px 22px;
  display:flex;justify-content:space-between;align-items:center;gap:18px}
 .child-brand{color:#205d4e;display:flex;align-items:center;gap:9px;font-size:19px;
- text-decoration:none;font-weight:850;letter-spacing:-.5px}.child-brand span{background:#d8efe0;
- border-radius:14px;padding:8px 12px;color:#326f59;font-size:25px}
+ text-decoration:none;font-weight:850;letter-spacing:-.5px}.child-brand .child-brand-icon{display:block;flex:0 0 40px;width:40px;height:40px;border-radius:12px}
+.child-brand-title{min-width:0;color:#1D5C4B;font-size:inherit;line-height:1.2}
 .child-badge{font-size:11px;background:#e2eee5;color:#34614e;border-radius:40px;
  font-weight:800;padding:8px 11px}.child-shell{max-width:900px;margin:4px auto 36px;padding:0 22px}
 .child-hero{display:flex;align-items:center;justify-content:space-between;gap:18px;

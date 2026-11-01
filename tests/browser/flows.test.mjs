@@ -354,6 +354,36 @@ test('Friday afternoon: tomorrow means Saturday family activities, never next Mo
   'Family activities should not pretend to be school-plan shortcuts');
  assert.deepEqual(errors,[]);
 });
+test('Skoleuka shares the same branded header and install icons on parent and child mobile pages',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ const logo=page.locator('#home-link .brand-icon');
+ await logo.waitFor();
+ assert.equal(await logo.getAttribute('src'),'/brand/skoleuka-icon.svg');
+ assert.equal(await logo.evaluate(img=>img.complete&&img.naturalWidth>0),true,
+  'Main Skoleuka logo must load as an actual image');
+ assert.equal(await page.locator('link[rel="icon"]').getAttribute('href'),
+  '/brand/skoleuka-icon.svg');
+ assert.equal(await page.locator('link[rel="manifest"]').getAttribute('href'),
+  '/manifest.webmanifest');
+ await page.locator('#family-toggle').click();
+ assert.equal(await page.locator('#family-mobile-nav .family-nav-icon').count(),3);
+ for(const button of await page.locator('#family-mobile-nav [data-family-mobile-tab]').all())
+  assert.equal(await button.locator('svg').getAttribute('aria-hidden'),'true');
+ const top=await page.locator('.topbar').evaluate(el=>el.getBoundingClientRect().width);
+ assert.ok(top>250&&top<=390,'Branded header stays within the mobile viewport');
+ await page.goto(server.baseURL+'/barn/',{waitUntil:'domcontentloaded'});
+ const childLogo=page.locator('.child-brand .child-brand-icon');
+ await childLogo.waitFor();
+ assert.equal(await childLogo.getAttribute('src'),'/brand/skoleuka-icon.svg');
+ assert.equal(await childLogo.evaluate(img=>img.complete&&img.naturalWidth>0),true,
+  'Child PWA should render the same logo as the main app');
+ assert.equal(await page.locator('link[rel="icon"]').getAttribute('href'),
+  '/brand/skoleuka-icon.svg');
+ assert.equal(await page.locator('link[rel="manifest"]').getAttribute('href'),
+  '/barn/manifest.webmanifest');
+ assert.match(await page.locator('.child-brand').innerText(),/Min Skoleuka/);
+ assert.deepEqual(errors,[]);
+});
 test('Mobile local family keeps guest navigation and shares persistent header across tabs',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  // Public pages and the individual child plan still use the generic navigation.

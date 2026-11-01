@@ -58,7 +58,7 @@ test('Overview, pause, source-based quiz and logo remain available',()=>{
  const js=readFileSync(new URL('../public/shared/word-quiz.mjs',import.meta.url),'utf8');
  for(const id of ['word-quiz-start','word-quiz-review','word-quiz-pause','word-quiz-track','word-quiz-stat-weak'])
   assert.ok(html.includes('id="'+id+'"'),id);
- assert.match(html,/brand-symbol/);
+ assert.match(html,/class="brand-icon" src="\/brand\/skoleuka-icon\.svg"/);
  assert.match(html,/Fremdrift lagres kun på denne enheten/);
  assert.match(js,/buildQuizRounds/);
  assert.match(js,/localStorage.setItem/);
