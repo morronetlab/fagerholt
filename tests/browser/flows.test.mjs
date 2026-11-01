@@ -395,7 +395,9 @@ test('Mobile local family keeps guest navigation and shares persistent header ac
  assert.equal(await page.locator('body').evaluate(x=>x.classList.contains('family-cloud-active')),false);
  assert.equal(await page.locator('body').evaluate(x=>x.classList.contains('family-dashboard-active')),true);
  assert.equal(await page.locator('.topbar').evaluate(x=>getComputedStyle(x).position),'sticky');
- assert.equal(await page.locator('#header-family-week').innerText(),'Uke 44');
+ assert.equal(await page.locator('#header-family-week').isVisible(),false,
+  'Family week must only appear beside the section heading');
+ assert.equal(await page.locator('#family-mobile-week').innerText(),'Uke 44');
  assert.equal(await page.locator('#home-link').getAttribute('aria-label'),'Gå til toppen av Min familie');
  for(const tab of ['overview','calendar','activities']){
   await page.locator('[data-family-mobile-tab="'+tab+'"]').click();
@@ -1548,7 +1550,8 @@ test('Family activities can be added, edited, repeated and persist locally witho
  await page.locator('#family-activity-location').fill('Musikkrommet');
  await page.locator('#family-activity-responsible').fill('Pappa');
  await page.locator('#family-activity-save').click();
- await page.locator('#family-activity-manage > summary').click();
+ assert.equal(await page.locator('#family-activity-manage').evaluate(el=>el.open),true,
+  'Activity list should open automatically on its dedicated mobile tab');
  await page.locator('#family-activity-list').getByText('Korpsøvelse').waitFor();
  assert.match(await page.locator('#family-activity-list').innerText(),/17:00–18:30/);
  assert.match(await page.locator('#family-activity-list').innerText(),/Ukentlig/);
@@ -1557,13 +1560,15 @@ test('Family activities can be added, edited, repeated and persist locally witho
  // The family section now restores directly after reload, without a detour.
  await page.locator('#family-view').waitFor({state:'visible'});
  assert.equal(await page.locator('#family-toggle').getAttribute('aria-pressed'),'true');
- await page.locator('#family-activity-manage > summary').click();
+ assert.equal(await page.locator('#family-activity-manage').evaluate(el=>el.open),true,
+  'Activity list should open automatically on its dedicated mobile tab');
  await page.locator('#family-activity-list').getByText('Korpsøvelse').waitFor();
  await page.locator('[data-activity-edit]').first().click();
  assert.equal(await page.locator('#family-activity-repeat').inputValue(),'weekly');
  await page.locator('#family-activity-name').fill('Korps og noter');
  await page.locator('#family-activity-save').click();
- await page.locator('#family-activity-manage > summary').click();
+ assert.equal(await page.locator('#family-activity-manage').evaluate(el=>el.open),true,
+  'Activity list should open automatically on its dedicated mobile tab');
  await page.locator('#family-activity-list').getByText('Korps og noter').waitFor();
  assert.doesNotMatch(await page.locator('#family-activity-list').innerText(),/Korpsøvelse/);
  page.once('dialog',dialog=>dialog.accept());
@@ -1776,7 +1781,7 @@ test('2.2 family administration is minimized and opens the correct editor from c
  assert.match(await page.locator('#family-activity-manage-summary').innerText(),/1 aktivitet/);
  assert.equal(await page.locator('#family-activity-form').isVisible(),false);
  await page.locator('[data-family-mobile-tab="activities"]').click();
- await page.locator('#family-activity-manage>summary').click();
+ assert.equal(await page.locator('#family-activity-manage').evaluate(el=>el.open),true);
  await page.locator('#family-activity-list').getByText('Korpsøvelse').waitFor({state:'visible'});
  await page.locator('[data-family-mobile-tab="calendar"]').click();
  await expandFirstFamilyActivity(page);
@@ -1788,12 +1793,14 @@ test('2.2 family administration is minimized and opens the correct editor from c
  await page.locator('[data-family-mobile-tab="calendar"]').click();
  await page.locator('#family-agenda-days').getByText('Korps – ny øving').waitFor({state:'visible'});
  assert.equal(await page.locator('#family-activity-form').isVisible(),false);
- assert.equal(await page.locator('#family-activity-manage').evaluate(el=>el.open),false);
  await page.locator('[data-family-mobile-tab="activities"]').click();
+ assert.equal(await page.locator('#family-activity-manage').evaluate(el=>el.open),true);
  await page.locator('#family-activity-add').click();
  assert.equal(await page.locator('#family-activity-form').isVisible(),true);
  await page.locator('#family-activity-cancel').click();
  assert.equal(await page.locator('#family-activity-form').isVisible(),false);
+ assert.equal(await page.locator('#family-activity-manage').evaluate(el=>el.open),true,
+  'Cancelling should immediately return to the activity list');
  assert.deepEqual(errors,[]);
 });
 
