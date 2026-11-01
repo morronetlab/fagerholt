@@ -20,6 +20,13 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
  let client=null,accountReady=false,requestedEmail='',familyId=null,families=[],children=[],invitation=invitationsFromUrl(),nextCodeRequestAt=0;
  let currentScreen='login',gradeRun=0,restoring=true,digestRequest=0,onboardingIntent=false;
  const status=(msg,error=false)=>{$('account-message').textContent=msg||'';$('account-message').dataset.error=String(error);};
+ const codeFeedback=message=>{
+  const field=$('account-code'),hint=$('account-code-error');
+  hint.textContent=message||'';
+  hint.hidden=!message;
+  field.setAttribute('aria-invalid',String(Boolean(message)));
+ };
+ $('account-code').addEventListener('input',()=>codeFeedback(''));
  const show=id=>{
   currentScreen=id;
   for(const section of $('account-panel').querySelectorAll('[data-account-screen]'))
@@ -226,7 +233,7 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
   try{
    await client.sendCode(email);requestedEmail=email;nextCodeRequestAt=Date.now()+60000;
    $('account-verify-email').textContent=email;
-   $('account-code').value='';show('verify');
+   $('account-code').value='';codeFeedback('');show('verify');
    status('Sjekk e-posten din for innloggingskoden.');
    $('account-code').focus({preventScroll:true});
   }
@@ -234,14 +241,17 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
  });
  $('account-verify-form').addEventListener('submit',async e=>{
   e.preventDefault();
-  const submit=$('account-verify');submit.disabled=true;
+  const submit=$('account-verify');submit.disabled=true;codeFeedback('');
   try{
    await client.verifyCode(requestedEmail,$('account-code').value);
    await syncFamilies();
    if(invitation)status('Du har fått en familieinvitasjon. Trykk «Godta familieinvitasjonen» for å bli med.');
    else if(familyId&&!children.length){show('children');status('Du er logget inn. Legg til barnet ditt.');}
    else status('Du er logget inn.');
-  }catch(error){status(error.message,true);}finally{submit.disabled=false;}
+  }catch(error){
+   codeFeedback(error.message);status('');
+   $('account-code').focus({preventScroll:true});
+  }finally{submit.disabled=false;}
  });
  $('account-resend-code').addEventListener('click',async()=>{
   if(!client||!requestedEmail){show('login');return;}
@@ -251,12 +261,12 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
   try{
    await client.sendCode(requestedEmail);
    nextCodeRequestAt=Date.now()+60000;
-   $('account-code').value='';
+   $('account-code').value='';codeFeedback('');
    status('En ny engangskode er forespurt til '+requestedEmail+'. Bruk bare den nyeste koden; tidligere koder kan være ugyldige.');
   }catch(error){status('Kunne ikke sende ny kode: '+error.message,true);}
   finally{submit.disabled=false;}
  });
- $('account-back-email').addEventListener('click',()=>{show('login');status('');$('account-email').focus({preventScroll:true});});
+ $('account-back-email').addEventListener('click',()=>{codeFeedback('');show('login');status('');$('account-email').focus({preventScroll:true});});
  $('account-family-create').addEventListener('submit',async e=>{
   e.preventDefault();const submit=$('account-create');submit.disabled=true;
   try{
