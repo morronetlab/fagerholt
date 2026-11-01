@@ -3,8 +3,25 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#1D5C4B"><meta name="description" content="Hele familiens skoleuke på ett sted. Ukeplaner, lekser, beskjeder og pakkelister fra skolen.">
-  <!-- Prevent initial route flash while the small SPA bootstrap resolves the saved view. -->
-  <style>html:not(.skoleuka-route-ready) #main-content{visibility:hidden}</style>
+  <!-- Keep the saved private family view hidden until auth restoration is settled. -->
+  <style>
+    html:not(.skoleuka-route-ready) #main-content > :not(#startup-loading){display:none!important}
+    html.skoleuka-route-ready #startup-loading{display:none!important}
+    html:not(.skoleuka-route-ready) .primary-nav,
+    html:not(.skoleuka-route-ready) .header-actions,
+    html:not(.skoleuka-route-ready) footer{visibility:hidden}
+    #startup-loading{margin:28px auto;max-width:720px;min-height:220px;
+      padding:28px 26px;border:1px solid #d8e6da;border-radius:22px;
+      background:#f5faf6;color:#205744;box-sizing:border-box}
+    #startup-loading h1{margin:0 0 9px;font-size:clamp(22px,4vw,27px);line-height:1.25}
+    #startup-loading p{margin:0;color:#567563;font-size:15px;line-height:1.5}
+    .startup-loading-indicator{display:inline-block;width:21px;height:21px;
+      border:3px solid #c9e5d3;border-top-color:#267050;border-radius:50%;
+      margin:0 12px 12px 0;vertical-align:middle;animation:startup-spin .9s linear infinite}
+    @keyframes startup-spin{to{transform:rotate(360deg)}}
+    @media(prefers-reduced-motion:reduce){.startup-loading-indicator{animation:none}}
+    @media(max-width:700px){#startup-loading{margin:18px auto;min-height:180px;padding:23px 19px}}
+  </style>
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" type="image/svg+xml" href="/brand/skoleuka-icon.svg">
   <link rel="apple-touch-icon" href="/brand/skoleuka-192.png">
@@ -133,6 +150,11 @@
     </div>
   </dialog>
   <main id="main-content">
+    <section id="startup-loading" role="status" aria-live="polite" aria-label="Åpner Skoleuka">
+      <span class="startup-loading-indicator" aria-hidden="true"></span>
+      <h1>Åpner Skoleuka</h1>
+      <p>Klargjør familiekontoen og ukeplanene dine …</p>
+    </section>
     <section id="welcome-view" class="welcome-view" aria-labelledby="welcome-title">
       <div class="welcome-hero">
         <div class="welcome-copy">
