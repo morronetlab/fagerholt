@@ -17,7 +17,7 @@ function cell(row,value){
 function indicator(kind){
  const chip=document.createElement('span');chip.className='chip '+kind;
  chip.textContent=kind==='attention'?'Feil':kind==='not_monitored'?'Ikke kontrollert':
-  kind==='processing'?'Pågår':'Kontrollert';
+  kind==='processing'?'Pågår':kind==='stale'?'Utdatert':'Kontrollert';
  return chip;
 }
 function render(){
@@ -52,15 +52,15 @@ function render(){
    const scroll=document.createElement('div');scroll.className='scroll';
    const table=document.createElement('table');
    const head=document.createElement('thead'),tr=document.createElement('tr');
-   for(const heading of ['Trinn','Status','Sist kontrollert','Siste vellykkede kilde','Siste PDF-funn','Siste AI-ferdig','Feil på rad']){
+   for(const heading of ['Trinn','Status','Sist kontrollert','Siste vellykkede kilde','Siste PDF-funn','Sist komplett','Siste AI-ferdig','Feil på rad']){
     const th=document.createElement('th');th.textContent=heading;tr.append(th);
    }
    head.append(tr);table.append(head);
    const body=document.createElement('tbody');
    for(const grade of school.grades){
     const row=document.createElement('tr');
-    for(const value of [grade.grade,words[grade.status]||grade.status,time(grade.lastCheckedAt),
-     time(grade.lastSourceOkAt),time(grade.lastPdfFoundAt),time(grade.lastAIReadyAt),
+    for(const value of [grade.grade,(grade.stale?'Utdatert: ':'')+(words[grade.status]||grade.status),time(grade.lastCheckedAt),
+     time(grade.lastSourceOkAt),time(grade.lastPdfFoundAt),time(grade.lastPlanReadyAt),time(grade.lastAIReadyAt),
      grade.consecutiveFailures||'0'])cell(row,value);
     body.append(row);
    }
