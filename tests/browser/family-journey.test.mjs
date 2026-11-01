@@ -267,7 +267,7 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  await parent.locator('#family-cards .family-child').first().getByText(/1 av 1 ferdig/).waitFor();
  await second.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
  await second.locator('#family-cards .family-child').first()
-  .getByText(/1 \/ 1 fullført|1 av 1 ferdig/).first().waitFor();
+  .locator('.family-child-progress b').getByText('1 / 1 fullført').waitFor();
  assert.ok(backend.state.homework.size>0);
  // Revocation is authoritative. The child's old token no longer reads data.
  await parent.locator('#family-cards .family-child').first().locator('[data-family-more]').click().catch(()=>{});
