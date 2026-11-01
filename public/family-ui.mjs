@@ -494,6 +494,10 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   el('family-week-context').textContent=now.upcoming?
    'Skoleuka er over for denne uken. Viser kun uke '+now.week+'.':
    'Lekser, pakkeliste og beskjeder for barna i uke '+now.week+'.';
+  // Preserve errors and loading messages while allowing success text to stay
+  // unobtrusive on mobile (the account panel still exposes sync details).
+  el('family-sync-status').dataset.syncState=cloud?
+   (syncError?'error':lastSynced?'ok':'loading'):'local';
   el('family-sync-status').textContent=cloud?
     (syncError|| (lastSynced?'Sist synkronisert kl. '+lastSynced.toLocaleTimeString('nb-NO',{hour:'2-digit',minute:'2-digit'}):'Henter synkronisert progresjon …')) :
     'Avkrysninger lagres lokalt i nettleseren';
