@@ -44,7 +44,8 @@
       <p class="account-onboard-lead">Skriv inn koden vi sendte til <strong id="account-verify-email"></strong>.</p>
       <p class="account-muted">Koden kommer på e-post, ikke SMS. Sjekk også søppelpost. Bruk den nyeste koden hvis du har bedt om flere.</p>
       <form id="account-verify-form"><label>Engangskode<input id="account-code" type="text" inputmode="numeric" pattern="[0-9]{6,8}" maxlength="8" autocomplete="one-time-code" required placeholder="123456"></label>
-        <button id="account-verify" type="submit" class="family-add-button">Bekreft og fortsett →</button></form>
+        <p id="account-code-error" class="account-code-error" role="alert" hidden></p>
+         <button id="account-verify" type="submit" class="family-add-button">Bekreft og fortsett →</button></form>
       <button type="button" id="account-resend-code" class="family-text-button">Send ny kode</button>
       <button type="button" id="account-back-email" class="family-text-button">← Bruk en annen e-postadresse</button>
     </div>

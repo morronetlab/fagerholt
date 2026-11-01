@@ -103,8 +103,19 @@ export class CloudAccount {
  }
  async verifyCode(email,token){
   if(!/^\d{6,8}$/.test(token.trim()))throw Error('Skriv inn engangskoden fra e-posten.');
-  const data=await this.request('/auth/v1/verify',{method:'POST',body:{email:email.toLowerCase().trim(),token:token.trim(),type:'email'}});
-  return this.persist(data);
+  try{
+   const data=await this.request('/auth/v1/verify',{method:'POST',body:{email:email.toLowerCase().trim(),token:token.trim(),type:'email'}});
+   return this.persist(data);
+  }catch(error){
+   const detail=String(error?.message||'');
+   // Supabase reports English Auth errors, often as "otp_expired" or
+   // "Token has expired or is invalid". Explain how to recover on a phone.
+   if(/otp_expired|(?:token|otp|code).*(?:expired|invalid)|(?:expired|invalid).*(?:token|otp|code)/i.test(detail))
+    throw Error('Koden er ugyldig eller har utløpt. Bruk den nyeste koden i e-posten, eller trykk «Send ny kode».');
+   if(/rate limit|too many requests|over_request_rate_limit/i.test(detail))
+    throw Error('For mange forsøk. Vent litt før du prøver igjen.');
+   throw error;
+  }
  }
  async restore(){
   if(!this.isSignedIn())return null;
