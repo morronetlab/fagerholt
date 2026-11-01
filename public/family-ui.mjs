@@ -1002,6 +1002,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    else{
     resumeAnalysis();
     if(active&&cloud)void syncCloud();
+    // A child may install the PWA on another phone while the guardian is away.
+    if(cloud)void childPairingUI.loadStatuses(profiles);
    }
   });
  setInterval(()=>{
