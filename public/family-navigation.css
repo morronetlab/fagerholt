@@ -1,14 +1,14 @@
-/* Skoleuka family app shell on phones. Desktop, public landing and a child's
-   individual week plan keep the existing global navigation unchanged. */
+/* Skoleuka family app shell on phones. Hide the global bottom bar only for
+   authenticated families; public/guest navigation and child plans stay intact. */
 .header-family-week{display:none}
 @media(max-width:700px){
   /* The family tabs already provide the only three relevant destinations.
      Reclaim the space taken by the fixed global bottom navigation. */
-  body.family-dashboard-active{
+  body.family-cloud-active{
     padding-bottom:env(safe-area-inset-bottom,0px)
   }
-  body.family-dashboard-active .primary-nav{display:none!important}
-  body.family-dashboard-active .shell{padding-bottom:24px}
+  body.family-cloud-active .primary-nav{display:none!important}
+  body.family-cloud-active .shell{padding-bottom:24px}
 
   /* Keep the brand and account settings reachable while scrolling. */
   body.family-dashboard-active .topbar{
