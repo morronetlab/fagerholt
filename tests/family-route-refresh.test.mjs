@@ -18,6 +18,10 @@ test('Family route is recovered before fallback plan selection at startup',()=>{
  assert.match(boot,/document\.documentElement\.classList\.add\('skoleuka-route-ready'\)/);
 });
 test('Main view cannot paint welcome or plan while initial route is being restored',()=>{
- assert.match(html,/html:not\(\.skoleuka-route-ready\) #main-content\{visibility:hidden\}/);
+ assert.match(html,/html:not\(\.skoleuka-route-ready\) #main-content > :not\(#startup-loading\)\{display:none!important\}/);
+ assert.match(html,/id="startup-loading" role="status"/);
+ assert.match(html,/html\.skoleuka-route-ready #startup-loading\{display:none!important\}/);
+ assert.match(app,/accountUI\.ready\.then\(finishStartup,finishStartup\)/);
+ assert.match(app,/const hasSavedSession=Boolean\(storageRead\(SESSION_KEY\)\)/);
  assert.match(app,/sessionStorage\.setItem\(LAST_VIEW_KEY,snapshot\.view\)/);
 });
