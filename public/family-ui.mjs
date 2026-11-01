@@ -2,6 +2,7 @@
 import {siteConfig} from './site-config.mjs';
 import {initChildPairingUI} from './child-pairing-ui.mjs';
 import {childSetupInfo} from './shared/child-setup-state.mjs';
+import {planAvailability} from './shared/plan-availability.mjs';
 import {activityOccurrences} from './shared/family-activities.mjs';
 import {initFamilyActivitiesUI} from './family-activities-ui.mjs';
 import {familyWeekCalendar,schoolCalendar,DAYS} from './shared/calendar.mjs';
@@ -302,7 +303,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   }).join('');
   const message=!profiles.length?'Legg til barn for å se viktige skolebeskjeder.':
    model.missingProfiles.length?
-    'Skoleplaner lastes inn. Viktige beskjeder kan fortsatt mangle.':
+    'Ukeplaner mangler eller kunne ikke hentes. Sjekk status for hvert barn.':
     'Ingen særskilte viktige beskjeder registrert for denne uka.';
   setHtml('family-important-cards',html||
    '<p class="family-important-empty">'+escape(message)+'</p>');
@@ -415,6 +416,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  function childCard(p,s,now){
   const school=siteConfig.schools[p.school],stored=plans.get(p.id);
   const plan=stored?.year===now.year&&stored?.week===now.week?stored:null;
+  const availability=planAvailability({plan,error:errors.get(p.id),loading:loading.has(p.id)});
   const aiLabel=plan?.aiStatus==='ready'?'✓ AI-tolket PDF · lagret':
    plan?.aiStatus==='processing'?'✦ AI tolker PDF automatisk …':
    plan?.aiStatus==='failed'?'⚠ AI-tolkingen feilet':
@@ -444,14 +446,11 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     allPacking.map(({day,items})=>'<section><h4>'+escape(day)+'</h4>'+
       packingList(items,day)+'</section>').join('')+'</details>'+
    '<p class="family-word-state">'+(practice?'✦ Ordøving: '+practice.attempted+' / '+practice.total+(practice.weak?', '+practice.weak+' trenger øving':''):'✦ Ingen ordøving i denne ukeplanen')+'</p></div></details>'
-  ].join(''):'<div class="family-not-ready" role="status">'+escape(
-    plan?.status==='unpublished'||plan?.status==='unavailable'?
-     'Ukeplan for uke '+now.week+' er ikke tilgjengelig ennå. Skolen har ikke publisert PDF for denne uka.':
-     errors.get(p.id)||s.reason||'Henter ukeplan for uke '+now.week+' …')+'</div>';
+  ].join(''):'<div class="family-not-ready" role="status">'+
+    escape(availability.label+'. '+(errors.get(p.id)||s.reason||availability.detail))+'</div>';
   const compactStatus=s.ready?'<span class="family-mobile-progress-label">Lekser</span><span>'+
    s.done+' av '+s.total+' ferdig</span>':
-   '<span class="family-mobile-progress-label">'+escape(
-    plan?.status==='unpublished'?'Ukeplan ikke publisert':errors.get(p.id)||'Henter ukeplan …')+'</span>';
+   '<span class="family-mobile-progress-label">'+escape(availability.label)+'</span>';
   const compact='<button type="button" class="family-child-compact" data-family-compact-open="'+escape(p.id)+'" '+
    'aria-label="Åpne ukeplan for '+escape(p.name)+'">'+
    '<span class="family-mobile-child-head"><span class="family-avatar" aria-hidden="true">'+
@@ -665,7 +664,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const analyzing=[...pendingJobs.values()].filter(job=>job.mode==='poll').length;
   el('family-load-status').textContent=loading.size?'Sjekker '+loading.size+' ukeplan(er) for nye PDF-er …':
    analyzing?'AI tolker '+analyzing+' ukeplan(er) automatisk. Resultatet vises når analysen er ferdig.':
-   errors.size?'Noen ukeplaner kunne ikke hentes. Prøv Oppdater.':syncError;
+   errors.size||profiles.some(p=>plans.get(p.id)?.status==='error')?
+    'Noen skolekilder kunne ikke hentes eller tolkes. Prøv Oppdater.':syncError;
  }
  // /api/plan finds the newest PDF and checks the content-hash against the
  // site-wide, durable Netlify Blobs AI cache. It queues the job only on a miss.

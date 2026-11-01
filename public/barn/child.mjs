@@ -1,5 +1,6 @@
 /** A separate, child-only UI. No parent account, Supabase key or sibling data. */
 import {siteConfig} from '../site-config.mjs';
+import {planAvailability} from '../shared/plan-availability.mjs';
 import {DAYS,dayDate,familyWeekCalendar} from '../shared/calendar.mjs';
 import {groupColorClass} from '../shared/group-scope.mjs';
 import {needsHomeworkHelp} from '../shared/homework-help-eligibility.mjs';
@@ -18,7 +19,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/gu,c=>({
  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
 }[c]));
 const safeURL=raw=>{try{const u=new URL(raw);return u.protocol==='https:'?u.href:null;}catch{return null;}};
-const state={child:null,plan:null,activities:[],municipal:null,day:0,calendar:null,session:null,installer:null,
+const state={child:null,plan:null,planError:null,activities:[],municipal:null,day:0,calendar:null,session:null,installer:null,
  homework:[],bag:[],progress:null,progressBusy:false,progressError:'',
  packing:null,packingBusy:false,packingError:''};
 const getToken=()=>{try{return localStorage.getItem(KEY);}catch{return null;}};
@@ -51,7 +52,7 @@ async function get(path,{method='GET',body,token=null}={}){
  return data;
 }
 function setup(message){
- state.child=null;state.plan=null;state.activities=[];state.municipal=null;state.progress=null;
+ state.child=null;state.plan=null;state.planError=null;state.activities=[];state.municipal=null;state.progress=null;
  state.progressBusy=false;state.progressError='';state.packing=null;state.packingBusy=false;state.packingError='';
  $('child-ready').hidden=true;$('child-setup').hidden=false;
  $('child-setup-message').textContent=message||
@@ -83,6 +84,7 @@ function render(){
  $('child-week-info').textContent='Uke '+calendar.week+' · '+calendar.year+
   (calendar.upcoming?' · neste skoleuke':'');
  $('child-badge').textContent='Uke '+calendar.week;
+ const availability=planAvailability({plan,error:state.planError});
  const ok=plan&&plan.year===calendar.year&&plan.week===calendar.week&&
   !['error','unpublished','unreadable','unavailable'].includes(plan.status)&&
   plan.aiStatus!=='processing';
@@ -94,7 +96,7 @@ function render(){
  const details=childSchoolDayDetails(ok?plan:null,child,day);
  $('child-events').innerHTML=ok?(details.own.length?timeline(details.own):
   empty('Ingen spesielle hendelser for din gruppe denne dagen.')):
-  empty('Ukeplanen er ikke publisert eller ferdig tolket. Prøv «Oppdater».');
+  empty(availability.label+'. '+availability.detail);
  $('child-notes').innerHTML=details.notes.map(note=>
   '<p class="child-note content-kind-practical">'+
   '<span class="content-type-label content-kind-practical">'+contentCategoryLabel('practical')+'</span> '+
@@ -179,14 +181,15 @@ function render(){
  $('child-source').innerHTML=link?
   'Ukeplanen kommer fra skolen. <a href="'+esc(link)+
    '" target="_blank" rel="noopener noreferrer">Se originalen ↗</a>':
-  'Skolen har ennå ikke publisert en tilgjengelig PDF. For detaljer: spør en foresatt.';
- status(state.packingError?'⚠️ '+state.packingError:ok?'':plan?.aiStatus==='processing'?'Skolens PDF behandles. Prøv igjen senere.':
-  'Noen skoleopplysninger mangler for denne uka.');
+  'Ukeplanen er ikke tilgjengelig akkurat nå. Be en foresatt kontrollere skolens trinnside.';
+ status(state.packingError?'⚠️ '+state.packingError:ok?
+  (availability.kind==='partial'?availability.detail:''):
+  availability.label+'. '+availability.detail);
 }
 async function load(){
  if(state.progressBusy)return; // Keep in-flight writes from being overwritten by a refresh.
  state.session=getToken();
- state.progress=null;state.progressError='';state.packing=null;state.packingError='';state.municipal=null;
+ state.planError=null;state.progress=null;state.progressError='';state.packing=null;state.packingError='';state.municipal=null;
  if(!state.session||!/^[a-f0-9]{64}$/u.test(state.session)){setup();return;}
  status('Henter ukeplanen din …');
  const cal=familyWeekCalendar(new Date(),'Europe/Oslo');
@@ -200,7 +203,9 @@ async function load(){
   state.child=child;state.activities=childData.activities||[];
   const url='/api/plan?school='+encodeURIComponent(child.school)+'&grade='+
    encodeURIComponent(child.grade)+(cal.upcoming?'&nextWeek=1':'');
-  try{state.plan=await get(url);}catch{state.plan=null;}
+  try{state.plan=await get(url);}catch(error){
+   state.plan=null;state.planError=error?.message||'Skolens kilde kunne ikke hentes.';
+  }
   try{
    const result=await get('/api/child-access?action=progress&year='+cal.year+'&week='+cal.week,
     {token:state.session});

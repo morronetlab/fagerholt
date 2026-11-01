@@ -22,7 +22,8 @@ const plan={status:'ok',parser:'ai',aiStatus:'ready',year:2026,week:44,
   {text:'Blå gruppes hemmelige lekse',subject:'Norsk',group:'Blå',dueDay:'Fredag'}],
  vocabulary:[{category:'engelske gloser',text:'apple - eple; dog - hund'},
   {category:'norske øveord',text:'skole, sol'}],notices:[]};
-async function open(t,query='',{redeem=true,sharedProgress=null,saveReject=false,readReject=false}={}){
+async function open(t,query='',{redeem=true,sharedProgress=null,saveReject=false,readReject=false,
+ planResponse=plan,planHttpStatus=200}={}){
  const context=await browser.newContext({viewport:{width:390,height:790},locale:'nb-NO',timezoneId:'Europe/Oslo'});
  t.after(()=>context.close());
  const page=await context.newPage(),errors=[];
@@ -79,7 +80,8 @@ async function open(t,query='',{redeem=true,sharedProgress=null,saveReject=false
  });
  await page.route('**/api/plan?**',route=>{
   calls.push({method:'GET',url:new URL(route.request().url()).pathname+new URL(route.request().url()).search});
-  return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(plan)});
+  return route.fulfill({status:planHttpStatus,contentType:'application/json',
+   body:JSON.stringify(planHttpStatus===200?planResponse:{error:'Skolens kilde kunne ikke hentes'})});
  });
  await page.goto(server.baseURL+'/barn/index.html'+query,{waitUntil:'domcontentloaded'});
  return {page,calls,errors,progress,packing};
@@ -289,4 +291,21 @@ test('Previously checked local homework needs explicit import and never overwrit
  assert.equal(sharedProgress.get(key),true);
  assert.equal(calls.filter(x=>x.body?.action==='set-progress').length,1);
  assert.deepEqual(errors,[]);
+});
+
+test('Child PWA clearly distinguishes no published link, source outage and unreadable PDF',async t=>{
+ const cases=[
+  [{status:'unpublished',week:44,year:2026},200,/ikke funnet på trinnsiden/i],
+  [{status:'error',errorCode:'pdf_download_failed',week:44,year:2026},200,/kunne ikke hente skolens PDF/i],
+  [{status:'unreadable',week:44,year:2026},200,/PDF uten lesbart innhold/i],
+  [null,502,/Kunne ikke hente ukeplan/i]
+ ];
+ for(const [planResponse,planHttpStatus,message] of cases){
+  const {page,errors}=await open(t,'?pair='+pair,{planResponse,planHttpStatus});
+  await page.locator('#child-greeting').getByText(/Hei, Barn A/).waitFor();
+  assert.match(await page.locator('#child-events').innerText(),message);
+  assert.match(await page.locator('#child-status').innerText(),message);
+  assert.doesNotMatch(await page.locator('#child-status').innerText(),/ikke publisert eller/i);
+  assert.deepEqual(errors,[]);
+ }
 });
