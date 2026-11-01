@@ -1,0 +1,24 @@
+/* Shared Skoleuka brand primitives. Used by parent site and child PWA. */
+:root{
+  --sk-forest:#1d5c4b;
+  --sk-mint:#d7f1df;
+  --sk-gold:#ffc76d;
+  --sk-cream:#fff8ef;
+}
+.brand-mark{
+  padding:0;
+  overflow:hidden;
+  background:transparent;
+  flex-shrink:0;
+  border-radius:15px;
+}
+.brand-icon{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+.logo strong,#brand-title{color:#1d4f40}
+@media(max-width:700px){
+  .logo small,#brand-subtitle{letter-spacing:.08em}
+}
