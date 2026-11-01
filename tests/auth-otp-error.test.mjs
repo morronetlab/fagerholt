@@ -31,3 +31,22 @@ test('Other Supabase Auth errors retain their specific message',async()=>{
  const {client}=clientWith(429,{msg:'email rate limit exceeded'});
  await assert.rejects(client.sendCode('somebody@example.com'),/email rate limit exceeded/);
 });
+
+test('Expired or invalid login code explains how to recover without exposing Supabase jargon',async()=>{
+ for(const msg of ['Token has expired or is invalid','otp_expired','Invalid OTP']){
+  const {client,calls}=clientWith(403,{msg});
+  await assert.rejects(client.verifyCode('parent@example.no','123456'),error=>{
+   assert.match(error.message,/Koden er ugyldig eller har utløpt/);
+   assert.match(error.message,/Send ny kode/);
+   assert.doesNotMatch(error.message,/otp_expired|Token has expired|Invalid OTP/i);
+   return true;
+  });
+  assert.equal(calls[0].body.type,'email');
+ }
+});
+test('OTP rate limit and unexpected errors are handled separately',async()=>{
+ const throttled=clientWith(429,{msg:'too many requests'});
+ await assert.rejects(throttled.client.verifyCode('parent@example.no','123456'),/For mange forsøk/);
+ const unexpected=clientWith(500,{msg:'Provider unavailable'});
+ await assert.rejects(unexpected.client.verifyCode('parent@example.no','123456'),/Provider unavailable/);
+});
