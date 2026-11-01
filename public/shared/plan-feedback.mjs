@@ -1,13 +1,12 @@
-/** Presentation decisions for an AI job, an absent weekly PDF or an unreadable document.
- * Pure, browser-independent state logic; never guesses whether a PDF was published.
- */
+/** Presentation decisions for source availability and AI parsing. */
+import {planAvailability} from './plan-availability.mjs';
 export function planFeedback({school=null,grade=null,plan=null,error=null,loading=false}={}){
   if(!school||!grade)return null;
   if(loading&&!plan)return {kind:'fetching',eyebrow:'HENTER DOKUMENT',title:'Henter PDF fra skolen',description:'Vi finner denne ukens originale PDF før AI begynner å lese og organisere innholdet.',showSchool:false,showGrade:false,showRetry:false,hideContent:true};
   if(plan?.status==='unpublished')return {
-    kind:'missing',eyebrow:'INGEN UKEPLAN FUNNET',
-    title:'Vi fant ingen ukeplan for denne uka',
-    description:`${school.name} har ikke en ukeplan-PDF tilgjengelig ${plan.week?`for uke ${plan.week}`:`for denne uka`} på den valgte trinnsiden. Det kan hende skolen publiserer planen et annet sted.`,
+    kind:'missing',eyebrow:'IKKE FUNNET PÅ TRINNSIDEN',
+    title:'Vi fant ingen ukeplan for denne uka på trinnsiden',
+    description:`Vi fant ingen PDF for ${plan.week?'uke '+plan.week:'denne uka'} på trinnsiden til ${school.name}. Dette er ikke en bekreftelse på at skolen ikke har publisert den et annet sted.`,
     showSchool:true,showGrade:Boolean(plan.source&&plan.source!==school.homepage),showRetry:true,hideContent:true
   };
   if(plan?.status==='unavailable')return {
@@ -16,12 +15,20 @@ export function planFeedback({school=null,grade=null,plan=null,error=null,loadin
     description:`Vi fant ikke en offisiell trinnside for ${grade} ved ${school.name}. Gå til skolens nettside for å finne informasjonen direkte.`,
     showSchool:true,showGrade:false,showRetry:true,hideContent:true
   };
-  if(error||plan?.status==='error')return {
-    kind:'missing',eyebrow:'KUNNE IKKE HENTE UKEPLAN',
-    title:'Ukeplanen er midlertidig utilgjengelig',
-    description:`Vi klarte ikke hente informasjon fra ${school.name} akkurat nå. Du kan prøve igjen eller åpne skolens nettside.`,
-    showSchool:true,showGrade:Boolean(plan?.source&&plan.source!==school.homepage),showRetry:true,hideContent:true
-  };
+  if(error||plan?.status==='error'){
+    const availability=planAvailability({plan,error});
+    return {
+      kind:'missing',
+      eyebrow:availability.kind==='parse_error'?'PDF KUNNE IKKE TOLKES':
+       availability.kind==='download_error'?'PDF KUNNE IKKE LASTES NED':'KUNNE IKKE HENTE UKEPLAN',
+      title:availability.kind==='parse_error'?'Ukeplanens PDF kunne ikke tolkes':
+       availability.kind==='download_error'?'Kunne ikke laste ned skolens PDF':
+       'Ukeplanen er midlertidig utilgjengelig',
+      description:availability.detail+' Vi har ikke bekreftet at ukeplanen mangler.',
+      showSchool:true,showGrade:Boolean(plan?.source&&plan.source!==school.homepage),
+      showRetry:true,hideContent:true
+    };
+  }
   // AI can read scanned PDF images even when PDF.js cannot extract any text.
   // Never hide an active AI job behind a premature "unreadable PDF" screen.
   if(plan?.aiStatus==='processing')return {
