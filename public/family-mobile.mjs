@@ -1,4 +1,4 @@
-/** Responsive guardian dashboard navigation; desktop keeps its full calendar. */
+/** Shared guardian dashboard navigation across phones and desktop. */
 const KEY='skoleuka.family.mobile.v1';
 const VIEWS=new Set(['overview','calendar','activities']);
 const SHORT_DAYS=['Man','Tir','Ons','Tor','Fre'];
@@ -22,7 +22,7 @@ export function initFamilyMobileUI(){
    button.setAttribute('aria-pressed',String(button.dataset.familyMobileTab===view));
   // "Aktiviteter" is the dedicated list, not another nested menu. Expand it
   // when entering the tab, but don't reopen over an active edit form.
-  if(view==='activities'&&mobile()&&document.getElementById('family-activity-form').hidden)
+  if(view==='activities'&&document.getElementById('family-activity-form').hidden)
    document.getElementById('family-activity-manage').open=true;
  }
  function refreshDays(){
@@ -65,7 +65,7 @@ export function initFamilyMobileUI(){
  function selectView(next,{scroll=false}={}){
   if(!VIEWS.has(next))return;
   view=next;save();paintTabs();
-  if(scroll&&mobile())root().scrollIntoView({block:'start',behavior:'auto'});
+  if(scroll)root().scrollIntoView({block:'start',behavior:'auto'});
  }
  nav().addEventListener('click',event=>{
   const button=event.target.closest('[data-family-mobile-tab]');

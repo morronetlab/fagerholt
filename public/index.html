@@ -31,6 +31,7 @@
   <link rel="stylesheet" href="/brand/skoleuka-brand.css">
   <link rel="stylesheet" href="/family-mobile-polish.css">
   <link rel="stylesheet" href="/child-app-setup.css">
+  <link rel="stylesheet" href="/family-desktop-tabs.css">
 </head>
 <body>
 <a class="skip-link" href="#main-content">Hopp til innhold</a>
@@ -205,8 +206,8 @@
         <h2>Min familie</h2><span id="family-mobile-week">Uke —</span>
       </div>
       <div class="family-overview-top"><div><p class="family-eyebrow">FAMILIEOVERSIKT</p><h1 id="family-title" tabindex="-1">God oversikt over skoleuka</h1><p id="family-week-context" class="family-overview-subtitle">Lekser, pakkeliste og beskjeder for barna.</p></div><div class="family-overview-stats"><span id="family-week">Uke —</span><strong id="family-week-progress">—</strong><small id="family-count">0 barn</small></div></div>
-      <nav id="family-mobile-nav" class="family-mobile-nav" aria-label="Min familie på mobil">
-        <button type="button" data-family-mobile-tab="overview" aria-pressed="true" aria-controls="family-children"><svg class="family-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/></svg><span>Oversikt</span></button>
+      <nav id="family-mobile-nav" class="family-mobile-nav" aria-label="Naviger i Min familie">
+        <button type="button" data-family-mobile-tab="overview" aria-pressed="true" aria-controls="family-tomorrow-brief family-children"><svg class="family-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/></svg><span>Oversikt</span></button>
         <button type="button" data-family-mobile-tab="calendar" aria-pressed="false" aria-controls="family-agenda-days"><svg class="family-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/><path d="M8 14h2m4 0h2m-8 4h2"/></svg><span>Kalender</span></button>
         <button type="button" data-family-mobile-tab="activities" aria-pressed="false" aria-controls="family-activity-section"><svg class="family-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m12 7-4 3 1.6 5h4.8L16 10zM8 10 4 8m12 2 4-2m-10 7-2 5m6-5 2 5"/></svg><span>Aktiviteter</span></button>
       </nav>
@@ -253,6 +254,20 @@
           </div>
         </details>
       </section>
+      <section id="family-tomorrow-brief" class="family-tomorrow-brief" aria-labelledby="family-tomorrow-brief-title" hidden>
+        <div class="family-tomorrow-brief-head">
+          <div><p class="family-tomorrow-eyebrow">FORBERED MORGENENDAGEN</p>
+            <h2 id="family-tomorrow-brief-title">Hva skjer i morgen?</h2>
+            <p id="family-tomorrow-brief-date"></p></div>
+          <span id="family-tomorrow-brief-count" class="family-tomorrow-brief-count"></span>
+        </div>
+        <p id="family-tomorrow-brief-notice" class="family-tomorrow-brief-notice" role="status"></p>
+        <ul id="family-tomorrow-brief-items" class="family-tomorrow-brief-items"></ul>
+        <div class="family-tomorrow-brief-actions">
+          <button type="button" id="family-tomorrow-brief-more" class="family-light-button" hidden aria-expanded="false">Vis resten</button>
+          <button type="button" id="family-tomorrow-brief-calendar" class="family-light-button" hidden>Se dagen i kalenderen →</button>
+        </div>
+      </section>
       <section id="family-children" class="family-children" aria-labelledby="family-children-title">
       <div class="family-toolbar">
         <div><h2 id="family-children-title">Barna mine</h2><p>Hvert barn har sin egen ukeplan og lekseprogresjon.</p></div>
@@ -280,20 +295,6 @@
       </form>
       <div id="family-empty" class="family-empty"><span aria-hidden="true">🏠</span><h3>Legg til det første barnet</h3><p>Velg skole og klassetrinn, så finner vi ukeplanen.</p><button id="family-empty-add" type="button" class="family-add-button">+ Legg til første barn</button></div>
       <div id="family-cards" class="family-cards" aria-live="polite"></div>
-      </section>
-      <section id="family-tomorrow-brief" class="family-tomorrow-brief" aria-labelledby="family-tomorrow-brief-title" hidden>
-        <div class="family-tomorrow-brief-head">
-          <div><p class="family-tomorrow-eyebrow">FORBERED MORGENENDAGEN</p>
-            <h2 id="family-tomorrow-brief-title">Hva skjer i morgen?</h2>
-            <p id="family-tomorrow-brief-date"></p></div>
-          <span id="family-tomorrow-brief-count" class="family-tomorrow-brief-count"></span>
-        </div>
-        <p id="family-tomorrow-brief-notice" class="family-tomorrow-brief-notice" role="status"></p>
-        <ul id="family-tomorrow-brief-items" class="family-tomorrow-brief-items"></ul>
-        <div class="family-tomorrow-brief-actions">
-          <button type="button" id="family-tomorrow-brief-more" class="family-light-button" hidden aria-expanded="false">Vis resten</button>
-          <button type="button" id="family-tomorrow-brief-calendar" class="family-light-button" hidden>Se dagen i kalenderen →</button>
-        </div>
       </section>
       <section class="family-agenda" aria-labelledby="family-agenda-title">
         <div class="family-agenda-top">
