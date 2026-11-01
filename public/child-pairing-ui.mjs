@@ -3,15 +3,41 @@ const $=id=>document.getElementById(id);
 const e=s=>String(s??'').replace(/[&<>"']/gu,c=>({
  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
 }[c]));
-export function initChildPairingUI({getCloud}){
+export function initChildPairingUI({getCloud,onStatusChange=()=>{}}){
  const panel=$('child-pair-dialog');let child=null,previous=null,scrollY=0;
+ const setup=new Map();let statusVersion=0;
+ const getStatus=id=>setup.get(id)||'unknown';
+ async function loadStatuses(profiles){
+  const version=++statusVersion;
+  if(!getCloud()?.familyId){setup.clear();onStatusChange();return;}
+  const updates=await Promise.all(profiles.map(async profile=>{
+   try{
+    const data=await api('status',null,true,profile.id);
+    return [profile.id,['not_invited','invited','activated','installed'].includes(data.status)?
+     data.status:'unknown'];
+   }catch{return [profile.id,'unknown'];}
+  }));
+  if(version!==statusVersion)return;
+  setup.clear();for(const [id,value] of updates)setup.set(id,value);
+  onStatusChange();
+ }
+ function clearStatuses(){statusVersion++;setup.clear();onStatusChange();}
+ async function refreshStatus(id){
+  if(!getCloud()?.familyId)return;
+  try{
+   const data=await api('status',null,true,id);
+   setup.set(id,['not_invited','invited','activated','installed'].includes(data.status)?
+    data.status:'unknown');
+  }catch{setup.set(id,'unknown');}
+  onStatusChange();
+ }
  const message=s=>{$('child-pair-status').textContent=s||'';};
- async function api(action,input=null,retrySession=true){
+ async function api(action,input=null,retrySession=true,targetId=child?.id){
   const cloud=getCloud();
   if(!cloud?.client||!cloud?.familyId)throw Error('Logg inn på familiekontoen først.');
   try{await cloud.client.ensureSession();}
   catch{throw Error('Økten er utløpt. Lukk QR-vinduet, oppdater siden og logg inn på nytt.');}
-  const uri='/api/child-access'+(input===null?'?action='+action+'&childId='+encodeURIComponent(child.id):'');
+  const uri='/api/child-access'+(input===null?'?action='+action+'&childId='+encodeURIComponent(targetId):'');
   const r=await fetch(uri,{method:input===null?'GET':'POST',headers:{
    Authorization:'Bearer '+cloud.client.session.access_token,Accept:'application/json',
    ...(input!==null?{'Content-Type':'application/json'}:{})
@@ -22,7 +48,7 @@ export function initChildPairingUI({getCloud}){
    // revoked before the JWT's exp timestamp. Try one refresh only.
    try{await cloud.client.refreshSession(true);}
    catch{throw Error('Økten er utløpt. Lukk QR-vinduet, oppdater siden og logg inn på nytt.');}
-   return api(action,input,false);
+   return api(action,input,false,targetId);
   }
   if(r.status===401)throw Error('Økten er utløpt. Lukk QR-vinduet, oppdater siden og logg inn på nytt.');
   if(!r.ok)throw Error(data?.error||'Kunne ikke opprette barnetilgang.');
@@ -35,6 +61,7 @@ export function initChildPairingUI({getCloud}){
    $('child-pair-devices').innerHTML=active.length?active.map((item,i)=>
     '<div class="child-pair-device"><div><strong>Enhet '+(i+1)+'</strong><small>Aktivert '+
     e(new Date(item.created_at).toLocaleDateString('nb-NO'))+
+    ' · '+(item.installed_at?'App åpnet fra hjemskjerm':'App ikke bekreftet installert')+
     ' · Tilgang utløper '+e(new Date(item.expires_at).toLocaleDateString('nb-NO'))+
     '</small></div><button type="button" data-child-revoke="'+e(item.id)+'">Fjern tilgang</button></div>').join(''):
     '<p class="family-muted">Ingen aktive barneenheter ennå.</p>';
@@ -56,6 +83,9 @@ export function initChildPairingUI({getCloud}){
    $('child-pair-link').value=result.link;
    $('child-pair-result').hidden=false;
    message('Klar! Skann QR-koden med barnets enhet. Koden er gyldig i 10 minutter.');
+   if(!['installed','activated'].includes(getStatus(child.id))){
+    setup.set(child.id,'invited');onStatusChange();
+   }
    void devices();
   }catch(err){message(err.message);}
   finally{$('child-pair-new').disabled=false;}
@@ -68,7 +98,9 @@ export function initChildPairingUI({getCloud}){
   document.body.classList.remove('account-modal-open');
   document.body.style.removeProperty('--account-lock-top');
   window.scrollTo({top:scrollY,behavior:'instant'});
+  const id=child?.id;
   previous?.focus?.({preventScroll:true});child=null;
+  if(id)void refreshStatus(id);
   $('child-pair-result').hidden=true;$('child-pair-link').value='';
   $('child-pair-qr').removeAttribute('src');
  });
@@ -83,18 +115,18 @@ export function initChildPairingUI({getCloud}){
   if(!confirm('Vil du fjerne denne enhetens tilgang til barnets ukeplan?'))return;
   button.disabled=true;
   try{await api('revoke',{childId:child.id,deviceId:button.dataset.childRevoke});
-   message('Tilgangen er fjernet.');await devices();
+   message('Tilgangen er fjernet.');await devices();await refreshStatus(child.id);
   }catch(err){button.disabled=false;message(err.message);}
  });
- return {open(profile){
+ return {getStatus,loadStatuses,refreshStatus,clearStatuses,open(profile){
   if(!getCloud()?.client?.isSignedIn()||!getCloud()?.familyId){
    alert('Logg inn i familiekontoen for å invitere barn.');return;
   }
   if(panel.open)return;
   child=profile;previous=document.activeElement;scrollY=window.scrollY;
   $('child-pair-title').textContent='Ukeplan til '+child.name;
-  $('child-pair-intro').textContent='Skann QR-koden med telefonen eller nettbrettet til '+child.name+
-   '. Barnet får kun sin egen ukeplan og egne/felles aktiviteter. Ingen foreldrekonto eller søskenprofiler.';
+  $('child-pair-intro').textContent='1. Skann QR-koden på telefonen til '+child.name+
+   '. 2. Åpne ukeplanen og legg den til på hjemskjermen. 3. Start appen fra hjemskjermen for å bekrefte oppsettet. Barnet ser bare sin egen ukeplan.';
   panel.showModal();
   document.body.style.setProperty('--account-lock-top','-'+scrollY+'px');
   document.documentElement.classList.add('account-modal-open');

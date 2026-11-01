@@ -1,5 +1,6 @@
 import {siteConfig} from './site-config.mjs';
 import {initFamilyUI} from './family-ui.mjs';
+import {childSetupInfo} from './shared/child-setup-state.mjs';
 import {initAccountUI} from './account-ui.mjs';
 import {childProgressKey,groupApplies} from './shared/family-core.mjs';
 import {smartDayChoice} from './shared/smart-day.mjs';
@@ -118,15 +119,32 @@ function renderGradeChoices(){
   $('grade-missing').hidden=!state.availableGrades||grades.length>0;
   if(state.school)$('grade-school-link').href=state.school.homepage;
 }
+function renderChildAppSetup(){
+ const panel=$('plan-child-app-setup');
+ const profile=state.profileId?familyUI?.profileById(state.profileId):null;
+ const eligible=Boolean(profile&&familyUI?.isCloudProfile(profile.id));
+ const info=eligible?childSetupInfo(familyUI.childAppStatus(profile.id)):null;
+ panel.hidden=!eligible||info.complete;
+ if(!eligible||info.complete)return;
+ $('plan-child-app-setup-title').textContent='Legg Skoleuka på telefonen til '+profile.name;
+ $('plan-child-app-setup-description').textContent=info.description;
+ $('plan-child-app-setup-status').textContent=info.label;
+ $('plan-child-app-qr').textContent=info.action||'Vis QR-kode';
+}
 function renderShell(){
   const hasSchool=Boolean(state.school),chosen=Boolean(state.grade&&hasSchool),inFamily=Boolean(familyUI?.isActive());
   const welcome=primaryView==='welcome'&&!inFamily;
   const section=inFamily?'family':welcome?'welcome':'plan';
+  const childCloudPlan=Boolean(!inFamily&&!welcome&&chosen&&state.profileId&&
+   familyUI?.isCloudProfile(state.profileId));
+  // Child plans selected from a signed-in family keep one clear return route.
+  document.body.classList.toggle('family-child-plan-active',childCloudPlan);
   // Family tabs replace the generic fixed mobile navigation. Keep this state
   // on the body so desktop and the child's own week-plan remain unchanged.
   document.body.classList.toggle('family-dashboard-active',inFamily);
   $('header-family-week').hidden=!inFamily;
-  $('home-link').setAttribute('aria-label',inFamily?'Gå til toppen av Min familie':'Gå til forsiden');
+  $('home-link').setAttribute('aria-label',inFamily?'Gå til toppen av Min familie':
+   childCloudPlan?'Gå til Min familie':'Gå til forsiden');
   $('welcome-view').hidden=!welcome;
   $('family-view').hidden=!inFamily;
   $('school-gate').hidden=inFamily||welcome||hasSchool;
@@ -151,6 +169,7 @@ function renderShell(){
   for(const id of ['change-school','change-grade','mobile-selection-menu'])
    $(id).hidden=Boolean(selectedProfile);
   $('plan-back-family').hidden=!selectedProfile;
+  renderChildAppSetup();
   $('plan-welcome-title').textContent=selectedProfile?'Hei, '+selectedProfile.name+'! ☀️':'Morgenklar! ☀️';
   $('school-name').textContent=`${state.school.name.toLocaleUpperCase('nb-NO')} · ${state.grade}. KLASSE`;
   $('welcome-description').textContent=`Se hva som skjer i ${state.grade}. klasse, og kryss av det du har gjort.`;
@@ -680,6 +699,7 @@ function boot(){
    onModeChange:()=>{renderShell();recordNavigation();scrollNewViewToTop();},
    onOpenProfile:openFamilyProfile,
    onReportIssue:args=>issueReporter.open(args),
+   onChildAppStatusChange:()=>{if(!familyUI?.isActive())renderChildAppSetup();},
    onOpenSingle:()=>{primaryView='plan';renderShell();recordNavigation();scrollNewViewToTop();}
   });
   accountUI=initAccountUI({familyUI,onGoFamily:()=>navigateTo('family'),
@@ -710,7 +730,8 @@ function boot(){
     e.preventDefault();
     // On the guardian dashboard the logo is a safe "back to family top" action,
     // never an accidental trip to the public registration landing page.
-    navigateTo(familyUI.isActive()?'family':'welcome');
+    navigateTo(familyUI.isActive()||
+     (state.profileId&&familyUI.isCloudProfile(state.profileId))?'family':'welcome');
   });
   $('nav-home').addEventListener('click',()=>navigateTo('welcome'));
   $('nav-plan').addEventListener('click',()=>navigateTo('plan'));
@@ -776,6 +797,9 @@ function boot(){
     const el=e.target.closest('input[data-check]');if(el)setChecked(el.dataset.check,el.dataset.index,el.dataset.progressDay,el.checked);
   });
   $('plan-back-family').addEventListener('click',()=>navigateTo('family'));
+  $('plan-child-app-qr').addEventListener('click',()=>{
+   if(state.profileId)familyUI.openChildInvite(state.profileId);
+  });
   $('change-grade').addEventListener('click',clearGrade);
   $('change-school').addEventListener('click',clearSchool);
   $('mobile-change-grade').addEventListener('click',()=>{$('mobile-selection-menu').open=false;clearGrade();});

@@ -1,0 +1,45 @@
+/* Child app onboarding for guardians. Never shown in the child-only /barn PWA. */
+.family-child-setup{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ background:#fff9eb;border-top:1px solid #f0dfbd;
+ padding:11px 14px;min-width:0
+}
+.family-child-setup-info{display:grid;gap:3px;min-width:0;flex:1}
+.family-child-setup-info strong{font-size:12px;line-height:1.35;color:#805d26}
+.family-child-setup-info small{font-size:11px;line-height:1.45;color:#806e52}
+.family-child-qr{flex:0 0 auto;min-height:42px;padding:8px 12px;
+ border:1px solid #286b54;border-radius:10px;background:#286b54;color:#fff;
+ font:inherit;font-size:12px;font-weight:850;cursor:pointer;white-space:nowrap}
+.family-child-qr:focus-visible{outline:3px solid #e8ad51;outline-offset:2px}
+.family-child-setup.is-complete{background:#eef8f0;border-color:#dcece1;padding:9px 14px}
+.family-child-setup.is-complete .family-child-setup-info strong{color:#236b4d}
+.plan-child-app-setup[hidden]{display:none!important}
+.plan-child-app-setup{
+ display:flex;align-items:center;justify-content:space-between;gap:16px;
+ margin:0 0 16px;padding:16px 18px;background:#fff9ea;border:1px solid #e8d8b6;
+ border-radius:17px;box-shadow:0 4px 14px #7459210b;color:#3e4c3c
+}
+.plan-child-app-setup-copy{flex:1;min-width:0}
+.plan-child-app-setup-copy strong{display:block;font-size:17px;line-height:1.3;color:#254e3f}
+.plan-child-app-setup-copy p{margin:5px 0 7px;font-size:13px;line-height:1.5;color:#617568}
+.plan-child-app-setup-status{display:inline-block;font-weight:800;font-size:11px;color:#906126}
+#plan-child-app-qr{flex:0 0 auto;white-space:nowrap}
+.child-pair-install-note{font-size:12px;line-height:1.5;color:#677c6e;margin:4px 0 11px}
+@media(max-width:700px){
+ /* This is a guardian's selected child: the top '← Min familie' is the
+    sole explicit back action; the generic fixed bottom menu is redundant. */
+ body.family-child-plan-active .primary-nav{display:none!important}
+ body.family-child-plan-active{padding-bottom:env(safe-area-inset-bottom,0px)}
+ body.family-child-plan-active .shell{padding-bottom:22px}
+ body.family-child-plan-active #plan-back-family{min-height:44px}
+ #family-view .family-child-setup{gap:8px;min-height:58px;padding:10px 12px}
+ #family-view .family-child-setup-info strong{font-size:12px}
+ #family-view .family-child-qr{padding:8px 11px;font-size:11px}
+ .plan-child-app-setup{padding:14px;gap:10px;flex-wrap:wrap}
+ .plan-child-app-setup-copy{flex-basis:100%}
+ #plan-child-app-qr{width:100%;min-height:44px}
+}
+@media(max-width:350px){
+ #family-view .family-child-setup{flex-wrap:wrap}
+ #family-view .family-child-qr{width:100%}
+}

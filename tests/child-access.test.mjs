@@ -79,12 +79,13 @@ function fixture({authStatus=200,planError=false}={}){
     const id=params.get('id')?.replace('eq.',''),hash=params.get('secret_hash')?.replace('eq.','');
     const d=devices.find(x=>!x.revoked_at&&
       (id?x.id===id:hash?x.secret_hash===hash:false));
-    if(d)d.revoked_at=JSON.parse(options.body).revoked_at;
+    if(d)Object.assign(d,JSON.parse(options.body));
     return options.headers?.Prefer==='return=representation'?ok(d?[{id:d.id}]:[]):ok(null,204);
    }
    const hash=params.get('secret_hash')?.replace('eq.','');
    if(hash)return ok(devices.filter(x=>x.secret_hash===hash&&!x.revoked_at));
-   return ok(devices.filter(x=>!x.revoked_at));
+   return ok(devices.filter(x=>!x.revoked_at&&
+    (!params.get('child_id')||params.get('child_id')==='eq.'+x.child_id)));
   }
   if(pathname==='/rest/v1/packing_progress'){
    if(options.method==='POST'){
@@ -148,6 +149,32 @@ test('A confirmed guardian may mint one-use 10-minute QR; data and QR SVG never 
  assert.ok(!JSON.stringify(f.pairs).includes(result.link.split('pair=')[1]));
  assert.ok(!JSON.stringify(result).includes(env.SUPABASE_SERVICE_ROLE_KEY));
  assert.equal(r.headers.get('Referrer-Policy'),'no-referrer');
+});
+test('Guardian setup status advances only after home-screen PWA confirmation',async()=>{
+ const f=fixture();
+ assert.deepEqual(await (await f.request('status')).json(),{status:'not_invited'});
+ const qr=await (await f.request('create',{childId:child})).json();
+ assert.deepEqual(await (await f.request('status')).json(),{status:'invited'});
+ const token=(await (await f.request('redeem',{token:qr.link.split('pair=')[1]})).json()).session;
+ assert.deepEqual(await (await f.request('status')).json(),{status:'activated'},
+  'QR redemption is not proof of app installation');
+ assert.equal(f.devices[0].installed_at,undefined);
+ const marked=await f.request('mark-installed',{}, {token});
+ assert.equal(marked.status,200);
+ assert.equal((await marked.json()).installed,true);
+ assert.match(f.devices[0].installed_at,/^2026-10-31/);
+ assert.deepEqual(await (await f.request('status')).json(),{status:'installed'});
+ assert.ok((await (await f.request('devices')).json()).devices[0].installed_at);
+ await f.request('revoke',{childId:child,deviceId:f.devices[0].id});
+ assert.deepEqual(await (await f.request('status')).json(),{status:'not_invited'},
+  'Revoked installations must not suppress setup CTA');
+ assert.equal((await f.request('mark-installed',{}, {token})).status,401);
+});
+test('Guardian setup state cannot be read with device tokens or anonymous calls',async()=>{
+ const f=fixture();
+ assert.equal((await f.request('status',null,{token:'a'.repeat(64)})).status,403);
+ assert.equal((await f.request('status',null,{token:'invalid'})).status,403);
+ assert.equal((await f.request('mark-installed',{}, {token:'f'.repeat(64)})).status,401);
 });
 test('Redeem is single-use, child may only read child/family events, and guardian can revoke',async()=>{
  const f=fixture();
