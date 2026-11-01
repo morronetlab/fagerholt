@@ -411,7 +411,9 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
  });
  $('onboard-open-invite').addEventListener('click',()=>{show('signed');$('account-invite-email').focus();});
  $('account-open-family').addEventListener('click',()=>{close({restorePage:false});onGoFamily();});
- void restore().then(()=>{if(invitation&&client?.isSignedIn()){open();show('signed');
+ // The shell must not display a temporary local/guest dashboard before
+ // a returning guardian's saved session and family children have been restored.
+ const ready=restore().then(()=>{if(invitation&&client?.isSignedIn()){open();show('signed');
    status('Du har en familieinvitasjon. Trykk «Godta familieinvitasjonen» for å bli med.');}});
- return {restore,open,close};
+ return {restore,open,close,ready};
 }

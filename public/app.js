@@ -2,6 +2,7 @@ import {siteConfig} from './site-config.mjs';
 import {initFamilyUI} from './family-ui.mjs';
 import {childSetupInfo} from './shared/child-setup-state.mjs';
 import {initAccountUI} from './account-ui.mjs';
+import {SESSION_KEY} from './shared/cloud-account.mjs';
 import {childProgressKey,groupApplies} from './shared/family-core.mjs';
 import {smartDayChoice} from './shared/smart-day.mjs';
 import {initWordQuiz,renderWordQuiz,quizItems} from './shared/word-quiz.mjs';
@@ -834,17 +835,28 @@ function boot(){
   }else if(validSchool(savedSchool,siteConfig.schools)){
     primaryView='plan';selectSchool(savedSchool,{restore:true});
   }else renderShell();
-  document.documentElement.classList.add('skoleuka-route-ready');
-  navigationReady=true;
-  const startupSnapshot=initialRoute?.view==='plan'&&initialRoute.profileId?
+  // A saved guardian session is restored asynchronously. Keep the neutral
+  // first-paint loading shell visible until account, family and children have
+  // been resolved. Otherwise the temporary 0-child guest dashboard flashes.
+  // Guest users have no network wait and can render immediately.
+  const hasSavedSession=Boolean(storageRead(SESSION_KEY));
+  const finishStartup=()=>{
+   if(navigationReady)return;
+   const startupSnapshot=!hasSavedSession&&initialRoute?.view==='plan'&&initialRoute.profileId?
     initialRoute:{...navigationSnapshot(),explicit:initialRoute?.explicit===true};
-  try{
+   try{
     sessionStorage.setItem(LAST_VIEW_KEY,startupSnapshot.view);
     sessionStorage.setItem(LAST_ROUTE_KEY,JSON.stringify(startupSnapshot));
-  }catch{}
-  // The first entry is the in-app starting point. Later internal steps are
-  // pushed, so the native browser Back button returns to the prior app view.
-  try{history.replaceState(startupSnapshot,' ',location.href);}catch{}
+   }catch{}
+   // Preserve the final route as the native Back button's base.
+   try{history.replaceState(startupSnapshot,'',location.href);}catch{}
+   navigationReady=true;
+   document.documentElement.classList.add('skoleuka-route-ready');
+  };
+  if(hasSavedSession){
+   // Account restoration handles offline/error cases and always settles.
+   void accountUI.ready.then(finishStartup,finishStartup);
+  }else finishStartup();
   // If a tablet or fridge display stays open, refresh on week/date rollover.
   setInterval(()=>{
     const next=schoolCalendar(new Date(),siteConfig.school.timezone);
