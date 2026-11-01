@@ -34,7 +34,8 @@
 .account-panel .onboard-import-row p{margin:6px 0 10px}
 .account-panel .onboard-actions{display:flex;align-items:center;
  justify-content:space-between;gap:10px;margin:15px 0 3px}
-.account-panel #onboard-add-another{margin-top:9px}
+.account-panel #onboard-child-form-title{font-size:14px;font-weight:800;color:#245a43;
+ margin:13px 0 7px}
 .account-panel #onboard-children-next{font-weight:850}
 .account-panel #onboard-children-back{margin:0}
 .account-panel .onboard-complete{text-align:center}
@@ -101,7 +102,6 @@
   align-items:center;padding:5px 6px;font-size:12px;line-height:1.4
  }
  dialog.account-panel #onboard-child-form{margin:5px 0}
- dialog.account-panel #onboard-add-another{width:100%;min-height:43px;margin-top:11px}
  dialog.account-panel .onboard-actions{
   position:sticky;bottom:-18px;z-index:2;display:grid;grid-template-columns:1fr;
   gap:5px;background:linear-gradient(#fffefcee,#fff 18px);

@@ -1298,20 +1298,29 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  await page.locator('#onboard-child-save').click();
  await page.locator('#onboard-children-list .onboard-child-item').first().waitFor();
  assert.equal(await page.locator('#onboard-children-list .onboard-child-item').count(),1);
- assert.equal(await page.locator('#onboard-child-form').isVisible(),false);
- assert.equal(await page.locator('#onboard-add-another').isVisible(),true);
- assert.match(await page.locator('#onboard-children-next').innerText(),/Fullfør oppsettet/);
- await page.locator('#onboard-add-another').click();
- assert.equal(await page.locator('#onboard-child-form').isVisible(),true);
+ assert.equal(await page.locator('#onboard-child-form').isVisible(),true,
+  'Adding one child must not close the form or make a second child hard to add');
+ assert.match(await page.locator('#onboard-child-form-title').innerText(),/barn til/);
+ assert.match(await page.locator('#onboard-children-next').innerText(),/Ferdig med barna/);
+ assert.equal(await page.locator('#onboard-child-name').inputValue(),'');
  assert.equal(await page.locator('#onboard-child-school').inputValue(),'sjostrand');
- // Reuse the previous school and grade for a sibling; no need to reselect them.
+ // Sibling on the same school: reuse the school while allowing a different grade.
  assert.equal(await page.locator('#onboard-child-grade').inputValue(),'2');
+ await page.locator('#onboard-child-name').fill('Andre barn');
+ await page.locator('#onboard-child-grade').selectOption('5A');
+ await page.locator('#onboard-child-save').click();
+ await page.locator('#onboard-children-list .onboard-child-item').nth(1).waitFor();
+ assert.equal(await page.locator('#onboard-children-list .onboard-child-item').count(),2);
+ assert.match(await page.locator('#onboard-children-list').innerText(),/Andre barn/);
+ assert.match(await page.locator('#onboard-children-list').innerText(),/5A/);
+ assert.equal(await page.locator('#onboard-child-form').isVisible(),true);
+ assert.equal(await page.locator('#onboard-child-name').inputValue(),'');
  await page.locator('#onboard-children-next').click();
  assert.equal(await page.locator('[data-account-screen="completed"]').isVisible(),true);
  assert.equal(await page.locator('[data-onboard-step="4"]').getAttribute('aria-current'),'step');
  await page.locator('#onboard-dashboard').click();
  await page.locator('#family-view').waitFor({state:'visible'});
- assert.equal(await page.locator('#family-cards .family-child').count(),1);
+ assert.equal(await page.locator('#family-cards .family-child').count(),2);
  assert.equal(await page.locator('#account-current-family').textContent(),'Min familie');
  assert.match(await page.locator('#family-storage-label').textContent(),/Synkronisert familie/);
  assert.equal(await page.locator('#family-first-run').isVisible(),true);
@@ -1322,6 +1331,8 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  // Guide survives an accidental reload during the first visit.
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-first-run').waitFor({state:'visible'});
+ assert.equal(await page.locator('#family-cards .family-child').count(),2,
+  'Both children must still exist after a fresh guardian session restoration');
  await page.locator('#family-first-run-dismiss').click();
  assert.equal(await page.locator('#family-first-run').isVisible(),false);
  await page.reload({waitUntil:'domcontentloaded'});
