@@ -1359,6 +1359,23 @@ test('Verified parent can explicitly enable and disable Sunday email without a s
 test('2.1 parent email OTP, create family and cloud-mode dashboard work with mocked Supabase',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  const endpoint='https://testprojectabc.supabase.co';
+ const setup=new Map();
+ await page.route('**/api/child-access**',route=>{
+  const req=route.request(),url=new URL(req.url());
+  const action=req.method()==='GET'?url.searchParams.get('action'):
+   JSON.parse(req.postData()||'{}').action;
+  const id=req.method()==='GET'?url.searchParams.get('childId'):
+   JSON.parse(req.postData()||'{}').childId;
+  if(action==='status')return reply(route,{status:setup.get(id)||'not_invited'});
+  if(action==='create'){
+   setup.set(id,'invited');
+   return reply(route,{link:url.origin+'/barn/?pair='+'a'.repeat(64),
+    qr:'data:image/svg+xml;base64,'+Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>').toString('base64'),
+    expiresAt:'2026-10-28T10:10:00Z'});
+  }
+  if(action==='devices')return reply(route,{devices:[]});
+  return reply(route,{error:'unexpected child access action '+action});
+ });
  await page.route('**/api/account-config*',route=>reply(route,{
   enabled:true,url:endpoint+'/',publishableKey:'sb_publishable_test_not_a_real_key'
  }));
@@ -1483,6 +1500,40 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  assert.equal(await page.locator('.primary-nav').isVisible(),false,
   'No Forside / Min familie / Ukeplan fixed bar for a signed-in family');
  assert.equal(await page.locator('#family-cards .family-child').count(),2);
+ await page.locator('#family-cards .family-child-setup[data-setup-status="not_invited"]').first().waitFor();
+ assert.equal(await page.locator('#family-cards .family-child-qr:visible').count(),2,
+  'Both uninstalled children must show a prominent QR invitation');
+ await page.locator('#family-cards .family-child-qr').first().click();
+ await page.locator('#child-pair-dialog').waitFor({state:'visible'});
+ await page.locator('#child-pair-qr').waitFor({state:'visible'});
+ assert.match(await page.locator('#child-pair-intro').innerText(),/hjemskjermen/);
+ await page.locator('#child-pair-close').click();
+ await page.locator('#family-cards .family-child-setup[data-setup-status="invited"]').first().waitFor();
+ await page.locator('#family-cards .family-child-compact').first().click();
+ await page.locator('#app-view').waitFor({state:'visible'});
+ assert.equal(await page.locator('body').evaluate(x=>x.classList.contains('family-child-plan-active')),true);
+ assert.equal(await page.locator('.primary-nav').isVisible(),false,
+  'The child plan belongs to the family flow, not the global bottom navigation');
+ assert.equal(await page.locator('#plan-back-family').isVisible(),true,
+  'Only the context Back to family button is needed');
+ assert.equal(await page.locator('#plan-child-app-setup').isVisible(),true);
+ await page.locator('#plan-child-app-qr').click();
+ await page.locator('#child-pair-dialog').waitFor({state:'visible'});
+ setup.set('child-1','activated');
+ await page.locator('#child-pair-close').click();
+ await page.getByText('Åpnet på telefonen').first().waitFor();
+ assert.equal(await page.locator('#plan-child-app-setup').isVisible(),true,
+  'QR activation must not hide the home-screen install reminder');
+ setup.set('child-1','installed');
+ await page.locator('#plan-back-family').click();
+ await page.locator('#family-cards .family-child-setup.is-complete').first().waitFor();
+ assert.equal(await page.locator('#family-cards .family-child-qr:visible').count(),1,
+  'The setup call to action remains for the second child');
+ await page.locator('#family-cards .family-child-compact').first().click();
+ await page.locator('#app-view').waitFor({state:'visible'});
+ assert.equal(await page.locator('#plan-child-app-setup').isVisible(),false,
+  'Only a confirmed installed app suppresses the reminder');
+ await page.locator('#plan-back-family').click();
  assert.equal(await page.locator('#account-current-family').textContent(),'Min familie');
  assert.match(await page.locator('#family-storage-label').textContent(),/Synkronisert familie/);
  assert.equal(await page.locator('#family-first-run').isVisible(),true);
