@@ -1200,13 +1200,20 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
   let families=JSON.parse(localStorage.getItem('__testFamilies')||'[]');
   let children=JSON.parse(localStorage.getItem('__testChildren')||'[]');
   window.__otpRequests=0;
+  window.__verifyRequests=0;
   window.fetch=(input,init={})=>{
    const url=typeof input==='string'?input:input.url;
    if(!url.startsWith('https://testprojectabc.supabase.co/'))return original(input,init);
    let data={};
    if(url.includes('/auth/v1/otp')){window.__otpRequests++;data={};}
-   else if(url.includes('/auth/v1/verify'))data={access_token:'access-token',
-    refresh_token:'refresh-token',expires_in:3600,user:{id:'guardian-one',email:'parent@example.no'}};
+   else if(url.includes('/auth/v1/verify')){
+    window.__verifyRequests++;
+    if(window.__verifyRequests===1)return Promise.resolve(new Response(
+     JSON.stringify({msg:'Token has expired or is invalid'}),{status:403,
+      headers:{'Content-Type':'application/json'}}));
+    data={access_token:'access-token',refresh_token:'refresh-token',expires_in:3600,
+     user:{id:'guardian-one',email:'parent@example.no'}};
+   }
    else if(url.includes('/rest/v1/rpc/create_family')){
     families=[{id:'family-1',name:'Min familie',created_by:'guardian-one'}];
     localStorage.setItem('__testFamilies',JSON.stringify(families));data='family-1';
@@ -1253,6 +1260,12 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  assert.equal(await page.evaluate(()=>window.__otpRequests),2);
  await page.evaluate(()=>{Date.now=window.__originalDateNow;});
  await page.locator('#account-code').fill('123456');
+ await page.locator('#account-verify').click();
+ await page.locator('#account-code-error').getByText(/Koden er ugyldig eller har utløpt/).waitFor();
+ assert.equal(await page.locator('#account-code').getAttribute('aria-invalid'),'true');
+ assert.equal(await page.locator('[data-account-screen="verify"]').isVisible(),true);
+ await page.locator('#account-code').fill('876543');
+ assert.equal(await page.locator('#account-code-error').isVisible(),false);
  await page.locator('#account-verify').click();
  await page.locator('#account-family-name').waitFor({state:'visible'});
  assert.equal(await page.locator('[data-onboard-step="2"]').getAttribute('aria-current'),'step');
