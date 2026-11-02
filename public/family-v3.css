@@ -393,6 +393,7 @@
 .family-important-empty{margin:0;padding:12px 14px;background:#f6faf6;border-radius:10px;
  color:#647c6e;font-size:12px;line-height:1.5}
 
+.family-important .family-important-cards{margin-bottom:0}
 /* A single compact action row, matching the "Hva skjer i morgen?" footer. */
 .family-important-actions{display:flex;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-top:9px}
 .family-important-actions #family-mobile-important-more,
@@ -403,6 +404,7 @@
  color:#2f6a51;font-size:12px;font-weight:800;line-height:1.4;cursor:pointer;
  box-shadow:none;text-align:left;white-space:normal
 }
+.family-important-actions #family-mobile-important-more{display:none}
 .family-important-actions #family-mobile-important-more[hidden]{display:none}
 .family-important-actions .family-disclosure{flex:0 1 auto;min-width:0;max-width:100%;margin:0;border:0}
 .family-important-actions .family-disclosure>summary{gap:8px;list-style:none}
