@@ -17,7 +17,7 @@ const basePlan=grade=>{
  return {
   grade,week:44,year:2026,source:'https://www.minskole.no/sjostrand/seksjon/22175',
   pdf:'https://www.minskole.no/DynamicContent/Documents/uke44.pdf',
-  status:'ok',parser:'ai',aiStatus:'ready',homeworkSourceVersion:2,days,
+  status:'ok',parser:'ai',aiStatus:'ready',homeworkSourceVersion:3,days,
   dayNotes:grade==='2'?{Onsdag:[{text:'Vaksine onsdag morgen.'}]}:{},
   everyday:[],attendance:[],subjects:[],learningGoals:[],notices:[],contacts:[],specialContent:[],
   homework:grade==='2'?
@@ -801,11 +801,11 @@ test('Family overview starts PDF AI once per class and automatically updates bot
   const data={...basePlan('2'),week:now.week,year:now.year};
   if(fullRequests===1)return reply(route,{...data,status:'partial',parser:'rules',
    aiStatus:'processing',jobId:'test-ai-handle',parsedFromPdf:false,homework:[]});
-  return reply(route,{...data,status:'ok',parser:'ai',aiStatus:'ready',homeworkSourceVersion:2});
+  return reply(route,{...data,status:'ok',parser:'ai',aiStatus:'ready',homeworkSourceVersion:3});
  });
  await page.route('**/api/ai-status?**',route=>{
   statusRequests++;
-  return reply(route,{aiStatus:'ready',status:'ok',parser:'ai',homeworkSourceVersion:2});
+  return reply(route,{aiStatus:'ready',status:'ok',parser:'ai',homeworkSourceVersion:3});
  });
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-view').waitFor({state:'visible'});
@@ -830,11 +830,11 @@ test('Family rechecks the PDF on a new visit and follows replacement AI jobs aut
   const data={...basePlan('2'),year:now.year,week:now.week,pdf:'https://www.minskole.no/DynamicContent/Documents/new-weekplan.pdf'};
   if(fullRequests<3)return reply(route,{...data,parser:'rules',status:'partial',
     aiStatus:'processing',jobId:fullRequests===1?'job-old-pdf':'job-new-pdf',homework:[]});
-  return reply(route,{...data,parser:'ai',status:'ok',aiStatus:'ready',homeworkSourceVersion:2});
+  return reply(route,{...data,parser:'ai',status:'ok',aiStatus:'ready',homeworkSourceVersion:3});
  });
  await page.route('**/api/ai-status?**',route=>{
   statusRequests++;
-  return reply(route,{aiStatus:'ready',parser:'ai',status:'ok',homeworkSourceVersion:2});
+  return reply(route,{aiStatus:'ready',parser:'ai',status:'ok',homeworkSourceVersion:3});
  });
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-cards .family-mobile-progress-track:visible, #family-cards .family-child-progress:visible').first().waitFor({state:'visible',timeout:25000});
