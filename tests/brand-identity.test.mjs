@@ -58,7 +58,7 @@ test('New PNG icons are deterministic, published during npm pretest and byte-ide
 
 test('Offline child shell caches common brand assets without caching private data',()=>{
  const sw=read('public/barn/sw.js');
- assert.match(sw,/skoleuka-child-shell-v6/);
+ assert.match(sw,/skoleuka-child-shell-v7/);
  for(const path of ['/brand/skoleuka-icon.svg','/brand/skoleuka-brand.css',
   '/brand/skoleuka-192.png','/brand/skoleuka-512.png']){
   assert.ok(sw.includes("'"+path+"'"),'Missing offline asset '+path);
