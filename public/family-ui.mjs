@@ -964,6 +964,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const api={
   isActive:()=>active,hasCloudFamily:()=>Boolean(cloud?.familyId),
   hasProfiles:()=>profiles.length>0,profileById:byId,
+  // Used by the guardian's sibling switcher; never expose cloud credentials.
+  profilesForNavigation:()=>profiles.map(p=>({id:p.id,name:p.name})),
   firstProfile:()=>profiles[0]||null,
   activitiesForProfile:(id,year,week,date)=>activityOccurrences(activityUI.getRows(),year,week)
    .filter(x=>x.date===date&&(!x.child_id||x.child_id===id)),
