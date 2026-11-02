@@ -258,7 +258,21 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  assert.equal(new URL(childPage.url()).searchParams.has('pair'),false);
  assert.match(await childPage.locator('#child-homework').innerText(),/Les 10 minutter/);
  assert.doesNotMatch(await childPage.locator('#child-homework').innerText(),/Skriv fem setninger/);
+ // Delay device-status requests on a reload. A saved family must not
+ // briefly claim QR was never scanned before the server confirms its state.
+ let releaseStatus;const statusGate=new Promise(resolve=>{releaseStatus=resolve;});
+ await parent.route('**/api/child-access?action=status*',async route=>{
+  await statusGate;
+  const result=backend.childAccess(route.request());
+  await route.fulfill({status:result.status,contentType:'application/json',
+   body:JSON.stringify(result.body)});
+ });
  await parent.reload({waitUntil:'domcontentloaded'});
+ await parent.locator('#startup-loading').waitFor({state:'visible'});
+ assert.equal(await parent.locator('#family-cards').isVisible(),false,
+  'No unverified device status should appear during account restoration');
+ releaseStatus();
+ await parent.locator('#family-cards [data-setup-status="activated"]').first().waitFor();
  await parent.locator('#family-cards .family-child').nth(1).waitFor();
  assert.equal(await parent.locator('#family-cards [data-setup-status="activated"]').count(),1,
   'QR redemption must not be mistaken for installation');
