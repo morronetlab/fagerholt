@@ -34,10 +34,9 @@
 }
 /* The guardian toolbar is the primary navigation in a child's plan. */
 body.guardian-plan-active .primary-nav{display:none!important}
-body.guardian-plan-active #app-view .plan-context{
-  margin:5px 0 0;padding:7px 13px;box-shadow:none;
-  background:transparent;border-color:transparent
-}
+/* The selected child's name is already in the sibling switcher.
+   School and grade are presented once in the compact day summary below. */
+body.guardian-plan-active #app-view .plan-context{display:none!important}
 body.guardian-plan-active #app-view .plan-context-name{
   flex-direction:row;align-items:center;flex-wrap:wrap;gap:7px
 }
@@ -69,16 +68,23 @@ body.guardian-plan-active #app-view .plan-context-actions{display:none!important
 }
 /* A compact parent-facing header retains weather, updates and school sources. */
 body.guardian-plan-active #app-view #app-hero{
-  padding:13px 17px;margin:8px 0 11px;border-radius:14px;min-height:0;gap:10px
+  padding:11px 14px;margin:8px 0 11px;border-radius:14px;
+  min-height:0;gap:10px;background:#f4f9f5;
+  border:1px solid #dceadf
 }
-body.guardian-plan-active #app-view #app-hero .hero-intro h1{
-  font-size:20px;letter-spacing:-.5px;margin:2px 0 4px
+body.guardian-plan-active #app-view #app-hero .hero-intro h1,
+body.guardian-plan-active #app-view #app-hero .hero-intro > .eyebrow,
+body.guardian-plan-active #app-view #app-hero .hero-intro > .lead{
+  display:none!important
+}
+body.guardian-plan-active #app-view #app-hero .hero-intro{
+  display:flex;align-items:center;min-width:0;min-height:0
 }
 body.guardian-plan-active #app-view #app-hero .hero-intro .lead{display:none}
 body.guardian-plan-active #app-view #app-hero .hero-intro .eyebrow{
   margin:0;font-size:10px
 }
-body.guardian-plan-active #app-view #app-hero .hero-actions{gap:8px;margin-top:7px}
+body.guardian-plan-active #app-view #app-hero .hero-actions{gap:8px;margin-top:0;align-items:center;flex-wrap:wrap}
 body.guardian-plan-active #app-view #app-hero .weather-icon{font-size:28px}
 body.guardian-plan-active #app-view #app-hero .weather-main strong{font-size:24px;letter-spacing:-.5px}
 body.guardian-plan-active #app-view #app-hero .weather{
