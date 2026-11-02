@@ -243,6 +243,13 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  // Parent invites the first child. The second child's QR must remain untouched.
  await parent.locator('#family-cards .family-child-qr').first().click();
  await parent.locator('#child-pair-link').waitFor({state:'visible'});
+ await parent.locator('#child-pair-stage-label').getByText('QR-kode klar').waitFor();
+ assert.equal(await parent.locator('#child-pair-result').isVisible(),true);
+ assert.equal(await parent.locator('[data-child-pair-step="qr"]').getAttribute('data-state'),'done');
+ await parent.locator('[data-child-pair-platform="android"]').click();
+ assert.match(await parent.locator('#child-pair-platform-instructions').innerText(),/Chrome/);
+ await parent.locator('[data-child-pair-platform="ios"]').click();
+ assert.match(await parent.locator('#child-pair-platform-instructions').innerText(),/Safari/);
  const url=await parent.locator('#child-pair-link').inputValue();
  await parent.locator('#child-pair-close').click();
  const c=await openPage(t,backend,{child:true}),childPage=c.page;
@@ -255,9 +262,22 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  await parent.locator('#family-cards .family-child').nth(1).waitFor();
  assert.equal(await parent.locator('#family-cards [data-setup-status="activated"]').count(),1,
   'QR redemption must not be mistaken for installation');
+ assert.match(await parent.locator('#family-cards [data-setup-status="activated"]').innerText(),/QR-kode skannet/);
+ // 'Trenger hjelp?' opens troubleshooting without silently creating another
+ // invitation or revealing a one-use QR that has already been redeemed.
+ await parent.locator('#family-cards [data-family-help]').first().click();
+ await parent.locator('#child-pair-stage-label').getByText('QR-kode skannet').waitFor();
+ assert.equal(await parent.locator('#child-pair-help').evaluate(el=>el.open),true);
+ assert.equal(await parent.locator('#child-pair-result').isVisible(),false);
+ assert.equal(backend.state.pairings.get(familyPair).used,true,
+  'Opening help after QR redemption must not mint a new pairing');
  // Simulate the browser OS appinstalled event; standalone detection is also
  // separately exercised in child PWA tests.
  await childPage.evaluate(()=>window.dispatchEvent(new Event('appinstalled')));
+ await parent.locator('#child-pair-check').click();
+ await parent.locator('#child-pair-stage-label').getByText('App installert').waitFor();
+ assert.equal(await parent.locator('[data-child-pair-step="install"]').getAttribute('data-state'),'done');
+ await parent.locator('#child-pair-close').click();
  await parent.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
  await parent.locator('#family-cards [data-setup-status="installed"]').first().waitFor();
  assert.equal(await parent.locator('#family-cards .family-child-qr').count(),1,

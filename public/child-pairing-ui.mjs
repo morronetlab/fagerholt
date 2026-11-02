@@ -118,9 +118,7 @@ export function initChildPairingUI({getCloud,onStatusChange=()=>{}}){
   if(!child||!panel.open)return;
   const targetId=child.id;
   $('child-pair-new').disabled=true;
-  $('child-pair-result').hidden=true;
-  $('child-pair-link').value='';
-  $('child-pair-qr').removeAttribute('src');
+  clearQr();
   message('Lager privat QR-kode …');
   try{
    const result=await api('create',{childId:targetId});

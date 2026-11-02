@@ -4,19 +4,25 @@ import {readFileSync} from 'node:fs';
 import {childSetupInfo} from '../public/shared/child-setup-state.mjs';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 
-test('QR activation never counts as installation and keeps a visible setup CTA',()=>{
- for(const status of ['unknown','not_invited','invited','activated']){
-  const info=childSetupInfo(status);
-  assert.equal(info.complete,false);
-  assert.match(info.action,/QR/);
-  assert.ok(info.description.length>15);
- }
- const activated=childSetupInfo('activated');
- assert.match(activated.description,/hjemskjermen/);
+test('Parent status tells apart QR ready, QR scanned, installed and unknown',()=>{
+ const notInvited=childSetupInfo('not_invited');
+ const invited=childSetupInfo('invited');
+ const scanned=childSetupInfo('activated');
  const installed=childSetupInfo('installed');
- assert.equal(installed.complete,true);
+ const unknown=childSetupInfo('unknown');
+ assert.deepEqual([notInvited.step,invited.step,scanned.step,installed.step],[0,1,2,3]);
+ assert.deepEqual([notInvited.complete,invited.complete,scanned.complete,installed.complete],
+  [false,false,false,true]);
+ assert.match(invited.label,/QR-kode klar/);
+ assert.match(scanned.label,/QR-kode skannet/);
+ assert.match(scanned.action,/Fullfør installasjon/);
+ assert.match(scanned.description,/hjemskjermen/);
+ assert.equal(installed.label,'App installert');
  assert.equal(installed.action,null);
- assert.match(installed.label,/klar/);
+ assert.equal(unknown.status,'unknown');
+ assert.match(unknown.label,/ikke tilgjengelig/);
+ assert.match(unknown.action,/hjelp/i);
+ assert.notEqual(unknown.status,'not_invited','Network outage must not imply the device was removed');
 });
 
 test('The guardian child plan hides generic navigation only for signed-in child profiles',()=>{
