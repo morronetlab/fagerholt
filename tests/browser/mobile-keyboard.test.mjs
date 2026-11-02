@@ -74,6 +74,7 @@ test('Account modal shrinks to visible viewport; focused field remains reachable
 });
 test('Inline family activity field remains reachable and page becomes scrollable',async t=>{
  const {page,errors}=await openPage(t,390);
+ await page.locator('#landing-other-options').click();
  await page.locator('#landing-local-family').click();
  await page.locator('#family-view').waitFor({state:'visible'});
  await page.locator('[data-family-mobile-tab="activities"]').click();
