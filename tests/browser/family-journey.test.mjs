@@ -130,7 +130,7 @@ const fixture=()=>{
   return ok({error:'Unknown child action '+action},400);
  }
  const plans=grade=>({
-  status:'ok',parser:'ai',aiStatus:'ready',homeworkSourceVersion:2,
+  status:'ok',parser:'ai',aiStatus:'ready',homeworkSourceVersion:3,
   schoolId:'sjostrand',grade,year:2026,week:44,
   source:'https://www.minskole.no/sjostrand/seksjon/12345',
   pdf:'https://www.minskole.no/sjostrand/uke44.pdf',
