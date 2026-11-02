@@ -5,10 +5,11 @@ import {aiConfigured,cacheKey,digestPdf,openAIStore,queueAIJob,lockKey,failureKe
 import {getSchool,validGradeCode,locateGradeSections,isSchoolSectionUrl} from '../../lib/schools.mjs';
 import {needsCachedEvidenceRefresh,refreshCachedEvidence} from '../../lib/plan-cache-evidence.mjs';
 import {stripSyntheticPackingNotices} from '../../lib/packing-source.mjs';
+import {correctWildsMinneWeek45Homework} from '../../lib/wildsminne-week45-homework.mjs';
 import {recordOperationsObservation} from '../../lib/operations-monitor.mjs';
 const MAX_PDF_BYTES=14*1024*1024;
 const HEADERS={'User-Agent':'Mozilla/5.0 (compatible; Ukeplanen/0.1; +https://github.com/morronetlab/fagerholt)','Accept-Language':'nb-NO,nb;q=0.9'};
-const reply=(body,status=200)=>new Response(JSON.stringify(stripSyntheticPackingNotices(body)),{status,headers:{
+const reply=(body,status=200)=>new Response(JSON.stringify(stripSyntheticPackingNotices(correctWildsMinneWeek45Homework(body))),{status,headers:{
   'Content-Type':'application/json; charset=utf-8','Cache-Control':status===200&&!['processing','failed'].includes(body.aiStatus)?'public, max-age=30, s-maxage=60':'no-store',
   'X-Content-Type-Options':'nosniff'
 }});
