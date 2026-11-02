@@ -51,6 +51,8 @@ async function open(t,width){
  await page.route('**/api/weather?**',route=>reply(route,{days:{},locationLabel:'Sjøstrand'}));
  await page.goto(server.baseURL+'/',{waitUntil:'domcontentloaded'});
  await page.locator('#family-cards .family-child').nth(1).waitFor();
+ // Wait for both school plans to be fully cached before testing zero-fetch sibling switches.
+ await page.waitForFunction(()=>document.querySelectorAll('#family-cards .family-child-progress').length===2);
  return {page,errors,requests};
 }
 for(const width of [390,1280]){
