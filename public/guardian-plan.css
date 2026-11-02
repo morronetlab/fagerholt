@@ -78,7 +78,9 @@ body.guardian-plan-active #app-view #app-hero .hero-intro .lead{display:none}
 body.guardian-plan-active #app-view #app-hero .hero-intro .eyebrow{
   margin:0;font-size:10px
 }
-body.guardian-plan-active #app-view #app-hero .hero-actions{gap:8px}
+body.guardian-plan-active #app-view #app-hero .hero-actions{gap:8px;margin-top:7px}
+body.guardian-plan-active #app-view #app-hero .weather-icon{font-size:28px}
+body.guardian-plan-active #app-view #app-hero .weather-main strong{font-size:24px;letter-spacing:-.5px}
 body.guardian-plan-active #app-view #app-hero .weather{
   padding:9px 11px;min-height:0;border-radius:12px
 }
@@ -96,6 +98,10 @@ body.guardian-plan-active #bag-title,
 body.guardian-plan-active #homework-title,
 body.guardian-plan-active #notices-panel{
   scroll-margin-top:83px
+}
+@media(min-width:701px){
+  /* With global navigation hidden, keep My account in the rightmost grid cell. */
+  body.guardian-plan-active .topbar .header-actions{grid-column:3;justify-self:end}
 }
 @media(max-width:700px){
   body.guardian-plan-active{
