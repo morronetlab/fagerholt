@@ -32,28 +32,37 @@ async function openFooter(t,width){
  return page;
 }
 
-test('mobile important-footer actions sit together and are not full-width rows',async t=>{
+test('Mobile: one calm full-width detail row, optional compact preview and one period filter',async t=>{
  const page=await openFooter(t,390);
- const metrics=await page.evaluate(()=>{
+ const dimensions=await page.evaluate(()=>{
   const first=document.querySelector('#family-mobile-important-more').getBoundingClientRect();
   const second=document.querySelector('#family-practical-details>summary').getBoundingClientRect();
   const row=document.querySelector('.family-important-actions').getBoundingClientRect();
-  return {first:{x:first.x,y:first.y,width:first.width},
-   second:{x:second.x,y:second.y,width:second.width},rowWidth:row.width};
+  return {firstWidth:first.width,summaryWidth:second.width,rowWidth:row.width,stacked:second.top>=first.bottom};
  });
- assert.ok(metrics.first.width<metrics.rowWidth*.65,'Preview action should be a compact pill');
- assert.ok(metrics.second.width<metrics.rowWidth*.9,'School messages should not fill the row');
- assert.ok(Math.abs(metrics.first.y-metrics.second.y)<=2,'Actions should share one row at phone width');
- assert.ok(metrics.second.x>metrics.first.x,'Second action should follow the first');
+ assert.ok(dimensions.firstWidth<dimensions.rowWidth*.65,'Extra preview remains compact');
+ assert.ok(dimensions.summaryWidth>=dimensions.rowWidth*.95,
+  'Full details are a single clear row, not a second chip');
+ assert.equal(dimensions.stacked,true,'Period controls must not crowd the preview action');
  await page.locator('#family-practical-details>summary').click();
  assert.equal(await page.locator('#family-practical-details').evaluate(el=>el.open),true);
- const width=await page.locator('#family-practical-details').evaluate(el=>el.getBoundingClientRect().width);
- assert.ok(width>=metrics.rowWidth*.95,'Expanded detail content should use the available width');
+ const filter=page.locator('#family-focus-filter');
+ assert.equal(await filter.isVisible(),true);
+ assert.deepEqual(await filter.locator('option').allTextContents(),
+  ['Hele uka','Neste skoledag','I dag']);
+ assert.equal(await page.locator('[data-family-focus]').count(),0);
 });
-
-test('desktop keeps only the school-message action',async t=>{
+test('Desktop: one disclosure row and a compact native filter',async t=>{
  const page=await openFooter(t,1100);
  assert.equal(await page.locator('#family-mobile-important-more')
   .evaluate(el=>getComputedStyle(el).display),'none');
- assert.equal(await page.locator('#family-practical-details>summary').isVisible(),true);
+ const summary=page.locator('#family-practical-details>summary');
+ assert.equal(await summary.isVisible(),true);
+ await summary.click();
+ const controls=await page.locator('.family-practical-toolbar').evaluate(node=>({
+  children:node.children.length,
+  filter:getComputedStyle(node.querySelector('select')).display
+ }));
+ assert.equal(controls.children,2);
+ assert.notEqual(controls.filter,'none');
 });

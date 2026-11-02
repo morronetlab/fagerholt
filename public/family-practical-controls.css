@@ -1,0 +1,68 @@
+/* One calm disclosure row with a native period filter. No nested pill toolbar. */
+#family-view .family-important-actions{
+ display:block;max-width:100%;margin-top:13px;
+}
+#family-view .family-important-actions .family-disclosure{
+ display:block;max-width:none;width:100%;margin:0;
+ border-top:1px solid #dfe9e2;border-radius:0;background:transparent
+}
+#family-view .family-important-actions .family-disclosure>summary{
+ display:flex;align-items:center;justify-content:space-between;gap:10px;
+ width:100%;max-width:100%;min-height:46px;box-sizing:border-box;
+ padding:10px 2px;margin:0;border:0;border-radius:0;
+ color:#2c6953;background:transparent!important;
+ text-align:left;font-size:13px;font-weight:800;box-shadow:none;
+}
+#family-view .family-important-actions .family-disclosure>summary::after{
+ margin-left:auto;color:#38735b;font-size:18px
+}
+#family-view .family-important-actions .family-disclosure[open]>summary{
+ border-bottom:1px solid #e8efe9
+}
+#family-view .family-important-actions .family-disclosure-body{
+ padding:12px 0 4px
+}
+#family-view .family-practical-toolbar{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:10px 18px;margin:0 0 12px;flex-wrap:wrap
+}
+#family-view .family-practical-toolbar .family-reminders-intro{
+ flex:1 1 250px;min-width:0;margin:0;font-size:12px;
+ line-height:1.45;color:#647e6e
+}
+#family-view .family-practical-toolbar label.family-focus-tabs{
+ display:inline-flex;align-items:center;justify-content:flex-start;
+ flex:0 0 auto;gap:9px;box-sizing:border-box;
+ min-height:39px;padding:0;margin:0;border:0;background:transparent;
+ font-size:12px;font-weight:750;color:#557362;
+}
+#family-view .family-practical-toolbar label.family-focus-tabs[hidden]{display:none!important}
+#family-view .family-practical-toolbar #family-focus-filter{
+ max-width:210px;min-height:39px;min-width:150px;
+ border:1px solid #cbded0;border-radius:9px;
+ background:#fff;color:#2d694e;
+ padding:7px 31px 7px 11px;font-size:12px;font-weight:800;
+ cursor:pointer
+}
+#family-view #family-focus-filter:focus-visible{
+ outline:3px solid #76b799;outline-offset:2px
+}
+#family-view .family-disclosure-body .family-reminders{margin-top:0}
+@media(max-width:700px){
+ #family-view .family-important-actions{margin-top:9px}
+ #family-view .family-important-actions .family-disclosure>summary{
+  min-height:43px;font-size:12px;padding:9px 1px
+ }
+ #family-view .family-practical-toolbar{
+  align-items:center;gap:6px;margin-bottom:10px
+ }
+ #family-view .family-practical-toolbar .family-reminders-intro{
+  flex:1 1 100%;font-size:11px
+ }
+ #family-view .family-practical-toolbar label.family-focus-tabs{
+  flex:1 1 auto;min-width:0;font-size:11px
+ }
+ #family-view .family-practical-toolbar #family-focus-filter{
+  min-width:145px;min-height:40px;font-size:12px
+ }
+}

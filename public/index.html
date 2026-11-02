@@ -60,6 +60,7 @@
   <link rel="stylesheet" href="/family-child-dialog.css">
   <link rel="stylesheet" href="/family-activity-dialog.css">
   <link rel="stylesheet" href="/guardian-plan.css">
+  <link rel="stylesheet" href="/family-practical-controls.css">
 </head>
 <body>
 <a class="skip-link" href="#main-content">Hopp til innhold</a>
@@ -270,12 +271,16 @@
           <details id="family-practical-details" class="family-disclosure">
             <summary><span id="family-practical-label">Skolebeskjeder og utstyr</span><span id="family-next-day" class="family-disclosure-time" hidden></span></summary>
           <div class="family-disclosure-body">
-        <div class="family-focus-tabs" role="group" aria-label="Huskeliste for">
-          <button type="button" data-family-focus="today" aria-pressed="false">I dag</button>
-          <button type="button" data-family-focus="next" aria-pressed="true">Neste skoledag</button>
-          <button type="button" data-family-focus="week" aria-pressed="false">Denne uka</button>
+        <div class="family-practical-toolbar">
+          <p class="family-reminders-intro">Praktiske beskjeder og utstyr fra skolen, med kildehenvisninger.</p>
+          <label class="family-focus-tabs" for="family-focus-filter">Vis
+            <select id="family-focus-filter" aria-label="Vis skolebeskjeder for">
+              <option value="week">Hele uka</option>
+              <option value="next">Neste skoledag</option>
+              <option value="today">I dag</option>
+            </select>
+          </label>
         </div>
-        <p class="family-reminders-intro">Alle praktiske beskjeder og utstyr fra skolens ukeplan, med kildehenvisninger.</p>
         <div id="family-reminders" class="family-reminders" aria-live="polite"></div>
         <p id="family-calendar-status" class="family-calendar-status" role="status" aria-live="polite"></p>
         <a id="family-calendar-source" class="family-calendar-source" href="https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/skoleruta/" target="_blank" rel="noopener noreferrer" hidden>Se kommunens skolerute ↗</a>

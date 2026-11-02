@@ -346,7 +346,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   moreButton.textContent=expanded?'Vis færre':'Vis '+hiddenPreviewCount+' til';
   // Full checklist is separate from the compact preview, not another
   // "show more important notices" button.
-  el('family-practical-label').textContent='Skolebeskjeder og utstyr';
+  el('family-practical-label').textContent=el('family-practical-details').open?
+   'Skjul skolebeskjeder og utstyr':'Alle skolebeskjeder og utstyr';
  }
  function renderTomorrowBriefing(now,summaries,fullAgenda){
   const section=el('family-tomorrow-brief');
@@ -594,10 +595,9 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    card.classList.toggle('mobile-more-open',mobileMoreOpen.has(card.dataset.childId));
   const {next}=schoolDayIndices(now);
   const shownFocus=now.upcoming?'week':focus;
-  const tabs=document.querySelector('.family-focus-tabs');
-  tabs.hidden=now.upcoming;
-  for(const button of tabs.querySelectorAll('[data-family-focus]'))
-   button.setAttribute('aria-pressed',String(button.dataset.familyFocus===shownFocus));
+  const selector=el('family-focus-filter');
+  selector.closest('.family-focus-tabs').hidden=now.upcoming;
+  selector.value=shownFocus;
   el('family-next-day').textContent=now.upcoming?'i uke '+now.week:
    shownFocus==='today'?'i dag':
    shownFocus==='week'?'denne uka':next==null?'neste skoleuke':'til '+DAYS[next].toLocaleLowerCase('nb-NO');
@@ -1095,9 +1095,10 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   button.setAttribute('aria-expanded',String(expanded));
   button.textContent=expanded?'Skjul detaljer':'Mer info';
  });
- for(const button of document.querySelectorAll('[data-family-focus]')){
-  button.addEventListener('click',()=>{focus=button.dataset.familyFocus;showAllHighlights=false;render();});
- }
+ el('family-focus-filter').addEventListener('change',event=>{
+  if(!['today','next','week'].includes(event.target.value))return;
+  focus=event.target.value;showAllHighlights=false;render();
+ });
  // Recheck when the parent returns to the tab; automatically inspect
  // the source every 15 minutes while the family screen stays visible.
  document.addEventListener('visibilitychange',()=>{
@@ -1127,10 +1128,12 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   if(contexts.length)onReportIssue?.({contexts,kind:'missing_notice'});
  });
  el('family-practical-details').addEventListener('toggle',()=>{
-  if(!el('family-practical-details').open)return;
-  // The expanded view must include ALL critical notices, not only the
-  // original 'next school day' focus.
-  focus='week';render();
+  if(el('family-practical-details').open){
+   // The expanded view must include ALL critical notices, not only the
+   // original 'next school day' focus.
+   focus='week';
+  }
+  render();
  });
  el('family-agenda-child').addEventListener('change',event=>{
   agendaChildId=event.target.value;showWeekend=false;render();
