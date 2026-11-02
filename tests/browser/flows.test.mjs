@@ -116,7 +116,10 @@ test('Local family entry and account CTA can both start from the new welcome scr
  await page.locator('#landing-other-options').click();
  await page.locator('#landing-local-family').click();
  assert.equal(await page.locator('#family-view').isVisible(),true);
+ assert.equal(await page.locator('#family-child-dialog').evaluate(el=>el.open),true);
  assert.equal(await page.locator('#family-form').isVisible(),true);
+ await page.locator('#family-cancel').click();
+ assert.equal(await page.locator('#family-child-dialog').evaluate(el=>el.open),false);
  await page.locator('#nav-home').click();
  assert.equal(await page.locator('#welcome-view').isVisible(),true);
  await page.locator('#landing-create-family').click();

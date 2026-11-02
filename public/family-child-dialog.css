@@ -1,0 +1,38 @@
+/* Add/edit child shares the same native modal pattern as account and QR dialogs.
+ * All editable fields remain in the existing #family-form, now in the top layer. */
+dialog.family-child-dialog{
+ position:fixed;inset:0;box-sizing:border-box;
+ width:min(550px,calc(100% - 24px));max-width:550px;
+ max-height:calc(100dvh - 28px);margin:auto;padding:24px 26px;
+ border:1px solid #dce8dd;border-radius:20px;background:#fff;
+ box-shadow:0 22px 70px #153c2b45;color:#22523e;
+ overflow-y:auto;overscroll-behavior:contain;scroll-padding-block:64px 95px;
+}
+dialog.family-child-dialog:not([open]){display:none}
+dialog.family-child-dialog::backdrop{background:rgba(15,43,32,.69);backdrop-filter:blur(2px)}
+dialog.family-child-dialog #family-form{
+ margin:0;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none;
+}
+dialog.family-child-dialog .family-form-head{
+ position:sticky;top:-24px;z-index:2;padding:4px 0 13px;margin:-4px 0 18px;
+ background:#fff;border-bottom:1px solid #e1ece4;
+}
+dialog.family-child-dialog .family-form-head h3{font-size:22px;line-height:1.2}
+dialog.family-child-dialog .family-form-close{flex:0 0 40px;width:40px;height:40px}
+dialog.family-child-dialog .family-form-tip{line-height:1.5}
+dialog.family-child-dialog .family-form-status{min-height:0;line-height:1.5}
+dialog.family-child-dialog .family-child-dialog-actions{
+ position:sticky;bottom:-24px;z-index:2;margin-top:13px;padding:13px 0 4px;
+ background:linear-gradient(#ffffffec,#fff 12px);
+ border-top:1px solid #e1ece4;
+}
+dialog.family-child-dialog #family-save{width:100%;min-height:46px}
+@media(max-width:700px){
+ dialog.family-child-dialog{
+  width:calc(100% - 20px);max-width:none;max-height:calc(100dvh - 20px);
+  padding:18px 17px;border-radius:17px;
+ }
+ dialog.family-child-dialog .family-form-head{top:-18px}
+ dialog.family-child-dialog .family-fields{grid-template-columns:minmax(0,1fr);gap:12px}
+ dialog.family-child-dialog .family-child-dialog-actions{bottom:-18px;padding:11px 0 3px}
+}

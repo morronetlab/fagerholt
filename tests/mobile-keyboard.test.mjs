@@ -20,6 +20,9 @@ test('Mobile keyboard support is wired into parent and child entrypoints',()=>{
  assert.match(styles,/data-mobile-keyboard="open"/);
  assert.match(styles,/font-size:16px/);
  assert.match(styles,/onboard-actions/);
+ assert.match(styles,/family-child-dialog/);
+ assert.match(file('public/family-child-dialog.css'),/dialog\.family-child-dialog/);
+ assert.match(file('public/index.html'),/id="family-child-dialog"/);
  const js=file('public/mobile-keyboard.mjs');
  assert.match(js,/viewport\.addEventListener\('resize',update\)/);
  assert.match(js,/dialog\.scrollTop\+=delta/);
