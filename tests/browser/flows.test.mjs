@@ -754,7 +754,8 @@ test('Family overview starts PDF AI once per class and automatically updates bot
 
 test('Family rechecks the PDF on a new visit and follows replacement AI jobs automatically',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
- const now=schoolCalendar(new Date(),'Europe/Oslo');
+ // Match the test's fixed browser date, rather than the actual CI calendar week.
+ const now=schoolCalendar(new Date(TEST_WEDNESDAY),'Europe/Oslo');
  await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
   version:2,profiles:[{id:'child-ai-000003',name:'Barn A',school:'sjostrand',grade:'2',group:''}]
  })));
@@ -1627,7 +1628,7 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  await page.locator('#family-cards .family-child-qr').first().click();
  await page.locator('#child-pair-dialog').waitFor({state:'visible'});
  await page.locator('#child-pair-qr').waitFor({state:'visible'});
- assert.match(await page.locator('#child-pair-intro').innerText(),/hjemskjermen/);
+ assert.match(await page.locator('#child-pair-intro').innerText(),/Hjem-skjerm|hjemskjermen/i);
  await page.locator('#child-pair-close').click();
  await page.locator('#family-cards .family-child-setup[data-setup-status="invited"]').first().waitFor();
  await page.locator('#family-cards .family-child-compact').first().click();

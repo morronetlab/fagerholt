@@ -23,10 +23,12 @@ const plan={status:'ok',parser:'ai',aiStatus:'ready',year:2026,week:44,
  vocabulary:[{category:'engelske gloser',text:'apple - eple; dog - hund'},
   {category:'norske øveord',text:'skole, sol'}],notices:[]};
 async function open(t,query='',{redeem=true,sharedProgress=null,saveReject=false,readReject=false,
- planResponse=plan,planHttpStatus=200}={}){
+ planResponse=plan,planHttpStatus=200,standalone=false,transferCookie=false}={}){
  const context=await browser.newContext({viewport:{width:390,height:790},locale:'nb-NO',timezoneId:'Europe/Oslo'});
  t.after(()=>context.close());
  const page=await context.newPage(),errors=[];
+ if(standalone)await page.addInitScript(()=>
+  Object.defineProperty(navigator,'standalone',{value:true,configurable:true}));
  page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(()=>{
   const D=Date,fixed=new D('2026-10-28T12:00:00Z');
@@ -38,6 +40,11 @@ async function open(t,query='',{redeem=true,sharedProgress=null,saveReject=false
   const url=new URL(route.request().url());
   calls.push({method:route.request().method(),url:url.pathname+url.search,headers:route.request().headers(),body:route.request().postDataJSON?.()});
   const action=route.request().method()==='POST'?route.request().postDataJSON()?.action:null;
+  const isRestore=action==='restore-install';
+  if(isRestore)return route.fulfill({status:transferCookie?200:401,
+   contentType:'application/json',
+   body:JSON.stringify(transferCookie?{session,expiresAt:'2027-01-01T00:00:00Z'}:
+    {error:'Ingen overførbar barnetilgang.'})});
   const isRedeem=action==='redeem',isSelfRevoke=action==='self-revoke',
    isProgress=url.searchParams.get('action')==='progress',isSave=action==='set-progress',
    isPacking=url.searchParams.get('action')==='packing',isPackSave=action==='set-packing';
@@ -311,4 +318,28 @@ test('Child PWA clearly distinguishes no published link, source outage and unrea
   assert.doesNotMatch(await page.locator('#child-status').innerText(),/ikke publisert eller/i);
   assert.deepEqual(errors,[]);
  }
+});
+
+test('iPadOS home-screen app restores QR session from copied cookie, not Safari localStorage',async t=>{
+ const {page,calls,errors}=await open(t,'',{standalone:true,transferCookie:true});
+ await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ assert.equal(await page.evaluate(()=>localStorage.getItem('skoleuka.child.device.v1')),session);
+ assert.equal(calls.some(c=>c.body?.action==='redeem'),false,
+  'The one-time QR must not be redeemed again from the installed app');
+ assert.ok(calls.some(c=>c.body?.action==='restore-install'));
+ await page.locator('#child-setup').waitFor({state:'hidden'});
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ assert.equal(calls.filter(c=>c.body?.action==='restore-install').length,1,
+  'Once transferred, the installed app keeps its own session');
+ assert.deepEqual(errors,[]);
+});
+test('iPadOS installed app without transfer cookie explains how to reinstall safely',async t=>{
+ const {page,errors,calls}=await open(t,'',{standalone:true,transferCookie:false});
+ await page.locator('#child-setup').waitFor({state:'visible'});
+ assert.match(await page.locator('#child-setup-message').textContent(),/Hjem-skjerm.*på nytt/);
+ assert.equal(await page.locator('#child-ready').isVisible(),false);
+ assert.ok(calls.some(c=>c.body?.action==='restore-install'));
+ assert.equal(calls.some(c=>c.body?.action==='redeem'),false);
+ assert.deepEqual(errors,[]);
 });

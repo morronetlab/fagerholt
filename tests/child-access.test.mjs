@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {createChildAccessHandler,PAIRING_VALID_MS,DEVICE_VALID_MS} from '../lib/child-access.mjs';
+import {createChildAccessHandler,PAIRING_VALID_MS,DEVICE_VALID_MS,INSTALL_TRANSFER_SECONDS} from '../lib/child-access.mjs';
 import {taskFingerprint} from '../public/shared/task-fingerprint.mjs';
 import {packingFingerprint} from '../public/shared/packing-fingerprint.mjs';
 const family='00000000-0000-4000-8000-000000000011';
@@ -127,11 +127,11 @@ function fixture({authStatus=200,planError=false}={}){
   throw Error('Unexpected mocked URL '+pathname);
  };
  const handler=createChildAccessHandler({env,fetchImpl,now,secret});
- const request=(action,body=null,{token=jwt,origin='https://skoleuka.no'}={})=>
+ const request=(action,body=null,{token=jwt,origin='https://skoleuka.no',cookie=null}={})=>
   handler(new Request('https://skoleuka.no/api/child-access'+
     (body===null?'?action='+action+'&childId='+child+(['child','progress','packing'].includes(action)?'&year=2026&week=45':''):''),{
    method:body===null?'GET':'POST',
-   headers:{Origin:origin,Authorization:'Bearer '+token, ...(body!==null?{'Content-Type':'application/json'}:{})},
+   headers:{Origin:origin,Authorization:'Bearer '+token,...(cookie?{Cookie:cookie}:{}), ...(body!==null?{'Content-Type':'application/json'}:{})},
    body:body===null?undefined:JSON.stringify({action,...body})
   }));
  return {request,pairs,devices,calls,progress,packing};
@@ -402,4 +402,37 @@ test('Packing policy migration limits guardian access and device stamp checks fa
  assert.match(sql,/d\.revoked_at is null/);
  assert.match(sql,/parent_family_ids\(\)/);
  assert.match(sql,/grant select,insert,update on public\.packing_progress to service_role/i);
+});
+
+test('iPadOS handoff cookie is HttpOnly, short-lived, scoped, and revocation-safe',async()=>{
+ const f=fixture(),invite=await (await f.request('create',{childId:child})).json();
+ const issued=await f.request('redeem',{token:invite.link.split('pair=')[1]});
+ assert.equal(issued.status,201);
+ const {session}=await issued.json(),cookie=issued.headers.get('set-cookie');
+ assert.match(cookie,/^__Secure-skoleuka-child-install=[a-f0-9]{64};/);
+ for(const flag of ['HttpOnly','Secure','SameSite=Strict','Path=/api/child-access',
+   'Max-Age='+INSTALL_TRANSFER_SECONDS])assert.ok(cookie.includes(flag),flag);
+ assert.doesNotMatch(cookie,/sb_secret_/);
+ assert.match(issued.headers.get('cache-control'),/no-store/);
+ assert.equal((await f.request('restore-install',{})).status,401,
+  'Other auth headers must not substitute for a transfer cookie');
+ const copied=cookie.split(';')[0];
+ const restored=await f.request('restore-install',{}, {token:'',cookie:copied});
+ assert.equal(restored.status,200);
+ assert.equal((await restored.json()).session,session);
+ assert.match(restored.headers.get('set-cookie'),/Max-Age=0/);
+ await f.request('revoke',{childId:child,deviceId:f.devices[0].id});
+ const revoked=await f.request('restore-install',{}, {token:'',cookie:copied});
+ assert.equal(revoked.status,401);
+ assert.match(revoked.headers.get('set-cookie'),/Max-Age=0/);
+});
+test('iPadOS handoff rejects invalid cookies and cross-origin requests',async()=>{
+ const f=fixture();
+ for(const cookie of ['__Secure-skoleuka-child-install=short',
+  '__Secure-skoleuka-child-install='+('b'.repeat(64))])
+  assert.equal((await f.request('restore-install',{}, {token:'',cookie})).status,401);
+ assert.equal((await f.request('restore-install',{}, {
+  origin:'https://other.example',cookie:'__Secure-skoleuka-child-install='+('b'.repeat(64))
+ })).status,403);
+ assert.equal(f.devices.length,0);
 });

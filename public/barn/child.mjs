@@ -46,7 +46,7 @@ async function get(path,{method='GET',body,token=null}={}){
  if(token)headers.Authorization='Bearer '+token;
  if(body!==undefined)headers['Content-Type']='application/json';
  const r=await fetch(path,{method,headers,body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',
-  referrerPolicy:'no-referrer'});
+  credentials:'same-origin',referrerPolicy:'no-referrer'});
  const data=await r.json().catch(()=>null);
  if(!r.ok)throw Object.assign(Error(data?.error||'Kunne ikke hente ukeplanen.'),{status:r.status});
  return data;
@@ -190,7 +190,25 @@ async function load(){
  if(state.progressBusy)return; // Keep in-flight writes from being overwritten by a refresh.
  state.session=getToken();
  state.planError=null;state.progress=null;state.progressError='';state.packing=null;state.packingError='';state.municipal=null;
- if(!state.session||!/^[a-f0-9]{64}$/u.test(state.session)){setup();return;}
+ if(!/^[a-f0-9]{64}$/u.test(state.session||'')&&isPresent()){
+  // iPadOS isolates installed PWA localStorage from Safari. Only cookies are
+  // copied at installation, so restore the server-verified session once.
+  status('Kobler den installerte appen til ukeplanen …');
+  try{
+   const restored=await get('/api/child-access',{method:'POST',
+    body:{action:'restore-install'}});
+   if(/^[a-f0-9]{64}$/u.test(restored?.session||'')){
+    setToken(restored.session);
+    state.session=getToken();
+   }
+  }catch{/* No transfer cookie, offline or revoked; show safe setup guidance. */}
+ }
+ if(!/^[a-f0-9]{64}$/u.test(state.session||'')){
+  setup(isPresent()?
+   'Den installerte appen mangler tilgang fra nettleseren. Fjern det gamle appikonet, be en foresatt lage en ny QR-kode, åpne lenken i Safari på iPad og legg til på Hjem-skjerm på nytt.':
+   undefined);
+  return;
+ }
  status('Henter ukeplanen din …');
  const cal=familyWeekCalendar(new Date(),'Europe/Oslo');
  state.calendar=cal;
@@ -257,7 +275,7 @@ function showInstall(){
  box.hidden=installed||sessionStorage.getItem('child-install-dismissed')==='1';
  const ios=/iphone|ipad|ipod/iu.test(navigator.userAgent);
  $('child-install-help').textContent=ios?
-  'Trykk Del i nettleseren, og velg «Legg til på Hjem-skjerm». Åpne deretter appikonet.':
+  'Åpne ukeplanen i Safari. Trykk Del → «Legg til på Hjem-skjerm» (Åpne som webapp). Legg til mens ukeplanen vises, og åpne deretter appikonet.':
   'Trykk «Legg til på hjemskjermen», eller velg Installer i nettlesermenyen.';
  $('child-install-button').hidden=ios;
 }

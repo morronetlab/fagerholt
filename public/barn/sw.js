@@ -1,5 +1,5 @@
 /** Cache ONLY public app shell files. Never cache sessions, school APIs or private responses. */
-const CACHE='skoleuka-child-shell-v6';
+const CACHE='skoleuka-child-shell-v7';
 const FILES=['/barn/','/barn/index.html','/barn/child.css','/barn/child.mjs',
  '/barn/content-categories.css','/shared/content-categories.mjs',
  '/barn/manifest.webmanifest','/brand/skoleuka-icon.svg',
