@@ -19,6 +19,14 @@ test('Skoleuka has one book/planner identity on the public site and child app',(
  assert.match(parent,/rel="icon" type="image\/svg\+xml" href="\/brand\/skoleuka-icon.svg"/);
  assert.match(child,/rel="icon" type="image\/svg\+xml" href="\/brand\/skoleuka-icon.svg"/);
  assert.match(parent,/href="\/brand\/skoleuka-brand.css"/);
+ assert.match(parent,/id="brand-title">skole<span class="logo-accent">uka\.<\/span><\/strong>/);
+ assert.match(parent,/id="brand-subtitle">HELE FAMILIENS SKOLEUKE<\/small>/);
+ const main=read('public/app.js');
+ assert.doesNotMatch(main,/\$\('brand-title'\)\.innerHTML\s*=/,
+  'Hydration must not rewrite the already visible Skoleuka wordmark');
+ const brandCss=read('public/brand/skoleuka-brand.css');
+ assert.match(brandCss,/#home-link \.logo-accent\{color:#ed9561\}/);
+ assert.match(parent,/html:not\(\.skoleuka-route-ready\) #home-link \.logo-accent\{color:#ed9561\}/);
  assert.match(child,/href="\/brand\/skoleuka-brand.css"/);
  assert.doesNotMatch(parent,/class="brand-symbol"/,'Do not duplicate inline logo geometry in the main header');
  const brandCSS=read('public/brand/skoleuka-brand.css');

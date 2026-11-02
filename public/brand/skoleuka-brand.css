@@ -23,6 +23,7 @@
 #home-link .brand-mark{width:47px;height:47px;min-width:47px}
 #home-link #brand-title{font-size:26px;font-weight:870;letter-spacing:-1.3px;
  line-height:1.15;color:#1d4f40}
+#home-link .logo-accent{color:#ed9561}
 #home-link #brand-subtitle{display:block;margin-top:3px;font-size:9px;
  font-weight:800;line-height:1.3;letter-spacing:.16em;color:#668f7c}
 @media(max-width:700px){

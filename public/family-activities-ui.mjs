@@ -210,6 +210,7 @@ export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar,onChang
   rows=localRead();render();onChange();
  });
  return {
+  isLoading:()=>loading,
   getRows:()=>weekKey===getWeek()?rows:[],
   editActivity:id=>{const found=rows.find(item=>item.id===id);if(found)openForm(found);},
   enter(){active=true;void refresh();},

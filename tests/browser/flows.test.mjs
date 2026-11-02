@@ -303,6 +303,47 @@ test('An explicitly selected welcome page survives reload even when family profi
  assert.deepEqual(errors,[]);
 });
 
+test('Tomorrow and important notices reveal one complete batch, not partial school data',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ // A saved local family with two different class PDFs means one response
+ // can complete before the other; do not display its partial task list.
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[
+   {id:'stable-a',name:'Ailin',school:'sjostrand',grade:'2',group:''},
+   {id:'stable-b',name:'Maya',school:'sjostrand',grade:'5A',group:''}
+  ]
+ })));
+ let releaseSecond;
+ const waiting=new Promise(resolve=>{releaseSecond=resolve;});
+ let secondStarted;
+ const started=new Promise(resolve=>{secondStarted=resolve;});
+ await page.route('**/api/plan?**',async route=>{
+  const grade=new URL(route.request().url()).searchParams.get('grade');
+  if(grade==='5A'){secondStarted();await waiting;}
+  const plan=basePlan(grade);
+  plan.homework=[{text:grade==='2'?'Les torsdag':'Ta med notebok torsdag',
+   subject:'Norsk',dueDay:'Torsdag'}];
+  await reply(route,plan);
+ });
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-toggle').click();
+ await started;
+ await page.waitForFunction(()=>document.querySelector('#family-tomorrow-brief')?.dataset.loading==='true');
+ assert.equal(await page.locator('#family-tomorrow-brief-items button').count(),0);
+ assert.equal(await page.locator('#family-tomorrow-brief-items .tomorrow-loading-item').count(),4);
+ assert.match(await page.locator('#family-important-cards').innerText(),/Samler viktige beskjeder/);
+ assert.doesNotMatch(await page.locator('#family-tomorrow-brief-items').innerText(),/Les torsdag/);
+ const skeletonHeight=await page.locator('#family-tomorrow-brief').evaluate(el=>el.getBoundingClientRect().height);
+ assert.ok(skeletonHeight>=330, 'Loading state reserves space to prevent scroll jumps');
+ releaseSecond();
+ await page.waitForFunction(()=>document.querySelector('#family-tomorrow-brief')?.dataset.loading==='false');
+ await page.locator('#family-tomorrow-brief-items').getByText('Les torsdag').waitFor();
+ await page.locator('#family-tomorrow-brief-items').getByText('Ta med notebok torsdag').waitFor();
+ const finalHeight=await page.locator('#family-tomorrow-brief').evaluate(el=>el.getBoundingClientRect().height);
+ assert.ok(finalHeight>=330,'Final list keeps a stable minimum height');
+ assert.deepEqual(errors,[]);
+});
+
 test('Tomorrow overview shows Thursday homework and packing, then opens that exact calendar day',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.route('**/api/plan?**',route=>{

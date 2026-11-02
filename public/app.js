@@ -756,9 +756,12 @@ function boot(){
   document.title=`${brand.title} · Kristiansand`;
   document.documentElement.style.setProperty('--brand',brand.color);
   document.documentElement.style.setProperty('--accent',brand.accent);
-  $('brand-title').textContent=brand.title;
-  if (brand.title.toLocaleLowerCase('nb-NO') === 'skoleuka') $('brand-title').innerHTML='skole<span class="logo-accent">uka.</span>';
-  $('brand-subtitle').textContent=brand.subtitle.toLocaleUpperCase('nb-NO');
+  // The canonical Skoleuka lockup is already present in HTML so hydration
+  // never swaps green plain text for the orange-accented wordmark.
+  if(brand.title.toLocaleLowerCase('nb-NO')!=='skoleuka')
+   $('brand-title').textContent=brand.title;
+  if($('brand-subtitle').textContent!==brand.subtitle.toLocaleUpperCase('nb-NO'))
+   $('brand-subtitle').textContent=brand.subtitle.toLocaleUpperCase('nb-NO');
   $('gate-school').textContent='';
   $('footer-school').textContent='Kristiansand';
   $('today').textContent=new Date().toLocaleDateString('nb-NO',{timeZone:siteConfig.school.timezone,weekday:'long',day:'numeric',month:'long'});

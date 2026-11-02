@@ -89,6 +89,22 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const priorityStates=new Map(),priorityTimers=new Map();
  let run=0,editing=null,gradeRun=0,lastPlanCheckAt=0,loadedWeekKey=null,showAllHighlights=false;
  let agendaChildId='',showWeekend=false,showAllTomorrow=false,lastTomorrowBriefing=null;
+ let tomorrowDisplayedKey=null,importantDisplayedKey=null;
+ // Do not publish an incomplete "tomorrow" list while the first PDF,
+ // activity or municipal-calendar source is still being resolved.
+ function overviewContentKey(now){
+  return weekKey(now)+'|'+profiles.map(p=>p.id+':'+p.school+':'+p.grade).join(',');
+ }
+ function overviewSourcesPending(now){
+  if(!profiles.length)return false;
+  const key=weekKey(now);
+  if(loadedWeekKey!==key||loading.size||activityUI.isLoading())return true;
+  return [...new Set(profiles.map(p=>p.school))].some(school=>{
+   const marker=school+'|'+key;
+   return calendarInFlight.has(marker)&&
+    !cacheableCalendar(calendars.get(school),school,now.year,now.week);
+  });
+ }
  let expandedChildren=new Set();
  let reportCards=[];
  const AUTO_CHECK_MS=15*60_000, RETRY_COOLDOWN_MS=5*60_000+5000;
@@ -292,6 +308,15 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   return {now,summaries};
  }
  function renderImportantNotices(model){
+  const now=calendar(),key=overviewContentKey(now);
+  if(overviewSourcesPending(now)){
+   if(importantDisplayedKey===key)return; // keep last verified content on refresh
+   setHtml('family-important-cards','<p class="family-important-empty" role="status">'+
+    'Samler viktige beskjeder fra skolen …</p>');
+   el('family-mobile-important-more').hidden=true;
+   return;
+  }
+  importantDisplayedKey=key;
   const notices=importantFamilyNotices(model,{limit:3});
   const html=notices.visible.map(item=>{
    const when=item.date?new Intl.DateTimeFormat('nb-NO',{
@@ -318,7 +343,23 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  function renderTomorrowBriefing(now,summaries,fullAgenda){
   const section=el('family-tomorrow-brief');
   section.hidden=!profiles.length;
-  if(!profiles.length){lastTomorrowBriefing=null;return;}
+  if(!profiles.length){lastTomorrowBriefing=null;tomorrowDisplayedKey=null;return;}
+  const key=overviewContentKey(now);
+  if(overviewSourcesPending(now)){
+   if(tomorrowDisplayedKey===key)return; // retain complete contents during revalidation
+   section.dataset.loading='true';
+   el('family-tomorrow-brief-date').textContent='Klargjør morgendagens oversikt';
+   el('family-tomorrow-brief-count').textContent='Sjekker …';
+   el('family-tomorrow-brief-notice').textContent='Samler ukeplaner, skolerute og familieaktiviteter.';
+   setHtml('family-tomorrow-brief-items',
+    Array.from({length:4},()=>'<li class="tomorrow-loading-item" aria-hidden="true">'+
+     '<span class="tomorrow-loading-line"></span></li>').join(''));
+   el('family-tomorrow-brief-more').hidden=true;
+   el('family-tomorrow-brief-calendar').hidden=true;
+   return;
+  }
+  tomorrowDisplayedKey=key;
+  section.dataset.loading='false';
   const actualToday=schoolCalendar(new Date(),'Europe/Oslo').today;
   const next=buildTomorrowBriefing({actualToday,calendar:now,agenda:fullAgenda,
    profiles,summaries,activities:activityUI.getRows()});
