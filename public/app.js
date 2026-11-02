@@ -171,9 +171,15 @@ function renderGuardianSummary(){
  }
  const all=expandHomework(state.plan.homework||[]);
  const homework=all.map((task,index)=>({task,index})).filter(x=>groupApplies(x.task,profile));
- const completed=homework.filter(x=>isChecked('homework',x.index)).length;
- $('guardian-plan-homework-state').textContent=homework.length?
-  completed+' av '+homework.length+' lekser ferdig':'Ingen lekser';
+ // The summary is headed by a selected weekday. Count only that day's
+ // source-dated assignments; undated-only plans keep their existing total.
+ const dated=homework.some(({task})=>Boolean(task.repeatDay||task.dueDay));
+ const shown=dated?homework.filter(({task})=>
+   (task.repeatDay||task.dueDay)===DAYS[state.day]):homework;
+ const completed=shown.filter(x=>isChecked('homework',x.index)).length;
+ $('guardian-plan-homework-state').textContent=shown.length?
+  completed+' av '+shown.length+(dated?' lekser i dag':' lekser ferdig'):
+  'Ingen lekser i dag';
  const bag=getBag().filter(item=>groupApplies(item,profile));
  const packed=bag.filter((_,index)=>isChecked('bag',index,DAYS[state.day])).length;
  $('guardian-plan-packing-state').textContent=bag.length?
