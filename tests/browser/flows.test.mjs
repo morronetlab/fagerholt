@@ -333,8 +333,16 @@ test('Tomorrow and important notices reveal one complete batch, not partial scho
  assert.equal(await page.locator('#family-tomorrow-brief-items .tomorrow-loading-item').count(),4);
  assert.match(await page.locator('#family-important-cards').innerText(),/Samler viktige beskjeder/);
  assert.doesNotMatch(await page.locator('#family-tomorrow-brief-items').innerText(),/Les torsdag/);
- const skeletonHeight=await page.locator('#family-tomorrow-brief').evaluate(el=>el.getBoundingClientRect().height);
- assert.ok(skeletonHeight>=330, 'Loading state reserves space to prevent scroll jumps');
+ await page.locator('#family-tomorrow-brief').waitFor({state:'visible'});
+ const skeleton=await page.locator('#family-tomorrow-brief').evaluate(el=>({
+  height:el.getBoundingClientRect().height,
+  minHeight:getComputedStyle(el).minHeight,
+  display:getComputedStyle(el).display,
+  tab:el.closest('#family-view').dataset.familyMobileView,
+  width:innerWidth
+ }));
+ assert.ok(skeleton.height>=330,
+  'Loading state reserves space to prevent scroll jumps: '+JSON.stringify(skeleton));
  releaseSecond();
  await page.waitForFunction(()=>document.querySelector('#family-tomorrow-brief')?.dataset.loading==='false');
  await page.locator('#family-tomorrow-brief-items').getByText('Les torsdag').waitFor();
