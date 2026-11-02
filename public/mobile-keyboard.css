@@ -1,0 +1,36 @@
+/* Applies only while a software keyboard is actually visible.
+ * Desktop and keyboard-free layouts keep their existing styling. */
+@media(max-width:1024px){
+  :is(#account-panel,#child-pair-dialog,#issue-report-dialog,
+      #family-form,#family-activity-form) :is(input:not([type="checkbox"]):not([type="radio"]),textarea,select){
+    font-size:16px; /* Prevent iOS Safari from zooming focused fields. */
+  }
+  body[data-mobile-keyboard="open"] :is(
+    dialog.account-panel[open],
+    dialog.child-pair-dialog[open],
+    dialog.issue-report-dialog[open]){
+    position:fixed;
+    inset:auto auto auto 50%!important;
+    top:calc(var(--mobile-vv-top,0px) + 8px)!important;
+    left:50%!important;
+    margin:0!important;
+    transform:translateX(-50%);
+    max-height:calc(var(--mobile-vv-height,100dvh) - 16px)!important;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    scroll-padding-block:55px 100px;
+  }
+  body[data-mobile-keyboard="open"] dialog.account-panel[open] .onboard-actions{
+    bottom:0; /* Keep Next reachable in the visible dialog, not under keyboard. */
+  }
+  body[data-mobile-keyboard="open"] :is(#family-view,#app-view){
+    padding-bottom:calc(var(--mobile-keyboard-inset,0px) + 110px);
+    scroll-padding-bottom:120px;
+  }
+  body[data-mobile-keyboard="open"] :is(#family-form,#family-activity-form){
+    scroll-margin-bottom:110px;
+  }
+  body[data-mobile-keyboard="open"] :is(#family-form,#family-activity-form) :is(input,textarea){
+    scroll-margin-block:35px 95px;
+  }
+}
