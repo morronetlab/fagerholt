@@ -225,3 +225,34 @@
     padding:8px 9px;
   }
 }
+
+/* Compact, left-aligned actions for important weekly notices.
+   Override the old full-width, unframed mobile button. */
+@media(max-width:700px){
+  #family-view .family-important-actions{
+    display:flex;flex-wrap:wrap;align-items:flex-start;gap:7px;margin-top:10px
+  }
+  #family-view .family-important-actions #family-mobile-important-more{
+    display:inline-flex;align-items:center;justify-content:center;
+    flex:0 0 auto;width:auto;max-width:100%;min-height:36px;margin:0;
+    padding:7px 11px;border:1px solid #c9dccf;border-radius:10px;
+    background:#fff;color:#2f6a51;font-size:11px;line-height:1.4;
+    font-weight:800;box-shadow:none
+  }
+  #family-view .family-important-actions #family-mobile-important-more[hidden]{
+    display:none!important
+  }
+  #family-view .family-important-actions .family-disclosure{
+    margin:0;border:0;min-width:0
+  }
+  #family-view .family-important-actions .family-disclosure>summary{
+    display:inline-flex;align-items:center;gap:7px;
+    width:auto;max-width:100%;min-height:36px;margin:0;
+    padding:7px 11px;border:1px solid #c9dccf;border-radius:10px;
+    background:#fff;color:#2f6a51;font-size:11px;line-height:1.4;
+    font-weight:800;text-align:left
+  }
+  #family-view .family-important-actions .family-disclosure[open]>summary{
+    background:#eef7f1
+  }
+}
