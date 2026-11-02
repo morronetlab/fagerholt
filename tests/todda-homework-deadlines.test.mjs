@@ -131,7 +131,7 @@ test('Actual production cache response is corrected: no null due dates or fake H
   ['Naturfag','Tirsdag'],['Engelsk','Tirsdag'],['Matte','Torsdag'],['Norsk','Fredag'],['Sosialt',null]]);
  assert.equal(result.homework.length,5);
  assert.equal(result.homework.some(x=>/leksefri|halloween/i.test(x.text)),false);
- assert.equal(HOMEWORK_SOURCE_VERSION,1);
+ assert.equal(HOMEWORK_SOURCE_VERSION,2);
 });
 test('Other valid homework outside an explicit source matrix is preserved',()=>{
  const extra={subject:'KRLE',text:'Les kapittel 7 om vennskap.',dueDay:null,repeatDays:[]};
