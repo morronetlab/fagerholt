@@ -41,8 +41,8 @@ export function initMobileKeyboardGuard({win=window,doc=document}={}){
   let bottom=Math.min(viewportBottom-24,bounds?bounds.bottom-16:Infinity);
   if(field.closest('.account-panel .onboard-child-form, .account-panel #onboard-child-form'))
    bottom-=80; // sticky onboarding actions occupy some of the visible space
-  if(dialog?.matches('.family-child-dialog'))
-   bottom-=70; // keep the sticky Save button clear of the active child field
+  if(dialog?.matches('.family-child-dialog, .family-activity-dialog'))
+   bottom-=70; // keep sticky Save buttons clear of focused fields
   if(bottom<=top+30)return;
   const r=field.getBoundingClientRect();
   const delta=r.bottom>bottom?Math.ceil(r.bottom-bottom+10):

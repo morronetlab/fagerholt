@@ -4,6 +4,8 @@
  */
 export function childSetupInfo(status){
  switch(status){
+  case 'checking':return {status,complete:false,label:'Sjekker appstatus …',
+   description:'Henter bekreftet installasjonsstatus for barnet.',action:null,step:0};
   case 'installed':return {status,complete:true,label:'App installert',
    description:'Barnet har åpnet Skoleuka fra appikonet på hjemskjermen.',action:null,step:3};
   case 'activated':return {status,complete:false,label:'QR-kode skannet',

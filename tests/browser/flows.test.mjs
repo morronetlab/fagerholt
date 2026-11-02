@@ -1840,6 +1840,38 @@ test('Family activity dates and optional end time are validated before saving',a
  assert.deepEqual(errors,[]);
 });
 
+test('Activity editor is a keyboard-aware native dialog for add, edit and Escape',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:800,mockNow:'2026-10-28T10:00:00Z'});
+ await page.locator('#family-toggle').click();
+ await page.locator('[data-family-mobile-tab="activities"]').click();
+ await page.locator('#family-activity-add').click();
+ const dialog=page.locator('#family-activity-dialog');
+ await dialog.waitFor({state:'visible'});
+ assert.equal(await page.locator('#family-activity-form').evaluate(el=>el.closest('dialog')?.id),'family-activity-dialog');
+ assert.equal(await page.evaluate(()=>document.body.classList.contains('account-modal-open')),true);
+ assert.notEqual(await page.evaluate(()=>document.activeElement.id),'family-activity-name');
+ await page.locator('#family-activity-name').fill('Ulagret avtale');
+ await page.keyboard.press('Escape');
+ await page.waitForFunction(()=>!document.querySelector('#family-activity-dialog').open);
+ await page.waitForFunction(()=>!document.body.classList.contains('account-modal-open'));
+ assert.equal(await page.locator('#family-activity-list .family-activity-card').count(),0);
+ await page.locator('#family-activity-add').click();
+ assert.equal(await page.locator('#family-activity-name').inputValue(),'');
+ await page.locator('#family-activity-name').fill('Korpsøvelse');
+ await page.locator('#family-activity-date').fill('2026-10-28');
+ await page.locator('#family-activity-save').click();
+ await page.locator('#family-activity-list .family-activity-card').first().waitFor();
+ assert.equal(await dialog.evaluate(el=>el.open),false);
+ await page.locator('#family-activity-list [data-activity-edit]').first().click();
+ await dialog.waitFor({state:'visible'});
+ assert.match(await page.locator('#family-activity-form-title').innerText(),/Endre/);
+ assert.equal(await page.locator('#family-activity-name').inputValue(),'Korpsøvelse');
+ await page.locator('#family-activity-cancel').click();
+ await page.waitForFunction(()=>!document.querySelector('#family-activity-dialog').open);
+ assert.equal(await page.locator('#family-activity-list .family-activity-card').count(),1);
+ assert.deepEqual(errors,[]);
+});
+
 test('Family calendar displays four typed sources, verified homework, optional weekend and sibling filter',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844,mockNow:'2026-10-28T10:00:00Z'});
  const profiles=[

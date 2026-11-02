@@ -30,8 +30,9 @@ const fieldMap={
 };
 export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar,onChange=()=>{}}){
  let active=false,rows=localRead(),editing=null,loading=false,status='',request=0,weekKey='';
- const form=$('family-activity-form'),save=$('family-activity-save'),
-  panel=$('family-activity-list');
+ const form=$('family-activity-form'),dialog=$('family-activity-dialog'),
+  save=$('family-activity-save'),panel=$('family-activity-list');
+ let returnFocus=null,returnScrollY=0,originalLockTop='';
  const setMessage=msg=>{status=msg;};
  const getWeek=()=>{const c=getCalendar();return c.year+'-'+c.week;};
  const isCloud=()=>Boolean(getCloud()?.client&&getCloud()?.familyId);
@@ -79,18 +80,37 @@ export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar,onChang
  }
  function formStatus(message){$('family-activity-form-status').textContent=message||'';}
  function resetForm(){
-  editing=null;form.reset();form.hidden=true;formStatus('');
+  editing=null;form.reset();formStatus('');
   $('family-activity-until-wrap').hidden=true;
-  // The mobile Activities tab should return to the list after saving/cancelling.
+  if(dialog.open)dialog.close();
+  // The Activities tab should return to its list after saving/cancelling.
   if(window.matchMedia('(max-width:700px)').matches&&
      $('family-view').dataset.familyMobileView==='activities')
    $('family-activity-manage').open=true;
  }
+ dialog.addEventListener('close',()=>{
+  // Escape, Cancel and Save all release the same body scroll lock.
+  document.documentElement.classList.remove('account-modal-open');
+  document.body.classList.remove('account-modal-open');
+  if(originalLockTop)document.body.style.setProperty('--account-lock-top',originalLockTop);
+  else document.body.style.removeProperty('--account-lock-top');
+  window.scrollTo({top:returnScrollY,left:0,behavior:'instant'});
+  const target=returnFocus?.isConnected&&returnFocus.getClientRects().length?
+   returnFocus:$('family-activity-add');
+  if(active&&target?.getClientRects().length)target.focus({preventScroll:true});
+  returnFocus=null;
+  editing=null;form.reset();formStatus('');
+  $('family-activity-until-wrap').hidden=true;
+  if(window.matchMedia('(max-width:700px)').matches&&
+     $('family-view').dataset.familyMobileView==='activities')
+   $('family-activity-manage').open=true;
+ });
  function openForm(item=null){
+  if(dialog.open)return;
   editing=item?.id||null;
   // Editing is the primary task: temporarily minimize the redundant list.
   $('family-activity-manage').open=false;
-  form.hidden=false;formStatus('');
+  formStatus('');
   const c=getCalendar();
   const defaults={title:'',child_id:'',occurs_on:familyActivityWeekDates(c.year,c.week).start,
    start_time:'',end_time:'',repeat_rule:'none',repeat_until:'',location:'',responsible:'',notes:''};
@@ -102,8 +122,16 @@ export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar,onChang
   $('family-activity-form-title').textContent=item?'Endre aktivitet':'Ny aktivitet';
   save.textContent=item?'Lagre endringer':'Lagre aktivitet';
   $('family-activity-until-wrap').hidden=$('family-activity-repeat').value!=='weekly';
-  $('family-activity-name').focus({preventScroll:true});
-  form.scrollIntoView({block:'nearest',behavior:'smooth'});
+  returnFocus=document.activeElement;returnScrollY=window.scrollY;
+  originalLockTop=document.body.style.getPropertyValue('--account-lock-top');
+  dialog.showModal();
+  document.body.style.setProperty('--account-lock-top','-'+returnScrollY+'px');
+  document.documentElement.classList.add('account-modal-open');
+  document.body.classList.add('account-modal-open');
+  dialog.scrollTop=0;
+  // Avoid opening the software keyboard until the guardian selects a field.
+  (window.matchMedia('(max-width:700px)').matches?
+    $('family-activity-cancel'):$('family-activity-name')).focus({preventScroll:true});
  }
  async function refresh(){
   if(!active)return;

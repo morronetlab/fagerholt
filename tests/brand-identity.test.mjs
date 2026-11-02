@@ -21,6 +21,11 @@ test('Skoleuka has one book/planner identity on the public site and child app',(
  assert.match(parent,/href="\/brand\/skoleuka-brand.css"/);
  assert.match(child,/href="\/brand\/skoleuka-brand.css"/);
  assert.doesNotMatch(parent,/class="brand-symbol"/,'Do not duplicate inline logo geometry in the main header');
+ const brandCSS=read('public/brand/skoleuka-brand.css');
+ assert.match(parent,/Critical brand lockup/);
+ assert.match(parent,/html:not\(\.skoleuka-route-ready\) #brand-title/);
+ assert.match(brandCSS,/#home-link #brand-title/);
+ assert.match(brandCSS,/#home-link \.brand-mark/);
 });
 
 test('Guardian and child PWA manifests have separate scopes and identical app icons',()=>{

@@ -932,8 +932,11 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     cloud={client,familyId};syncCloudChrome();
     profiles=remoteChildren.map(x=>({id:x.id,name:x.nickname,school:x.school_id,
       grade:x.grade,group:x.group_name||''})).filter(x=>Object.hasOwn(siteConfig.schools,x.school));
-    void childPairingUI.loadStatuses(profiles);
-    plans.clear();cloudChecks.clear();bagChecks.clear();loadedWeekKey=null;activityUI.onFamilyChanged();await syncCloud();
+    // Resolve device statuses as part of initial account restoration, so the
+    // first family screen doesn't present unverified QR states as facts.
+    const statusReady=childPairingUI.loadStatuses(profiles);
+    plans.clear();cloudChecks.clear();bagChecks.clear();loadedWeekKey=null;activityUI.onFamilyChanged();
+    await Promise.all([syncCloud(),statusReady]);
     if(active){render();void fetchPlans();}
   },
   clearCloud:()=>{

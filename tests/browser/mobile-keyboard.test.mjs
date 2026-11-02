@@ -72,7 +72,7 @@ test('Account modal shrinks to visible viewport; focused field remains reachable
  await page.waitForFunction(()=>!document.body.dataset.mobileKeyboard);
  assert.deepEqual(errors,[]);
 });
-test('Inline family activity field remains reachable and page becomes scrollable',async t=>{
+test('Activity modal stays inside virtual mobile keyboard viewport with its Save action',async t=>{
  const {page,errors}=await openPage(t,390);
  await page.locator('#landing-other-options').click();
  await page.locator('#landing-local-family').click();
@@ -81,17 +81,35 @@ test('Inline family activity field remains reachable and page becomes scrollable
  await page.waitForFunction(()=>!document.querySelector('#family-child-dialog').open);
  await page.locator('[data-family-mobile-tab="activities"]').click();
  await page.locator('#family-activity-add').click();
+ const dialog=page.locator('#family-activity-dialog');
+ assert.equal(await dialog.evaluate(el=>el.open),true);
+ assert.equal(await page.evaluate(()=>document.body.classList.contains('account-modal-open')),true);
+ assert.notEqual(await page.evaluate(()=>document.activeElement.id),'family-activity-name',
+  'Do not open the keyboard until the guardian selects a field');
  const field=page.locator('#family-activity-name');
  await field.focus();
  await resizeKeyboard(page,390);
  await page.waitForFunction(()=>document.body.dataset.mobileKeyboard==='open');
+ await page.locator('#family-activity-notes').focus();
  await page.waitForFunction(()=>{
-  const rect=document.querySelector('#family-activity-name').getBoundingClientRect();
-  return rect.bottom<=window.__testKeyboardViewport.height-10;
+  const rect=document.querySelector('#family-activity-notes').getBoundingClientRect();
+  const bounds=document.querySelector('#family-activity-dialog').getBoundingClientRect();
+  return rect.bottom<=window.__testKeyboardViewport.height-70 && bounds.bottom<=390+1;
  });
  assert.equal(await field.evaluate(el=>getComputedStyle(el).fontSize),'16px');
- const padding=await page.locator('#family-view').evaluate(el=>parseFloat(getComputedStyle(el).paddingBottom));
- assert.ok(padding>=100, 'Must leave room to scroll form actions above keyboard');
+ const measures=await page.evaluate(()=>{
+  const bounds=document.querySelector('#family-activity-dialog').getBoundingClientRect();
+  const save=document.querySelector('#family-activity-save').getBoundingClientRect();
+  return {height:bounds.height,saveBottom:save.bottom,saveTop:save.top};
+ });
+ assert.ok(measures.height<=374,JSON.stringify(measures));
+ assert.ok(measures.saveTop>=0&&measures.saveBottom<=390,JSON.stringify(measures));
+ await page.locator('#family-activity-notes').blur();
+ await resizeKeyboard(page,800);
+ await page.waitForFunction(()=>!document.body.dataset.mobileKeyboard);
+ await page.locator('#family-activity-cancel').click();
+ await page.waitForFunction(()=>!document.body.classList.contains('account-modal-open'));
+ assert.equal(await dialog.evaluate(el=>el.open),false);
  assert.deepEqual(errors,[]);
 });
 test('Desktop layout stays unchanged even when visual viewport reports a short height',async t=>{

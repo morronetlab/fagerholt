@@ -8,6 +8,7 @@
   body[data-mobile-keyboard="open"] :is(
     dialog.account-panel[open],
     dialog.family-child-dialog[open],
+    dialog.family-activity-dialog[open],
     dialog.child-pair-dialog[open],
     dialog.issue-report-dialog[open]){
     position:fixed;
@@ -24,8 +25,9 @@
   body[data-mobile-keyboard="open"] dialog.account-panel[open] .onboard-actions{
     bottom:0; /* Keep Next reachable in the visible dialog, not under keyboard. */
   }
-  body[data-mobile-keyboard="open"] dialog.family-child-dialog[open] .family-child-dialog-actions{
-    bottom:0; /* Keep Save inside the keyboard-sized child modal. */
+  body[data-mobile-keyboard="open"] dialog.family-child-dialog[open] .family-child-dialog-actions,
+  body[data-mobile-keyboard="open"] dialog.family-activity-dialog[open] .family-activity-dialog-actions{
+    bottom:0; /* Keep Save inside the keyboard-sized modal. */
   }
   body[data-mobile-keyboard="open"] :is(#family-view,#app-view){
     padding-bottom:calc(var(--mobile-keyboard-inset,0px) + 110px);

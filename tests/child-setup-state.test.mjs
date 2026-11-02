@@ -10,6 +10,11 @@ test('Parent status tells apart QR ready, QR scanned, installed and unknown',()=
  const scanned=childSetupInfo('activated');
  const installed=childSetupInfo('installed');
  const unknown=childSetupInfo('unknown');
+ const checking=childSetupInfo('checking');
+ assert.equal(checking.status,'checking');
+ assert.match(checking.label,/Sjekker appstatus/);
+ assert.equal(checking.action,null,'Never offer a new QR while the current status is being checked');
+ assert.equal(checking.complete,false);
  assert.deepEqual([notInvited.step,invited.step,scanned.step,installed.step],[0,1,2,3]);
  assert.deepEqual([notInvited.complete,invited.complete,scanned.complete,installed.complete],
   [false,false,false,true]);
