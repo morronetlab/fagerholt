@@ -68,11 +68,11 @@ test('Cached AI schema is corrected on a PDF-only read, without rerunning AI',()
  const cache={...meta(),...normalizeAIPlan(raw(),meta()),homework:raw().homework,
   schoolId:'other-school',sourceAudit:{status:'ok'},homeworkSourceVersion:1,
   digestPracticalEvidenceVersion:1};
- assert.equal(HOMEWORK_SOURCE_VERSION,2);
+ assert.equal(HOMEWORK_SOURCE_VERSION,3);
  assert.equal(needsCachedEvidenceRefresh(cache),true);
  const refreshed=refreshCachedEvidence(cache,pages());
  assert.equal(refreshed.changed,true);
- assert.equal(refreshed.plan.homeworkSourceVersion,2);
+ assert.equal(refreshed.plan.homeworkSourceVersion,3);
  assert.deepEqual(refreshed.plan.homework.find(t=>t.subject==='Norsk').repeatDays,
   ['Tirsdag','Onsdag','Torsdag']);
  assert.deepEqual(cache.homework[0].repeatDays,[]);
