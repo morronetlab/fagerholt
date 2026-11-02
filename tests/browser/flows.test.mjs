@@ -111,6 +111,14 @@ test('School and grade selection remains available after navigating home and bac
  assert.deepEqual(errors,[]);
 });
 
+test('Public desktop visitors keep a visible Forside navigation choice',async t=>{
+ const {page,errors}=await openPage(t,{width:1280,height:850});
+ assert.equal(await page.locator('#nav-home').isVisible(),true);
+ assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('family-account-ready')),false);
+ assert.equal(await page.locator('#home-link').getAttribute('aria-label'),'Gå til forsiden');
+ assert.deepEqual(errors,[]);
+});
+
 test('Local family entry and account CTA can both start from the new welcome screen',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.locator('#landing-other-options').click();

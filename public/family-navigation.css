@@ -58,3 +58,10 @@
   body.family-dashboard-active .header-family-week{display:none!important}
   body.family-dashboard-active .logo small{display:none}
 }
+
+/* A confirmed guardian family uses the app, not the public marketing page.
+   On desktop keep the useful Family/Weekplan links; mobile already hides
+   global navigation inside the family dashboard. Guest navigation is intact. */
+@media(min-width:701px){
+  body.family-account-ready #nav-home{display:none!important}
+}

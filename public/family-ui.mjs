@@ -63,8 +63,12 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  let cloud=null,cloudChecks=new Map(),bagChecks=new Map(),focus='next',lastSynced=null,syncError='';
  // Public/guest family mode still needs the bottom navigation. Only a
  // signed-in family account uses the three dashboard tabs exclusively.
- const syncCloudChrome=()=>document.body.classList.toggle('family-cloud-active',
-  Boolean(active&&cloud?.familyId));
+ const syncCloudChrome=()=>{
+  // Account navigation depends on whether a guardian has a family, even
+  // while looking at an individual child's plan (when the family view is inactive).
+  document.body.classList.toggle('family-account-ready',Boolean(cloud?.familyId));
+  document.body.classList.toggle('family-cloud-active',Boolean(active&&cloud?.familyId));
+ };
  const plans=new Map(),loading=new Set(),errors=new Map();
  // Public municipal dates are independent of individual PDF availability.
  const calendars=new Map(),calendarFetchAt=new Map(),calendarInFlight=new Set();
@@ -913,7 +917,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  el('family-school').innerHTML='<option value="">Velg skole</option>'+schools.map(s=>
   '<option value="'+escape(s.id)+'">'+escape(s.name)+'</option>').join('');
  const api={
-  isActive:()=>active,hasProfiles:()=>profiles.length>0,profileById:byId,
+  isActive:()=>active,hasCloudFamily:()=>Boolean(cloud?.familyId),
+  hasProfiles:()=>profiles.length>0,profileById:byId,
   firstProfile:()=>profiles[0]||null,
   activitiesForProfile:(id,year,week,date)=>activityOccurrences(activityUI.getRows(),year,week)
    .filter(x=>x.date===date&&(!x.child_id||x.child_id===id)),

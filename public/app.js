@@ -135,6 +135,7 @@ function renderChildAppSetup(){
 function renderShell(){
   const hasSchool=Boolean(state.school),chosen=Boolean(state.grade&&hasSchool),inFamily=Boolean(familyUI?.isActive());
   const welcome=primaryView==='welcome'&&!inFamily;
+  const hasCloudFamily=Boolean(familyUI?.hasCloudFamily());
   const section=inFamily?'family':welcome?'welcome':'plan';
   const childCloudPlan=Boolean(!inFamily&&!welcome&&chosen&&state.profileId&&
    familyUI?.isCloudProfile(state.profileId));
@@ -145,7 +146,7 @@ function renderShell(){
   document.body.classList.toggle('family-dashboard-active',inFamily);
   $('header-family-week').hidden=!inFamily;
   $('home-link').setAttribute('aria-label',inFamily?'Gå til toppen av Min familie':
-   childCloudPlan?'Gå til Min familie':'Gå til forsiden');
+   hasCloudFamily||childCloudPlan?'Gå til Min familie':'Gå til forsiden');
   $('welcome-view').hidden=!welcome;
   $('family-view').hidden=!inFamily;
   $('school-gate').hidden=inFamily||welcome||hasSchool;
@@ -731,7 +732,7 @@ function boot(){
     e.preventDefault();
     // On the guardian dashboard the logo is a safe "back to family top" action,
     // never an accidental trip to the public registration landing page.
-    navigateTo(familyUI.isActive()||
+    navigateTo(familyUI.isActive()||familyUI.hasCloudFamily()||
      (state.profileId&&familyUI.isCloudProfile(state.profileId))?'family':'welcome');
   });
   $('nav-home').addEventListener('click',()=>navigateTo('welcome'));
