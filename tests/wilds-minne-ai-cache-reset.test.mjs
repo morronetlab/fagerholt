@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {cacheKey,digestPdf} from '../lib/ai-runtime.mjs';
 const hash='f'.repeat(64),model='gpt-4.1-mini';
+const sanitizedModel=model.replace(/[^a-zA-Z0-9_-]/g,'_');
 const oldKey=({school,grade,year,week})=>
- `v20/${school}/${grade}/${year}-${week}/${hash}-${model}.json`;
+ `v20/${school}/${grade}/${year}-${week}/${hash}-${sanitizedModel}.json`;
 
 test('Wilds Minne grade 2 week 45 2026 bypasses the already populated AI blob',()=>{
  const k=cacheKey({school:'wildsminne',grade:'2',year:2026,week:45,hash,model});
  assert.notEqual(k,oldKey({school:'wildsminne',grade:'2',year:2026,week:45}));
- assert.equal(k,`v20-wildsminne-2-w45-refresh1/wildsminne/2/2026-45/${hash}-${model}.json`);
+ assert.equal(k,`v20-wildsminne-2-w45-refresh1/wildsminne/2/2026-45/${hash}-${sanitizedModel}.json`);
  assert.equal(cacheKey({school:'wildsminne',grade:'2',year:2026,week:45,hash,model}),k,
    'Identical source must share the new key, not retrigger AI on every request');
 });
