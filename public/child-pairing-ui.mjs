@@ -6,7 +6,7 @@ const e=s=>String(s??'').replace(/[&<>"']/gu,c=>({
 }[c]));
 export function initChildPairingUI({getCloud,onStatusChange=()=>{}}){
  const panel=$('child-pair-dialog');let child=null,previous=null,scrollY=0;
- const setup=new Map();let statusVersion=0;
+ const setup=new Map();let statusVersion=0,statusFamilyId=null;
  let platform='ios',pollTimer=null,refreshing=false,qrExpiresAt=0,qrMode=null;
  const clearQr=()=>{
   qrExpiresAt=0;qrMode=null;
@@ -51,8 +51,17 @@ export function initChildPairingUI({getCloud,onStatusChange=()=>{}}){
  }
  const getStatus=id=>setup.get(id)||'unknown';
  async function loadStatuses(profiles){
-  const version=++statusVersion;
-  if(!getCloud()?.familyId){setup.clear();onStatusChange();return;}
+  const version=++statusVersion,cloud=getCloud();
+  if(!cloud?.familyId){
+   setup.clear();statusFamilyId=null;onStatusChange();return;
+  }
+  // Keep confirmed statuses during a refresh. New children have a deliberate
+  // pending state rather than flashing "not invited" before the API responds.
+  if(statusFamilyId!==cloud.familyId){setup.clear();statusFamilyId=cloud.familyId;}
+  const ids=new Set(profiles.map(p=>p.id));
+  for(const id of setup.keys())if(!ids.has(id))setup.delete(id);
+  for(const id of ids)if(!setup.has(id))setup.set(id,'checking');
+  onStatusChange();paintProgress();
   const updates=await Promise.all(profiles.map(async profile=>{
    try{
     const data=await api('status',null,true,profile.id);
@@ -60,11 +69,18 @@ export function initChildPairingUI({getCloud,onStatusChange=()=>{}}){
      data.status:'unknown'];
    }catch{return [profile.id,'unknown'];}
   }));
-  if(version!==statusVersion)return;
-  setup.clear();for(const [id,value] of updates)setup.set(id,value);
+  if(version!==statusVersion||getCloud()?.familyId!==cloud.familyId)return;
+  for(const [id,value] of updates){
+   // On a network error preserve previously confirmed data, but do not
+   // claim the child has never scanned a QR code.
+   if(value!=='unknown'||['checking','unknown'].includes(getStatus(id)))
+    setup.set(id,value);
+  }
   onStatusChange();paintProgress();
  }
- function clearStatuses(){statusVersion++;setup.clear();onStatusChange();paintProgress();}
+ function clearStatuses(){
+  statusVersion++;statusFamilyId=null;setup.clear();onStatusChange();paintProgress();
+ }
  async function refreshStatus(id){
   if(!getCloud()?.familyId)return;
   let next='unknown';
@@ -73,6 +89,7 @@ export function initChildPairingUI({getCloud,onStatusChange=()=>{}}){
    if(['not_invited','invited','activated','installed'].includes(data.status))
     next=data.status;
   }catch{/* Unknown indicates that a status check failed, not revoked access. */}
+  if(next==='unknown'&&!['checking','unknown'].includes(getStatus(id)))return;
   const changed=getStatus(id)!==next;
   setup.set(id,next);
   if(changed)onStatusChange();

@@ -18,6 +18,29 @@
     .startup-loading-indicator{display:inline-block;width:21px;height:21px;
       border:3px solid #c9e5d3;border-top-color:#267050;border-radius:50%;
       margin:0 12px 12px 0;vertical-align:middle;animation:startup-spin .9s linear infinite}
+    /* Critical brand lockup: match the final header from the very first
+       paint, even before external CSS and the account session have loaded. */
+    html:not(.skoleuka-route-ready){background:#f8faf6;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+    html:not(.skoleuka-route-ready) body{margin:0;background:#f8faf6;color:#1d4f40}
+    html:not(.skoleuka-route-ready) .shell{width:auto;max-width:1170px;margin:0 auto;padding:0 30px 70px;box-sizing:border-box}
+    html:not(.skoleuka-route-ready) .topbar{min-height:88px;display:flex;align-items:center;
+      border-bottom:1px solid #dde8e0;margin-bottom:16px;box-sizing:border-box}
+    html:not(.skoleuka-route-ready) #home-link{display:inline-flex;align-items:center;
+      gap:12px;text-decoration:none;color:#1d4f40}
+    html:not(.skoleuka-route-ready) #home-link .brand-mark{width:47px;height:47px;
+      flex:0 0 47px;display:block;overflow:hidden;border-radius:15px;background:transparent}
+    html:not(.skoleuka-route-ready) #home-link .brand-icon{display:block;width:100%;height:100%}
+    html:not(.skoleuka-route-ready) #brand-title{display:block;font-weight:870;line-height:1.15;
+      font-size:26px;letter-spacing:-1.3px;color:#1d4f40}
+    html:not(.skoleuka-route-ready) #brand-subtitle{display:block;font-size:9px;
+      font-weight:800;line-height:1.3;letter-spacing:.16em;color:#668f7c;margin-top:3px}
+    @media(max-width:700px){
+      html:not(.skoleuka-route-ready) .shell{padding:0 15px 40px}
+      html:not(.skoleuka-route-ready) .topbar{min-height:72px}
+      html:not(.skoleuka-route-ready) #home-link .brand-mark{width:39px;height:39px;flex-basis:39px}
+      html:not(.skoleuka-route-ready) #brand-title{font-size:22px}
+      html:not(.skoleuka-route-ready) #brand-subtitle{font-size:8px;letter-spacing:.08em}
+    }
     @keyframes startup-spin{to{transform:rotate(360deg)}}
     @media(prefers-reduced-motion:reduce){.startup-loading-indicator{animation:none}}
     @media(max-width:700px){#startup-loading{margin:18px auto;min-height:180px;padding:23px 19px}}
@@ -34,6 +57,7 @@
   <link rel="stylesheet" href="/family-desktop-tabs.css">
   <link rel="stylesheet" href="/mobile-keyboard.css">
   <link rel="stylesheet" href="/family-child-dialog.css">
+  <link rel="stylesheet" href="/family-activity-dialog.css">
 </head>
 <body>
 <a class="skip-link" href="#main-content">Hopp til innhold</a>
@@ -333,25 +357,6 @@
           <button type="button" id="family-activity-add" class="family-add-button" aria-label="Legg til ny aktivitet">+ Legg til</button>
         </div>
         <p id="family-activity-status" class="family-activity-status" role="status" aria-live="polite"></p>
-        <form id="family-activity-form" class="family-activity-form" hidden aria-labelledby="family-activity-form-title">
-          <div class="family-form-head"><h3 id="family-activity-form-title">Ny aktivitet</h3>
-            <button type="button" id="family-activity-cancel" class="family-form-close" aria-label="Lukk aktivitetsskjema">✕</button></div>
-          <div class="family-activity-fields">
-            <label class="family-activity-wide">Aktivitet<input id="family-activity-name" type="text" maxlength="120" placeholder="F.eks. Korpsøvelse" required></label>
-            <label>Hvem gjelder det?<select id="family-activity-child"><option value="">Hele familien</option></select></label>
-            <label>Dato<input id="family-activity-date" type="date" min="2020-01-01" max="2100-12-31" required></label>
-            <label>Starttid (valgfritt)<input id="family-activity-start" type="time"></label>
-            <label>Sluttid (valgfritt)<input id="family-activity-end" type="time"></label>
-            <label>Gjentakelse<select id="family-activity-repeat"><option value="none">Kun denne dagen</option><option value="weekly">Hver uke</option></select></label>
-            <label id="family-activity-until-wrap" hidden>Gjentakelsen slutter (valgfritt)<input id="family-activity-until" type="date" min="2020-01-01" max="2100-12-31"></label>
-            <label>Sted (valgfritt)<input id="family-activity-location" type="text" maxlength="120" placeholder="F.eks. gymsalen"></label>
-            <label>Ansvarlig (valgfritt)<input id="family-activity-responsible" type="text" maxlength="80" placeholder="F.eks. Mamma eller pappa"></label>
-            <label class="family-activity-wide">Merknad (valgfritt)<textarea id="family-activity-notes" maxlength="600" rows="2" placeholder="F.eks. husk instrument eller utstyr"></textarea></label>
-          </div>
-          <p class="family-activity-help">Med familiekonto deles aktivitetene mellom foresatte. Uten innlogging lagres de kun på denne enheten. Endringer i en gjentakende aktivitet gjelder hele serien.</p>
-          <p id="family-activity-form-status" class="family-form-status" role="status" aria-live="polite"></p>
-          <button id="family-activity-save" type="submit" class="family-add-button">Lagre aktivitet</button>
-        </form>
         <details id="family-activity-manage" class="family-disclosure family-activity-manage">
           <summary id="family-activity-manage-summary">Administrer registrerte aktiviteter</summary>
           <div id="family-activity-list" class="family-activity-list" aria-live="polite"></div>
@@ -500,6 +505,27 @@
   </main>
   <footer>Skoleuka · <span id="footer-school">Kristiansand</span> · Uten familiekonto lagres valg på denne enheten. Med familiekonto deles lekseprogresjonen. <span class="footer-meta"><a href="https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/grunnskole/" target="_blank" rel="noopener noreferrer">Skoleoversikten ↗</a> · <a href="mailto:mortenronn@gmail.com?subject=Feilrapport%20Skoleuka">Rapporter feil: mortenronn@gmail.com</a> · <a id="git-version" href="#" target="_blank" rel="noopener noreferrer" hidden>Git-versjon</a></span></footer>
 </div>
+<dialog id="family-activity-dialog" class="family-activity-dialog" aria-modal="true" aria-labelledby="family-activity-form-title">
+<form id="family-activity-form" class="family-activity-form" aria-labelledby="family-activity-form-title">
+          <div class="family-form-head"><h3 id="family-activity-form-title">Ny aktivitet</h3>
+            <button type="button" id="family-activity-cancel" class="family-form-close" aria-label="Lukk aktivitetsskjema">✕</button></div>
+          <div class="family-activity-fields">
+            <label class="family-activity-wide">Aktivitet<input id="family-activity-name" type="text" maxlength="120" placeholder="F.eks. Korpsøvelse" required></label>
+            <label>Hvem gjelder det?<select id="family-activity-child"><option value="">Hele familien</option></select></label>
+            <label>Dato<input id="family-activity-date" type="date" min="2020-01-01" max="2100-12-31" required></label>
+            <label>Starttid (valgfritt)<input id="family-activity-start" type="time"></label>
+            <label>Sluttid (valgfritt)<input id="family-activity-end" type="time"></label>
+            <label>Gjentakelse<select id="family-activity-repeat"><option value="none">Kun denne dagen</option><option value="weekly">Hver uke</option></select></label>
+            <label id="family-activity-until-wrap" hidden>Gjentakelsen slutter (valgfritt)<input id="family-activity-until" type="date" min="2020-01-01" max="2100-12-31"></label>
+            <label>Sted (valgfritt)<input id="family-activity-location" type="text" maxlength="120" placeholder="F.eks. gymsalen"></label>
+            <label>Ansvarlig (valgfritt)<input id="family-activity-responsible" type="text" maxlength="80" placeholder="F.eks. Mamma eller pappa"></label>
+            <label class="family-activity-wide">Merknad (valgfritt)<textarea id="family-activity-notes" maxlength="600" rows="2" placeholder="F.eks. husk instrument eller utstyr"></textarea></label>
+          </div>
+          <p class="family-activity-help">Med familiekonto deles aktivitetene mellom foresatte. Uten innlogging lagres de kun på denne enheten. Endringer i en gjentakende aktivitet gjelder hele serien.</p>
+          <p id="family-activity-form-status" class="family-form-status" role="status" aria-live="polite"></p>
+          <div class="family-activity-dialog-actions"><button id="family-activity-save" type="submit" class="family-add-button">Lagre aktivitet</button></div>
+        </form>
+</dialog>
 <dialog id="family-child-dialog" class="family-child-dialog" aria-labelledby="family-form-title" aria-describedby="family-form-tip" aria-modal="true">
 <form id="family-form" class="family-form" aria-labelledby="family-form-title">
         <div class="family-form-head"><h3 id="family-form-title">Legg til barn</h3><button type="button" id="family-cancel" class="family-form-close" aria-label="Lukk skjemaet">✕</button></div>
