@@ -92,6 +92,11 @@ test('No invented deadline from an isolated weekday or unlabelled week tasks',()
  p2.items=p2.items.filter(x=>x.text!=='LEKSER');
  assert.equal(reconcileHomeworkWithPdf(raw().homework,[p2]).verified,false);
 });
+test('Generic week-numbered homework heading is supported across school years',()=>{
+ const p=page();
+ p.items=p.items.map(item=>item.text==='LEKSER'?{...item,text:'LEKSER UKE 12'}:item);
+ assert.equal(extractHomeworkDaySections([p]).length,4);
+});
 test('Day section stops before goal/information blocks',()=>{
  const p=page();
  p.items.push(tok('Mandag',80,671),tok('Matte: Gjør side 32',103,695));
