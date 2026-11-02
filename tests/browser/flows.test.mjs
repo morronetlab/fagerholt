@@ -326,7 +326,10 @@ test('Tomorrow and important notices reveal one complete batch, not partial scho
   await reply(route,plan);
  });
  await page.reload({waitUntil:'domcontentloaded'});
- await page.locator('#family-toggle').click();
+ // A saved family is restored directly. Do not click Min familie again:
+ // that toggle would navigate *away* from the dashboard.
+ await page.locator('#family-view').waitFor({state:'visible'});
+ await page.locator('[data-family-mobile-tab="overview"]').click();
  await started;
  await page.waitForFunction(()=>document.querySelector('#family-tomorrow-brief')?.dataset.loading==='true');
  assert.equal(await page.locator('#family-tomorrow-brief-items button').count(),0);
