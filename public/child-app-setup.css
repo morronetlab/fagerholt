@@ -43,3 +43,50 @@
  #family-view .family-child-setup{flex-wrap:wrap}
  #family-view .family-child-qr{width:100%}
 }
+
+/* Guardian QR setup: progress, device choice and assistance. */
+.family-child-setup{flex-wrap:wrap}
+.family-child-setup .family-child-help{flex:0 0 auto;min-height:35px;padding:5px 2px;
+ border:0;background:transparent;color:#275d49;font-size:11px;
+ text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.family-child-help:focus-visible{outline:3px solid #d5a355;outline-offset:3px}
+.child-pair-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;
+ list-style:none;padding:0;margin:15px 0 10px}
+.child-pair-steps li{display:grid;justify-items:center;align-content:center;gap:5px;
+ padding:10px 4px;border:1px solid #e2eae3;border-radius:12px;
+ text-align:center;color:#697a70;font-size:11px;background:#f6f9f6}
+.child-pair-steps li span{display:grid;place-items:center;width:24px;height:24px;
+ border-radius:50%;background:#e5ebe6;color:#466751;font-weight:850;font-size:12px}
+.child-pair-steps li strong{font-size:11px}
+.child-pair-steps li[data-state="done"]{border-color:#b4d9c2;background:#f0faf3;color:#226148}
+.child-pair-steps li[data-state="done"] span{background:#2b7556;color:white}
+.child-pair-steps li[data-state="active"]{border-color:#e2c990;background:#fffaf0;color:#795a22}
+.child-pair-current{padding:12px 14px;border-radius:12px;background:#f0f7f1;border:1px solid #dce9df}
+#child-pair-stage-label{display:block;font-size:15px;color:#285d46}
+#child-pair-stage-description{margin:4px 0 0;font-size:12px;line-height:1.5;color:#506f5c}
+.child-pair-toolbar{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+#child-pair-check{min-height:38px;padding:7px 10px;font-size:12px}
+.child-pair-note{font-size:11px;line-height:1.4;color:#728577;flex:1}
+#child-pair-status{margin:10px 0;min-height:0;font-size:12px;line-height:1.45;color:#655c47}
+#child-pair-new{width:100%;min-height:43px}
+.child-pair-platform{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;
+ margin-top:14px;padding:4px;border-radius:12px;background:#eef4ef}
+.child-pair-platform button{min-height:43px;border:0;border-radius:9px;background:transparent;
+ color:#38664e;font-weight:800;font-size:12px;cursor:pointer}
+.child-pair-platform button[aria-pressed="true"]{background:white;color:#205d46;box-shadow:0 2px 7px #133c2718}
+.child-pair-platform button:focus-visible{outline:3px solid #d5a355;outline-offset:2px}
+.child-pair-instructions{padding:11px 13px;margin:8px 0;border:1px solid #dce9df;
+ background:#f8fcf9;border-radius:11px}
+.child-pair-instructions strong{display:block;font-size:13px}
+.child-pair-instructions p{font-size:12px;line-height:1.5;color:#627667;margin:4px 0 0}
+.child-pair-help{border-top:1px solid #e1ece4;margin-top:12px;padding:10px 0}
+.child-pair-help>summary{cursor:pointer;font-size:13px;font-weight:800;color:#285c45;padding:7px 0}
+.child-pair-help-content{padding:4px 0 8px;font-size:12px;line-height:1.55;color:#526f5e}
+.child-pair-help-content p{margin:5px 0 9px}
+@media(max-width:700px){
+ #family-view .family-child-setup .family-child-help{min-height:39px}
+ #family-view .family-child-setup .family-child-qr{flex-shrink:0}
+ .child-pair-steps{gap:4px}
+ .child-pair-steps li{padding:9px 3px}
+ .child-pair-steps li strong{font-size:10px}
+}

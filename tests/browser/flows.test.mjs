@@ -1643,7 +1643,7 @@ test('2.1 parent email OTP, create family and cloud-mode dashboard work with moc
  await page.locator('#child-pair-dialog').waitFor({state:'visible'});
  setup.set('child-1','activated');
  await page.locator('#child-pair-close').click();
- await page.getByText('Åpnet på telefonen').first().waitFor();
+ await page.getByText('QR-kode skannet').first().waitFor();
  assert.equal(await page.locator('#plan-child-app-setup').isVisible(),true,
   'QR activation must not hide the home-screen install reminder');
  setup.set('child-1','installed');
