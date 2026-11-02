@@ -161,7 +161,7 @@ test('invalid signature and forged public background requests are blocked',async
  assert.equal(validSignature(JSON.stringify(body),signJob(JSON.stringify(body),env.AI_JOB_SECRET),env.AI_JOB_SECRET),true);
 });
 test('already audited cached AI result is served without PDF.js and without re-dispatch',async()=>{
- const store=memoryStore();store.map.set(key,{...normalizeAIPlan(aiRaw,meta),model:'gpt-4.1-mini',homeworkSourceVersion:2,
+ const store=memoryStore();store.map.set(key,{...normalizeAIPlan(aiRaw,meta),model:'gpt-4.1-mini',homeworkSourceVersion:3,
   sourceAudit:{status:'ok',sourceFacts:0,missing:0,unsupported:0},
   digestPracticalEvidenceVersion:1,digestPracticalHighlights:[]});
  let parseCount=0,queueCount=0;
@@ -299,10 +299,10 @@ test('Pre-existing cached AI homework is repaired from PDF columns once, persist
  assert.deepEqual(first.homework.map(x=>[x.subject,x.dueDay]),[
   ['Norsk','Tirsdag'],['Matte','Torsdag'],['Sosialt',null]]);
  assert.equal(first.homeworkSourceVerified,true);
- assert.equal(first.homeworkSourceVersion,2);
+ assert.equal(first.homeworkSourceVersion,3);
  const second=await (await handler(new Request(url))).json();
  assert.deepEqual(second.homework,first.homework);
  assert.equal(parses,1,'The PDF should be parsed only once per cached document/version');
  assert.equal(dispatches,0,'No model re-run is necessary');
- assert.equal((await store.get(key)).homeworkSourceVersion,2,'Corrected cached result persists');
+ assert.equal((await store.get(key)) .homeworkSourceVersion,3,'Corrected cached result persists');
 });
