@@ -757,15 +757,15 @@ test('V2 family overview combines two children and keeps completion independentl
  await ensurePracticalOpen(page);
  assert.equal(await page.locator('#family-reminders').isVisible(),true);
  await ensurePracticalOpen(page);
- await page.locator('[data-family-focus="week"]').click();
- assert.equal(await page.locator('[data-family-focus="week"]').getAttribute('aria-pressed'),'true');
+ await page.locator('#family-focus-filter').selectOption('week');
+ assert.equal(await page.locator('#family-focus-filter').inputValue(),'week');
  await ensurePracticalOpen(page);
  await page.locator('#family-reminders').getByText(/Gymtøy/).first().waitFor({state:'visible'});
  assert.match(await page.locator('#family-reminders').innerText(),/Gymtøy/);
  assert.doesNotMatch(await page.locator('#family-reminders').innerText(),/Les en bok fra skolen/);
  await ensurePracticalOpen(page);
- await page.locator('[data-family-focus="today"]').click();
- assert.equal(await page.locator('[data-family-focus="today"]').getAttribute('aria-pressed'),'true');
+ await page.locator('#family-focus-filter').selectOption('today');
+ assert.equal(await page.locator('#family-focus-filter').inputValue(),'today');
  await page.locator('#family-cards [data-family-compact-open]:visible, #family-cards [data-family-open]:visible').first().click();
  await page.locator('#homework-list input[type=checkbox]').first().waitFor();
  await page.locator('#homework-list input[type=checkbox]').first().check();
@@ -950,7 +950,7 @@ test('Practical overview limits notices to five, expands without an AI call, and
  });
  await page.reload({waitUntil:'domcontentloaded'});
  await ensurePracticalOpen(page);
- await page.locator('[data-family-focus="week"]').click();
+ await page.locator('#family-focus-filter').selectOption('week');
  await page.locator('.family-reminder').first().waitFor({state:'visible'});
  assert.equal(await page.locator('.family-reminder').count(),5);
  assert.match(await page.locator('#family-reminders-more').innerText(),/Vis alle/);
@@ -994,7 +994,7 @@ test('Family AI ranks advance preparations first, visually highlights them, and 
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-cards .family-mobile-progress-track:visible, #family-cards .family-child-progress:visible').waitFor({state:'visible'});
  await ensurePracticalOpen(page);
- await page.locator('[data-family-focus="week"]').click();
+ await page.locator('#family-focus-filter').selectOption('week');
  await page.locator('.family-reminder-priority').filter({hasText:important})
   .waitFor({state:'visible',timeout:15000});
  const reminders=await page.locator('.family-reminder').allInnerTexts();
@@ -1050,7 +1050,7 @@ test('Family workday changes and vaccinations outrank homework and even conflict
  assert.match(await page.locator('#family-reminders').innerText(),/SFO er stengt/);
  assert.match(await page.locator('#family-reminders').innerText(),/Vaksine/);
  await ensurePracticalOpen(page);
- await page.locator('[data-family-focus="week"]').click();
+ await page.locator('#family-focus-filter').selectOption('week');
  await ensurePracticalOpen(page);
  await page.locator('.family-reminder-workday').first().waitFor({state:'visible'});
  assert.equal(await page.locator('.family-reminder-workday').count(),2);
@@ -1093,7 +1093,7 @@ test('Family notices have a short source-extractive headline, verified date, ful
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-cards .family-mobile-progress-track:visible, #family-cards .family-child-progress:visible').waitFor({state:'visible'});
  await ensurePracticalOpen(page);
- await page.locator('[data-family-focus="week"]').click();
+ await page.locator('#family-focus-filter').selectOption('week');
  const card=page.locator('.family-reminder').filter({hasText:'planleggingsdag'});
  await card.locator('.family-reminder-date').waitFor({state:'visible'});
  assert.match(await card.locator('.family-reminder-date').innerText(),/fredag 30. oktober/i);
