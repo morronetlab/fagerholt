@@ -33,6 +33,7 @@
   <link rel="stylesheet" href="/child-app-setup.css">
   <link rel="stylesheet" href="/family-desktop-tabs.css">
   <link rel="stylesheet" href="/mobile-keyboard.css">
+  <link rel="stylesheet" href="/family-child-dialog.css">
 </head>
 <body>
 <a class="skip-link" href="#main-content">Hopp til innhold</a>
@@ -282,18 +283,6 @@
         </div>
       </div>
       <p id="family-load-status" class="family-status" role="status" aria-live="polite"></p>
-      <form id="family-form" class="family-form" hidden aria-labelledby="family-form-title">
-        <div class="family-form-head"><h3 id="family-form-title">Legg til barn</h3><button type="button" id="family-cancel" class="family-form-close" aria-label="Lukk skjemaet">✕</button></div>
-        <div class="family-fields">
-          <label>Navn eller kallenavn<input id="family-name" type="text" maxlength="40" required autocomplete="off" placeholder="F.eks. Barn 1"></label>
-          <label>Skole<select id="family-school" required><option value="">Velg skole</option></select></label>
-          <label>Klasse eller trinn<select id="family-grade" required disabled><option value="">Velg skole først</option></select></label>
-          <label>Gruppe (valgfritt)<input id="family-group" type="text" maxlength="35" placeholder="F.eks. Rød gruppe"></label>
-        </div>
-        <p id="family-form-tip" class="family-form-tip">Bruk gjerne kallenavn. Lagringen avhenger av om du bruker familiekonto.</p>
-        <p id="family-form-status" class="family-form-status" role="status" aria-live="polite"></p>
-        <button id="family-save" type="submit" class="family-add-button">Legg til i familien</button>
-      </form>
       <div id="family-empty" class="family-empty"><span aria-hidden="true">🏠</span><h3>Legg til det første barnet</h3><p>Velg skole og klassetrinn, så finner vi ukeplanen.</p><button id="family-empty-add" type="button" class="family-add-button">+ Legg til første barn</button></div>
       <div id="family-cards" class="family-cards" aria-live="polite"></div>
       </section>
@@ -511,6 +500,20 @@
   </main>
   <footer>Skoleuka · <span id="footer-school">Kristiansand</span> · Uten familiekonto lagres valg på denne enheten. Med familiekonto deles lekseprogresjonen. <span class="footer-meta"><a href="https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/grunnskole/" target="_blank" rel="noopener noreferrer">Skoleoversikten ↗</a> · <a href="mailto:mortenronn@gmail.com?subject=Feilrapport%20Skoleuka">Rapporter feil: mortenronn@gmail.com</a> · <a id="git-version" href="#" target="_blank" rel="noopener noreferrer" hidden>Git-versjon</a></span></footer>
 </div>
+<dialog id="family-child-dialog" class="family-child-dialog" aria-labelledby="family-form-title" aria-describedby="family-form-tip" aria-modal="true">
+<form id="family-form" class="family-form" aria-labelledby="family-form-title">
+        <div class="family-form-head"><h3 id="family-form-title">Legg til barn</h3><button type="button" id="family-cancel" class="family-form-close" aria-label="Lukk skjemaet">✕</button></div>
+        <div class="family-fields">
+          <label>Navn eller kallenavn<input id="family-name" type="text" maxlength="40" required autocomplete="off" placeholder="F.eks. Barn 1"></label>
+          <label>Skole<select id="family-school" required><option value="">Velg skole</option></select></label>
+          <label>Klasse eller trinn<select id="family-grade" required disabled><option value="">Velg skole først</option></select></label>
+          <label>Gruppe (valgfritt)<input id="family-group" type="text" maxlength="35" placeholder="F.eks. Rød gruppe"></label>
+        </div>
+        <p id="family-form-tip" class="family-form-tip">Bruk gjerne kallenavn. Lagringen avhenger av om du bruker familiekonto.</p>
+        <p id="family-form-status" class="family-form-status" role="status" aria-live="polite"></p>
+        <div class="family-child-dialog-actions"><button id="family-save" type="submit" class="family-add-button">Legg til i familien</button></div>
+      </form>
+</dialog>
 <dialog id="child-pair-dialog" class="child-pair-dialog" aria-labelledby="child-pair-title" aria-describedby="child-pair-intro" aria-modal="true">
  <header class="child-pair-header"><div><p class="family-eyebrow">MIN EGEN UKEPLAN</p>
  <h2 id="child-pair-title">Installer barnets Skoleuka</h2></div>

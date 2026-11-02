@@ -844,7 +844,29 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    schedulePoll(pair,run,delay);
   }
  }
- function closeForm(){editing=null;el('family-form').hidden=true;setStatus('');}
+ const childDialog=el('family-child-dialog');
+ let childReturnFocus=null,childReturnScrollY=0,originalChildLockTop='';
+ function cleanupChildDialog(){
+  // Native dialogs also close on Escape. Always release scroll lock and
+  // restore focus, including when the guardian cancels an edit.
+  document.documentElement.classList.remove('account-modal-open');
+  document.body.classList.remove('account-modal-open');
+  if(originalChildLockTop)document.body.style.setProperty('--account-lock-top',originalChildLockTop);
+  else document.body.style.removeProperty('--account-lock-top');
+  window.scrollTo({top:childReturnScrollY,left:0,behavior:'instant'});
+  if(active){
+   const fallback=window.matchMedia('(max-width:700px)').matches?
+    el('family-mobile-add'):el('family-add');
+   const target=childReturnFocus?.isConnected&&childReturnFocus.getClientRects().length?
+    childReturnFocus:fallback;
+   if(target?.getClientRects().length)target.focus({preventScroll:true});
+  }
+  childReturnFocus=null;editing=null;setStatus('');
+ }
+ function closeForm(){
+  if(childDialog.open)childDialog.close();
+  editing=null;setStatus('');
+ }
  async function loadGrades(current=''){
   const i=++gradeRun,school=el('family-school').value,select=el('family-grade');
   select.disabled=true;select.replaceChildren(new Option('Velg skole først',''));
@@ -865,14 +887,27 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   }
  }
  function openForm(p=null){
+  if(childDialog.open)return;
   editing=p?.id||null;
-  el('family-form').hidden=false;
   el('family-form-title').textContent=p?'Rediger barneprofil':'Legg til barn';
   el('family-name').value=p?.name||'';
   el('family-school').value=p?.school||'';
   el('family-group').value=p?.group||'';
   el('family-save').textContent=p?'Lagre endringer':'Legg til i familien';
-  setStatus('');void loadGrades(p?.grade||'');el('family-name').focus();
+  setStatus('');void loadGrades(p?.grade||'');
+  childReturnFocus=document.activeElement;
+  childReturnScrollY=window.scrollY;
+  originalChildLockTop=document.body.style.getPropertyValue('--account-lock-top');
+  childDialog.showModal();
+  document.body.style.setProperty('--account-lock-top','-'+childReturnScrollY+'px');
+  document.documentElement.classList.add('account-modal-open');
+  document.body.classList.add('account-modal-open');
+  childDialog.scrollTop=0;
+  // Do not force the software keyboard to cover half the modal on open.
+  // Desktop users can start typing immediately.
+  const initialFocus=window.matchMedia('(max-width:700px)').matches?
+   el('family-cancel'):el('family-name');
+  initialFocus.focus({preventScroll:true});
  }
  const schools=Object.values(siteConfig.schools).sort((a,b)=>a.name.localeCompare(b.name,'nb-NO'));
  el('family-school').innerHTML='<option value="">Velg skole</option>'+schools.map(s=>
@@ -927,7 +962,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     if(!recentlyChecked)void fetchPlans();
     else{render();void fetchCalendars();}
   },
-  leave:()=>{active=false;syncCloudChrome();activityUI.leave();run++;clearOverviewTimer();overviewBatch=null;
+  leave:()=>{if(childDialog.open)closeForm();active=false;syncCloudChrome();activityUI.leave();run++;clearOverviewTimer();overviewBatch=null;
    stopPollTimers();pendingJobs.clear();autoRetries.clear();
     for(const [pair,state] of priorityStates)if(state.status!=='ready')priorityStates.delete(pair);
     loading.clear();onModeChange();},
@@ -1070,6 +1105,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const button=e.target.closest('[data-family-open]');
   if(button){const p=byId(button.dataset.familyOpen);if(p)openChildProfile(p);}
  });
+ childDialog.addEventListener('close',cleanupChildDialog);
  el('family-cancel').addEventListener('click',closeForm);
  el('family-refresh').addEventListener('click',api.refresh);
  el('family-return').addEventListener('click',()=>{api.leave();onOpenSingle();});
