@@ -68,6 +68,12 @@ for(const width of [390,1280]){
   assert.equal(await buttons.first().getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('.primary-nav').isVisible(),false);
   assert.equal(await page.locator('#guardian-plan-summary').isVisible(),true);
+  assert.equal(await page.locator('#plan-context').isVisible(),false,
+   'The selected child and grade must not appear in a redundant context bar');
+  assert.equal(await page.locator('#plan-welcome-title').isVisible(),false,
+   'No second oversized greeting for the already-selected child');
+  assert.match(await page.locator('#guardian-plan-day-subtitle').innerText(),
+   /skole.*2\. trinn/i,'School and grade appear once in the compact day summary');
   await page.locator('[data-day="3"]').click();
   assert.equal(await page.locator('[data-day="3"]').getAttribute('aria-current'),'date');
   await page.locator('#homework-list input[type="checkbox"]').first().check();
