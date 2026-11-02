@@ -239,6 +239,18 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  await second.locator('#account-open-family').click();
  await second.locator('#family-cards .family-child').nth(1).waitFor();
  assert.equal(await second.locator('#family-cards .family-child').count(),2);
+ // Desktop guardians should not be offered the public landing page, even
+ // while viewing an individual child's plan.
+ assert.equal(await second.locator('body').evaluate(el=>el.classList.contains('family-account-ready')),true);
+ assert.equal(await second.locator('#nav-home').isVisible(),false);
+ assert.equal(await second.locator('#family-toggle').isVisible(),true);
+ assert.equal(await second.locator('#nav-plan').isVisible(),true);
+ await second.locator('#nav-plan').click();
+ await second.locator('#app-view').waitFor({state:'visible'});
+ assert.equal(await second.locator('#nav-home').isVisible(),false);
+ assert.equal(await second.locator('#home-link').getAttribute('aria-label'),'Gå til Min familie');
+ await second.locator('#home-link').click();
+ await second.locator('#family-view').waitFor({state:'visible'});
  assert.equal(backend.state.members.size,2);
  // Parent invites the first child. The second child's QR must remain untouched.
  await parent.locator('#family-cards .family-child-qr').first().click();
@@ -322,6 +334,11 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  await childPage.locator('#child-refresh').click();
  await childPage.locator('#child-setup').waitFor({state:'visible'});
  assert.equal(backend.state.revoked.length,1);
+ // Logging out restores the public entry point on desktop.
+ await second.locator('#account-button').click();
+ await second.locator('#account-signout').click();
+ await second.waitForFunction(()=>!document.body.classList.contains('family-account-ready'));
+ assert.equal(await second.locator('#nav-home').isVisible(),true);
  assert.deepEqual(a.errors,[]);
  assert.deepEqual(b.errors,[]);
  assert.deepEqual(c.errors,[]);
