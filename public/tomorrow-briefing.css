@@ -59,3 +59,21 @@
  .family-tomorrow-brief-notice{font-size:11px}
  .family-tomorrow-brief-actions button{min-height:34px;font-size:11px}
 }
+
+/* Reserve predictable space while the first complete overview is assembled.
+   Show a single finished briefing, never partial items that grow on scroll. */
+#family-tomorrow-brief{min-height:254px;box-sizing:border-box}
+#family-tomorrow-brief[data-loading="true"]{min-height:254px}
+#family-tomorrow-brief .tomorrow-loading-item{
+ min-height:57px;border-color:#e4ede7;background:#f7faf8;
+ border-left-color:#e4ede7
+}
+#family-tomorrow-brief .tomorrow-loading-line{
+ display:block;width:80%;height:10px;margin:6px 0;border-radius:9px;background:#e5eee7
+}
+#family-tomorrow-brief .tomorrow-loading-item:nth-child(even) .tomorrow-loading-line{width:66%}
+@media(max-width:700px){
+ #family-tomorrow-brief{min-height:335px}
+ #family-tomorrow-brief[data-loading="true"]{min-height:335px}
+ #family-tomorrow-brief .tomorrow-loading-item{min-height:45px}
+}
