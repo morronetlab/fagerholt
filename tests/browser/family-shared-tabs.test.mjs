@@ -27,6 +27,9 @@ for(const width of [390,1280]){
    await page.locator('#landing-other-options').click();
   await page.locator('#landing-local-family').click();
   await page.locator('#family-view').waitFor({state:'visible'});
+  // The guest landing path intentionally opens the native Add child modal.
+  await page.locator('#family-cancel').click();
+  await page.waitForFunction(()=>!document.querySelector('#family-child-dialog').open);
   const tabs=page.locator('#family-mobile-nav [data-family-mobile-tab]');
   assert.equal(await tabs.count(),3);
   assert.equal(await tabs.first().isVisible(),true);

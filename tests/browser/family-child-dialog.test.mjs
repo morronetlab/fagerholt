@@ -27,7 +27,8 @@ async function openPage(t,width,{keyboard=false}={}){
   body:JSON.stringify({grades:[{code:'2'},{code:'5A'}]})
  }));
  await page.goto(server.baseURL+'/',{waitUntil:'load'});
- await page.locator('#landing-other-options').click();
+ if(await page.locator('#landing-other-options').isVisible())
+  await page.locator('#landing-other-options').click();
  await page.locator('#landing-local-family').click();
  const modal=page.locator('#family-child-dialog');
  await modal.waitFor({state:'visible'});
@@ -50,6 +51,7 @@ test('Add child is a real, accessible mobile modal with cancel and Escape',async
  assert.equal(await page.locator('#family-name').inputValue(),'');
  await page.keyboard.press('Escape');
  await page.waitForFunction(()=>!document.querySelector('#family-child-dialog').open);
+ await page.waitForFunction(()=>!document.body.classList.contains('account-modal-open'));
  assert.equal(await page.evaluate(()=>document.body.classList.contains('account-modal-open')),false);
  assert.deepEqual(errors,[]);
 });
