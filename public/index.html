@@ -59,6 +59,7 @@
   <link rel="stylesheet" href="/mobile-keyboard.css">
   <link rel="stylesheet" href="/family-child-dialog.css">
   <link rel="stylesheet" href="/family-activity-dialog.css">
+  <link rel="stylesheet" href="/guardian-plan.css">
 </head>
 <body>
 <a class="skip-link" href="#main-content">Hopp til innhold</a>
@@ -394,15 +395,33 @@
       <p class="fineprint">Vi henter kun opplysninger fra skolens offisielle ukeplan for valgt klassetrinn.</p>
     </section>
     <div id="app-view" hidden>
+      <nav id="guardian-plan-toolbar" class="guardian-plan-toolbar" aria-label="Bytt mellom barnas ukeplaner" hidden>
+        <button id="plan-back-family" class="guardian-plan-back" type="button">← Min familie</button>
+        <div id="guardian-plan-profiles" class="guardian-plan-profiles" role="group" aria-label="Velg barn"></div>
+        <span id="guardian-plan-week" class="guardian-plan-week"></span>
+      </nav>
       <div class="plan-context" id="plan-context">
         <div class="plan-context-name"><span class="plan-context-label">DIN UKEPLAN</span><strong id="plan-context-class">Velg skole og klasse</strong><span id="today" class="date-chip"></span></div>
         <div class="plan-context-actions"><span class="week-badge" id="week-label">UKE —</span>
-          <button id="plan-back-family" type="button" class="ghost" hidden>← Min familie</button>
           <button id="change-school" type="button" class="ghost">Bytt skole</button>
           <button id="change-grade" type="button" class="ghost">Bytt klassetrinn</button>
           <details id="mobile-selection-menu" class="mobile-selection-menu"><summary>Endre valg</summary><div class="mobile-selection-actions"><button id="mobile-change-grade" type="button">Bytt klassetrinn</button><button id="mobile-change-school" type="button">Bytt skole</button></div></details>
         </div>
       </div>
+      <section id="guardian-plan-summary" class="guardian-plan-summary" aria-label="Kort oversikt for foresatte" hidden>
+        <div class="guardian-plan-summary-line">
+          <div><strong id="guardian-plan-day-title">Valgt skoledag</strong>
+            <span id="guardian-plan-day-subtitle">Lekser og pakkeliste</span></div>
+          <span id="guardian-plan-homework-state" class="guardian-plan-progress" role="status"></span>
+        </div>
+        <p id="guardian-plan-packing-state" class="guardian-plan-packing-state"></p>
+        <div class="guardian-plan-shortcuts" role="group" aria-label="Gå til innhold">
+          <button type="button" data-guardian-jump="school">Skoledag</button>
+          <button type="button" data-guardian-jump="packing">Pakkeliste</button>
+          <button type="button" data-guardian-jump="homework">Lekser</button>
+          <button type="button" data-guardian-jump="notices">Beskjeder</button>
+        </div>
+      </section>
       <section id="plan-child-app-setup" class="plan-child-app-setup" aria-labelledby="plan-child-app-setup-title" hidden>
         <div class="plan-child-app-setup-copy">
           <strong id="plan-child-app-setup-title">Legg Skoleuka på barnets telefon</strong>
