@@ -980,6 +980,16 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     const p=byId(id);if(!p||!task)throw Error('Fant ikke denne leksen.');
     await updateCloud(p,task,checked);
   },
+  // Use the same per-child cloud packing keys as the family overview and
+  // child app; local family profiles continue using the existing local keys.
+  isPackingChecked:(id,item,day)=>{
+    const p=byId(id);return Boolean(p&&cloud&&cloudBagChecked(p,item,calendar(),day));
+  },
+  updatePacking:async(id,item,day,checked)=>{
+    const p=byId(id);
+    if(!p||!item||!DAYS.includes(day))throw Error('Fant ikke pakkelistepunktet.');
+    await updateBag(p,item,day,checked);
+  },
   setCloud:async(client,familyId,remoteChildren)=>{
     cloud={client,familyId};syncCloudChrome();
     profiles=remoteChildren.map(x=>({id:x.id,name:x.nickname,school:x.school_id,
