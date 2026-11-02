@@ -513,8 +513,9 @@ test('Mobile local family keeps guest navigation and shares persistent header ac
  await page.locator('[data-family-mobile-tab="overview"]').click();
  await page.locator('#family-cards .family-child-compact').first().click();
  await page.locator('#app-view').waitFor({state:'visible'});
- assert.equal(await page.locator('.primary-nav').isVisible(),true,
-  'The regular bottom navigation remains available on child week plans');
+ assert.equal(await page.locator('.primary-nav').isVisible(),false,
+  'Parent-opened child plans use the sibling toolbar, not the generic bottom bar');
+ assert.equal(await page.locator('#guardian-plan-toolbar').isVisible(),true);
  assert.deepEqual(errors,[]);
 });
 test('Desktop family navigation and overview header remain unchanged',async t=>{
@@ -768,7 +769,8 @@ test('V2 family overview combines two children and keeps completion independentl
  await page.locator('#family-cards [data-family-compact-open]:visible, #family-cards [data-family-open]:visible').first().click();
  await page.locator('#homework-list input[type=checkbox]').first().waitFor();
  await page.locator('#homework-list input[type=checkbox]').first().check();
- await page.locator('#family-toggle').click();
+ // The guardian plan uses its own sibling/back toolbar, not the old bottom menu.
+ await page.locator('#plan-back-family').click();
  await page.locator('#family-cards .family-child').first().locator('.family-mobile-progress-track').waitFor({state:'visible'});
  assert.match(await page.locator('#family-cards .family-child').first().locator('.family-mobile-progress').innerText(),/1 av 2/);
  assert.match(await page.locator('#family-cards .family-child').nth(1).locator('.family-mobile-progress').innerText(),/0 av 2/);

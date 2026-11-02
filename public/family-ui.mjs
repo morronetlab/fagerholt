@@ -964,6 +964,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const api={
   isActive:()=>active,hasCloudFamily:()=>Boolean(cloud?.familyId),
   hasProfiles:()=>profiles.length>0,profileById:byId,
+  // Used by the guardian's sibling switcher; never expose cloud credentials.
+  profilesForNavigation:()=>profiles.map(p=>({id:p.id,name:p.name})),
   firstProfile:()=>profiles[0]||null,
   activitiesForProfile:(id,year,week,date)=>activityOccurrences(activityUI.getRows(),year,week)
    .filter(x=>x.date===date&&(!x.child_id||x.child_id===id)),
@@ -977,6 +979,16 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   updateHomework:async(id,task,checked)=>{
     const p=byId(id);if(!p||!task)throw Error('Fant ikke denne leksen.');
     await updateCloud(p,task,checked);
+  },
+  // Use the same per-child cloud packing keys as the family overview and
+  // child app; local family profiles continue using the existing local keys.
+  isPackingChecked:(id,item,day)=>{
+    const p=byId(id);return Boolean(p&&cloud&&cloudBagChecked(p,item,calendar(),day));
+  },
+  updatePacking:async(id,item,day,checked)=>{
+    const p=byId(id);
+    if(!p||!item||!DAYS.includes(day))throw Error('Fant ikke pakkelistepunktet.');
+    await updateBag(p,item,day,checked);
   },
   setCloud:async(client,familyId,remoteChildren)=>{
     cloud={client,familyId};syncCloudChrome();
