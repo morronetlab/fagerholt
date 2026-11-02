@@ -393,6 +393,32 @@
 .family-important-empty{margin:0;padding:12px 14px;background:#f6faf6;border-radius:10px;
  color:#647c6e;font-size:12px;line-height:1.5}
 
+/* A single compact action row, matching the "Hva skjer i morgen?" footer. */
+.family-important-actions{display:flex;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-top:9px}
+.family-important-actions #family-mobile-important-more,
+.family-important-actions .family-disclosure>summary{
+ display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;
+ width:auto;max-width:100%;min-height:36px;margin:0;padding:7px 11px;
+ border:1px solid #c9dccf;border-radius:10px;background:#fff;
+ color:#2f6a51;font-size:12px;font-weight:800;line-height:1.4;cursor:pointer;
+ box-shadow:none;text-align:left;white-space:normal
+}
+.family-important-actions #family-mobile-important-more[hidden]{display:none}
+.family-important-actions .family-disclosure{flex:0 1 auto;min-width:0;max-width:100%;margin:0;border:0}
+.family-important-actions .family-disclosure>summary{gap:8px;list-style:none}
+.family-important-actions .family-disclosure>summary::after{
+ content:'⌄';margin:0;flex:0 0 auto;color:#39745a;font-size:17px;line-height:1
+}
+.family-important-actions .family-disclosure[open]{flex:0 0 100%;max-width:100%}
+.family-important-actions .family-disclosure[open]>summary{background:#eef7f1}
+.family-important-actions .family-disclosure[open]>summary::after{content:'⌃'}
+.family-important-actions .family-disclosure-body{padding-top:12px}
+.family-important-actions .family-disclosure-time[hidden]{display:none!important}
+.family-important-actions #family-mobile-important-more:focus-visible,
+.family-important-actions .family-disclosure>summary:focus-visible{
+ outline:3px solid #7cbea0;outline-offset:2px
+}
+
 /* Native details keep the source, reporting and all actions accessible. */
 .family-disclosure{margin-top:11px;border-top:1px solid #e3ece4}
 .family-disclosure>summary{display:flex;align-items:center;gap:8px;min-height:45px;
