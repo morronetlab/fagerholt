@@ -7,7 +7,7 @@ const source=()=>({
  schoolId:'wildsminne',grade:'2',week:45,year:2026,status:'ok',parser:'ai',aiStatus:'ready',
  homeworkSourceVersion:1,homeworkDayColumnsVersion:1,
  homework:[
-  {subject:'Norsk',text:'Les i bok i sekken 10-15 min.',dueDay:null,repeatDays:[],group:null},
+  {subject:'Norsk',text:'Les i bok i sekken 10-15.min.',dueDay:null,repeatDays:[],group:null},
   {subject:'Matte',text:'Tell til hundre – hva skjer med tallet når det består av to siffer? (Det består av en mengde tiere og en mengde enere). Bruk gjerne penger eller andre konkreter hjemme.',dueDay:null,repeatDays:[],group:null},
  ]
 });
@@ -16,11 +16,11 @@ test('Known week 45 tasks get their guardian-confirmed days even with already-mi
  assert.notEqual(result,p);
  assert.equal(result.homework.length,2);
  assert.equal(result.homework[0].dueDay,null);
- assert.deepEqual(result.homework[0].repeatDays,['Tirsdag','Onsdag','Torsdag']);
+ assert.deepEqual(result.homework[0].repeatDays,['Mandag','Tirsdag','Onsdag','Torsdag']);
  assert.equal(result.homework[1].dueDay,'Mandag');
  assert.deepEqual(result.homework[1].repeatDays,[]);
  assert.deepEqual(expandHomework(result.homework).map(item=>item.repeatDay||item.dueDay),[
-  'Tirsdag','Onsdag','Torsdag','Mandag'
+  'Mandag','Tirsdag','Onsdag','Torsdag','Mandag'
  ]);
  assert.deepEqual(p.homework.map(x=>x.repeatDays),[[],[]],
   'Do not mutate the shared cached plan');

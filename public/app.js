@@ -162,7 +162,7 @@ function renderGuardianSummary(){
  const profile=state.profileId?familyUI?.profileById(state.profileId):null;
  if(!profile||familyUI?.isActive())return;
  $('guardian-plan-day-title').textContent=DAYS[state.day]+' '+titleDay(state.day);
- $('guardian-plan-day-subtitle').textContent=profile.name+' · '+state.grade+'. trinn';
+ $('guardian-plan-day-subtitle').textContent=(state.school?.name||'Skole')+' · '+state.grade+'. trinn';
  if(state.loading||!state.plan||state.plan.aiStatus==='processing'||
   !['ok','partial'].includes(state.plan.status)){
   $('guardian-plan-homework-state').textContent='Henter ukeplan …';
@@ -171,9 +171,15 @@ function renderGuardianSummary(){
  }
  const all=expandHomework(state.plan.homework||[]);
  const homework=all.map((task,index)=>({task,index})).filter(x=>groupApplies(x.task,profile));
- const completed=homework.filter(x=>isChecked('homework',x.index)).length;
- $('guardian-plan-homework-state').textContent=homework.length?
-  completed+' av '+homework.length+' lekser ferdig':'Ingen lekser';
+ // The summary is headed by a selected weekday. Count only that day's
+ // source-dated assignments; undated-only plans keep their existing total.
+ const dated=homework.some(({task})=>Boolean(task.repeatDay||task.dueDay));
+ const shown=dated?homework.filter(({task})=>
+   (task.repeatDay||task.dueDay)===DAYS[state.day]):homework;
+ const completed=shown.filter(x=>isChecked('homework',x.index)).length;
+ $('guardian-plan-homework-state').textContent=shown.length?
+  completed+' av '+shown.length+(dated?' lekser i dag':' lekser ferdig'):
+  'Ingen lekser i dag';
  const bag=getBag().filter(item=>groupApplies(item,profile));
  const packed=bag.filter((_,index)=>isChecked('bag',index,DAYS[state.day])).length;
  $('guardian-plan-packing-state').textContent=bag.length?
@@ -564,7 +570,7 @@ async function reload({quiet=false,statusOnly=quiet}={}){
     // A ready AI-status response can hold older, unverified homework data.
     // Read the canonical cached plan through /api/plan, which validates PDF
     // columns and repairs any stale source deadlines before displaying it.
-    if(statusOnly&&fresh.aiStatus==='ready'&&fresh.homeworkSourceVersion!==2){
+    if(statusOnly&&fresh.aiStatus==='ready'&&fresh.homeworkSourceVersion!==3){
       try{
         fresh=await fetchJSON(`/api/plan?school=${encodeURIComponent(schoolId)}&grade=${encodeURIComponent(grade)}${viewingNextWeek?'&nextWeek=1':''}`,60000);
       }catch(error){
@@ -684,7 +690,7 @@ function openFamilyProfile(profile,{upcoming=false,cachedPlan=null,record=true,
   // A source-verified AI plan is already available from the family dashboard.
   // Render it immediately: do not show the loading screen or repeat /api/plan.
   const initial= cachedPlan?.aiStatus==='ready'&&cachedPlan?.parser==='ai'&&
-   cachedPlan.homeworkSourceVersion===2&&cachedPlan.status==='ok' ? cachedPlan:null;
+   cachedPlan.homeworkSourceVersion===3&&cachedPlan.status==='ok' ? cachedPlan:null;
   state.plan=initial;state.loading=!initial;state.planError=null;
   state.weather=null;state.weatherError=null;
   const previousDay=state.day;
