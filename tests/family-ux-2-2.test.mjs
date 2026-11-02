@@ -78,3 +78,26 @@ test('Full-week family model retains group-specific structured vaccine notices w
  assert.equal(alert.visible[0].scope,red.name);
  assert.ok(alert.visible[0].source.url.includes('minskole.no'));
 });
+
+test('Three duplicate Friday planning notices do not hide a sourced vaccination',()=>{
+ const date='2026-11-06',source={name:'Skolens PDF',url:'https://www.minskole.no/plan.pdf'};
+ const school1={kind:'school',important:true,date,title:'Det er planleggingsdag for ansatte på fredag. Da har elevene fri.',scope:'Barn 1',source};
+ const school2={...school1,title:'Minner om at det er planleggingsdag for ansatte på fredag.',scope:'Barn 2'};
+ const official={kind:'municipal',important:true,date,title:'Fridag (Sørlandsk lærerstevne)',scope:'Wilds Minne skole',
+  source:{name:'Offisiell skolerute',url:'https://www.kristiansand.kommune.no/skoleruta'}};
+ const vaccination={kind:'school',important:true,date:'2026-11-04',title:'Vaksinasjon onsdag kl. 10',
+  scope:'Barn 2',source};
+ const result=importantFamilyNotices(data([school1,official,school2,vaccination]),{limit:3});
+ assert.ok(result.visible.some(x=>/vaksinasjon/i.test(x.title)));
+ assert.equal(result.visible.filter(x=>/planleggingsdag|lærerstevne/i.test(x.title)).length,1);
+ assert.equal(result.visible.find(x=>/lærerstevne/i.test(x.title))?.scope,
+  'Barn 1, Wilds Minne skole, Barn 2');
+});
+test('Vaccination receives a preview slot even when closures occur on different days',()=>{
+ const notices=[0,1,2].map(i=>({...closure,date:'2026-11-0'+(i+2),
+  title:'Planleggingsdag '+(i+1)+', elevene har fri',scope:'Barn A'}));
+ const result=importantFamilyNotices(data([...notices,vaccine]),{limit:3});
+ assert.equal(result.visible.length,3);
+ assert.ok(result.visible.some(x=>/Vaksinasjon/.test(x.title)));
+ assert.equal(result.remaining,1);
+});
