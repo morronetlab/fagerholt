@@ -81,6 +81,11 @@ function isChecked(section,index,day='all'){
    const task=expandHomework(state.plan?.homework||[])[index];
    return task?familyUI.isHomeworkChecked(state.profileId,task):false;
   }
+  if(section==='bag'&&state.profileId&&familyUI?.isCloudProfile(state.profileId)){
+   const profile=familyUI.profileById(state.profileId);
+   const item=getBag().filter(x=>groupApplies(x,profile))[index];
+   return item?familyUI.isPackingChecked(profile.id,item,day):false;
+  }
   try{return Boolean(JSON.parse(storageRead(progress(section,day))||'{}')[index]);}catch{return false;}
 }
 function setChecked(section,index,day,checked){
@@ -89,6 +94,15 @@ function setChecked(section,index,day,checked){
    if(!task)return;
    void familyUI.updateHomework(state.profileId,task,checked).then(()=>renderContent())
     .catch(error=>{renderContent();window.alert('Kunne ikke lagre leksen: '+error.message);});
+   renderContent();
+   return;
+  }
+  if(section==='bag'&&state.profileId&&familyUI?.isCloudProfile(state.profileId)){
+   const profile=familyUI.profileById(state.profileId);
+   const item=getBag().filter(x=>groupApplies(x,profile))[index];
+   if(!item)return;
+   void familyUI.updatePacking(profile.id,item,day,checked).then(()=>renderContent())
+    .catch(error=>{renderContent();window.alert('Kunne ikke lagre pakkestatus: '+error.message);});
    renderContent();
    return;
   }
@@ -160,9 +174,10 @@ function renderGuardianSummary(){
  $('guardian-plan-homework-state').textContent=homework.length?
   completed+' av '+homework.length+' lekser ferdig':'Ingen lekser';
  const bag=getBag().filter(item=>groupApplies(item,profile));
+ const packed=bag.filter((_,index)=>isChecked('bag',index,DAYS[state.day])).length;
  $('guardian-plan-packing-state').textContent=bag.length?
-  bag.length+' ting oppgitt i pakkelisten for '+DAYS[state.day].toLowerCase()+
-   '. Huk av i listen nedenfor.':'Ingen ekstra utstyr oppgitt for denne dagen.';
+  packed+' av '+bag.length+' ting pakket for '+DAYS[state.day].toLowerCase()+
+  '.':'Ingen ekstra utstyr oppgitt for denne dagen.';
 }
 function renderShell(){
   const hasSchool=Boolean(state.school),chosen=Boolean(state.grade&&hasSchool),inFamily=Boolean(familyUI?.isActive());
