@@ -409,8 +409,10 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    escape(info.label)+'</strong>'+
    (!info.complete?'<small>'+escape(info.description)+'</small>':'')+'</span>'+
    (info.action?'<button type="button" class="family-child-qr" data-family-pair="'+
-   escape(p.id)+'" aria-label="Vis QR-kode og appoppsett for '+escape(p.name)+'">'+
+   escape(p.id)+'" aria-label="'+escape(info.action+' for '+p.name)+'">'+
    escape(info.action)+'</button>':'')+
+   (!info.complete?'<button type="button" class="family-child-help" data-family-help="'+
+   escape(p.id)+'" aria-label="Trenger hjelp med barneappen til '+escape(p.name)+'?">Trenger hjelp?</button>':'')+
    '</div>';
  }
  function childCard(p,s,now){
@@ -1140,6 +1142,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   }
   const open=e.target.closest('[data-family-compact-open], [data-family-open]');
   if(open){const p=byId(open.dataset.familyCompactOpen||open.dataset.familyOpen);if(p)openChildProfile(p);return;}
+  const help=e.target.closest('[data-family-help]');
+  if(help){const p=byId(help.dataset.familyHelp);if(p&&cloud)childPairingUI.open(p,{showHelp:true});return;}
   const pair=e.target.closest('[data-family-pair]');
   if(pair){const p=byId(pair.dataset.familyPair);if(p&&cloud)childPairingUI.open(p);return;}
   const edit=e.target.closest('[data-family-edit]');

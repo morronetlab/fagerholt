@@ -510,22 +510,49 @@
   </main>
   <footer>Skoleuka · <span id="footer-school">Kristiansand</span> · Uten familiekonto lagres valg på denne enheten. Med familiekonto deles lekseprogresjonen. <span class="footer-meta"><a href="https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/grunnskole/" target="_blank" rel="noopener noreferrer">Skoleoversikten ↗</a> · <a href="mailto:mortenronn@gmail.com?subject=Feilrapport%20Skoleuka">Rapporter feil: mortenronn@gmail.com</a> · <a id="git-version" href="#" target="_blank" rel="noopener noreferrer" hidden>Git-versjon</a></span></footer>
 </div>
-<dialog id="child-pair-dialog" class="child-pair-dialog" aria-labelledby="child-pair-title" aria-modal="true">
+<dialog id="child-pair-dialog" class="child-pair-dialog" aria-labelledby="child-pair-title" aria-describedby="child-pair-intro" aria-modal="true">
  <header class="child-pair-header"><div><p class="family-eyebrow">MIN EGEN UKEPLAN</p>
- <h2 id="child-pair-title">Inviter barnet med QR-kode</h2></div>
+ <h2 id="child-pair-title">Installer barnets Skoleuka</h2></div>
  <button type="button" id="child-pair-close" class="family-form-close" aria-label="Lukk QR-invitasjon">✕</button></header>
- <p id="child-pair-intro">1. Skann QR-koden. 2. Legg appen på hjemskjermen. 3. Åpne appikonet for å bekrefte oppsettet.</p>
+ <p id="child-pair-intro">Følg stegene under. På iPad: Åpne i Safari og legg appen på Hjem-skjerm.</p>
+ <ol class="child-pair-steps" aria-label="Fremdrift for barneappen">
+  <li data-child-pair-step="qr"><span aria-hidden="true">1</span><strong>QR-kode</strong></li>
+  <li data-child-pair-step="scan"><span aria-hidden="true">2</span><strong>QR skannet</strong></li>
+  <li data-child-pair-step="install"><span aria-hidden="true">3</span><strong>App installert</strong></li>
+ </ol>
+ <div class="child-pair-current" role="status" aria-live="polite">
+  <strong id="child-pair-stage-label">Sjekker status …</strong>
+  <p id="child-pair-stage-description">Henter status for barnets enhet.</p>
+ </div>
+ <div class="child-pair-toolbar">
+  <button type="button" id="child-pair-check" class="family-light-button">↻ Sjekk status</button>
+  <span class="child-pair-note">Status oppdateres også mens vinduet er åpent.</span>
+ </div>
  <p id="child-pair-status" role="status" aria-live="polite"></p>
- <p class="child-pair-install-note">Oppsettet markeres som ferdig først når barnet åpner den installerte appen fra hjemskjermen. En skannet QR-kode er ikke nok.</p>
  <div id="child-pair-result" hidden>
    <img id="child-pair-qr" alt="QR-kode for barnets ukeplan" width="242" height="242">
-   <label class="child-pair-label">Invitasjonslenke<input id="child-pair-link" type="text" readonly aria-label="Privat invitasjonslenke til barnet"></label>
-   <button type="button" id="child-pair-copy" class="family-light-button">Kopier invitasjonslenke</button>
-   <p class="child-pair-hint">Koden kan bare brukes én gang og utløper etter 10 minutter. Hold den privat. Du kan oppheve tilgangen senere.</p>
+   <label class="child-pair-label">Privat invitasjonslenke<input id="child-pair-link" type="text" readonly aria-label="Privat invitasjonslenke til barnet"></label>
+   <button type="button" id="child-pair-copy" class="family-light-button">Kopier lenke</button>
+   <p class="child-pair-hint">QR-koden kan brukes én gang og utløper etter 10 minutter. Den skal bare åpnes på barnets enhet.</p>
  </div>
  <button type="button" id="child-pair-new" class="family-add-button">Lag ny QR-kode</button>
+ <div class="child-pair-platform" role="group" aria-label="Velg barnets enhet">
+  <button type="button" data-child-pair-platform="ios" aria-pressed="true">iPad / iPhone</button>
+  <button type="button" data-child-pair-platform="android" aria-pressed="false">Android</button>
+ </div>
+ <div id="child-pair-platform-instructions" class="child-pair-instructions">
+  <strong>Installer på iPad eller iPhone</strong>
+  <p>Skann QR-koden, åpne ukeplanen i Safari og velg Del → Legg til på Hjem-skjerm med «Åpne som webapp». Start deretter appikonet.</p>
+ </div>
+ <details id="child-pair-help" class="child-pair-help">
+  <summary>Trenger hjelp?</summary>
+  <div class="child-pair-help-content">
+   <p id="child-pair-help-description">Hvis oppsettet stopper, kontroller at barnet åpner appen fra hjemskjermen og ikke bare i nettleseren.</p>
+   <p>Hvis den installerte appen fortsatt ber om hjelp fra en foresatt, fjern bare det gamle appikonet, opprett en ny QR-kode og installer på nytt. Ingen familieprofiler slettes.</p>
+  </div>
+ </details>
  <details class="child-pair-devices"><summary>Administrer barnets enheter</summary>
-   <div id="child-pair-devices"></div></details>
+  <div id="child-pair-devices"></div></details>
 </dialog>
 <dialog id="issue-report-dialog" class="issue-report-dialog" aria-labelledby="issue-report-title" aria-describedby="issue-report-intro">
   <header class="issue-report-header">
