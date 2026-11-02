@@ -233,7 +233,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  function cachedReadyPlan(p){
   const plan=plans.get(p.id),now=calendar();
   // Only pass source-verified AI plans, not old/provisional parser results.
-  return plan?.parser==='ai'&&plan?.aiStatus==='ready'&&plan.homeworkSourceVersion===1&&
+  return plan?.parser==='ai'&&plan?.aiStatus==='ready'&&plan.homeworkSourceVersion===2&&
    plan.status==='ok'&&plan.week===now.week&&plan.year===now.year?plan:null;
  }
  function openChildProfile(p){
