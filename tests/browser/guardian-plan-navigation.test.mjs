@@ -27,7 +27,8 @@ async function open(t,width){
  const context=await browser.newContext({viewport:{width,height:840},
   locale:'nb-NO',timezoneId:'Europe/Oslo'});
  t.after(()=>context.close());
- await context.addInitScript(iso=>{
+ const page=await context.newPage();
+ await page.addInitScript(iso=>{
   const Native=Date,stamp=new Native(iso).getTime();
   class FixedDate extends Native{
    constructor(...args){if(args.length)super(...args);else super(stamp);}
@@ -39,7 +40,7 @@ async function open(t,width){
    {id:'nav-child-b',name:'Maya',school:'sjostrand',grade:'5A',group:''}
   ]}));
  },fixed);
- const page=await context.newPage(),errors=[],requests=[];
+ const errors=[],requests=[];
  page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/api/account-config*',route=>reply(route,{enabled:false}));
  await page.route('**/api/plan?**',route=>{
