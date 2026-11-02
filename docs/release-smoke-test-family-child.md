@@ -21,7 +21,10 @@ Sist oppdatert: 1. november 2026. **Dette er en sjekkliste for ekte enheter, ikk
 - [ ] QR-skanning med barnets telefon gir kun barnets egen ukeplan, aldri søskens profil/lekser.
 - [ ] Status etter skanning er «Åpnet på telefonen», **ikke** «Installert».
 - [ ] På Android: Installer/Legg til på hjemskjermen og åpne Skoleuka fra appikonet; bekreft at status endres til «Barneappen er klar» hos foresatt.
-- [ ] På iPhone: Del → Legg til på Hjem-skjerm → Åpne appikonet; bekreft tilsvarende.
+- [ ] På iPhone/iPad (iOS/iPadOS 17.2+): skann QR, åpne i Safari og se barnets ukeplan. Del → Legg til på Hjem-skjerm → Åpne som webapp → Åpne appikonet. Bekreft at ukeplanen fortsatt fungerer og at foresatts status blir «Installert».
+- [ ] Kontroller at webappen har egen lokal lagring ved første oppstart, men får overført en kortvarig HttpOnly-cookie fra Safari og henter barnets tilgang uten ny QR.
+- [ ] Kontroller at en tilbakekalt enhet ikke kan gjenopprettes via overført cookie.
+- [ ] Eldre installert app uten overføringscookie: Fjern det gamle appikonet, opprett ny QR, åpne lenken i Safari og legg appen til på hjemskjermen igjen. Dette er kun en test av enhetens appdata.
 - [ ] Den andre barneprofilen beholder QR-oppfordringen til akkurat den enheten er satt opp.
 - [ ] Foresatt tilbakekaller barneenheten i QR-dialogen; på barnets enhet blir videre tilgang avvist, og QR-oppsettet dukker opp igjen.
 - [ ] Utløpt eller brukt QR kan ikke brukes på nytt; en ny kode virker.

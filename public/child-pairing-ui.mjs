@@ -126,7 +126,7 @@ export function initChildPairingUI({getCloud,onStatusChange=()=>{}}){
   child=profile;previous=document.activeElement;scrollY=window.scrollY;
   $('child-pair-title').textContent='Ukeplan til '+child.name;
   $('child-pair-intro').textContent='1. Skann QR-koden på telefonen til '+child.name+
-   '. 2. Åpne ukeplanen og legg den til på hjemskjermen. 3. Start appen fra hjemskjermen for å bekrefte oppsettet. Barnet ser bare sin egen ukeplan.';
+   '. 2. På iPad: åpne lenken i Safari og velg Del → Legg til på Hjem-skjerm, med «Åpne som webapp» aktivert. 3. Åpne det nye appikonet for å bekrefte oppsettet. På Android: installer som vanlig. Barnet ser bare sin egen ukeplan.';
   panel.showModal();
   document.body.style.setProperty('--account-lock-top','-'+scrollY+'px');
   document.documentElement.classList.add('account-modal-open');
