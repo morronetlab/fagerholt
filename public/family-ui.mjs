@@ -336,13 +336,17 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     'Ingen særskilte viktige beskjeder registrert for denne uka.';
   setHtml('family-important-cards',html||
    '<p class="family-important-empty">'+escape(message)+'</p>');
-  el('family-mobile-important-more').hidden=notices.visible.length<=2;
-  el('family-mobile-important-more').textContent=
-   document.querySelector('#family-view .family-tomorrow')?.classList.contains('mobile-important-expanded')?
-    'Vis færre beskjeder':'Vis alle viktige beskjeder';
-  el('family-practical-label').textContent=notices.remaining?
-   'Vis komplette skolebeskjeder · '+notices.remaining+' flere viktige':
-   'Vis alle praktiske beskjeder og ekstra utstyr';
+  const moreButton=el('family-mobile-important-more');
+  const hiddenPreviewCount=Math.max(0,notices.visible.length-2);
+  const expanded=document.querySelector('#family-view .family-tomorrow')
+   ?.classList.contains('mobile-important-expanded')||false;
+  moreButton.hidden=hiddenPreviewCount===0;
+  moreButton.dataset.moreCount=String(hiddenPreviewCount);
+  moreButton.setAttribute('aria-expanded',String(expanded));
+  moreButton.textContent=expanded?'Vis færre':'Vis '+hiddenPreviewCount+' til';
+  // Full checklist is separate from the compact preview, not another
+  // "show more important notices" button.
+  el('family-practical-label').textContent='Skolebeskjeder og utstyr';
  }
  function renderTomorrowBriefing(now,summaries,fullAgenda){
   const section=el('family-tomorrow-brief');
@@ -1067,7 +1071,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const section=document.querySelector('#family-view .family-tomorrow');
   const expanded=section.classList.toggle('mobile-important-expanded');
   el('family-mobile-important-more').setAttribute('aria-expanded',String(expanded));
-  el('family-mobile-important-more').textContent=expanded?'Vis færre beskjeder':'Vis alle viktige beskjeder';
+  const button=el('family-mobile-important-more');
+  button.textContent=expanded?'Vis færre':'Vis '+(button.dataset.moreCount||1)+' til';
  });
  el('family-important-cards').addEventListener('click',event=>{
   const button=event.target.closest('[data-family-agenda-details]');
