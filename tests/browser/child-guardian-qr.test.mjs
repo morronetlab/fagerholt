@@ -11,13 +11,24 @@ before(async()=>{
 });
 after(async()=>{await browser?.close();await server?.close();});
 const child='00000000-0000-4000-8000-000000000022';
+const urlAction=route=>new URL(route.request().url()).searchParams.get('action');
 const dialogHTML=String.raw`<dialog id="child-pair-dialog">
  <h2 id="child-pair-title"></h2><p id="child-pair-intro"></p>
- <p id="child-pair-status"></p>
+ <ol><li data-child-pair-step="qr"></li><li data-child-pair-step="scan"></li>
+ <li data-child-pair-step="install"></li></ol>
+ <strong id="child-pair-stage-label"></strong><p id="child-pair-stage-description"></p>
+ <p id="child-pair-status"></p><button id="child-pair-check">Sjekk status</button>
  <div id="child-pair-result" hidden>
  <img id="child-pair-qr"><input id="child-pair-link">
  <button id="child-pair-copy">Kopier</button></div>
  <button id="child-pair-new">Ny kode</button>
+ <div class="child-pair-platform">
+  <button data-child-pair-platform="ios" aria-pressed="true">iPad</button>
+  <button data-child-pair-platform="android" aria-pressed="false">Android</button>
+ </div>
+ <div id="child-pair-platform-instructions"><strong></strong><p></p></div>
+ <details id="child-pair-help"><summary>Trenger hjelp?</summary>
+  <p id="child-pair-help-description"></p></details>
  <button id="child-pair-close">Lukk</button>
  <div id="child-pair-devices"></div>
 </dialog>`;
@@ -36,10 +47,10 @@ async function setup(t,{refuseRefresh=false}={}){
    await route.fulfill({status:401,contentType:'application/json',
     body:JSON.stringify({error:'Økten til foresatt har utløpt'})});return;
   }
-  const info=data?.action==='create'?{
+  const info=urlAction(route)==='status'?{status:'not_invited'}:data?.action==='create'?{
    link:server.baseURL+'/barn/?pair='+'b'.repeat(64),
    qr:'data:image/svg+xml;base64,'+Buffer.from('<svg/>').toString('base64'),
-   expiresAt:'2026-11-01T12:00:00Z'
+   expiresAt:'2027-01-01T12:00:00Z'
   }:{devices:[]};
   await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(info)});
  });
@@ -60,7 +71,7 @@ async function setup(t,{refuseRefresh=false}={}){
 }
 test('Parent QR retries exactly once with a refreshed session when Auth says 401',async t=>{
  const {page,requests,errors}=await setup(t);
- await page.locator('#child-pair-status').getByText(/Klar!/).waitFor();
+ await page.locator('#child-pair-status').getByText(/QR-koden er klar/).waitFor();
  assert.equal(await page.evaluate(()=>window.__refreshed),1);
  assert.deepEqual(requests.filter(x=>x.action==='create').map(x=>x.bearer),[
   'Bearer old-access-token','Bearer new-access-token']);
