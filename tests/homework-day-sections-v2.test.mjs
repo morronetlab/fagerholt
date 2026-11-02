@@ -110,3 +110,14 @@ test('Existing explicit Til weekday tables retain their own source evidence',()=
  assert.equal(cells.length,2);
  assert.deepEqual(cells.map(x=>x.dueDay),['Tirsdag','Fredag']);
 });
+
+test('Source geometry never broadens a group-scoped homework item to all pupils',()=>{
+ const original={subject:'Norsk',text:'Les i bok i sekken 10–15 min.',
+  dueDay:null,repeatDays:[],group:'Rød gruppe'};
+ const reconciled=reconcileHomeworkWithPdf([original],pages());
+ const matched=reconciled.homework.filter(x=>/Les i bok/.test(x.text));
+ assert.equal(matched.length,1);
+ assert.equal(matched[0].group,'Rød gruppe');
+ assert.equal(matched[0].dueDay,null);
+ assert.deepEqual(matched[0].repeatDays,[]);
+});
