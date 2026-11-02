@@ -132,15 +132,51 @@ function renderChildAppSetup(){
  $('plan-child-app-setup-status').textContent=info.label;
  $('plan-child-app-qr').textContent=info.action||'Vis QR-kode';
 }
+function renderGuardianToolbar(profile){
+ const active=Boolean(profile);
+ $('guardian-plan-toolbar').hidden=!active;
+ $('guardian-plan-summary').hidden=!active;
+ if(!active)return;
+ const children=familyUI.profilesForNavigation();
+ $('guardian-plan-profiles').innerHTML=children.map(child=>
+  '<button type="button" data-guardian-profile="'+safe(child.id)+'" aria-pressed="'+
+  String(child.id===profile.id)+'" aria-label="Vis ukeplanen til '+safe(child.name)+'">'+
+  safe(child.name)+'</button>').join('');
+ $('guardian-plan-week').textContent='Uke '+calendar.week;
+}
+function renderGuardianSummary(){
+ const profile=state.profileId?familyUI?.profileById(state.profileId):null;
+ if(!profile||familyUI?.isActive())return;
+ $('guardian-plan-day-title').textContent=DAYS[state.day]+' '+titleDay(state.day);
+ $('guardian-plan-day-subtitle').textContent=profile.name+' · '+state.grade+'. trinn';
+ if(state.loading||!state.plan||state.plan.aiStatus==='processing'){
+  $('guardian-plan-homework-state').textContent='Henter ukeplan …';
+  $('guardian-plan-packing-state').textContent='Lekser og utstyr vises når ukeplanen er klar.';
+  return;
+ }
+ const all=expandHomework(state.plan.homework||[]);
+ const homework=all.map((task,index)=>({task,index})).filter(x=>groupApplies(x.task,profile));
+ const completed=homework.filter(x=>isChecked('homework',x.index)).length;
+ $('guardian-plan-homework-state').textContent=homework.length?
+  completed+' av '+homework.length+' lekser ferdig':'Ingen lekser';
+ const bag=getBag().filter(item=>groupApplies(item,profile));
+ $('guardian-plan-packing-state').textContent=bag.length?
+  bag.length+' ting oppgitt i pakkelisten for '+DAYS[state.day].toLowerCase()+
+   '. Huk av i listen nedenfor.':'Ingen ekstra utstyr oppgitt for denne dagen.';
+}
 function renderShell(){
   const hasSchool=Boolean(state.school),chosen=Boolean(state.grade&&hasSchool),inFamily=Boolean(familyUI?.isActive());
   const welcome=primaryView==='welcome'&&!inFamily;
   const hasCloudFamily=Boolean(familyUI?.hasCloudFamily());
+  const guardianProfile=chosen&&!inFamily&&!welcome&&state.profileId?
+   familyUI?.profileById(state.profileId):null;
   const section=inFamily?'family':welcome?'welcome':'plan';
   const childCloudPlan=Boolean(!inFamily&&!welcome&&chosen&&state.profileId&&
    familyUI?.isCloudProfile(state.profileId));
   // Child plans selected from a signed-in family keep one clear return route.
   document.body.classList.toggle('family-child-plan-active',childCloudPlan);
+  document.body.classList.toggle('guardian-plan-active',Boolean(guardianProfile));
+  renderGuardianToolbar(guardianProfile);
   // Family tabs replace the generic fixed mobile navigation. Keep this state
   // on the body so desktop and the child's own week-plan remain unchanged.
   document.body.classList.toggle('family-dashboard-active',inFamily);
@@ -280,6 +316,7 @@ function updateAnalysisClock(){
 function renderContent(){
   if(!state.grade)return;
   const p=state.plan;
+  renderGuardianSummary();
   const waitingForPlan=state.loading||p?.aiStatus==='processing';
   $('weather-panel').hidden=waitingForPlan||!features.weather;
   $('app-hero').classList.toggle('is-awaiting',waitingForPlan);
@@ -620,7 +657,8 @@ async function showBuildVersion(){
     node.hidden=false;
   }catch{node.hidden=true;}
 }
-function openFamilyProfile(profile,{upcoming=false,cachedPlan=null,record=true}={}){
+function openFamilyProfile(profile,{upcoming=false,cachedPlan=null,record=true,
+ preserveDay=false,preserveScroll=false}={}){
   primaryView="plan";
   const school=siteConfig.schools[profile.school];
   if(!school)return;
@@ -633,15 +671,18 @@ function openFamilyProfile(profile,{upcoming=false,cachedPlan=null,record=true}=
    cachedPlan.homeworkSourceVersion===1&&cachedPlan.status==='ok' ? cachedPlan:null;
   state.plan=initial;state.loading=!initial;state.planError=null;
   state.weather=null;state.weatherError=null;
-  viewingNextWeek=upcoming;dayWasSelected=upcoming;
+  const previousDay=state.day;
+  viewingNextWeek=upcoming;dayWasSelected=upcoming||preserveDay;
   calendar=schoolCalendar(new Date(Date.now()+(upcoming?7*86400_000:0)),school.timezone);
-  state.day=upcoming?0:currentChoice().day;state.aiPolls=0;
+  state.day=preserveDay&&Number.isInteger(previousDay)&&previousDay>=0&&previousDay<5?
+   previousDay:upcoming?0:currentChoice().day;
+  state.aiPolls=0;
   storageWrite(schoolSelectionKey(),profile.school);
   storageWrite(gradeSelectionKey(profile.school),profile.grade);
-  familyUI.leave();
+  if(familyUI.isActive())familyUI.leave();
   renderShell();
   if(record)recordNavigation();
-  scrollNewViewToTop();
+  if(!preserveScroll)scrollNewViewToTop();
   if(!initial){reload();return;}
   if(features.weather){
    const requestId=state.requestId;
@@ -802,6 +843,31 @@ function boot(){
     const el=e.target.closest('input[data-check]');if(el)setChecked(el.dataset.check,el.dataset.index,el.dataset.progressDay,el.checked);
   });
   $('plan-back-family').addEventListener('click',()=>navigateTo('family'));
+  $('guardian-plan-profiles').addEventListener('click',event=>{
+    const button=event.target.closest('button[data-guardian-profile]');
+    if(!button||button.dataset.guardianProfile===state.profileId)return;
+    const profile=familyUI.profileById(button.dataset.guardianProfile);
+    if(!profile)return;
+    openFamilyProfile(profile,{upcoming:viewingNextWeek,
+      cachedPlan:familyUI.cachedReadyPlan(profile.id),
+      preserveDay:true,preserveScroll:true});
+    // The selected control is recreated by renderShell: restore keyboard focus
+    // without moving the scrolled page unexpectedly.
+    requestAnimationFrame(()=>{
+      const selected=[...$('guardian-plan-profiles').querySelectorAll('button')]
+        .find(item=>item.dataset.guardianProfile===profile.id);
+      selected?.focus({preventScroll:true});
+    });
+  });
+  $('guardian-plan-summary').addEventListener('click',event=>{
+    const button=event.target.closest('button[data-guardian-jump]');
+    if(!button||$('plan-body').hidden)return;
+    const ids={school:'program-title',packing:'bag-title',
+      homework:'homework-title',notices:'notices-panel'};
+    const id=ids[button.dataset.guardianJump];if(!id)return;
+    if(id==='notices-panel')$('notices-panel').open=true;
+    $(id)?.scrollIntoView({block:'start',behavior:'auto'});
+  });
   $('plan-child-app-qr').addEventListener('click',()=>{
    if(state.profileId)familyUI.openChildInvite(state.profileId);
   });
