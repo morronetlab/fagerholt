@@ -513,8 +513,9 @@ test('Mobile local family keeps guest navigation and shares persistent header ac
  await page.locator('[data-family-mobile-tab="overview"]').click();
  await page.locator('#family-cards .family-child-compact').first().click();
  await page.locator('#app-view').waitFor({state:'visible'});
- assert.equal(await page.locator('.primary-nav').isVisible(),true,
-  'The regular bottom navigation remains available on child week plans');
+ assert.equal(await page.locator('.primary-nav').isVisible(),false,
+  'Parent-opened child plans use the sibling toolbar, not the generic bottom bar');
+ assert.equal(await page.locator('#guardian-plan-toolbar').isVisible(),true);
  assert.deepEqual(errors,[]);
 });
 test('Desktop family navigation and overview header remain unchanged',async t=>{
