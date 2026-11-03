@@ -410,11 +410,12 @@ test('Morning overview shows today, not tomorrow, and opens the correct calendar
  });
  await page.locator('#family-toggle').click();
  await addFamilyChild(page,'Ailin');
- await page.locator('#family-tomorrow-brief-items').getByText('Les onsdag').waitFor();
+ await page.locator('#family-tomorrow-brief-items').getByText('Vannflaske onsdag').waitFor();
  assert.equal(await page.locator('#family-tomorrow-brief-title').innerText(),'Hva skjer i dag?');
  assert.match(await page.locator('#family-tomorrow-brief-date').innerText(),/onsdag 28. oktober/i);
  assert.match(await page.locator('#family-tomorrow-brief-items').innerText(),/Vannflaske onsdag/);
- assert.doesNotMatch(await page.locator('#family-tomorrow-brief-items').innerText(),/Les torsdag/);
+ assert.doesNotMatch(await page.locator('#family-tomorrow-brief-items').innerText(),/Les onsdag|Les torsdag/);
+ assert.equal(await page.locator('#family-tomorrow-brief-items .kind-homework').count(),0);
  await page.locator('#family-tomorrow-brief-calendar').click();
  assert.equal(await page.locator('#family-agenda-days .family-agenda-day:visible').getAttribute('data-date'),'2026-10-28');
  assert.deepEqual(errors,[]);
