@@ -1,9 +1,6 @@
-/** Exact next-calendar-day briefing for parents.
- * "Tomorrow" is never replaced by "next school day". The displayed school
- * week can roll forward on Friday afternoon, but family activities may still
- * occur this weekend. Those activities are looked up by the actual ISO date.
- *
- * No school event or homework due-date is ever invented when a source is missing.
+/** Date-bound family briefing. School days and weekend activities use the
+ * actual ISO date rather than an inferred "next school day". Never invent
+ * events or homework deadlines when source information is missing.
  */
 import {DAYS,dayDate,schoolCalendar} from './calendar.mjs';
 import {activityOccurrences,activityScopeLabel,activityTimeLabel} from './family-activities.mjs';
@@ -15,11 +12,26 @@ export function nextIsoDate(today){
  d.setUTCDate(d.getUTCDate()+1);
  return d.toISOString().slice(0,10);
 }
+/** Switch from today to tomorrow after school in Oslo time. The Friday
+ * 14:00 cutover matches familyWeekCalendar's next-week rollover.
+ */
+export function selectBriefingDay(now=new Date(),zone='Europe/Oslo',schoolEndsAt=15){
+ const actualToday=schoolCalendar(now,zone).today;
+ const hourParts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{
+  timeZone:zone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'
+ }).formatToParts(now).filter(x=>x.type!=='literal').map(x=>[x.type,x.value]));
+ const hour=Number(hourParts.hour)+Number(hourParts.minute)/60;
+ const weekday=(new Date(actualToday+'T12:00:00Z').getUTCDay()+6)%7;
+ const cutoff=weekday===4?14:schoolEndsAt;
+ const isToday=hour<cutoff;
+ return {actualToday,date:isToday?actualToday:nextIsoDate(actualToday),isToday};
+}
 export function buildTomorrowBriefing({
- actualToday,calendar,agenda,profiles=[],summaries=new Map(),activities=[]
+ actualToday,targetDate,calendar,agenda,profiles=[],summaries=new Map(),activities=[]
 }={}){
- const date=nextIsoDate(actualToday);
- if(!date||!calendar)return {date:null,label:'I morgen',items:[],inDisplayedWeek:false,
+ const date=targetDate===undefined?nextIsoDate(actualToday):targetDate;
+ const isToday=date===actualToday;
+ if(!date||!calendar)return {date:null,label:isToday?'I dag':'I morgen',items:[],inDisplayedWeek:false,
   hasMissing:true,notice:'Datoen kunne ikke leses.'};
  const timestamp=new Date(date+'T12:00:00Z');
  const target=schoolCalendar(timestamp,'UTC');
@@ -69,12 +81,13 @@ export function buildTomorrowBriefing({
  const hasMissing=missingProfiles.length>0||(!inDisplayedWeek&&!weekend);
  const label=new Intl.DateTimeFormat('nb-NO',{timeZone:'UTC',weekday:'long',day:'numeric',
   month:'long'}).format(timestamp);
- const notice=!profiles.length?'Legg til barn for å se morgendagens skoleoppgaver.':
-  !inDisplayedWeek?'Viser familieaktiviteter for morgendagen. Skoleplanen på denne siden gjelder en annen uke.':
+ const dayLabel=isToday?'i dag':'i morgen';
+ const notice=!profiles.length?'Legg til barn for å se skoleoppgaver '+dayLabel+'.':
+  !inDisplayedWeek?'Viser familieaktiviteter for '+dayLabel+'. Skoleplanen på denne siden gjelder en annen uke.':
   missingProfiles.length?'Ukeplanen er ikke klar for '+missingProfiles.join(', ')+'. Flere punkter kan komme.':
   weekend?'Sjekk familiens avtaler. Skolenes eventuelle helgebeskjeder må kontrolleres i originalkilden.':
-  !items.length?'Ingen datofestede punkter funnet for i morgen. Sjekk skolens original ved tvil.':'';
- return {date,label,items,inDisplayedWeek,weekend,hasMissing,missingProfiles,notice,
+  !items.length?'Ingen datofestede punkter funnet for '+dayLabel+'. Sjekk skolens original ved tvil.':'';
+ return {date,label,isToday,items,inDisplayedWeek,weekend,hasMissing,missingProfiles,notice,
   completed:items.filter(x=>x.checked).length,outstanding:items.filter(x=>!x.checked).length,
   targetWeek:target.week,targetYear:target.year};
 }
