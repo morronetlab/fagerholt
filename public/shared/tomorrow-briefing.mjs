@@ -43,7 +43,9 @@ export function buildTomorrowBriefing({
  let items=[];
  if(inDisplayedWeek){
   const day=agenda?.days?.find(d=>d.date===date);
-  items=(day?.items||[]).map(item=>({
+  // Today is a practical day overview. Homework stays in the child's
+  // week plan and in tomorrow's preparation briefing, not in today's list.
+  items=(day?.items||[]).filter(item=>!isToday||item.kind!=='homework').map(item=>({
    key:item.key,kind:item.kind,title:item.title,scope:item.scope||'',
    checked:item.checked===true,time:item.time||null,
    childId:item.childId||null,source:item.source||null
