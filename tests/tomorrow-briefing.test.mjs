@@ -90,7 +90,11 @@ test('Morning in Oslo uses today; at the school cutoff it switches to tomorrow',
 test('Morning briefing selects today tasks and packing; afternoon keeps tomorrow',()=>{
  const today='2026-11-03',tomorrow='2026-11-04';
  const agenda={days:[
-  {date:today,items:[event(today,'school','Dagens besøk'),event(today,'family','Klarinett',{time:'16:00'})]},
+  {date:today,items:[
+   event(today,'school','Dagens besøk'),
+   event(today,'family','Klarinett',{time:'16:00'}),
+   event(today,'homework','Gjør norsklekser',{checked:true})
+  ]},
   {date:tomorrow,items:[event(tomorrow,'school','Morgendagens besøk')]}
  ]};
  const summaries=new Map([[child.id,{ready:true,todayIndex:1,nextIndex:2,
@@ -101,6 +105,8 @@ test('Morning briefing selects today tasks and packing; afternoon keeps tomorrow
  assert.equal(morning.isToday,true);
  assert.deepEqual(morning.items.map(x=>x.title),['Dagens besøk','Klarinett','Pakk: Matpakke']);
  assert.equal(morning.items.some(x=>x.title==='Morgendagens besøk'),false);
+ assert.equal(morning.items.some(x=>x.kind==='homework'),false);
+ assert.equal(morning.completed,0,'A completed homework must not affect today count');
  assert.equal(afternoon.isToday,false);
  assert.deepEqual(afternoon.items.map(x=>x.title),['Morgendagens besøk','Pakk: Gymtøy']);
 });
