@@ -243,6 +243,8 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  await second.locator('#account-invite-accept').waitFor({state:'visible'});
  await second.locator('#account-invite-accept').click();
  await second.locator('#account-open-family').waitFor({state:'visible'});
+ assert.equal(await second.evaluate(()=>sessionStorage.getItem('skoleuka.guardian-invite.v1')),null,
+  'The used one-time invitation must be removed from this tab');
  await second.locator('#account-open-family').click();
  await second.locator('#family-cards .family-child').nth(1).waitFor();
  assert.equal(await second.locator('#family-cards .family-child').count(),2);
