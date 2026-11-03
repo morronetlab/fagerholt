@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {nextIsoDate,buildTomorrowBriefing} from '../public/shared/tomorrow-briefing.mjs';
+import {nextIsoDate,buildTomorrowBriefing,selectBriefingDay} from '../public/shared/tomorrow-briefing.mjs';
 
 const child={id:'one',name:'Ailin',school:'fagerholt',grade:'3'};
 const emptyWeek=(year,week)=>({year,week});
@@ -71,4 +71,46 @@ test('Undated homework is never given an invented tomorrow date',()=>{
    ready:true,todayIndex:2,nextIndex:3,todayBag:[],bag:[]
   }]])});
  assert.equal(r.items.length,0);
+});
+
+test('Morning in Oslo uses today; at the school cutoff it switches to tomorrow',()=>{
+ const select=iso=>selectBriefingDay(new Date(iso));
+ assert.deepEqual(select('2026-11-03T06:35:00Z'),{
+  actualToday:'2026-11-03',date:'2026-11-03',isToday:true});
+ assert.equal(select('2026-11-03T13:59:00Z').isToday,true);
+ assert.deepEqual(select('2026-11-03T14:00:00Z'),{
+  actualToday:'2026-11-03',date:'2026-11-04',isToday:false});
+ // Friday follows the family calendar's earlier 14:00 week rollover.
+ assert.equal(select('2026-10-30T12:59:00Z').date,'2026-10-30');
+ assert.equal(select('2026-10-30T13:00:00Z').date,'2026-10-31');
+ // Oslo DST and day boundaries must not depend on UTC or device locale.
+ assert.equal(select('2026-06-03T12:59:00Z').date,'2026-06-03');
+ assert.equal(select('2026-06-03T13:00:00Z').date,'2026-06-04');
+});
+test('Morning briefing selects today tasks and packing; afternoon keeps tomorrow',()=>{
+ const today='2026-11-03',tomorrow='2026-11-04';
+ const agenda={days:[
+  {date:today,items:[event(today,'school','Dagens besøk'),event(today,'family','Klarinett',{time:'16:00'})]},
+  {date:tomorrow,items:[event(tomorrow,'school','Morgendagens besøk')]}
+ ]};
+ const summaries=new Map([[child.id,{ready:true,todayIndex:1,nextIndex:2,
+  todayBag:[{label:'Matpakke',checked:false}],bag:[{label:'Gymtøy',checked:false}]}]]);
+ const options={actualToday:today,calendar:emptyWeek(2026,45),agenda,profiles:[child],summaries};
+ const morning=buildTomorrowBriefing({...options,targetDate:today});
+ const afternoon=buildTomorrowBriefing({...options,targetDate:tomorrow});
+ assert.equal(morning.isToday,true);
+ assert.deepEqual(morning.items.map(x=>x.title),['Dagens besøk','Klarinett','Pakk: Matpakke']);
+ assert.equal(morning.items.some(x=>x.title==='Morgendagens besøk'),false);
+ assert.equal(afternoon.isToday,false);
+ assert.deepEqual(afternoon.items.map(x=>x.title),['Morgendagens besøk','Pakk: Gymtøy']);
+});
+test('Weekend morning shows activities on the actual date despite next-week school calendar',()=>{
+ const childActivity={id:'sat',title:'Lørdagstur',child_id:child.id,occurs_on:'2026-10-31',
+  repeat_rule:'none',start_time:'11:00'};
+ const morning=selectBriefingDay(new Date('2026-10-31T07:00:00Z'));
+ const result=buildTomorrowBriefing({actualToday:morning.actualToday,targetDate:morning.date,
+  calendar:emptyWeek(2026,45),profiles:[child],activities:[childActivity]});
+ assert.equal(result.isToday,true);
+ assert.deepEqual(result.items.map(x=>x.title),['Lørdagstur']);
+ assert.match(result.notice,/i dag/);
 });
