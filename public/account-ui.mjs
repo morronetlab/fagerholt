@@ -7,14 +7,18 @@ import {importCurrentLocalFamily} from './shared/family-import.mjs';
 import {FAMILY_STORAGE_KEY,readFamily} from './shared/family-core.mjs';
 import {schoolCalendar} from './shared/calendar.mjs';
 import {siteConfig} from './site-config.mjs';
+import {captureGuardianInvite,clearGuardianInvite} from './shared/guardian-invite-link.mjs';
 const $=id=>document.getElementById(id);
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const read=k=>{try{return localStorage.getItem(k);}catch{return null;}};
+const inviteStorage=()=>{try{return sessionStorage;}catch{return null;}};
 const invitationsFromUrl=()=>{
- const fragment=new URLSearchParams(location.hash.slice(1)),token=fragment.get('invite');
- if(!token)return null;
- history.replaceState(null,'',location.pathname+location.search);
- return /^[a-f0-9]{64}$/.test(token)?token:null;
+ const params=new URLSearchParams(location.hash.slice(1));
+ const token=captureGuardianInvite(location.hash,inviteStorage());
+ // Preserve the SPA's current history state. A private invitation token must
+ // not stay in the URL, but OTP/reload must not silently discard it either.
+ if(params.has('invite'))history.replaceState(history.state,'',location.pathname+location.search);
+ return token;
 };
 export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudRestored=()=>false}){
  let client=null,accountReady=false,requestedEmail='',familyId=null,families=[],children=[],invitation=invitationsFromUrl(),nextCodeRequestAt=0;
@@ -42,7 +46,8 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
    if(Number(el.dataset.onboardStep)===step)el.setAttribute('aria-current','step');
    else el.removeAttribute('aria-current');
   }
-  $('account-heading').textContent=id==='login'?(onboardingIntent?'Kom i gang med Skoleuka':'Logg inn på Skoleuka'):
+  $('account-invite-welcome').hidden=!invitation||!['login','verify'].includes(id);
+  $('account-heading').textContent=id==='login'?(invitation?'Bli med i familien':onboardingIntent?'Kom i gang med Skoleuka':'Logg inn på Skoleuka'):
    id==='verify'?'Bekreft e-postadressen':id==='children'?'Legg til barna':
    id==='completed'?'Familien er klar!':id==='signed'&&!familyId?
    (invitation?'Godta familieinvitasjonen':'Opprett familien din'):
@@ -308,6 +313,7 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
   const action=$('account-invite-accept');action.disabled=true;
   try{
    const id=await client.acceptInvite(token);
+   clearGuardianInvite(inviteStorage());
    invitation=null;
    await syncFamilies(id);
    status('Du har nå tilgang til familien.');
@@ -414,9 +420,29 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
  });
  $('onboard-open-invite').addEventListener('click',()=>{show('signed');$('account-invite-email').focus();});
  $('account-open-family').addEventListener('click',()=>{close({restorePage:false});onGoFamily();});
- // The shell must not display a temporary local/guest dashboard before
- // a returning guardian's saved session and family children have been restored.
- const ready=restore().then(()=>{if(invitation&&client?.isSignedIn()){open();show('signed');
-   status('Du har en familieinvitasjon. Trykk «Godta familieinvitasjonen» for å bli med.');}});
+ // Invitation URLs should start the join flow for FIRST-TIME users too. Previously
+ // we only opened the modal for existing signed-in users, so a new parent saw
+ // the ordinary landing page with no indication that the invite was received.
+ const showInvitation=()=>{
+  if(!invitation||!accountReady)return;
+  open();
+  if(client?.isSignedIn()){
+   $('account-invite-prompt').hidden=false;
+   $('account-invite-accept').hidden=false;
+   show('signed');
+   status('Invitasjonen er klar. Trykk «Godta familieinvitasjonen» for å bli med.');
+  }else{
+   show('login');
+   status('Logg inn med e-postadressen invitasjonen ble sendt til.');
+  }
+ };
+ const ready=restore().then(showInvitation);
+ // Hash-only navigation within an already-open Skoleuka tab must also work;
+ // it does not trigger a new application bootstrap.
+ window.addEventListener('hashchange',()=>{
+  if(!new URLSearchParams(location.hash.slice(1)).has('invite'))return;
+  invitation=invitationsFromUrl();
+  if(invitation)showInvitation();
+ });
  return {restore,open,close,ready};
 }
