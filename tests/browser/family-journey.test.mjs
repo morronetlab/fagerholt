@@ -142,7 +142,7 @@ const fixture=()=>{
  });
  return {state,supabase,childAccess,plans};
 };
-async function openPage(t,backend,{width=390,child=false}={}){
+async function openPage(t,backend,{width=390,child=false,initialHash=''}={}){
  const context=await browser.newContext({viewport:{width,height:844},locale:'nb-NO',timezoneId:'Europe/Oslo'});
  t.after(()=>context.close());
  const page=await context.newPage(),errors=[];
@@ -185,7 +185,7 @@ async function openPage(t,backend,{width=390,child=false}={}){
   contentType:'application/json',body:'{"days":{},"locationLabel":"Kristiansand"}'}));
  await page.route('**/api/school-calendar?**',route=>route.fulfill({status:200,
   contentType:'application/json',body:'{"sourceStatus":"unavailable","events":[]}'}));
- await page.goto(server.baseURL+(child?'/barn/':'/'),{waitUntil:'domcontentloaded'});
+ await page.goto(server.baseURL+(child?'/barn/':'/')+initialHash,{waitUntil:'domcontentloaded'});
  return {page,errors};
 }
 async function login(page,email){
@@ -226,12 +226,19 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  await parent.locator('#account-close').click();
  // A second guardian accepts the invitation rather than inheriting an
  // already-logged-in family. All API state is shared across browser contexts.
- const b=await openPage(t,backend,{width:1280}),second=b.page;
- await second.goto(invite,{waitUntil:'domcontentloaded'});
- // A hash-only navigation on an already-open page doesn't re-run bootstrap.
- // A real invitation is opened as a new document; emulate that explicitly.
+ const b=await openPage(t,backend,{width:1280,initialHash:new URL(invite).hash}),second=b.page;
+ // A first-time visitor must be taken straight to the invite login. Clicking
+ // the regular "Min konto" button should NOT be a hidden prerequisite.
+ await second.locator('#account-panel[open]').waitFor({state:'visible'});
+ await second.locator('[data-account-screen="login"]').waitFor({state:'visible'});
+ assert.match(await second.locator('#account-heading').innerText(),/Bli med i familien/);
+ assert.equal(await second.locator('#account-invite-welcome').isVisible(),true);
+ assert.equal(new URL(second.url()).hash,'','The bearer token must leave browser history');
+ // A real user can reload between opening the invitation and verifying OTP.
+ // The unconsumed invite must survive in tab-only storage.
  await second.reload({waitUntil:'domcontentloaded'});
- await second.locator('#account-button').click();
+ await second.locator('#account-panel[open]').waitFor({state:'visible'});
+ await second.locator('[data-account-screen="login"]').waitFor({state:'visible'});
  await login(second,'second@example.no');
  await second.locator('#account-invite-accept').waitFor({state:'visible'});
  await second.locator('#account-invite-accept').click();
