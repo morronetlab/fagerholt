@@ -312,7 +312,7 @@ test('An explicitly selected welcome page survives reload even when family profi
 });
 
 test('Tomorrow and important notices reveal one complete batch, not partial school data',async t=>{
- const {page,errors}=await openPage(t,{width:390,height:844});
+ const {page,errors}=await openPage(t,{width:390,height:844,mockNow:'2026-10-28T15:00:00Z'});
  // A saved local family with two different class PDFs means one response
  // can complete before the other; do not display its partial task list.
  await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
@@ -364,7 +364,7 @@ test('Tomorrow and important notices reveal one complete batch, not partial scho
 });
 
 test('Tomorrow overview shows Thursday homework and packing, then opens that exact calendar day',async t=>{
- const {page,errors}=await openPage(t,{width:390,height:844});
+ const {page,errors}=await openPage(t,{width:390,height:844,mockNow:'2026-10-28T15:00:00Z'});
  await page.route('**/api/plan?**',route=>{
   const plan=basePlan('2');
   plan.homework=[{subject:'Norsk',text:'Les 10 minutter på torsdag',dueDay:'Torsdag'}];
@@ -395,6 +395,28 @@ test('Tomorrow overview shows Thursday homework and packing, then opens that exa
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-agenda-days .family-agenda-day[data-date="2026-10-29"]').waitFor({state:'visible'});
  assert.equal(await page.locator('#family-agenda-days .family-agenda-day:visible').count(),1);
+ assert.deepEqual(errors,[]);
+});
+test('Morning overview shows today, not tomorrow, and opens the correct calendar day',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844,mockNow:'2026-10-28T06:35:00Z'});
+ await page.route('**/api/plan?**',route=>{
+  const plan=basePlan('2');
+  plan.homework=[
+   {subject:'Norsk',text:'Les onsdag',dueDay:'Onsdag'},
+   {subject:'Norsk',text:'Les torsdag',dueDay:'Torsdag'}
+  ];
+  plan.days.Onsdag.bring=[{label:'Vannflaske onsdag'}];
+  return reply(route,plan);
+ });
+ await page.locator('#family-toggle').click();
+ await addFamilyChild(page,'Ailin');
+ await page.locator('#family-tomorrow-brief-items').getByText('Les onsdag').waitFor();
+ assert.equal(await page.locator('#family-tomorrow-brief-title').innerText(),'Hva skjer i dag?');
+ assert.match(await page.locator('#family-tomorrow-brief-date').innerText(),/onsdag 28. oktober/i);
+ assert.match(await page.locator('#family-tomorrow-brief-items').innerText(),/Vannflaske onsdag/);
+ assert.doesNotMatch(await page.locator('#family-tomorrow-brief-items').innerText(),/Les torsdag/);
+ await page.locator('#family-tomorrow-brief-calendar').click();
+ assert.equal(await page.locator('#family-agenda-days .family-agenda-day:visible').getAttribute('data-date'),'2026-10-28');
  assert.deepEqual(errors,[]);
 });
 test('Friday afternoon: tomorrow means Saturday family activities, never next Monday lessons',async t=>{
