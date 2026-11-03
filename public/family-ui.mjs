@@ -21,7 +21,7 @@ import {practicalDigest} from './shared/practical-digest.mjs';
 import {calendarHighlights} from './shared/school-calendar-highlights.mjs';
 import {buildFamilyWeekAgenda} from './shared/family-week-agenda.mjs';
 import {focusedFamilyCalendar} from './shared/family-calendar-viewport.mjs';
-import {buildTomorrowBriefing} from './shared/tomorrow-briefing.mjs';
+import {buildTomorrowBriefing,selectBriefingDay} from './shared/tomorrow-briefing.mjs';
 import {initFamilyMobileUI} from './family-mobile.mjs';
 import {firstRunGuideState} from './shared/first-run-guide.mjs';
 import {familyAgendaMarkup,familyAgendaItemHtml} from './shared/family-week-agenda-html.mjs';
@@ -353,11 +353,17 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const section=el('family-tomorrow-brief');
   section.hidden=!profiles.length;
   if(!profiles.length){lastTomorrowBriefing=null;tomorrowDisplayedKey=null;return;}
-  const key=overviewContentKey(now);
+  const briefingDay=selectBriefingDay(new Date());
+  const key=overviewContentKey(now)+'|'+briefingDay.date;
+  el('family-tomorrow-brief-title').textContent=briefingDay.isToday?
+   'Hva skjer i dag?':'Hva skjer i morgen?';
+  section.querySelector('.family-tomorrow-eyebrow').textContent=briefingDay.isToday?
+   'OVERSIKT FOR I DAG':'FORBERED MORGENDAGEN';
   if(overviewSourcesPending(now)){
    if(tomorrowDisplayedKey===key)return; // retain complete contents during revalidation
    section.dataset.loading='true';
-   el('family-tomorrow-brief-date').textContent='Klargjør morgendagens oversikt';
+   el('family-tomorrow-brief-date').textContent=briefingDay.isToday?
+    'Klargjør dagens oversikt':'Klargjør morgendagens oversikt';
    el('family-tomorrow-brief-count').textContent='Sjekker …';
    el('family-tomorrow-brief-notice').textContent='Samler ukeplaner, skolerute og familieaktiviteter.';
    setHtml('family-tomorrow-brief-items',
@@ -369,8 +375,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   }
   tomorrowDisplayedKey=key;
   section.dataset.loading='false';
-  const actualToday=schoolCalendar(new Date(),'Europe/Oslo').today;
-  const next=buildTomorrowBriefing({actualToday,calendar:now,agenda:fullAgenda,
+  const next=buildTomorrowBriefing({actualToday:briefingDay.actualToday,
+   targetDate:briefingDay.date,calendar:now,agenda:fullAgenda,
    profiles,summaries,activities:activityUI.getRows()});
   if(lastTomorrowBriefing?.date!==next.date)showAllTomorrow=false;
   lastTomorrowBriefing=next;
@@ -1105,6 +1111,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    if(document.visibilityState==='hidden')stopPollTimers();
    else{
     resumeAnalysis();
+    if(active)render(); // update day focus when returning to an inactive tab
     if(active&&cloud)void syncCloud();
     // A child may install the PWA on another phone while the guardian is away.
     if(cloud)void childPairingUI.loadStatuses(profiles);
@@ -1112,6 +1119,9 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   });
  setInterval(()=>{
   if(active&&document.visibilityState==='visible'){
+   // A date-only change needs no new PDF request; update when school ends.
+   if(lastTomorrowBriefing&&lastTomorrowBriefing.date!==selectBriefingDay(new Date()).date)
+    render();
    if(cloud&&(!lastSynced||Date.now()-lastSynced.getTime()>12_000))void syncCloud();
    if(weekKey(calendar())!==loadedWeekKey||Date.now()-lastPlanCheckAt>=AUTO_CHECK_MS)
     api.refresh();
