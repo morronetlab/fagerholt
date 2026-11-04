@@ -364,7 +364,9 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  await until(()=>[...backend.state.packing.values()].some(x=>x.completed===false));
  await parent.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
  await parent.waitForFunction(()=>document.querySelector('#family-cards .family-child input[data-family-bag-day="Onsdag"]')?.checked===false);
- // Restore the mobile admin collapse before the device revocation steps.
+ // Restore the child action disclosure and mobile admin state so the
+ // original device-revocation journey begins from a predictable UI state.
+ await parentCard.locator('[data-family-more]').click();
  await parent.locator('#family-mobile-admin-toggle').click();
 
  // Revocation is authoritative. The child's old token no longer reads data.
