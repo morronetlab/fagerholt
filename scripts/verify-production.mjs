@@ -36,7 +36,9 @@ async function inspect(school,candidates){
     if(status.aiStatus==='failed'){plan.aiStatus='failed';break;}
    }
   }
-  if(school==='sjostrand'&&grade==='2'){
+  // Week 44 is the documented vaccine/Friday-gym-shoes PDF fixture.
+  // Other weeks must not be required to repeat those one-off school notices.
+  if(school==='sjostrand'&&grade==='2'&&current.year===2026&&current.week===44){
    const homework=(plan.homework||[]).map(x=>x.text||'').join(' ');
    const wednesday=(plan.dayNotes?.Onsdag||[]).map(x=>x.text||'').join(' ');
    const friday=(plan.days?.Fredag?.bring||[]).map(x=>x.label||'').join(' ');
