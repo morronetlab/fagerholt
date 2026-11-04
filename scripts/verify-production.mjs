@@ -5,12 +5,12 @@ import {extractEnglishGlossaries} from '../lib/english-glossaries.mjs';
 import {extractNorwegianWordLists} from '../lib/norwegian-word-lists.mjs';
 import {quizItems,buildQuizRounds} from '../public/shared/word-quiz-core.mjs';
 
-const base=(process.env.PRODUCTION_URL||'https://ukeplanen.netlify.app').replace(/\/$/,'');
+const base=(process.env.PRODUCTION_URL||'https://www.skoleuka.no').replace(/\/$/,'');
 const expected=process.env.EXPECTED_COMMIT||null;
 const current=schoolCalendar(new Date(),'Europe/Oslo');
 const checks=[],warnings=[],errors=[];
 async function get(url,{binary=false,timeout=65000}={}){
- const r=await fetch(new URL(url,base),{signal:AbortSignal.timeout(timeout),headers:{'User-Agent':'Ukeplanen/production-verification'}});
+ const r=await fetch(new URL(url,base),{cache:'no-store',signal:AbortSignal.timeout(timeout),headers:{'User-Agent':'Ukeplanen/production-verification'}});
  if(!r.ok)throw Error('HTTP '+r.status+' '+new URL(url,base).pathname);
  return binary?new Uint8Array(await r.arrayBuffer()):r;
 }
@@ -36,7 +36,9 @@ async function inspect(school,candidates){
     if(status.aiStatus==='failed'){plan.aiStatus='failed';break;}
    }
   }
-  if(school==='sjostrand'&&grade==='2'){
+  // Week 44 is the documented vaccine/Friday-gym-shoes PDF fixture.
+  // Other weeks must not be required to repeat those one-off school notices.
+  if(school==='sjostrand'&&grade==='2'&&current.year===2026&&current.week===44){
    const homework=(plan.homework||[]).map(x=>x.text||'').join(' ');
    const wednesday=(plan.dayNotes?.Onsdag||[]).map(x=>x.text||'').join(' ');
    const friday=(plan.days?.Fredag?.bring||[]).map(x=>x.label||'').join(' ');
@@ -92,7 +94,14 @@ async function inspect(school,candidates){
  }catch(e){errors.push(school+' '+grade+': '+e.message);}
 }
 try{
- const [home,build]=await Promise.all([(await get('/')).text(),getJson('/build-info.json')]);
+ const [home,build,accountScript,accountConfig]=await Promise.all([
+  (await get('/')).text(),getJson('/build-info.json'),
+  (await get('/account-ui.mjs')).text(),getJson('/api/account-config')
+ ]);
+ const inviteHandlerReady=accountScript.includes('captureGuardianInvite')&&accountScript.includes('showInvitation');
+ checks.push({type:'guardian-invitation',handlerReady:inviteHandlerReady,accountEnabled:accountConfig?.enabled===true});
+ if(!inviteHandlerReady)errors.push('Production invitation handler missing or stale');
+ if(accountConfig?.enabled!==true)errors.push('Guardian account configuration is not enabled in production');
  checks.push({type:'deployment',commit:build.commit,expected,week:current.week,year:current.year});
  if(!home.includes('id="school-gate"')||!home.includes('id="word-quiz"'))errors.push('Production homepage missing quiz or school gate');
  if(!/^[a-f0-9]{40}$/i.test(build.commit||''))errors.push('Production build SHA missing');

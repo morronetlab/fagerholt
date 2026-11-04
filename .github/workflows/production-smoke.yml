@@ -20,6 +20,6 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Check live production and original school PDFs
         env:
-          PRODUCTION_URL: https://ukeplanen.netlify.app
+          PRODUCTION_URL: https://www.skoleuka.no
           EXPECTED_COMMIT: ${{ github.event.pull_request.base.sha || github.sha }}
         run: node scripts/verify-production.mjs
