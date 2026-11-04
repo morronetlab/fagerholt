@@ -324,6 +324,51 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  await second.locator('#family-cards .family-child').first()
   .locator('.family-child-progress b').getByText('1 / 1 fullført').waitFor();
  assert.ok(backend.state.homework.size>0);
+ // Guardian 2 can change a child's existing homework status, and guardian 1
+ // must see the change after its next authenticated cloud refresh.
+ const secondCard=second.locator('#family-cards .family-child').first();
+ await secondCard.locator('.family-child-extra > summary').click();
+ await secondCard.locator('input[data-family-check]').first().uncheck();
+ await second.waitForFunction(()=>document.querySelector('#family-cards .family-child .family-child-progress b')?.textContent?.includes('0 / 1'));
+ const until=async predicate=>{
+  for(let attempt=0;attempt<50;attempt++){
+   if(predicate())return;
+   await new Promise(resolve=>setTimeout(resolve,20));
+  }
+  assert.fail('Shared mock API never received the guardian update');
+ };
+ await until(()=>[...backend.state.homework.values()].some(x=>x.completed===false));
+ await parent.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
+ await parent.locator('#family-cards .family-child').first().getByText(/0 av 1 ferdig/).waitFor();
+
+ // Guardian 1 marks the homework done again; guardian 2 reads the same key.
+ await parent.locator('#family-mobile-admin-toggle').click();
+ const parentCard=parent.locator('#family-cards .family-child').first();
+ await parentCard.locator('[data-family-more]').click();
+ await parentCard.locator('.family-child-extra > summary').click();
+ await parentCard.locator('input[data-family-check]').first().check();
+ await until(()=>[...backend.state.homework.values()].some(x=>x.completed===true));
+ await second.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
+ await secondCard.locator('.family-child-progress b').getByText('1 / 1 fullført').waitFor();
+
+ // Packing is a different table/key set and must sync in both directions too.
+ await parentCard.locator('.family-packing-week > summary').click();
+ const parentBag=parentCard.locator('input[data-family-bag-day="Onsdag"]').first();
+ await parentBag.check();
+ await until(()=>[...backend.state.packing.values()].some(x=>x.completed===true));
+ await second.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
+ await secondCard.locator('.family-packing-week > summary').click();
+ await second.waitForFunction(()=>document.querySelector('#family-cards .family-child input[data-family-bag-day="Onsdag"]')?.checked===true);
+ const secondBag=secondCard.locator('input[data-family-bag-day="Onsdag"]').first();
+ await secondBag.uncheck();
+ await until(()=>[...backend.state.packing.values()].some(x=>x.completed===false));
+ await parent.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
+ await parent.waitForFunction(()=>document.querySelector('#family-cards .family-child input[data-family-bag-day="Onsdag"]')?.checked===false);
+ // Restore the child action disclosure and mobile admin state so the
+ // original device-revocation journey begins from a predictable UI state.
+ await parentCard.locator('[data-family-more]').click();
+ await parent.locator('#family-mobile-admin-toggle').click();
+
  // Revocation is authoritative. The child's old token no longer reads data.
  await parent.locator('#family-mobile-admin-toggle').click();
  await parent.locator('#family-cards .family-child').first().locator('[data-family-more]').click();
