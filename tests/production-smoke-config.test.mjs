@@ -17,5 +17,5 @@ test('Production smoke checks deployed invitation handler and live account confi
  assert.match(script,/accountConfig\?\.enabled===true/);
  assert.match(script,/build\.commit!==expected/);
  // One-off week-44 vaccine and gym shoe fixtures must not fail subsequent school weeks.
- assert.match(script,/grade==='2'&&current\\.year===2026&&current\\.week===44/);
+ assert.match(script,/grade==='2'&&current\.year===2026&&current\.week===44/);
 });
