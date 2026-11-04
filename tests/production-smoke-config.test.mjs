@@ -19,3 +19,11 @@ test('Production smoke checks deployed invitation handler and live account confi
  // One-off week-44 vaccine and gym shoe fixtures must not fail subsequent school weeks.
  assert.match(script,/grade==='2'&&current\.year===2026&&current\.week===44/);
 });
+test('Production verification runs after each main push and waits for Netlify deployment',()=>{
+ assert.match(workflow,/push:\s*\n\s*branches: \[main\]/);
+ assert.match(workflow,/for attempt in \{1\.\.24\}; do/);
+ assert.match(workflow,/build-info\.json\?verify=\$GITHUB_RUN_ID-\$attempt/);
+ assert.match(workflow,/LIVE_COMMIT" = "\$EXPECTED_COMMIT"/);
+ assert.match(workflow,/EXPECTED_COMMIT: \$\{\{ github\.event\.pull_request\.base\.sha \|\| github\.sha \}\}/);
+ assert.match(workflow,/run: node scripts\/verify-production\.mjs/);
+});

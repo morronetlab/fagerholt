@@ -1,6 +1,8 @@
 name: Production smoke test
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
   pull_request:
     paths:
       - 'scripts/verify-production.mjs'
@@ -8,16 +10,37 @@ on:
       - 'lib/norwegian-word-lists.mjs'
       - 'lib/ai-plan.mjs'
       - 'lib/plan-core.mjs'
+# One current production verification per branch; obsolete pushes are superseded.
+concurrency:
+  group: production-smoke-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: npm ci --no-audit --no-fund
+      - name: Wait for Netlify to publish the expected production commit
+        env:
+          PRODUCTION_URL: https://www.skoleuka.no
+          EXPECTED_COMMIT: ${{ github.event.pull_request.base.sha || github.sha }}
+        run: |
+          for attempt in {1..24}; do
+            LIVE_COMMIT="$(curl -fsSL --max-time 10 --header 'Cache-Control: no-cache' \
+              "$PRODUCTION_URL/build-info.json?verify=$GITHUB_RUN_ID-$attempt" | jq -r '.commit // empty')" || LIVE_COMMIT=""
+            if [ "$LIVE_COMMIT" = "$EXPECTED_COMMIT" ]; then
+              echo "Production is serving expected commit $EXPECTED_COMMIT"
+              exit 0
+            fi
+            echo "Attempt $attempt/24: production SHA ${LIVE_COMMIT:-unavailable}; expecting $EXPECTED_COMMIT"
+            if [ "$attempt" -lt 24 ]; then sleep 15; fi
+          done
+          echo "::error::Production did not serve expected commit $EXPECTED_COMMIT"
+          exit 1
       - name: Check live production and original school PDFs
         env:
           PRODUCTION_URL: https://www.skoleuka.no
