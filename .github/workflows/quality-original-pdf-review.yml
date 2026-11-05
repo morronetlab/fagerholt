@@ -25,11 +25,21 @@ jobs:
         run: node --test tests/quality-original-source-collection.test.mjs
       - name: Collect official PDF samples for manual review
         run: node scripts/collect-quality-originals.mjs quality-originals
-      - name: Upload temporary source evidence for page-by-page human review
+      - name: Upload source hashes and status only (no PDF bytes)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: quality-official-pdf-review
-          path: quality-originals/
+          name: quality-official-source-manifest
+          path: quality-originals/source-manifest.json
+          if-no-files-found: error
+          retention-days: 21
+      # Original public PDFs can contain staff/parent contact information.
+      # Never rehost them automatically in public PR artifacts.
+      - name: Upload temporary original PDFs only on explicit manual review
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-official-pdf-manual-review
+          path: quality-originals/*.pdf
           if-no-files-found: error
           retention-days: 1
