@@ -7,6 +7,9 @@ on:
       - '.github/workflows/ai-quality-real-pdfs.yml'
       - 'scripts/collect-quality-originals.mjs'
       - 'scripts/evaluate-original-pdf-quality.mjs'
+      - 'scripts/check-approved-original-pdf-baseline.mjs'
+      - 'tests/quality/approved-original-pdf-baseline-v1.json'
+      - 'tests/ai-quality-approved-baseline.test.mjs'
       - 'tests/ai-quality-original-pdfs.test.mjs'
       - 'tests/quality/original-pdf-goldens.mjs'
       - 'lib/plan-core.mjs'
@@ -34,9 +37,11 @@ jobs:
           node-version: '22'
       - run: npm ci --no-audit --no-fund
       - name: Validate visually reviewed source manifest and evaluator contracts
-        run: node --test tests/quality-original-source-collection.test.mjs tests/ai-quality-original-pdfs.test.mjs
+        run: node --test tests/quality-original-source-collection.test.mjs tests/ai-quality-original-pdfs.test.mjs tests/ai-quality-approved-baseline.test.mjs
       - name: Fetch originals, verify SHA-256 and score existing rules parser
         run: node scripts/evaluate-original-pdf-quality.mjs quality-real-results
+      - name: Enforce no regressions of previously correct original-PDF facts
+        run: node scripts/check-approved-original-pdf-baseline.mjs quality-real-results/original-pdf-quality.json
       - name: Publish quality report to GitHub Actions summary
         if: always()
         run: |
