@@ -19,6 +19,8 @@ on:
     paths:
       - '.github/workflows/ai-quality-real-pdfs.yml'
       - 'scripts/evaluate-original-pdf-quality.mjs'
+      - 'scripts/check-approved-original-pdf-baseline.mjs'
+      - 'tests/quality/approved-original-pdf-baseline-v1.json'
       - 'tests/quality/original-pdf-goldens.mjs'
       - 'lib/plan-core.mjs'
       - 'lib/homework-*.mjs'
