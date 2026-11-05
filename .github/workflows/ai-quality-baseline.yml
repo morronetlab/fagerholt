@@ -1,0 +1,57 @@
+name: AI quality baseline
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/ai-quality-baseline.yml'
+      - 'scripts/evaluate-plan-quality.mjs'
+      - 'tests/quality/**'
+      - 'tests/ai-quality-evaluator.test.mjs'
+      - 'lib/ai-plan.mjs'
+      - 'lib/plan-core.mjs'
+      - 'lib/homework-*.mjs'
+      - 'lib/practical-source-audit.mjs'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ai-quality-baseline.yml'
+      - 'scripts/evaluate-plan-quality.mjs'
+      - 'tests/quality/**'
+      - 'tests/ai-quality-evaluator.test.mjs'
+      - 'lib/ai-plan.mjs'
+      - 'lib/plan-core.mjs'
+      - 'lib/homework-*.mjs'
+      - 'lib/practical-source-audit.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  quality-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - name: Verify corpus/evaluator contract
+        run: node --test tests/quality-corpus-contract.test.mjs tests/ai-quality-evaluator.test.mjs
+      - name: Generate read-only quality report
+        run: node scripts/evaluate-plan-quality.mjs --out-dir quality-results
+      - name: Publish scorecard to GitHub Actions summary
+        if: always()
+        run: |
+          if [ -f quality-results/quality-report.md ]; then
+            cat quality-results/quality-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload quality baseline (JSON and Markdown)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-quality-baseline
+          path: quality-results/
+          if-no-files-found: warn
+          retention-days: 21
