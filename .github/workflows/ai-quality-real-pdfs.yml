@@ -1,0 +1,53 @@
+name: AI quality real original PDFs
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/ai-quality-real-pdfs.yml'
+      - 'scripts/collect-quality-originals.mjs'
+      - 'scripts/evaluate-original-pdf-quality.mjs'
+      - 'tests/ai-quality-original-pdfs.test.mjs'
+      - 'tests/quality/original-pdf-goldens.mjs'
+      - 'lib/plan-core.mjs'
+      - 'lib/homework-*.mjs'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ai-quality-real-pdfs.yml'
+      - 'scripts/evaluate-original-pdf-quality.mjs'
+      - 'tests/quality/original-pdf-goldens.mjs'
+      - 'lib/plan-core.mjs'
+      - 'lib/homework-*.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  real-pdf-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - name: Validate visually reviewed source manifest and evaluator contracts
+        run: node --test tests/quality-original-source-collection.test.mjs tests/ai-quality-original-pdfs.test.mjs
+      - name: Fetch originals, verify SHA-256 and score existing rules parser
+        run: node scripts/evaluate-original-pdf-quality.mjs quality-real-results
+      - name: Publish quality report to GitHub Actions summary
+        if: always()
+        run: |
+          if [ -f quality-real-results/original-pdf-quality.md ]; then
+            cat quality-real-results/original-pdf-quality.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload reviewed-facts scorecard only, never original PDF bytes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-quality-original-pdf-baseline
+          path: quality-real-results/
+          if-no-files-found: warn
+          retention-days: 21
