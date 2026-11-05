@@ -1,0 +1,260 @@
+{
+  "schemaVersion": 1,
+  "approvedAt": "2026-11-05",
+  "approvedFromRun": "https://github.com/morronetlab/fagerholt/actions/runs/41989590228",
+  "qualityGate": "Preserve the 13 passing parser assertions and 18 passing PDF text anchors; 13 known parser failures and 1 missing anchor remain visible, not approved as correct",
+  "sources": [
+    {
+      "id": "sjostrand-2-w44-2026",
+      "sha256": "945c339a8cab3c8a954ceb6d9cb6e007b4825355ffb524e5528829e90f19c771",
+      "passedChecks": [
+        {
+          "index": 0,
+          "expected": {
+            "kind": "homework",
+            "contains": "Fabel lesebok",
+            "dueDay": "Tirsdag"
+          }
+        },
+        {
+          "index": 1,
+          "expected": {
+            "kind": "homework",
+            "contains": "leksemappa"
+          }
+        },
+        {
+          "index": 2,
+          "expected": {
+            "kind": "exclude_homework",
+            "contains": "Vaksine onsdag"
+          }
+        },
+        {
+          "index": 3,
+          "expected": {
+            "kind": "exclude_homework",
+            "contains": "Ta med gymsko"
+          }
+        },
+        {
+          "index": 4,
+          "expected": {
+            "kind": "day_note",
+            "day": "Onsdag",
+            "contains": "Vaksine"
+          }
+        }
+      ],
+      "passedAnchors": [
+        {
+          "index": 0,
+          "expected": {
+            "page": 1,
+            "contains": "Lekser til tirsdag"
+          }
+        },
+        {
+          "index": 1,
+          "expected": {
+            "page": 1,
+            "contains": "Vaksine onsdag morgen"
+          }
+        },
+        {
+          "index": 2,
+          "expected": {
+            "page": 1,
+            "contains": "Ta med gymsko"
+          }
+        },
+        {
+          "index": 3,
+          "expected": {
+            "page": 1,
+            "contains": "skjorte"
+          }
+        }
+      ]
+    },
+    {
+      "id": "fagerholt-4-w44-2026",
+      "sha256": "3886c3cd628cd4c3ed5c0ef859eaa4939b9057eda5d13b55660390149c7a6067",
+      "passedChecks": [
+        {
+          "index": 0,
+          "expected": {
+            "kind": "homework",
+            "contains": "Detektivene"
+          }
+        },
+        {
+          "index": 1,
+          "expected": {
+            "kind": "homework",
+            "contains": "mattearket"
+          }
+        },
+        {
+          "index": 2,
+          "expected": {
+            "kind": "homework",
+            "contains": "Workbook s. 31",
+            "dueDay": "Torsdag"
+          }
+        },
+        {
+          "index": 3,
+          "expected": {
+            "kind": "exclude_homework",
+            "contains": "Planleggingsdag"
+          }
+        },
+        {
+          "index": 4,
+          "expected": {
+            "kind": "exclude_homework",
+            "contains": "Halloween-kostyme"
+          }
+        }
+      ],
+      "passedAnchors": [
+        {
+          "index": 0,
+          "expected": {
+            "page": 1,
+            "contains": "Detektivene LeMik"
+          }
+        },
+        {
+          "index": 1,
+          "expected": {
+            "page": 1,
+            "contains": "Til torsdag"
+          }
+        },
+        {
+          "index": 2,
+          "expected": {
+            "page": 2,
+            "contains": "lekser skal leveres torsdag"
+          }
+        },
+        {
+          "index": 3,
+          "expected": {
+            "page": 2,
+            "contains": "vedkubbe"
+          }
+        },
+        {
+          "index": 4,
+          "expected": {
+            "page": 2,
+            "contains": "SFO"
+          }
+        }
+      ]
+    },
+    {
+      "id": "lovisenlund-4-w45-2026",
+      "sha256": "b7480b4ae5f9ff6206434d9c792554a2c7f70a536c9e01568973dbd983cdd597",
+      "passedChecks": [
+        {
+          "index": 3,
+          "expected": {
+            "kind": "exclude_homework",
+            "contains": "Planleggingsdag"
+          }
+        }
+      ],
+      "passedAnchors": [
+        {
+          "index": 0,
+          "expected": {
+            "page": 1,
+            "contains": "planleggingsdager torsdag og fredag"
+          }
+        },
+        {
+          "index": 1,
+          "expected": {
+            "page": 1,
+            "contains": "Husk gymtøy og gymsko"
+          }
+        },
+        {
+          "index": 2,
+          "expected": {
+            "page": 2,
+            "contains": "leveres senest onsdag"
+          }
+        },
+        {
+          "index": 3,
+          "expected": {
+            "page": 2,
+            "contains": "Matteark med divisjon"
+          }
+        },
+        {
+          "index": 4,
+          "expected": {
+            "page": 2,
+            "contains": "Hibernation"
+          }
+        }
+      ]
+    },
+    {
+      "id": "nygaard-4-w45-2026",
+      "sha256": "f55de892837f698ad5a2c5be2c5bf49c7aeccfd155454b97bb46e413eb5e8456",
+      "passedChecks": [
+        {
+          "index": 4,
+          "expected": {
+            "kind": "exclude_homework",
+            "contains": "LEKSEFRI"
+          }
+        },
+        {
+          "index": 5,
+          "expected": {
+            "kind": "exclude_homework",
+            "contains": "skolen stengt"
+          }
+        }
+      ],
+      "passedAnchors": [
+        {
+          "index": 1,
+          "expected": {
+            "page": 1,
+            "contains": "Ingen norske øveord"
+          }
+        },
+        {
+          "index": 2,
+          "expected": {
+            "page": 2,
+            "contains": "skolen stengt torsdag"
+          }
+        },
+        {
+          "index": 3,
+          "expected": {
+            "page": 2,
+            "contains": "Onsdag: LEKSEFRI"
+          }
+        },
+        {
+          "index": 4,
+          "expected": {
+            "page": 2,
+            "contains": "Til tirsdag"
+          }
+        }
+      ]
+    }
+  ]
+}
