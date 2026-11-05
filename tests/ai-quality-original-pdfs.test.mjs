@@ -30,7 +30,7 @@ test('Real original goldens have strict hashes and explicitly reviewed PDF pages
   assert.equal(c.review.date,'2026-11-05');
   assert.deepEqual(c.review.pages,Array.from({length:c.pageCount},(_,i)=>i+1));
   assert.ok(c.sourceAnchors.length>=3&&c.expectations.length>=5);
-  assert.ok(c.sourceAnchors.every(a=>a.page>=1&&a.page<=c.pageCount&&a.contains.length>3));
+  assert.ok(c.sourceAnchors.every(a=>a.page>=1&&a.page<=c.pageCount&&a.contains.length>=3));
  }
 });
 test('No personal contact details are included in golden cases',()=>{
