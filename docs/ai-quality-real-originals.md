@@ -42,3 +42,23 @@ The baseline is initially informational, so a low rules-parser score does not fa
 ## Future reference expansion
 
 Expand from 4 to 20–30 original PDFs with varied layout and year. Visually review all pages, privacy-screen each document, and add goldens derived from the **source**, never parser output. Track each PDF's SHA-256; do not silently refresh expectations if a PDF changes.
+
+## Non-regression ratchet (follow-up CI PR)
+
+The approved historical baseline is in `tests/quality/approved-original-pdf-baseline-v1.json`, frozen from GitHub Actions run [41989590228](https://github.com/morronetlab/fagerholt/actions/runs/41989590228).
+
+- **13 parser assertions** previously passed and must continue passing.
+- **18 PDF.js source text anchors** previously matched and must remain extractable.
+- **13 existing parser failures and one non-extracted source heading remain failures** in the full report. They are **not** approved as correct and are not rewritten to make CI green.
+- Any formerly passing assertion becoming incorrect is a CI regression.
+- A changed reviewed expected value, SHA-256 or unavailable approved source prevents a green gate until independently reviewed. Such conditions are reported as source/review blockers, not mislabeled parser defects.
+- Newly fixed assertions are allowed. A future independently reviewed PR can refresh the approved passing baseline after verifying the improvement.
+- The baseline is not generated from parser outputs during CI; it must be changed explicitly in a reviewed PR.
+
+Run this non-regression check against a produced report:
+
+```bash
+node scripts/check-approved-original-pdf-baseline.mjs quality-real-results/original-pdf-quality.json
+```
+
+This gate remains **strictly limited to the four visually inspected official originals**. It does not imply any measured live OpenAI model performance. No production parser or family data changes are part of it.
