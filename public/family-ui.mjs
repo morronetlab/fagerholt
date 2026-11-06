@@ -25,7 +25,7 @@ import {buildTomorrowBriefing,selectBriefingDay} from './shared/tomorrow-briefin
 import {initFamilyMobileUI} from './family-mobile.mjs';
 import {firstRunGuideState} from './shared/first-run-guide.mjs';
 import {familyAgendaMarkup,familyAgendaItemHtml} from './shared/family-week-agenda-html.mjs';
-import {importantFamilyNotices} from './shared/family-important-notices.mjs';
+import {familyNoticePreview} from './shared/family-important-notices.mjs';
 import {FAMILY_OVERVIEW_BATCH_MS,holdInitialHighlights,readCalendarCache,storeCalendarCache,cacheableCalendar,stableHighlightOrder,highlightIdentity} from './shared/family-overview-load.mjs';
 
 const el=id=>document.getElementById(id);
@@ -318,10 +318,19 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    setHtml('family-important-cards','<p class="family-important-empty" role="status">'+
     'Samler viktige beskjeder fra skolen …</p>');
    el('family-mobile-important-more').hidden=true;
+   el('family-important-status').hidden=true;
    return;
   }
   importantDisplayedKey=key;
-  const notices=importantFamilyNotices(model,{limit:3});
+  const notices=familyNoticePreview(model,{limit:3});
+  const hasAvailable=notices.visible.length>0;
+  const fallback=notices.mode==='school-notices'&&hasAvailable;
+  el('family-tomorrow-title').textContent=fallback?'Beskjeder denne uka':'Viktig denne uka';
+  document.querySelector('#family-view .family-important-heading .family-eyebrow').textContent=
+   fallback?'FRA SKOLENS UKEPLANER':'DET SOM KREVER OPPMERKSOMHET';
+  document.querySelector('#family-view .family-important-subtitle').textContent=fallback?
+   'Aktuelle skolebeskjeder. Viktige endringer vises her når de finnes.':
+   'Fridager, vaksinasjon, endret skoledag og andre viktige beskjeder.';
   const html=notices.visible.map(item=>{
    const when=item.date?new Intl.DateTimeFormat('nb-NO',{
     timeZone:'UTC',weekday:'long',day:'numeric',month:'short'
@@ -330,10 +339,14 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     '<span class="family-important-date">'+escape(when)+'</span>'+
     familyAgendaItemHtml(item)+'</div>';
   }).join('');
-  const message=!profiles.length?'Legg til barn for å se viktige skolebeskjeder.':
-   model.missingProfiles.length?
-    'Ukeplaner mangler eller kunne ikke hentes. Sjekk status for hvert barn.':
-    'Ingen særskilte viktige beskjeder registrert for denne uka.';
+  const message=!profiles.length?'Legg til barn for å se skolebeskjeder.':
+   model.missingProfiles.length===profiles.length?
+    'Ingen ukeplaner er klare for uke '+now.week+' ennå. Sjekk status for hvert barn.':
+    'Ingen skolebeskjeder registrert for uke '+now.week+' ennå.';
+  const partial=el('family-important-status');
+  partial.hidden=!hasAvailable||!model.missingProfiles.length;
+  partial.textContent=partial.hidden?'':'Viser tilgjengelige beskjeder. Ukeplanen er ennå ikke klar for '+
+   model.missingProfiles.join(', ')+'.';
   setHtml('family-important-cards',html||
    '<p class="family-important-empty">'+escape(message)+'</p>');
   const moreButton=el('family-mobile-important-more');
