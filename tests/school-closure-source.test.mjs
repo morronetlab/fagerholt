@@ -4,6 +4,7 @@ import {extractSchoolClosuresFromPdf} from '../lib/school-closure-source.mjs';
 import {analyzePdfPages} from '../lib/plan-core.mjs';
 import {dayDate} from '../public/shared/calendar.mjs';
 import {profileSummary} from '../public/shared/family-core.mjs';
+import {practicalHighlights} from '../public/shared/practical-highlights.mjs';
 
 const page=rows=>({width:620,height:780,items:rows.map(([text,x,y])=>({
  text,x,y,width:Math.max(10,text.length*5)
@@ -103,4 +104,17 @@ test('Daily packing never reappears on confirmed closed days through the family 
  assert.equal(summary.bag.length,0,'No "everyday" items on Friday when school is closed');
  assert.ok(summary.todayNotes.some(t=>/skolen stengt/i.test(t)));
  assert.ok(summary.weeklyBag.some(x=>x.day==='Hver dag'),'Normal week reminders remain for open days');
+});
+
+test('Weekly family highlights show the source-backed school closure once, not once per weekday',()=>{
+ const original='Denne uken er skolen stengt torsdag 05.november og fredag 6.november';
+ const plan=planFor([timetable(),source(original)]);
+ const profile={id:'fixture-0001',name:'Test',grade:'4',school:'nygaard',group:''};
+ const cal={year:2026,week:45,weekday:3,today:'2026-11-05',upcoming:false};
+ const summary=profileSummary(profile,plan,cal,()=>null);
+ const items=practicalHighlights({profiles:[profile],summaries:new Map([[profile.id,summary]]),
+  plans:new Map([[profile.id,plan]]),calendar:cal,focus:'week'});
+ const closures=items.filter(x=>x.kind==='notice'&&/skolen stengt/i.test(x.label));
+ assert.equal(closures.length,1,'Global and Thursday/Friday day notices must not create three cards');
+ assert.match(closures[0].label,/torsdag 5\. november og fredag 6\. november/i);
 });
