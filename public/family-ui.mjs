@@ -109,7 +109,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     !cacheableCalendar(calendars.get(school),school,now.year,now.week);
   });
  }
- let expandedChildren=new Set();
+ let expandedChildren=new Set(),expandedPacking=new Set();
  let reportCards=[];
  const AUTO_CHECK_MS=15*60_000, RETRY_COOLDOWN_MS=5*60_000+5000;
  const pairOf=p=>p.school+'|'+p.grade;
@@ -459,16 +459,18 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  function childSetupMarkup(p){
   if(!cloud)return '';
   const info=childSetupInfo(childPairingUI.getStatus(p.id));
+  const title=info.status==='not_invited'?'Barneapp ikke aktivert':
+   info.complete?'Barneapp aktiv':info.label;
   return '<div class="family-child-setup'+(info.complete?' is-complete':'')+
    '" data-setup-status="'+escape(info.status)+'">'+
-   '<span class="family-child-setup-info"><strong>'+(info.complete?'✓ ':'📱 ')+
-   escape(info.label)+'</strong>'+
-   (!info.complete?'<small>'+escape(info.description)+'</small>':'')+'</span>'+
-   (info.action?'<button type="button" class="family-child-qr sk-action sk-action--modal" data-family-pair="'+
-   escape(p.id)+'" aria-label="'+escape(info.action+' for '+p.name)+'">'+
-   escape(info.action)+'</button>':'')+
-   (!info.complete?'<button type="button" class="family-child-help sk-action sk-action--modal" data-family-help="'+
-   escape(p.id)+'" aria-label="Trenger hjelp med barneappen til '+escape(p.name)+'?">Trenger hjelp?</button>':'')+
+   '<span class="family-child-setup-info"><strong><span aria-hidden="true">📱</span> '+
+   escape(title)+'</strong></span>'+
+   (!info.complete?'<span class="family-child-setup-actions">'+
+    (info.action?'<button type="button" class="family-child-qr sk-action sk-action--modal" data-family-pair="'+
+      escape(p.id)+'" aria-label="'+escape(info.action+' for '+p.name)+'">'+
+      escape(info.action)+'</button>':'')+
+    '<button type="button" class="family-child-help sk-action sk-action--link" data-family-help="'+
+      escape(p.id)+'" aria-label="Hjelp med barneappen til '+escape(p.name)+'">Hjelp</button></span>':'')+
    '</div>';
  }
  function childCard(p,s,now){
@@ -489,21 +491,26 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     '<span>'+escape(x.label)+'</span></label></li>').join('')+'</ul>':
    '<p class="family-muted">Ingen ekstra utstyr denne dagen</p>';
   const allPacking=plan?DAYS.map(day=>({day,items:scopedPackingItems(plan,p,day)})):[];
+  const nearbyDay=now.upcoming?DAYS[0]:s.nextIndex==null?null:DAYS[s.nextIndex];
+  const nearbyBag=now.upcoming?s.todayBag:s.bag;
+  const hasWeekPacking=allPacking.some(({items})=>items.length>0);
+  const taskHeading=now.upcoming?'Lekser denne uka':'Lekser i dag';
   const details=s.ready?[
-   '<div class="family-child-progress"><div><span>Lekser i uke '+now.week+'</span><b>'+s.done+' / '+s.total+' fullført</b></div>',
+   '<div class="family-child-progress"><div><span>Lekser</span><b>'+s.done+' av '+s.total+' fullført</b></div>',
    '<div class="family-progress-track" role="progressbar" aria-label="Fullført for '+escape(p.name)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><span style="width:'+pct+'%"></span></div></div>',
-   '<details class="family-child-extra"'+(expandedChildren.has(p.id)?' open':'')+'><summary class="sk-action sk-action--disclosure">Se lekser, pakkeliste og ordøving</summary><div class="family-child-extra-content">',
-   now.upcoming?
-    '<div class="family-child-columns"><div><h4>📚 Lekser i uke '+now.week+'</h4>'+taskList(p,s.tasks,'Ingen lekser registrert')+'</div>'+
-    '<div><h4>🎒 Pakk til mandag</h4>'+packingList(s.todayBag,DAYS[0])+'</div></div>':
-    '<div class="family-child-columns"><div><h4>📚 I dag</h4>'+taskList(p,s.today,'Ingen lekser med frist i dag')+'</div>'+
-    '<div><h4>🎒 Pakk til '+(s.nextIndex==null?'neste skoledag':DAYS[s.nextIndex])+'</h4>'+
-     (s.nextIndex==null?'<p class="family-muted">Neste uke er ikke hentet ennå</p>':
-      packingList(s.bag,DAYS[s.nextIndex]))+'</div></div>',
-   '<details class="family-packing-week"><summary class="sk-action sk-action--disclosure">🎒 Se og kryss av utstyr alle dager</summary>'+
-    allPacking.map(({day,items})=>'<section><h4>'+escape(day)+'</h4>'+
-      packingList(items,day)+'</section>').join('')+'</details>'+
-   '<p class="family-word-state">'+(practice?'✦ Ordøving: '+practice.attempted+' / '+practice.total+(practice.weak?', '+practice.weak+' trenger øving':''):'✦ Ingen ordøving i denne ukeplanen')+'</p></div></details>'
+   '<details class="family-child-extra"'+(expandedChildren.has(p.id)?' open':'')+
+    '><summary class="sk-action sk-action--disclosure">Lekser og pakkeliste</summary><div class="family-child-extra-content">',
+   '<div class="family-child-columns"><div><h4>'+taskHeading+'</h4>'+
+    taskList(p,now.upcoming?s.tasks:s.today,now.upcoming?'Ingen lekser denne uka':'Ingen lekser i dag')+'</div>'+
+    (nearbyDay&&nearbyBag?.length?'<div><h4>Utstyr til '+escape(nearbyDay)+'</h4>'+
+      packingList(nearbyBag,nearbyDay)+'</div>':'')+'</div>',
+   hasWeekPacking?'<details class="family-packing-week"'+(expandedPacking.has(p.id)?' open':'')+
+    '><summary class="sk-action sk-action--disclosure">Utstyr alle dager</summary><div class="family-packing-days">'+
+    allPacking.filter(({items})=>items.length).map(({day,items})=>'<section><h4>'+escape(day)+'</h4>'+
+     packingList(items,day)+'</section>').join('')+'</div></details>':'',
+   practice?'<p class="family-word-state">Ordøving: '+practice.attempted+' av '+practice.total+
+    (practice.weak?' · '+practice.weak+' trenger øving':'')+'</p>':'',
+   '</div></details>'
   ].join(''):'<div class="family-not-ready" role="status">'+
     escape(availability.label+'. '+(errors.get(p.id)||s.reason||availability.detail))+'</div>';
   const compactStatus=s.ready?'<span class="family-mobile-progress-label">Lekser</span><span>'+
@@ -520,10 +527,11 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    (s.ready?'<span class="family-mobile-progress-track" aria-hidden="true"><span style="width:'+pct+'%"></span></span>':'')+
    '</button>';
   return '<article class="family-child" data-child-id="'+escape(p.id)+'">'+compact+
-   childSetupMarkup(p)+'<div class="family-child-heading">'+
+   '<div class="family-child-heading">'+
    '<span class="family-avatar" aria-hidden="true">'+escape(p.name.slice(0,1).toUpperCase())+'</span>'+
    '<div><h3>'+escape(p.name)+'</h3><p>'+escape(school?.name||'Skole')+' · '+escape(p.grade)+'. klasse'+(p.group?' · '+escape(p.group):'')+'</p>'+
    '<span class="family-child-week">UKE '+now.week+' · '+now.year+(now.upcoming?' · NESTE UKE':'')+'</span></div></div>'+
+   childSetupMarkup(p)+
    (aiLabel?'<p class="family-ai-label" role="status">'+escape(aiLabel)+'</p>':'')+
    details+'<div class="family-child-actions">'+
    (plan?.aiStatus==='failed'?'<button type="button" class="family-soft sk-action sk-action--utility" data-family-retry="'+escape(pairOf(p))+'">Prøv AI-tolkning igjen</button>':'')+
@@ -596,6 +604,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    card.classList.contains('mobile-more-open')).map(card=>card.dataset.childId));
   if(presentCards.length)expandedChildren=new Set(presentCards.filter(card=>
    card.querySelector('.family-child-extra')?.open).map(card=>card.dataset.childId));
+  if(presentCards.length)expandedPacking=new Set(presentCards.filter(card=>
+   card.querySelector('.family-packing-week')?.open).map(card=>card.dataset.childId));
   setHtml('family-cards',profiles.map(p=>childCard(p,summaries.get(p.id),now)).join(''));
   for(const card of el('family-cards').querySelectorAll('.family-child[data-child-id]'))
    card.classList.toggle('mobile-more-open',mobileMoreOpen.has(card.dataset.childId));
