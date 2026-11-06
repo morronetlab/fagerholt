@@ -18,7 +18,7 @@ test('Child identity precedes QR onboarding; no long explanatory copy in card',(
 });
 test('Homework progress copy is compact and zero homework remains explicit',()=>{
  assert.match(family,/<span>Lekser<\/span><b>/);
- assert.match(family,/s\.done\+' av '\+s\.total\+' fullført'/);
+ assert.match(family,/s\.done\+' av '\+s\.total\+' fullført<\/b>/);
  assert.match(family,/Ingen lekser i dag/);
  assert.match(family,/nearbyDay&&nearbyBag\?\.length/);
  assert.match(family,/hasWeekPacking\?/);
