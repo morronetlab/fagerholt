@@ -396,6 +396,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   if(lastTomorrowBriefing?.date!==next.date)showAllTomorrow=false;
   lastTomorrowBriefing=next;
   const count=next.items.length,completed=next.completed||0;
+  section.dataset.empty=String(count===0);
   el('family-tomorrow-brief-date').textContent=next.label;
   el('family-tomorrow-brief-count').textContent=
    count+' punkt'+(count===1?'':'er')+(completed?' · '+completed+' ferdig':'');
