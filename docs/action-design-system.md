@@ -35,9 +35,16 @@ In static HTML or a dynamic template:
 - An action that opens a native modal is `modal`, even if it was previously
   styled like a dark primary CTA. A form submit is `submit`.
 - Keep `aria-expanded` accurate on toggles; native `details[open]` works
-  automatically. The shared stylesheet supplies the disclosure arrow for
-  buttons without a built-in arrow. Where the label already includes a
-  chevron, add `data-sk-chevron="off"` to avoid duplicates.
+  automatically. **Buttons and native `<details>/<summary>` now use the exact
+  same CSS-only 8px chevron.** It is aligned to the far right of the control
+  (never a separate text line), rotates when expanded, and responds to reduced
+  motion. Do **not** type Unicode arrows into labels or add another
+  `<span class="chevron">` or `::after` glyph in feature-specific CSS.
+- Reserve `data-sk-chevron="off"` for intentional **icon-only controls**
+  such as the mobile settings gear. It is not a general workaround for
+  conflicting styles; remove old manual chevrons instead.
+- Preserve existing layout visibility: mobile-only controls must not be
+  exposed on desktop simply because a new disclosure uses `display:flex`.
 - Choices and whole-card buttons are *not* restyled as ordinary action pills:
   their nav/tile layout remains recognisable.
 - Background, border, typography, radius, hover, keyboard focus, disabled

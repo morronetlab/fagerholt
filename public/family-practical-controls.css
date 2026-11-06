@@ -13,9 +13,6 @@
  color:#2c6953;background:transparent!important;
  text-align:left;font-size:13px;font-weight:800;box-shadow:none;
 }
-#family-view .family-important-actions .family-disclosure>summary::after{
- margin-left:auto;color:#38735b;font-size:18px
-}
 #family-view .family-important-actions .family-disclosure[open]>summary{
  border-bottom:1px solid #e8efe9
 }

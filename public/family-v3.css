@@ -151,9 +151,8 @@
  color:#3f6959;font-size:12px;font-weight:800}
 .family-reminder-short{margin:4px 0 7px;line-height:1.5;font-weight:620}
 .family-reminder-detail{margin-top:8px;font-size:12px;color:#526c5e;max-width:100%}
-.family-reminder-detail summary{cursor:pointer;display:list-item;list-style:disclosure-closed;
+.family-reminder-detail summary{cursor:pointer;
  font-size:12px;font-weight:750;color:#275c47;padding:5px 0;min-height:28px}
-.family-reminder-detail[open] summary{list-style:disclosure-open}
 .family-reminder-detail>p{margin:7px 0;line-height:1.55;white-space:normal;overflow-wrap:anywhere;
  color:#3d5248;font-weight:450}
 .family-reminder-detail .family-reminder-quote{border-left:2px solid #a8c7b0;
@@ -422,12 +421,8 @@
 .family-important-actions #family-mobile-important-more[hidden]{display:none}
 .family-important-actions .family-disclosure{flex:0 1 auto;min-width:0;max-width:100%;margin:0;border:0}
 .family-important-actions .family-disclosure>summary{gap:8px;list-style:none}
-.family-important-actions .family-disclosure>summary::after{
- content:'⌄';margin:0;flex:0 0 auto;color:#39745a;font-size:17px;line-height:1
-}
 .family-important-actions .family-disclosure[open]{flex:0 0 100%;max-width:100%}
 .family-important-actions .family-disclosure[open]>summary{background:#eef7f1}
-.family-important-actions .family-disclosure[open]>summary::after{content:'⌃'}
 .family-important-actions .family-disclosure-body{padding-top:12px}
 .family-important-actions .family-disclosure-time[hidden]{display:none!important}
 .family-important-actions #family-mobile-important-more:focus-visible,
@@ -440,8 +435,6 @@
 .family-disclosure>summary{display:flex;align-items:center;gap:8px;min-height:45px;
  color:#306951;font-size:13px;font-weight:800;cursor:pointer;list-style:none;padding:10px 3px}
 .family-disclosure>summary::-webkit-details-marker{display:none}
-.family-disclosure>summary::after{content:'⌄';margin-left:auto;font-size:20px;line-height:1}
-.family-disclosure[open]>summary::after{content:'⌃'}
 .family-disclosure>summary:focus-visible{outline:3px solid #7cbea0;outline-offset:2px;border-radius:7px}
 .family-disclosure-time{font-size:11px;font-weight:600;color:#688273}
 .family-disclosure-body{padding:10px 0 5px}
@@ -456,8 +449,6 @@ details.family-agenda-undated[hidden]{display:none!important}
 details.family-agenda-undated>summary{padding:12px 3px;list-style:none;
  color:#536f5d;font-weight:800;font-size:12px;cursor:pointer}
 details.family-agenda-undated>summary::-webkit-details-marker{display:none}
-details.family-agenda-undated>summary::after{content:' ⌄';color:#47836b}
-details.family-agenda-undated[open]>summary::after{content:' ⌃'}
 details.family-agenda-undated>summary:focus-visible{outline:3px solid #78b795;outline-offset:2px}
 #family-agenda-undated-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
  gap:9px;padding:1px 0 12px}

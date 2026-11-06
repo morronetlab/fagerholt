@@ -94,24 +94,93 @@
   --sk-intent-bg:#ffece8;
   --sk-intent-border:#dcb0a8;
 }
-/* Clear, shared disclosure cue for buttons; native details keep their own
-   ::after/chevron mechanisms, avoiding duplicated arrows. */
-button.sk-action--disclosure:not([data-sk-chevron="off"])::after {
-  content:"⌄";
-  display:inline-block;
-  margin-left:7px;
-  font-size:18px;
-  font-weight:700;
-  line-height:1;
-  vertical-align:middle;
-  transition:transform .15s ease;
+/* One chevron for ALL expandable controls (buttons and native details).
+ * No Unicode glyph: the same 8px CSS chevron can never move to a second
+ * text line and rotates with aria-expanded/details[open]. */
+:is(button,summary).sk-action.sk-action--disclosure:not([data-sk-chevron="off"]) {
+ align-items:center;
+ justify-content:space-between;
+ gap:12px;
+ text-align:left;
 }
-button.sk-action--disclosure[aria-expanded="true"]:not([data-sk-chevron="off"])::after {
-  transform:rotate(180deg);
+details > summary.sk-action--disclosure:not([data-sk-chevron="off"]) {
+ display:flex;
+ width:100%;
+ min-width:0;
+ list-style:none;
+}
+details > summary::-webkit-details-marker {
+ display:none;
+}
+:is(button,summary).sk-action.sk-action--disclosure:not([data-sk-chevron="off"])::after {
+ content:"";
+ box-sizing:content-box;
+ display:block;
+ flex:0 0 8px;
+ width:8px;height:8px;
+ border-right:2px solid currentColor;
+ border-bottom:2px solid currentColor;
+ margin:0 3px 4px auto;
+ font-size:0;line-height:0;
+ transform:rotate(45deg);
+ transition:transform .15s ease;
+}
+details[open] > summary.sk-action--disclosure:not([data-sk-chevron="off"])::after,
+button.sk-action.sk-action--disclosure[aria-expanded="true"]:not([data-sk-chevron="off"])::after {
+ transform:rotate(225deg);
+ margin-top:4px;
+ margin-bottom:0;
 }
 details[open] > summary.sk-action--disclosure {
-  --sk-intent-bg:var(--sk-action-soft-hover);
-  --sk-intent-border:#a8d0b7;
+ --sk-intent-bg:var(--sk-action-soft-hover);
+ --sk-intent-border:#a8d0b7;
+}
+/* These buttons are always present only when their controlling views are
+ * available. Others (weekend, calendar details, mobile-only menus) MUST keep
+ * their own display/hidden rules rather than being forced visible globally. */
+#family-view #family-tomorrow-brief-more.sk-action--disclosure,
+#family-view .family-reminders-more.sk-action--disclosure {
+ display:inline-flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:12px;
+ max-width:100%;
+ white-space:normal;
+}
+#family-view .family-important-actions #family-mobile-important-more.sk-action--disclosure {
+ justify-content:space-between;
+ gap:12px;
+}
+#family-view .family-reminder-detail > summary.sk-action--disclosure {
+ min-height:36px;
+ padding:7px 10px;
+ font-size:12px;
+}
+/* Preserve the old reveal rules, but keep labels and the chevron
+ * separated when a wide surface is visible. */
+#welcome-view .welcome-other-options.sk-action--disclosure {
+ justify-content:space-between;
+}
+#app-view #weather-toggle.sk-action--disclosure {
+ justify-content:space-between;
+}
+@media(min-width:701px) {
+ #family-view #family-agenda-weekend-toggle.sk-action--disclosure:not([hidden]) {
+  display:inline-flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+ }
+}
+/* Utility disclosures in their respective compact/mobile contexts. */
+@media(max-width:700px) {
+ #family-view .family-mobile-more.sk-action--disclosure,
+ #family-view .family-agenda-expand.sk-action--disclosure {
+  display:inline-flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+ }
 }
 :is(button,a,summary).sk-action.sk-action--link,
 :is(#family-view,#app-view,#welcome-view,#account-panel,#child-app) .sk-action.sk-action--link {
@@ -205,5 +274,5 @@ details[open] > summary.sk-action--disclosure {
 }
 @media(prefers-reduced-motion:reduce) {
   .sk-action { transition:none!important; }
-  button.sk-action--disclosure::after { transition:none!important; }
+  :is(button,summary).sk-action--disclosure::after { transition:none!important; }
 }
