@@ -133,6 +133,7 @@ function showQuestion(){
   $('word-quiz-peek').hidden=true;
   for(const option of round.choices){
    const button=document.createElement('button');
+   button.classList.add('sk-action','sk-action--choice');
    button.type='button';
    button.textContent=option;
    button.addEventListener('click',()=>submit(option));
