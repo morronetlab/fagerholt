@@ -11,7 +11,7 @@ before(async()=>{server=await startStaticServer();
 after(async()=>{await browser?.close();await server?.close();});
 
 async function pageFor(t,width){
- const context=await browser.newContext({viewport:{width,height:950},locale:'nb-NO'});
+ const context=await browser.newContext({viewport:{width,height:950},locale:'nb-NO',reducedMotion:'reduce'});
  t.after(()=>context.close());
  const page=await context.newPage();
  const css=['style.css','original-look.css','family-look.css','family-v3.css',
