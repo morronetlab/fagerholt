@@ -202,16 +202,17 @@ function renderShell(){
   // Family tabs replace the generic fixed mobile navigation. Keep this state
   // on the body so desktop and the child's own week-plan remain unchanged.
   document.body.classList.toggle('family-dashboard-active',inFamily);
-  // The public first-run page already has its own two entry paths. The
-  // three-way app navigation belongs to school/family views only, on both
-  // desktop and mobile. Hidden also removes it from the accessibility tree.
+  // One consistent app header: logo + account. Public onboarding has its
+  // own choices; families use Overview/Calendar/Activities and child plans
+  // use the contextual back button. Never expose the legacy global nav,
+  // even temporarily during route changes or async account restoration.
   document.body.classList.toggle('public-landing-active',welcome);
   const primaryNav=document.querySelector('.primary-nav');
-  primaryNav.hidden=welcome;
-  primaryNav.inert=welcome;
+  primaryNav.hidden=true;
+  primaryNav.inert=true;
   $('header-family-week').hidden=!inFamily;
   $('home-link').setAttribute('aria-label',inFamily?'Gå til toppen av Min familie':
-   hasCloudFamily||guardianProfile?'Gå til Min familie':'Gå til forsiden');
+   hasCloudFamily||familyUI?.hasProfiles()||guardianProfile?'Gå til Min familie':'Gå til forsiden');
   $('welcome-view').hidden=!welcome;
   $('family-view').hidden=!inFamily;
   $('school-gate').hidden=inFamily||welcome||hasSchool;
@@ -802,7 +803,7 @@ function boot(){
     e.preventDefault();
     // On the guardian dashboard the logo is a safe "back to family top" action,
     // never an accidental trip to the public registration landing page.
-    navigateTo(familyUI.isActive()||familyUI.hasCloudFamily()||
+    navigateTo(familyUI.isActive()||familyUI.hasCloudFamily()||familyUI.hasProfiles()||
      (state.profileId&&familyUI.profileById(state.profileId))?'family':'welcome');
   });
   $('nav-home').addEventListener('click',()=>navigateTo('welcome'));

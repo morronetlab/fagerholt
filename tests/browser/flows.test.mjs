@@ -60,7 +60,7 @@ async function enterFamily(page){
   await page.locator('#landing-other-options').click();
   await page.locator('#landing-local-family').click();
   await page.locator('#family-cancel').click();
- }else await page.locator('#family-toggle').click();
+ }else await page.locator('#home-link').click();
 }
 async function chooseSchoolGrade(page,grade){
  if(await page.locator('#welcome-view').isVisible()){
@@ -108,7 +108,7 @@ test('School and grade selection remains available after navigating home and bac
  await chooseSchoolGrade(page,'2');
  await page.locator('#homework-list .checkrow').first().waitFor();
  assert.match(await page.locator('#plan-context-class').innerText(),/Sjøstrand.*2/);
- await page.locator('#nav-home').click();
+ await page.locator('#nav-home').evaluate(el=>el.click());
  assert.equal(await page.locator('#welcome-view').isVisible(),true);
  await page.locator('#landing-open-plan').click();
  assert.equal(await page.locator('#app-view').isVisible(),true);
@@ -144,7 +144,7 @@ test('Local family entry and account CTA can both start from the new welcome scr
  assert.equal(await page.locator('#family-form').isVisible(),true);
  await page.locator('#family-cancel').click();
  assert.equal(await page.locator('#family-child-dialog').evaluate(el=>el.open),false);
- await page.locator('#nav-home').click();
+ await page.locator('#nav-home').evaluate(el=>el.click());
  assert.equal(await page.locator('#welcome-view').isVisible(),true);
  await page.locator('#landing-create-family').click();
  assert.equal(await page.locator('#account-panel').isVisible(),true);
@@ -296,7 +296,7 @@ test('Header Ukeplan opens an existing child and reloading its plan stays on tha
  await enterFamily(page);
  await addFamilyChild(page,'Første barn');
  await addFamilyChild(page,'Andre barn');
- await page.locator('#nav-plan').click();
+ await page.locator('#family-cards .family-child-compact').first().click();
  await page.locator('#app-view').waitFor({state:'visible'});
  assert.match(await page.locator('#plan-context-class').innerText(),/Første barn/);
  assert.equal(await page.locator('#school-gate').isVisible(),false);
@@ -319,7 +319,7 @@ test('An explicitly selected welcome page survives reload even when family profi
  const {page,errors}=await openPage(t);
  await enterFamily(page);
  await addFamilyChild(page,'Barn med egen profil');
- await page.locator('#nav-home').click();
+ await page.locator('#nav-home').evaluate(el=>el.click());
  await page.locator('#welcome-view').waitFor({state:'visible'});
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#welcome-view').waitFor({state:'visible'});
@@ -436,7 +436,7 @@ test('Morning overview shows today, not tomorrow, and opens the correct calendar
  assert.equal(await page.locator('#family-agenda-days .family-agenda-day:visible').getAttribute('data-date'),'2026-10-28');
  assert.deepEqual(errors,[]);
 });
-test('Friday afternoon: tomorrow means Saturday family activities, never next Monday lessons',async t=>{
+test('Friday afternoon: school preparation jumps to Monday, weekend activity stays in calendar',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844,mockNow:'2026-10-30T14:00:00Z'});
  await enterFamily(page);
  await addFamilyChild(page,'Ailin');
@@ -447,13 +447,14 @@ test('Friday afternoon: tomorrow means Saturday family activities, never next Mo
  await page.locator('#family-activity-start').fill('12:00');
  await page.locator('#family-activity-save').click();
  await page.locator('[data-family-mobile-tab="overview"]').click();
- await page.locator('#family-tomorrow-brief-items').getByText('Lørdagsfotball').waitFor();
- assert.match(await page.locator('#family-tomorrow-brief-date').innerText(),/lørdag 31. oktober/i);
- assert.doesNotMatch(await page.locator('#family-tomorrow-brief-items').innerText(),/Mandagslekse|Neste mandag/);
- assert.equal(await page.locator('#family-tomorrow-brief-calendar').isVisible(),false);
- assert.match(await page.locator('#family-tomorrow-brief-notice').innerText(),/annen uke/);
- assert.equal(await page.locator('#family-tomorrow-brief-items button[data-family-tomorrow-child]').count(),0,
-  'Family activities should not pretend to be school-plan shortcuts');
+ await page.waitForFunction(()=>document.querySelector('#family-tomorrow-brief')?.dataset.loading==='false');
+ assert.equal(await page.locator('#family-tomorrow-brief-title').innerText(),'Hva skjer på mandag?');
+ assert.match(await page.locator('#family-tomorrow-brief-date').innerText(),/mandag 2. november/i);
+ assert.doesNotMatch(await page.locator('#family-tomorrow-brief-items').innerText(),/Lørdagsfotball/);
+ assert.equal(await page.locator('#family-tomorrow-brief-calendar').isVisible(),true);
+ await page.locator('#family-tomorrow-brief-calendar').click();
+ assert.equal(await page.locator('#family-agenda-days .family-agenda-day:visible')
+  .getAttribute('data-date'),'2026-11-02');
  assert.deepEqual(errors,[]);
 });
 test('Skoleuka shares the same branded header and install icons on parent and child mobile pages',async t=>{
@@ -515,8 +516,8 @@ test('Mobile local family keeps guest navigation and shares persistent header ac
  assert.equal(await page.locator('.primary-nav').isVisible(),false);
  await enterFamily(page);
  await addFamilyChild(page,'Barn med familie');
- assert.equal(await page.locator('.primary-nav').isVisible(),true,
-  'The public bottom navigation must remain usable for a guest/local family');
+ assert.equal(await page.locator('.primary-nav').isVisible(),false,
+  'All families use the same contextual navigation, not a bottom bar');
  assert.equal(await page.locator('body').evaluate(x=>x.classList.contains('family-cloud-active')),false);
  assert.equal(await page.locator('body').evaluate(x=>x.classList.contains('family-dashboard-active')),true);
  assert.equal(await page.locator('.topbar').evaluate(x=>getComputedStyle(x).position),'sticky');
@@ -560,7 +561,7 @@ test('Mobile local family keeps guest navigation and shares persistent header ac
 test('Desktop family navigation and overview header remain unchanged',async t=>{
  const {page,errors}=await openPage(t,{width:1280,height:850});
  await enterFamily(page);
- assert.equal(await page.locator('.primary-nav').isVisible(),true);
+ assert.equal(await page.locator('.primary-nav').isVisible(),false);
  assert.equal(await page.locator('.family-overview-top').isVisible(),true);
  assert.equal(await page.locator('#header-family-week').isVisible(),false);
  assert.notEqual(await page.locator('.topbar').evaluate(x=>getComputedStyle(x).position),'sticky');
@@ -1555,8 +1556,8 @@ test('Returning guardian sees a neutral startup shell, never a temporary empty f
   assert.equal(await page.locator('#account-button').innerText(),'Min konto');
   assert.match(await page.locator('#family-cards').innerText(),/Første barn/);
   assert.match(await page.locator('#family-cards').innerText(),/Andre barn/);
-  assert.equal(await page.locator('.primary-nav').isVisible(),width>700,
-   'Authenticated mobile dashboard has its own tabs, not generic bottom bar');
+  assert.equal(await page.locator('.primary-nav').isVisible(),false,
+   'Neither desktop nor mobile show the redundant global navigation');
   assert.deepEqual(errors,[]);
   await page.close();
  }
@@ -2144,6 +2145,55 @@ test('Skoleuka 2.2 mobile hierarchy makes children and critical notices prominen
  assert.deepEqual(errors,[]);
 });
 
+test('Upcoming week shows available child school notices instead of a false all-plans-missing warning',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844,mockNow:'2026-10-30T14:51:00Z'});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[
+   {id:'child-ready-1',name:'Ailin',school:'sjostrand',grade:'2',group:''},
+   {id:'child-pending-2',name:'Andre barn',school:'sjostrand',grade:'5A',group:''}
+  ]
+ })));
+ await page.route('**/api/plan?**',route=>{
+  const query=new URL(route.request().url()).searchParams;
+  const grade=query.get('grade');
+  if(grade==='5A')return reply(route,{status:'unpublished',schoolId:'sjostrand',
+   grade,week:45,year:2026,aiStatus:'disabled'});
+  return reply(route,{...basePlan('2'),schoolId:'sjostrand',year:2026,week:45,
+   dayNotes:{}, // no critical vaccine: exercise the ordinary-notice fallback
+   notices:['Husk å lese ukebrevet og ta med bibliotekboka.']});
+ });
+ await page.route('**/api/school-calendar?**',route=>reply(route,{
+  schoolId:'sjostrand',year:2026,week:45,sourceStatus:'live',events:[]
+ }));
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-view').waitFor({state:'visible'});
+ try{
+  await page.locator('#family-important-cards').getByText(/bibliotekboka/).waitFor({timeout:12000});
+ }catch(error){
+  const state=await page.evaluate(()=>({
+   screen:document.querySelector('#family-view')?.hidden,
+   title:document.querySelector('#family-tomorrow-title')?.textContent,
+   cards:document.querySelector('#family-important-cards')?.innerText,
+   details:document.querySelector('#family-reminders')?.innerText.slice(0,500),
+   status:document.querySelector('#family-important-status')?.innerText,
+   children:document.querySelector('#family-cards')?.innerText.slice(0,650),
+   week:document.querySelector('#family-week')?.textContent,
+   pending:document.querySelector('#family-load-status')?.textContent
+  }));
+  console.log('NEXT_WEEK_FALLBACK_DIAG',JSON.stringify(state));
+  throw error;
+ }
+ assert.equal(await page.locator('#family-tomorrow-title').innerText(),'Beskjeder denne uka');
+ assert.doesNotMatch(await page.locator('#family-important-cards').innerText(),/Ukeplaner mangler eller kunne ikke hentes/);
+ assert.match(await page.locator('#family-important-status').innerText(),/Andre barn/);
+ assert.equal(await page.locator('#family-important-status').isVisible(),true);
+ await page.locator('#family-practical-details > summary').click();
+ await page.locator('#family-reminders').getByText(/bibliotekboka/).first().waitFor();
+ assert.equal(await page.locator('#family-tomorrow-brief-title').innerText(),'Hva skjer på mandag?');
+ assert.match(await page.locator('#family-tomorrow-brief-date').innerText(),/mandag 2. november/);
+ assert.deepEqual(errors,[]);
+});
+
 test('2.2 family administration is minimized and opens the correct editor from calendar',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:740,mockNow:'2026-10-28T10:00:00Z'});
  await page.evaluate(()=>{
@@ -2261,8 +2311,8 @@ test('Landing actions still open existing login and school flows; global nav ret
  assert.equal(await page.locator('#account-panel').evaluate(el=>el.open),false);
  await page.locator('#landing-open-plan').click();
  assert.equal(await page.locator('#school-gate').isVisible(),true);
- assert.equal(await page.locator('.primary-nav').isVisible(),true,
-  'Public school selector retains its existing navigation');
+ assert.equal(await page.locator('.primary-nav').isVisible(),false,
+  'Public school selector uses its Back control, not global navigation');
  await page.locator('#school-back').click();
  assert.equal(await page.locator('#welcome-view').isVisible(),true);
  assert.equal(await page.locator('.primary-nav').isVisible(),false);

@@ -252,9 +252,10 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  // while viewing an individual child's plan.
  assert.equal(await second.locator('body').evaluate(el=>el.classList.contains('family-account-ready')),true);
  assert.equal(await second.locator('#nav-home').isVisible(),false);
- assert.equal(await second.locator('#family-toggle').isVisible(),true);
- assert.equal(await second.locator('#nav-plan').isVisible(),true);
- await second.locator('#nav-plan').click();
+ assert.equal(await second.locator('#family-toggle').isVisible(),false);
+ assert.equal(await second.locator('#nav-plan').isVisible(),false);
+ // Open a child's plan from the actual family card, not an obsolete tab.
+ await second.locator('#family-cards .family-child [data-family-open]').first().click();
  await second.locator('#app-view').waitFor({state:'visible'});
  assert.equal(await second.locator('#nav-home').isVisible(),false);
  assert.equal(await second.locator('#home-link').getAttribute('aria-label'),'Gå til Min familie');
@@ -392,7 +393,8 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  await second.locator('#account-button').click();
  await second.locator('#account-signout').click();
  await second.waitForFunction(()=>!document.body.classList.contains('family-account-ready'));
- assert.equal(await second.locator('#nav-home').isVisible(),true);
+ assert.equal(await second.locator('#nav-home').isVisible(),false);
+ assert.equal(await second.locator('#account-button').isVisible(),true);
  assert.deepEqual(a.errors,[]);
  assert.deepEqual(b.errors,[]);
  assert.deepEqual(c.errors,[]);

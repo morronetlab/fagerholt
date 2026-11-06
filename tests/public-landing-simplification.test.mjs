@@ -27,15 +27,17 @@ test('Local family is a disclosed secondary choice with clear device-only warnin
  assert.match(css,/#welcome-view\.show-welcome-options \.welcome-alternatives-panel/);
  assert.match(css,/#welcome-view \.welcome-alternatives-panel\{\s*display:none/);
 });
-test('Navigation is hidden and inert ONLY while the actual welcome screen is visible',()=>{
+test('Global tabs are hidden and inert throughout the app, keeping contextual navigation',()=>{
  assert.match(jsApp,/document\.body\.classList\.toggle\('public-landing-active',welcome\)/);
- assert.match(jsApp,/primaryNav\.hidden=welcome/);
- assert.match(jsApp,/primaryNav\.inert=welcome/);
- assert.match(css,/body\.public-landing-active \.primary-nav/);
- assert.match(css,/@media\(max-width:700px\)/);
- assert.match(html,/href="\/landing-first-time\.css"/);
- assert.ok(html.indexOf('href="/landing-first-time.css"')>html.indexOf('href="/action-system.css"'),
-  'Landing CSS must be loaded last');
+ assert.match(jsApp,/primaryNav\.hidden=true/);
+ assert.match(jsApp,/primaryNav\.inert=true/);
+ const cleanup=read('public/navigation-compact.css');
+ assert.match(cleanup,/html \.primary-nav \{ display:none!important; \}/);
+ assert.match(cleanup,/@media\(max-width:700px\)/);
+ assert.match(html,/href="\/navigation-compact\.css"/);
+ assert.ok(html.indexOf('href="/navigation-compact.css"')>html.indexOf('href="/landing-first-time.css"'),
+  'Main navigation cleanup must be loaded last');
+ assert.match(css,/#welcome-view\.show-welcome-options/);
 });
 test('All original action ids and QR/back-end integrations remain intact',()=>{
  for(const id of ['nav-home','nav-plan','family-toggle','account-button',

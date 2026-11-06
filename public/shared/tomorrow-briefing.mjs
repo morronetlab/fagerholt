@@ -2,7 +2,7 @@
  * actual ISO date rather than an inferred "next school day". Never invent
  * events or homework deadlines when source information is missing.
  */
-import {DAYS,dayDate,schoolCalendar} from './calendar.mjs';
+import {DAYS,dayDate,schoolCalendar,familyWeekCalendar} from './calendar.mjs';
 import {activityOccurrences,activityScopeLabel,activityTimeLabel} from './family-activities.mjs';
 
 export function nextIsoDate(today){
@@ -22,12 +22,19 @@ export function selectBriefingDay(now=new Date(),zone='Europe/Oslo',schoolEndsAt
  }).formatToParts(now).filter(x=>x.type!=='literal').map(x=>[x.type,x.value]));
  const hour=Number(hourParts.hour)+Number(hourParts.minute)/60;
  const weekday=(new Date(actualToday+'T12:00:00Z').getUTCDay()+6)%7;
+ const isWeekend=weekday>=5;
  const cutoff=weekday===4?14:schoolEndsAt;
- const isToday=hour<cutoff;
- return {actualToday,date:isToday?actualToday:nextIsoDate(actualToday),isToday};
+ const isToday=!isWeekend&&hour<cutoff;
+ // The family dashboard rolls over after Friday 14:00. Its preparation
+ // briefing must follow the same selected school week, not Saturday/Sunday.
+ const nextSchoolDay=isWeekend||(weekday===4&&!isToday);
+ const week=nextSchoolDay?familyWeekCalendar(now,zone):null;
+ return {actualToday,
+  date:nextSchoolDay?dayDate(week.year,week.week,0):isToday?actualToday:nextIsoDate(actualToday),
+  isToday,nextSchoolDay};
 }
 export function buildTomorrowBriefing({
- actualToday,targetDate,calendar,agenda,profiles=[],summaries=new Map(),activities=[]
+ actualToday,targetDate,nextSchoolDay=false,calendar,agenda,profiles=[],summaries=new Map(),activities=[]
 }={}){
  const date=targetDate===undefined?nextIsoDate(actualToday):targetDate;
  const isToday=date===actualToday;
@@ -83,11 +90,11 @@ export function buildTomorrowBriefing({
  const hasMissing=missingProfiles.length>0||(!inDisplayedWeek&&!weekend);
  const label=new Intl.DateTimeFormat('nb-NO',{timeZone:'UTC',weekday:'long',day:'numeric',
   month:'long'}).format(timestamp);
- const dayLabel=isToday?'i dag':'i morgen';
+ const dayLabel=isToday?'i dag':nextSchoolDay?'mandag':'i morgen';
  const notice=!profiles.length?'Legg til barn for å se skoleoppgaver '+dayLabel+'.':
-  !inDisplayedWeek?'Viser familieaktiviteter for '+dayLabel+'. Skoleplanen på denne siden gjelder en annen uke.':
+  !inDisplayedWeek?'Viser bare familieaktiviteter for '+dayLabel+'. Ukeplanen for neste skoledag er ikke tilgjengelig her.':
   missingProfiles.length?'Ukeplanen er ikke klar for '+missingProfiles.join(', ')+'. Flere punkter kan komme.':
-  weekend?'Sjekk familiens avtaler. Skolenes eventuelle helgebeskjeder må kontrolleres i originalkilden.':
+  weekend?'Sjekk familiens avtaler. Helgebeskjeder finnes i familiekalenderen.':
   !items.length?'Ingen datofestede punkter funnet for '+dayLabel+'. Sjekk skolens original ved tvil.':'';
  return {date,label,isToday,items,inDisplayedWeek,weekend,hasMissing,missingProfiles,notice,
   completed:items.filter(x=>x.checked).length,outstanding:items.filter(x=>!x.checked).length,
