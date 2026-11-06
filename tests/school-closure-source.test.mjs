@@ -77,6 +77,9 @@ test('Explicitly dated closure must match actual selected ISO year and week',()=
  const explicitOtherYear=source('Skolen stengt torsdag 05.november 2027 og fredag 6.november 2027');
  assert.deepEqual(extractSchoolClosuresFromPdf([explicitOtherYear],2026,45)[0]?.closedDays||[],[],
   'A matching day/month in the WRONG printed year must not close school.');
+ const yearOnlyAtEnd=source('Skolen stengt torsdag 05.november og fredag 6.november 2027');
+ assert.deepEqual(extractSchoolClosuresFromPdf([yearOnlyAtEnd],2026,45)[0]?.closedDays||[],[],
+  'When a date pair prints the year only once, both dates inherit that year.');
 });
 
 test('Unproven, negated, historical or next-week phrases never cancel school days',()=>{
@@ -86,6 +89,7 @@ test('Unproven, negated, historical or next-week phrases never cancel school day
   'Planleggingsdag er avlyst torsdag.',
   'Forrige uke hadde vi planleggingsdager torsdag og fredag.',
   'Neste uke har skolen planleggingsdager torsdag og fredag.',
+  'Skolen har planleggingsdager torsdag og fredag neste uke.',
   'Planleggingsdag uten dato'
  ]){
   const records=extractSchoolClosuresFromPdf([source(sentence)],2026,45);
@@ -117,4 +121,10 @@ test('Weekly family highlights show the source-backed school closure once, not o
  const closures=items.filter(x=>x.kind==='notice'&&/skolen stengt/i.test(x.label));
  assert.equal(closures.length,1,'Global and Thursday/Friday day notices must not create three cards');
  assert.match(closures[0].label,/torsdag 5\. november og fredag 6\. november/i);
+});
+
+test('Unrelated subsequent sentence about next week cannot cancel an explicit current-week closure',()=>{
+ const p=source('Skolen har planleggingsdager torsdag og fredag. Neste uke er alt normalt igjen.');
+ const facts=extractSchoolClosuresFromPdf([p],2026,45);
+ assert.deepEqual(facts[0]?.closedDays,['Torsdag','Fredag']);
 });
