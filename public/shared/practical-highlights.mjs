@@ -46,7 +46,15 @@ export function practicalHighlights({profiles,summaries,plans,calendar,focus='we
  const push=(profile,kind,label,priority,dayOrder,day=null,plan=null)=>{
   const text=String(label||'').trim();
   if(!text)return;
-  const key=profile.id+'|'+norm(text);
+  // A source-backed closure is recorded once globally and once for each
+  // closed weekday, so parents can find it in both scopes. In the weekly
+  // highlights, show the complete dated notice ONCE instead of three cards.
+  // Do not collapse other notices which may genuinely recur on two days.
+  const normalized=norm(text);
+  const datedClosure=/\b(?:planleggingsdag(?:er)?|skolen\s+(?:er\s+)?stengt)\b/u.test(normalized)&&
+   /\b(?:mandag|tirsdag|onsdag|torsdag|fredag)\b/u.test(normalized);
+  const labelKey=datedClosure?normalized.replace(/^(?:mandag|tirsdag|onsdag|torsdag|fredag)\s*[:–-]\s*/u,''):normalized;
+  const key=profile.id+'|'+labelKey;
   if(seen.has(key))return;
   seen.add(key);
   const adultImpact=adultImpactType(text);
