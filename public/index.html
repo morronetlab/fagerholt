@@ -61,6 +61,7 @@
   <link rel="stylesheet" href="/family-activity-dialog.css">
   <link rel="stylesheet" href="/guardian-plan.css">
   <link rel="stylesheet" href="/family-practical-controls.css">
+  <link rel="stylesheet" href="/action-system.css">
 </head>
 <body>
 <a class="skip-link" href="#main-content">Hopp til innhold</a>
@@ -68,19 +69,19 @@
   <header class="topbar">
     <a class="logo" id="home-link" href="/" aria-label="Gå til forsiden"><span class="brand-mark" aria-hidden="true"><img class="brand-icon" src="/brand/skoleuka-icon.svg" width="47" height="47" alt=""></span><span><strong id="brand-title">skole<span class="logo-accent">uka.</span></strong><small id="brand-subtitle">HELE FAMILIENS SKOLEUKE</small></span></a>
     <nav class="primary-nav" aria-label="Hovednavigasjon">
-      <button id="nav-home" type="button" class="primary-nav-link" data-nav="welcome">Forside</button>
-      <button id="family-toggle" type="button" class="primary-nav-link" data-nav="family" aria-pressed="false">Min familie</button>
-      <button id="nav-plan" type="button" class="primary-nav-link" data-nav="plan">Ukeplan</button>
+      <button id="nav-home" type="button" class="primary-nav-link sk-action sk-action--choice" data-nav="welcome">Forside</button>
+      <button id="family-toggle" type="button" class="primary-nav-link sk-action sk-action--choice" data-nav="family" aria-pressed="false">Min familie</button>
+      <button id="nav-plan" type="button" class="primary-nav-link sk-action sk-action--choice" data-nav="plan">Ukeplan</button>
     </nav>
     <div class="header-actions">
       <span id="header-family-week" class="header-family-week" hidden aria-label="Familieoversiktens uke">Uke —</span>
-      <button type="button" id="account-button" class="account-nav" aria-expanded="false" aria-controls="account-panel">Logg inn</button>
+      <button type="button" id="account-button" class="account-nav sk-action sk-action--modal" aria-expanded="false" aria-controls="account-panel">Logg inn</button>
     </div>
   </header>
   <dialog id="account-panel" class="account-panel" aria-labelledby="account-heading" aria-modal="true">
     <div class="account-head"><div><p class="family-eyebrow">SKOLEUKA · FAMILIEKONTO</p>
       <h2 id="account-heading">Familien på alle enheter</h2></div>
-      <button type="button" id="account-close" class="account-close" aria-label="Lukk konto">✕</button></div>
+      <button type="button" id="account-close" class="account-close sk-action sk-action--close" aria-label="Lukk konto">✕</button></div>
     <div id="account-steps" class="onboard-steps" hidden aria-label="Fremdrift i registreringen">
       <span data-onboard-step="1">1. E-post</span><span data-onboard-step="2">2. Familie</span><span data-onboard-step="3">3. Barn</span><span data-onboard-step="4">4. Ferdig</span>
     </div>
@@ -93,7 +94,7 @@
     <div data-account-screen="login" hidden>
       <p class="account-onboard-lead">Skriv inn e-postadressen din. Du får en kode for å logge inn – ingen passord og ikke noe eget registreringsskjema.</p>
       <form id="account-request-form"><label>E-postadresse<input id="account-email" type="email" required autocomplete="email" placeholder="forelder@eksempel.no"></label>
-        <button id="account-send-code" type="submit" class="family-add-button">Fortsett med e-post →</button></form>
+        <button id="account-send-code" type="submit" class="family-add-button sk-action sk-action--submit">Fortsett med e-post →</button></form>
       <p class="account-muted">Barn trenger ikke e-postadresse. De får sin egen ukeplan via QR-kode fra en foresatt.</p>
     </div>
     <div data-account-screen="verify" hidden>
@@ -101,51 +102,51 @@
       <p class="account-muted">Koden kommer på e-post, ikke SMS. Sjekk også søppelpost. Bruk den nyeste koden hvis du har bedt om flere.</p>
       <form id="account-verify-form"><label>Engangskode<input id="account-code" type="text" inputmode="numeric" pattern="[0-9]{6,8}" maxlength="8" autocomplete="one-time-code" required placeholder="123456"></label>
         <p id="account-code-error" class="account-code-error" role="alert" hidden></p>
-         <button id="account-verify" type="submit" class="family-add-button">Bekreft og fortsett →</button></form>
-      <button type="button" id="account-resend-code" class="family-text-button">Send ny kode</button>
-      <button type="button" id="account-back-email" class="family-text-button">← Bruk en annen e-postadresse</button>
+         <button id="account-verify" type="submit" class="family-add-button sk-action sk-action--submit">Bekreft og fortsett →</button></form>
+      <button type="button" id="account-resend-code" class="family-text-button sk-action sk-action--utility">Send ny kode</button>
+      <button type="button" id="account-back-email" class="family-text-button sk-action sk-action--link">← Bruk en annen e-postadresse</button>
     </div>
     <div data-account-screen="signed" hidden>
       <p class="account-signed-in">Innlogget som <strong id="account-user-email"></strong></p>
       <div id="account-invite-prompt" class="account-invite-prompt" hidden>
         <strong>Du er invitert til en familie</strong>
         <p>Du trenger ikke opprette en ny familie. Godta invitasjonen for å bli med.</p>
-        <button id="account-invite-accept" type="button" class="family-add-button">Godta familieinvitasjonen →</button>
+        <button id="account-invite-accept" type="button" class="family-add-button sk-action sk-action--submit">Godta familieinvitasjonen →</button>
       </div>
       <p id="account-selected-family-row">Valgt familie: <strong id="account-current-family">Ingen</strong></p>
       <label class="account-family-picker" id="account-family-picker-row">Bytt familie<select id="account-family-picker"><option value="">Velg familie</option></select></label>
       <div id="account-empty-family">
         <h3>Hva skal familien hete?</h3><p>Bruk gjerne bare «Min familie». Navnet kan endres senere. Deretter legger du til barna.</p>
         <form id="account-family-create"><label>Familienavn<input id="account-family-name" type="text" maxlength="80" required placeholder="F.eks. Min familie"></label>
-          <button id="account-create" type="submit" class="family-add-button">Opprett familie og fortsett →</button></form>
+          <button id="account-create" type="submit" class="family-add-button sk-action sk-action--submit">Opprett familie og fortsett →</button></form>
       </div>
       <div id="account-family-tools" hidden>
         <h3>Inviter en annen foresatt</h3>
         <form id="account-invite-form"><label>Foresattes e-post<input id="account-invite-email" type="email" required autocomplete="off" placeholder="foresatt@eksempel.no"></label>
-          <button id="account-invite-submit" type="submit" class="family-add-button">Lag engangsinvitasjon</button></form>
+          <button id="account-invite-submit" type="submit" class="family-add-button sk-action sk-action--submit">Lag engangsinvitasjon</button></form>
         <div id="account-invite-result" hidden><p>Invitasjonen gjelder i 48 timer og er bundet til e-postadressen du skrev inn.</p>
           <label>Invitasjonslenke<input id="account-invite-link" readonly aria-label="Invitasjonslenke til foresatt"></label>
-          <button id="account-copy-invite" type="button" class="family-light-button">Kopier lenke</button></div>
+          <button id="account-copy-invite" type="button" class="family-light-button sk-action sk-action--utility">Kopier lenke</button></div>
 
         <div class="account-import-section"><h3>Overfør fra denne enheten</h3>
           <p>Importer lokale barneprofiler og ferdigmerkede lekser fra <strong>inneværende uke</strong>. Eldre ukeprogresjon og øveøkter forblir lokale foreløpig.</p>
-          <button id="account-import" type="button" class="family-light-button" hidden>Importer lokale profiler</button></div>
+          <button id="account-import" type="button" class="family-light-button sk-action sk-action--utility" hidden>Importer lokale profiler</button></div>
       </div>
       <section id="account-digest-settings" class="account-digest-settings" hidden aria-labelledby="account-digest-heading">
         <h3 id="account-digest-heading">Søndagsoppsummering på e-post</h3>
         <p>Få de viktigste praktiske beskjedene for neste skoleuke hver søndag kveld. Vi bruker e-postadressen du allerede har bekreftet ved innlogging.</p>
         <label class="account-digest-toggle"><input id="account-digest-optin" type="checkbox"><span>Ja, send meg ukentlig oppsummering</span></label>
-        <button type="button" id="account-digest-send-test" class="family-light-button" disabled>Send en testmail til meg nå</button>
+        <button type="button" id="account-digest-send-test" class="family-light-button sk-action sk-action--utility" disabled>Send en testmail til meg nå</button>
         <p id="account-digest-availability" class="account-muted"></p>
         <p id="account-digest-status" role="status" aria-live="polite"></p>
         <p class="account-muted">Frivillig. Du kan slå av når som helst her. Ukeplanene kan mangle enkelte beskjeder, så skolens original er alltid fasit.</p>
       </section>
       <div class="account-danger-zone">
-        <button id="account-leave-family" type="button" class="account-danger" hidden>Forlat familien</button>
-        <button id="account-delete-family" type="button" class="account-danger" hidden>Slett hele familien og all progresjon</button>
+        <button id="account-leave-family" type="button" class="account-danger sk-action sk-action--danger" hidden>Forlat familien</button>
+        <button id="account-delete-family" type="button" class="account-danger sk-action sk-action--danger" hidden>Slett hele familien og all progresjon</button>
       </div>
-      <button id="account-open-family" type="button" class="family-add-button">Gå til familieoversikten →</button>
-      <button id="account-signout" type="button" class="family-text-button">Logg ut</button>
+      <button id="account-open-family" type="button" class="family-add-button sk-action sk-action--navigate">Gå til familieoversikten →</button>
+      <button id="account-signout" type="button" class="family-text-button sk-action sk-action--utility">Logg ut</button>
     </div>
     <div data-account-screen="children" hidden>
       <p class="onboard-intro">Legg til ditt første barn. Velg skolen og klassetrinnet barnet går på, så finner Skoleuka ukeplanen. Du kan legge til flere senere.</p>
@@ -153,7 +154,7 @@
       <div id="onboard-import-row" class="onboard-import-row" hidden>
         <strong>Har du allerede lagt til barn på denne enheten?</strong>
         <p>Bruk eksisterende barneprofiler i stedet for å registrere dem på nytt. Avkrysninger for inneværende uke kan også overføres.</p>
-        <button id="onboard-import" type="button" class="family-light-button">Bruk barna jeg har lagt til →</button>
+        <button id="onboard-import" type="button" class="family-light-button sk-action sk-action--utility">Bruk barna jeg har lagt til →</button>
       </div>
       <h3 id="onboard-child-form-title">Legg til første barn</h3>
       <form id="onboard-child-form" class="onboard-child-form">
@@ -164,19 +165,19 @@
         </div>
         <label>Gruppe <span class="account-optional">(valgfritt)</span><input id="onboard-child-group" type="text" maxlength="35" autocomplete="off" placeholder="F.eks. Rød"></label>
         <p class="account-field-help">Brukes hvis skolen deler klassen i grupper, som Rød og Blå. Er du usikker, kan du la feltet stå tomt.</p>
-        <button id="onboard-child-save" type="submit" class="family-add-button">+ Legg til barn</button>
+        <button id="onboard-child-save" type="submit" class="family-add-button sk-action sk-action--submit">+ Legg til barn</button>
       </form>
       <div class="onboard-actions">
-        <button id="onboard-children-back" type="button" class="family-text-button">← Familieinnstillinger</button>
-        <button id="onboard-children-next" type="button" class="family-add-button">Fortsett →</button>
+        <button id="onboard-children-back" type="button" class="family-text-button sk-action sk-action--navigate">← Familieinnstillinger</button>
+        <button id="onboard-children-next" type="button" class="family-add-button sk-action sk-action--navigate">Fortsett →</button>
       </div>
     </div>
     <div data-account-screen="completed" hidden class="onboard-complete">
       <div class="onboard-success-symbol" aria-hidden="true">✓</div>
       <h3>Familien er klar!</h3>
       <p id="onboard-complete-description">Du kan nå følge skoleuka for barna på ett sted.</p>
-      <button id="onboard-dashboard" type="button" class="family-add-button">Gå til min familie →</button>
-      <button id="onboard-open-invite" type="button" class="family-light-button">Inviter en annen foresatt</button>
+      <button id="onboard-dashboard" type="button" class="family-add-button sk-action sk-action--navigate">Gå til min familie →</button>
+      <button id="onboard-open-invite" type="button" class="family-light-button sk-action sk-action--modal">Inviter en annen foresatt</button>
       <p class="account-muted">Invitasjonen er frivillig. Du kan legge til flere barn senere.</p>
     </div>
   </dialog>
@@ -204,26 +205,26 @@
           <span class="welcome-choice-icon" aria-hidden="true">👨‍👩‍👧‍👦</span>
           <h2>For foresatte</h2>
           <p>Opprett familie, legg til barna og få én oversikt med skole, frister og fritidsaktiviteter. Del med en annen foresatt.</p>
-          <button id="landing-create-family" type="button" class="welcome-button welcome-button-primary">Opprett familiekonto <span aria-hidden="true">→</span></button>
+          <button id="landing-create-family" type="button" class="welcome-button welcome-button-primary sk-action sk-action--modal">Opprett familiekonto <span aria-hidden="true">→</span></button>
           <p class="welcome-helper">1. E-postkode · 2. Legg til barn · 3. Få oversikt</p>
         </article>
-        <button type="button" id="landing-other-options" class="welcome-other-options" aria-expanded="false">Andre måter å bruke Skoleuka <span aria-hidden="true">⌄</span></button>
+        <button type="button" id="landing-other-options" class="welcome-other-options sk-action sk-action--disclosure" aria-expanded="false" data-sk-chevron="off">Andre måter å bruke Skoleuka <span aria-hidden="true">⌄</span></button>
         <article class="welcome-choice welcome-child-choice">
           <span class="welcome-choice-icon" aria-hidden="true">📱</span>
           <h2>For barn</h2>
           <p>Få din egen ukeplan på telefonen eller nettbrettet, med lekser, pakkeliste og aktiviteter som gjelder deg.</p>
-          <a href="/barn/" class="welcome-button welcome-button-secondary">Åpne min ukeplan <span aria-hidden="true">→</span></a>
+          <a href="/barn/" class="welcome-button welcome-button-secondary sk-action sk-action--navigate">Åpne min ukeplan <span aria-hidden="true">→</span></a>
           <p class="welcome-helper">En foresatt inviterer deg med QR-kode</p>
         </article>
         <article class="welcome-choice">
           <span class="welcome-choice-icon" aria-hidden="true">📖</span>
           <h2>Bare se en ukeplan?</h2>
           <p>Du kan fortsatt finne en offentlig ukeplan uten registrering. Velg skole og klassetrinn.</p>
-          <button id="landing-open-plan" type="button" class="welcome-button welcome-button-secondary">Finn ukeplan <span aria-hidden="true">→</span></button>
+          <button id="landing-open-plan" type="button" class="welcome-button welcome-button-secondary sk-action sk-action--navigate">Finn ukeplan <span aria-hidden="true">→</span></button>
           <p class="welcome-helper">Ingen registrering nødvendig</p>
         </article>
       </div>
-      <p class="welcome-local">Vil du samle barna uten å registrere deg? <button id="landing-local-family" type="button">Bruk familieoversikt kun på denne enheten</button></p>
+      <p class="welcome-local">Vil du samle barna uten å registrere deg? <button class="sk-action sk-action--modal" id="landing-local-family" type="button">Bruk familieoversikt kun på denne enheten</button></p>
       <section class="welcome-explain" aria-label="Slik fungerer Skoleuka">
         <div><span aria-hidden="true">1</span><strong>Opprett familiekonto</strong><p>Logg inn som foresatt med kode på e-post.</p></div>
         <div><span aria-hidden="true">2</span><strong>Legg til barna</strong><p>Velg riktig skole, trinn og eventuell gruppe én gang.</p></div>
@@ -237,16 +238,16 @@
       </div>
       <div class="family-overview-top"><div><p class="family-eyebrow">FAMILIEOVERSIKT</p><h1 id="family-title" tabindex="-1">God oversikt over skoleuka</h1><p id="family-week-context" class="family-overview-subtitle">Lekser, pakkeliste og beskjeder for barna.</p></div><div class="family-overview-stats"><span id="family-week">Uke —</span><strong id="family-week-progress">—</strong><small id="family-count">0 barn</small></div></div>
       <nav id="family-mobile-nav" class="family-mobile-nav" aria-label="Naviger i Min familie">
-        <button type="button" data-family-mobile-tab="overview" aria-pressed="true" aria-controls="family-tomorrow-brief family-children"><svg class="family-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/></svg><span>Oversikt</span></button>
-        <button type="button" data-family-mobile-tab="calendar" aria-pressed="false" aria-controls="family-agenda-days"><svg class="family-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/><path d="M8 14h2m4 0h2m-8 4h2"/></svg><span>Kalender</span></button>
-        <button type="button" data-family-mobile-tab="activities" aria-pressed="false" aria-controls="family-activity-section"><svg class="family-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m12 7-4 3 1.6 5h4.8L16 10zM8 10 4 8m12 2 4-2m-10 7-2 5m6-5 2 5"/></svg><span>Aktiviteter</span></button>
+        <button class="sk-action sk-action--choice" type="button" data-family-mobile-tab="overview" aria-pressed="true" aria-controls="family-tomorrow-brief family-children"><svg class="family-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/></svg><span>Oversikt</span></button>
+        <button class="sk-action sk-action--choice" type="button" data-family-mobile-tab="calendar" aria-pressed="false" aria-controls="family-agenda-days"><svg class="family-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/><path d="M8 14h2m4 0h2m-8 4h2"/></svg><span>Kalender</span></button>
+        <button class="sk-action sk-action--choice" type="button" data-family-mobile-tab="activities" aria-pressed="false" aria-controls="family-activity-section"><svg class="family-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m12 7-4 3 1.6 5h4.8L16 10zM8 10 4 8m12 2 4-2m-10 7-2 5m6-5 2 5"/></svg><span>Aktiviteter</span></button>
       </nav>
       <div class="family-overview-meta"><span id="family-storage-label">🔒 Kun på denne enheten</span><span id="family-sync-status" role="status" aria-live="polite"></span></div>
       <aside id="family-first-run" class="family-first-run" aria-labelledby="family-first-run-title" hidden>
         <div class="family-first-run-head">
           <div><span class="family-first-run-eyebrow">NY FAMILIE · NESTE STEG</span>
             <h2 id="family-first-run-title">Kom i gang</h2></div>
-          <button id="family-first-run-dismiss" type="button" aria-label="Skjul veiledningen">✕</button>
+          <button class="sk-action sk-action--close" id="family-first-run-dismiss" type="button" aria-label="Skjul veiledningen">✕</button>
         </div>
         <ol class="family-first-run-steps" aria-label="Dine første steg">
           <li data-first-run-step="family">Familie</li>
@@ -255,8 +256,8 @@
         </ol>
         <p id="family-first-run-description"></p>
         <div class="family-first-run-actions">
-          <button type="button" id="family-first-run-next" class="family-add-button">Fortsett →</button>
-          <button type="button" id="family-first-run-calendar" class="family-light-button" hidden>Se familiekalender</button>
+          <button type="button" id="family-first-run-next" class="family-add-button sk-action sk-action--modal">Fortsett →</button>
+          <button type="button" id="family-first-run-calendar" class="family-light-button sk-action sk-action--navigate" hidden>Se familiekalender</button>
         </div>
       </aside>
       <section class="family-tomorrow family-important" aria-labelledby="family-tomorrow-title">
@@ -268,9 +269,9 @@
         </div>
         <div id="family-important-cards" class="family-important-cards" aria-live="polite"></div>
         <div class="family-important-actions">
-          <button type="button" id="family-mobile-important-more" class="family-light-button" aria-expanded="false" aria-controls="family-important-cards" hidden>Vis 1 til</button>
+          <button type="button" id="family-mobile-important-more" class="family-light-button sk-action sk-action--disclosure" aria-expanded="false" aria-controls="family-important-cards" hidden>Vis 1 til</button>
           <details id="family-practical-details" class="family-disclosure">
-            <summary><span id="family-practical-label">Skolebeskjeder og utstyr</span><span id="family-next-day" class="family-disclosure-time" hidden></span></summary>
+            <summary class="sk-action sk-action--disclosure"><span id="family-practical-label">Skolebeskjeder og utstyr</span><span id="family-next-day" class="family-disclosure-time" hidden></span></summary>
           <div class="family-disclosure-body">
         <div class="family-practical-toolbar">
           <p class="family-reminders-intro">Praktiske beskjeder og utstyr fra skolen, med kildehenvisninger.</p>
@@ -284,8 +285,8 @@
         </div>
         <div id="family-reminders" class="family-reminders" aria-live="polite"></div>
         <p id="family-calendar-status" class="family-calendar-status" role="status" aria-live="polite"></p>
-        <a id="family-calendar-source" class="family-calendar-source" href="https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/skoleruta/" target="_blank" rel="noopener noreferrer" hidden>Se kommunens skolerute ↗</a>
-        <button type="button" id="family-report-missing" class="family-report-missing">Mangler det en viktig beskjed? Rapporter feil</button>
+        <a id="family-calendar-source" class="family-calendar-source sk-action sk-action--link" href="https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/skoleruta/" target="_blank" rel="noopener noreferrer" hidden>Se kommunens skolerute ↗</a>
+        <button type="button" id="family-report-missing" class="family-report-missing sk-action sk-action--modal">Mangler det en viktig beskjed? Rapporter feil</button>
           </div>
           </details>
         </div>
@@ -300,24 +301,24 @@
         <p id="family-tomorrow-brief-notice" class="family-tomorrow-brief-notice" role="status"></p>
         <ul id="family-tomorrow-brief-items" class="family-tomorrow-brief-items"></ul>
         <div class="family-tomorrow-brief-actions">
-          <button type="button" id="family-tomorrow-brief-more" class="family-light-button" hidden aria-expanded="false">Vis resten</button>
-          <button type="button" id="family-tomorrow-brief-calendar" class="family-light-button" hidden>Se dagen i kalenderen →</button>
+          <button type="button" id="family-tomorrow-brief-more" class="family-light-button sk-action sk-action--disclosure" hidden aria-expanded="false">Vis resten</button>
+          <button type="button" id="family-tomorrow-brief-calendar" class="family-light-button sk-action sk-action--navigate" hidden>Se dagen i kalenderen →</button>
         </div>
       </section>
       <section id="family-children" class="family-children" aria-labelledby="family-children-title">
       <div class="family-toolbar">
         <div><h2 id="family-children-title">Barna mine</h2><p>Hvert barn har sin egen ukeplan og lekseprogresjon.</p></div>
         <div class="family-toolbar-actions">
-          <button id="family-mobile-add" type="button" aria-label="Legg til barn">+ Legg til</button>
-          <button id="family-mobile-admin-toggle" type="button" aria-expanded="false" aria-controls="family-mobile-admin-panel">⚙</button>
+          <button class="sk-action sk-action--modal" id="family-mobile-add" type="button" aria-label="Legg til barn">+ Legg til</button>
+          <button class="sk-action sk-action--disclosure" id="family-mobile-admin-toggle" type="button" aria-expanded="false" aria-controls="family-mobile-admin-panel" data-sk-chevron="off">⚙</button>
           <div id="family-mobile-admin-panel" class="family-mobile-admin-panel">
-            <button id="family-refresh" type="button" class="family-light-button">↻ Oppdater</button>
-            <button id="family-add" type="button" class="family-add-button">+ Legg til barn</button>
+            <button id="family-refresh" type="button" class="family-light-button sk-action sk-action--utility">↻ Oppdater</button>
+            <button id="family-add" type="button" class="family-add-button sk-action sk-action--modal">+ Legg til barn</button>
           </div>
         </div>
       </div>
       <p id="family-load-status" class="family-status" role="status" aria-live="polite"></p>
-      <div id="family-empty" class="family-empty"><span aria-hidden="true">🏠</span><h3>Legg til det første barnet</h3><p>Velg skole og klassetrinn, så finner vi ukeplanen.</p><button id="family-empty-add" type="button" class="family-add-button">+ Legg til første barn</button></div>
+      <div id="family-empty" class="family-empty"><span aria-hidden="true">🏠</span><h3>Legg til det første barnet</h3><p>Velg skole og klassetrinn, så finner vi ukeplanen.</p><button id="family-empty-add" type="button" class="family-add-button sk-action sk-action--modal">+ Legg til første barn</button></div>
       <div id="family-cards" class="family-cards" aria-live="polite"></div>
       </section>
       <section class="family-agenda" aria-labelledby="family-agenda-title">
@@ -341,20 +342,20 @@
         <div class="family-mobile-calendar-controls">
           <nav id="family-mobile-days" class="family-mobile-days" aria-label="Velg dag i kalenderen"></nav>
           <details id="family-mobile-calendar-options" class="family-mobile-calendar-options">
-            <summary aria-label="Flere kalendervalg" title="Flere kalendervalg">⋯</summary>
+            <summary class="sk-action sk-action--choice" aria-label="Flere kalendervalg" title="Flere kalendervalg">⋯</summary>
             <div class="family-mobile-calendar-menu">
-              <button type="button" data-family-mobile-range aria-pressed="false">Vis hele uka</button>
-              <button type="button" data-family-mobile-weekend hidden>Vis helg</button>
+              <button class="sk-action sk-action--utility" type="button" data-family-mobile-range aria-pressed="false">Vis hele uka</button>
+              <button class="sk-action sk-action--utility" type="button" data-family-mobile-weekend hidden>Vis helg</button>
             </div>
           </details>
         </div>
         <p id="family-mobile-day-status" class="family-mobile-day-status" role="status" aria-live="polite"></p>
         <p id="family-agenda-status" class="family-agenda-status" role="status" aria-live="polite"></p>
         <div id="family-agenda-days" class="family-agenda-days"></div>
-        <button type="button" id="family-agenda-weekend-toggle" class="family-agenda-weekend-toggle"
+        <button type="button" id="family-agenda-weekend-toggle" class="family-agenda-weekend-toggle sk-action sk-action--disclosure"
           aria-expanded="false" aria-controls="family-agenda-days" hidden>Vis helg</button>
         <details id="family-agenda-undated" class="family-agenda-undated" hidden>
-          <summary id="family-agenda-undated-summary">Beskjeder uten bestemt dag</summary>
+          <summary class="sk-action sk-action--disclosure" id="family-agenda-undated-summary">Beskjeder uten bestemt dag</summary>
           <div id="family-agenda-undated-list" class="family-agenda-undated-list"></div>
         </details>
         <p id="family-agenda-missing" class="family-agenda-missing" hidden></p>
@@ -364,19 +365,19 @@
         <div class="family-activity-head">
           <div><p class="family-eyebrow">FRITID OG AVTALER</p><h2 id="family-activity-title">Familiens aktiviteter</h2>
             <p>Aktivitetene vises i kalenderen. Åpne administrasjon ved behov.</p></div>
-          <button type="button" id="family-activity-add" class="family-add-button" aria-label="Legg til ny aktivitet">+ Legg til</button>
+          <button type="button" id="family-activity-add" class="family-add-button sk-action sk-action--modal" aria-label="Legg til ny aktivitet">+ Legg til</button>
         </div>
         <p id="family-activity-status" class="family-activity-status" role="status" aria-live="polite"></p>
         <details id="family-activity-manage" class="family-disclosure family-activity-manage">
-          <summary id="family-activity-manage-summary">Administrer registrerte aktiviteter</summary>
+          <summary class="sk-action sk-action--disclosure" id="family-activity-manage-summary">Administrer registrerte aktiviteter</summary>
           <div id="family-activity-list" class="family-activity-list" aria-live="polite"></div>
         </details>
       </section>
-      <div class="family-bottom"><button id="family-return" type="button" class="family-text-button">← Bruk vanlig visning for én klasse</button>
+      <div class="family-bottom"><button id="family-return" type="button" class="family-text-button sk-action sk-action--navigate">← Bruk vanlig visning for én klasse</button>
        <p id="family-bottom-note">Opplysninger hentes fra skolenes egne ukeplaner. Ved tvil er original-PDF fasit.</p></div>
     </section>
     <section id="school-gate" class="gate school-gate" hidden aria-labelledby="school-gate-title">
-      <button id="school-back" type="button" class="gate-back">← Tilbake til forsiden</button>
+      <button id="school-back" type="button" class="gate-back sk-action sk-action--navigate">← Tilbake til forsiden</button>
       <div class="gate-step"><span>STEG 1 AV 2</span><strong>Finn ukeplan</strong></div>
       <div class="gate-icon">🏫</div><p class="eyebrow">SKOLEVALG · KRISTIANSAND</p>
       <h1 id="school-gate-title">Hvilken skole går barnet på?</h1>
@@ -388,7 +389,7 @@
       <p class="fineprint">Skolene kommer fra Kristiansand kommunes oversikt. Fire er kombinerte 1.–10.-skoler; vi viser bare barnetrinnene.</p>
     </section>
     <section id="grade-gate" class="gate" hidden aria-labelledby="gate-title">
-      <button id="grade-back" type="button" class="gate-back">← Velg en annen skole</button>
+      <button id="grade-back" type="button" class="gate-back sk-action sk-action--navigate">← Velg en annen skole</button>
       <div class="gate-step"><span>STEG 2 AV 2</span><strong>Finn ukeplan</strong></div>
       <div class="gate-icon">🎒</div><p class="eyebrow">KLASSEVALG</p><h1 id="gate-title">Hvilket klassetrinn går barnet på?</h1>
       <p id="gate-school" class="lead"></p><p class="muted">Velg klassetrinn for å se ukens plan. Valget huskes på denne enheten.</p>
@@ -396,22 +397,22 @@
       <div id="grade-missing" class="grade-missing" hidden>
         <strong>Finner du ikke klassetrinnet?</strong>
         <p>Skolen kan ha lagt informasjonen et annet sted. Åpne skolens offisielle nettsted for å se trinn og ukeplaner.</p>
-        <a id="grade-school-link" class="feedback-primary-link" href="#" target="_blank" rel="noopener noreferrer">Åpne skolens nettside <span aria-hidden="true">↗</span></a>
+        <a id="grade-school-link" class="feedback-primary-link sk-action sk-action--link" href="#" target="_blank" rel="noopener noreferrer">Åpne skolens nettside <span aria-hidden="true">↗</span></a>
       </div>
       <p class="fineprint">Vi henter kun opplysninger fra skolens offisielle ukeplan for valgt klassetrinn.</p>
     </section>
     <div id="app-view" hidden>
       <nav id="guardian-plan-toolbar" class="guardian-plan-toolbar" aria-label="Bytt mellom barnas ukeplaner" hidden>
-        <button id="plan-back-family" class="guardian-plan-back" type="button">← Min familie</button>
+        <button id="plan-back-family" class="guardian-plan-back sk-action sk-action--navigate" type="button">← Min familie</button>
         <div id="guardian-plan-profiles" class="guardian-plan-profiles" role="group" aria-label="Velg barn"></div>
         <span id="guardian-plan-week" class="guardian-plan-week"></span>
       </nav>
       <div class="plan-context" id="plan-context">
         <div class="plan-context-name"><span class="plan-context-label">DIN UKEPLAN</span><strong id="plan-context-class">Velg skole og klasse</strong><span id="today" class="date-chip"></span></div>
         <div class="plan-context-actions"><span class="week-badge" id="week-label">UKE —</span>
-          <button id="change-school" type="button" class="ghost">Bytt skole</button>
-          <button id="change-grade" type="button" class="ghost">Bytt klassetrinn</button>
-          <details id="mobile-selection-menu" class="mobile-selection-menu"><summary>Endre valg</summary><div class="mobile-selection-actions"><button id="mobile-change-grade" type="button">Bytt klassetrinn</button><button id="mobile-change-school" type="button">Bytt skole</button></div></details>
+          <button id="change-school" type="button" class="ghost sk-action sk-action--navigate">Bytt skole</button>
+          <button id="change-grade" type="button" class="ghost sk-action sk-action--navigate">Bytt klassetrinn</button>
+          <details id="mobile-selection-menu" class="mobile-selection-menu"><summary class="sk-action sk-action--disclosure">Endre valg</summary><div class="mobile-selection-actions"><button class="sk-action sk-action--navigate" id="mobile-change-grade" type="button">Bytt klassetrinn</button><button class="sk-action sk-action--navigate" id="mobile-change-school" type="button">Bytt skole</button></div></details>
         </div>
       </div>
       <section id="guardian-plan-summary" class="guardian-plan-summary" aria-label="Kort oversikt for foresatte" hidden>
@@ -422,10 +423,10 @@
         </div>
         <p id="guardian-plan-packing-state" class="guardian-plan-packing-state"></p>
         <div class="guardian-plan-shortcuts" role="group" aria-label="Gå til innhold">
-          <button type="button" data-guardian-jump="school">Skoledag</button>
-          <button type="button" data-guardian-jump="packing">Pakkeliste</button>
-          <button type="button" data-guardian-jump="homework">Lekser</button>
-          <button type="button" data-guardian-jump="notices">Beskjeder</button>
+          <button class="sk-action sk-action--choice" type="button" data-guardian-jump="school">Skoledag</button>
+          <button class="sk-action sk-action--choice" type="button" data-guardian-jump="packing">Pakkeliste</button>
+          <button class="sk-action sk-action--choice" type="button" data-guardian-jump="homework">Lekser</button>
+          <button class="sk-action sk-action--choice" type="button" data-guardian-jump="notices">Beskjeder</button>
         </div>
       </section>
       <section id="plan-child-app-setup" class="plan-child-app-setup" aria-labelledby="plan-child-app-setup-title" hidden>
@@ -434,13 +435,13 @@
           <p id="plan-child-app-setup-description">Skann QR-koden og legg appen til på hjemskjermen.</p>
           <span id="plan-child-app-setup-status" class="plan-child-app-setup-status">Barneapp ikke satt opp</span>
         </div>
-        <button id="plan-child-app-qr" class="family-add-button" type="button">Vis QR-kode</button>
+        <button id="plan-child-app-qr" class="family-add-button sk-action sk-action--modal" type="button">Vis QR-kode</button>
       </section>
       <section class="hero" id="app-hero">
         <div class="hero-intro"><p class="eyebrow" id="school-name"></p><h1 id="plan-welcome-title">Morgenklar! <span aria-hidden="true">☀️</span></h1><p class="lead" id="welcome-description">Sjekk skoledagen og pakk sekken.</p>
-          <div class="hero-actions"><span id="status-pill" class="state-pill">Henter ukeplan …</span><button type="button" id="reload" class="small-button">↻ Oppdater</button><a id="school-source" href="#" target="_blank" rel="noopener noreferrer">Skolens trinnside ↗</a></div>
+          <div class="hero-actions"><span id="status-pill" class="state-pill">Henter ukeplan …</span><button type="button" id="reload" class="small-button sk-action sk-action--utility">↻ Oppdater</button><a class="sk-action sk-action--link" id="school-source" href="#" target="_blank" rel="noopener noreferrer">Skolens trinnside ↗</a></div>
         </div>
-        <aside id="weather-panel" class="weather" aria-label="Vær for valgt skoledag"><p class="eyebrow">VÆR I OMRÅDET · 08–15</p><div class="weather-main"><span id="weather-icon" class="weather-icon">🌤️</span><strong id="weather-temp">—</strong></div><button id="weather-toggle" class="weather-toggle" type="button" aria-expanded="false" aria-controls="weather-details">Vær for valgt dag <span aria-hidden="true">⌄</span></button><div id="weather-details" class="weather-details"><p id="weather-desc" class="weather-desc">Henter værmelding …</p><p class="source-note" id="weather-location">Værdata: Meteorologisk institutt / Yr</p></div></aside>
+        <aside id="weather-panel" class="weather" aria-label="Vær for valgt skoledag"><p class="eyebrow">VÆR I OMRÅDET · 08–15</p><div class="weather-main"><span id="weather-icon" class="weather-icon">🌤️</span><strong id="weather-temp">—</strong></div><button id="weather-toggle" class="weather-toggle sk-action sk-action--disclosure" type="button" aria-expanded="false" aria-controls="weather-details" data-sk-chevron="off">Vær for valgt dag <span aria-hidden="true">⌄</span></button><div id="weather-details" class="weather-details"><p id="weather-desc" class="weather-desc">Henter værmelding …</p><p class="source-note" id="weather-location">Værdata: Meteorologisk institutt / Yr</p></div></aside>
       </section>
       <section id="plan-feedback" class="plan-feedback" hidden role="status" aria-live="polite" aria-atomic="true" aria-labelledby="feedback-title">
         <div id="feedback-illustration" class="feedback-illustration" aria-hidden="true">
@@ -457,17 +458,17 @@
             <p id="analysis-time-hint">Anslått 30–40 sekunder. Prosenten er estimert, ikke målt AI-fremdrift.</p>
           </div>
           <div class="feedback-actions">
-            <a id="feedback-school-link" class="feedback-primary-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Åpne skolens nettside <span aria-hidden="true">↗</span></a>
-            <a id="feedback-grade-link" class="feedback-secondary-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Se originalen <span aria-hidden="true">↗</span></a>
-            <button id="feedback-retry" class="feedback-retry" type="button">↻ Sjekk på nytt</button>
-            <button id="feedback-report-issue" class="feedback-retry" type="button" hidden>Rapporter feil i ukeplanen</button>
+            <a id="feedback-school-link" class="feedback-primary-link sk-action sk-action--link" href="#" target="_blank" rel="noopener noreferrer" hidden>Åpne skolens nettside <span aria-hidden="true">↗</span></a>
+            <a id="feedback-grade-link" class="feedback-secondary-link sk-action sk-action--link" href="#" target="_blank" rel="noopener noreferrer" hidden>Se originalen <span aria-hidden="true">↗</span></a>
+            <button id="feedback-retry" class="feedback-retry sk-action sk-action--utility" type="button">↻ Sjekk på nytt</button>
+            <button id="feedback-report-issue" class="feedback-retry sk-action sk-action--modal" type="button" hidden>Rapporter feil i ukeplanen</button>
           </div>
         </div>
       </section>
       <div id="warning-area" class="alert" role="status" aria-live="polite" hidden></div>
       <div id="plan-body">
       <div id="rain-reminder" class="rain-alert" role="status" hidden></div>
-      <div class="smart-week-row"><span id="smart-week" hidden></span><button id="back-this-week" type="button" hidden>← Vis denne uka</button></div><nav class="weekdays" id="day-buttons" aria-label="Velg dag"></nav>
+      <div class="smart-week-row"><span id="smart-week" hidden></span><button class="sk-action sk-action--navigate" id="back-this-week" type="button" hidden>← Vis denne uka</button></div><nav class="weekdays" id="day-buttons" aria-label="Velg dag"></nav>
       <div id="day-group-summary" class="day-group-summary" hidden aria-live="polite"></div>
       <div id="plan-columns" class="columns">
         <section class="panel" aria-labelledby="program-title"><div class="panel-head"><div><p class="eyebrow">SKOLEDAGEN</p><h2 id="program-title">Dette skjer i dag</h2></div><span class="section-icon">📚</span></div><div id="day-program" class="items"></div><section id="day-notes" class="day-notes" hidden aria-label="Praktisk informasjon for dagen"><h3>📌 Praktisk informasjon for dagen</h3><div id="day-notes-list"></div></section><div id="day-attendance" class="day-attendance" hidden aria-label="Særskilt oppmøte for enkelte grupper"></div></section>
@@ -489,26 +490,26 @@
  <div class="quiz-header"><strong>🎮 Ordutfordringen</strong><span class="practice-local">🔒 Fremdrift lagres kun på denne enheten</span></div>
  <div class="practice-stats" aria-label="Fremdrift i øvingen"><div><strong id="word-quiz-stat-correct">0</strong><small>Riktige svar</small></div><div><strong id="word-quiz-stat-progress">0 / 0</strong><small>Gjennomgått</small></div><div><strong id="word-quiz-stat-weak">0</strong><small>Trenger mer øving</small></div></div>
  <div id="word-quiz-language" role="group" aria-label="Velg språk">
-  <button type="button" data-quiz-language="en" aria-pressed="false">🇬🇧 Engelsk</button>
-  <button type="button" data-quiz-language="nb" aria-pressed="false">🇳🇴 Norsk</button>
+  <button class="sk-action sk-action--choice" type="button" data-quiz-language="en" aria-pressed="false">🇬🇧 Engelsk</button>
+  <button class="sk-action sk-action--choice" type="button" data-quiz-language="nb" aria-pressed="false">🇳🇴 Norsk</button>
  </div>
- <p id="word-quiz-description"></p><div id="word-quiz-home" class="practice-home"><div><strong id="word-quiz-welcome">Klar for øving?</strong><p>Et ord om gangen, i ditt eget tempo.</p></div><div class="practice-home-actions"><button id="word-quiz-start" class="practice-primary" type="button">Start ordøving</button><button id="word-quiz-review" type="button" hidden>↻ Øv på vanskelige ord</button></div></div>
+ <p id="word-quiz-description"></p><div id="word-quiz-home" class="practice-home"><div><strong id="word-quiz-welcome">Klar for øving?</strong><p>Et ord om gangen, i ditt eget tempo.</p></div><div class="practice-home-actions"><button id="word-quiz-start" class="practice-primary sk-action sk-action--submit" type="button">Start ordøving</button><button class="sk-action sk-action--utility" id="word-quiz-review" type="button" hidden>↻ Øv på vanskelige ord</button></div></div>
  <div id="word-quiz-play" hidden>
-  <div class="practice-progress-heading"><p id="word-quiz-progress" aria-live="polite"></p><button id="word-quiz-pause" type="button">Lagre og fortsett senere</button></div><div class="practice-track" id="word-quiz-track" role="progressbar" aria-label="Øvefremdrift" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="word-quiz-track-fill"></span></div><div class="practice-question"><p id="word-quiz-kind"></p>
+  <div class="practice-progress-heading"><p id="word-quiz-progress" aria-live="polite"></p><button class="sk-action sk-action--utility" id="word-quiz-pause" type="button">Lagre og fortsett senere</button></div><div class="practice-track" id="word-quiz-track" role="progressbar" aria-label="Øvefremdrift" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="word-quiz-track-fill"></span></div><div class="practice-question"><p id="word-quiz-kind"></p>
   <p id="word-quiz-question"></p>
   <div id="word-quiz-options" class="quiz-meaning-options" role="group" aria-label="Velg norsk betydning" hidden></div>
   <div id="word-quiz-tools" class="quiz-tools">
-   <button id="word-quiz-speak" type="button">🔊 Hør ordet</button>
-   <button id="word-quiz-peek" type="button">👀 Se ordet i 4 sekunder</button>
+   <button class="sk-action sk-action--utility" id="word-quiz-speak" type="button">🔊 Hør ordet</button>
+   <button class="sk-action sk-action--utility" id="word-quiz-peek" type="button">👀 Se ordet i 4 sekunder</button>
   </div>
   <p id="word-quiz-preview" class="quiz-preview" hidden></p>
   <form id="word-quiz-form" hidden>
    <label for="word-quiz-answer">Ditt svar</label>
    <input id="word-quiz-answer" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="45" required>
-   <button type="submit">Sjekk svaret</button>
+   <button class="sk-action sk-action--submit" type="submit">Sjekk svaret</button>
   </form>
   <p id="word-quiz-feedback" role="status" aria-live="polite"></p>
-  <button id="word-quiz-next" type="button" hidden>Neste oppgave →</button>
+  <button class="sk-action sk-action--submit" id="word-quiz-next" type="button" hidden>Neste oppgave →</button>
  </div></div>
 </div></section>
       <section class="panel practice-panel practice-panel-nb" id="vocabulary-panel-nb" hidden aria-labelledby="vocabulary-title-nb">
@@ -524,10 +525,10 @@
         <div class="panel-head"><div><p class="eyebrow">BILDER & EKSTRA</p><h2 id="special-title">Fra skolens PDF</h2></div><span class="section-icon">🖼️</span></div>
         <div id="special-items" class="special-items"></div>
       </section>
-      <details class="details" id="notices-panel"><summary>📬 Beskjeder fra skolen <span id="notices-count" class="count"></span><span id="notices-empty-hint" class="section-empty-hint" hidden>Ingen egne beskjeder denne uka</span><span class="chevron">⌄</span></summary><div id="notices-list" class="details-content"></div></details>
-      <details class="details" id="goals-panel"><summary>🎯 Læringsmål <span id="goals-count" class="count"></span><span id="goals-empty-hint" class="section-empty-hint" hidden>Ingen egne læringsmål denne uka</span><span class="chevron">⌄</span></summary><div id="goals-list" class="details-content"></div></details>
+      <details class="details" id="notices-panel"><summary class="sk-action sk-action--disclosure">📬 Beskjeder fra skolen <span id="notices-count" class="count"></span><span id="notices-empty-hint" class="section-empty-hint" hidden>Ingen egne beskjeder denne uka</span><span class="chevron">⌄</span></summary><div id="notices-list" class="details-content"></div></details>
+      <details class="details" id="goals-panel"><summary class="sk-action sk-action--disclosure">🎯 Læringsmål <span id="goals-count" class="count"></span><span id="goals-empty-hint" class="section-empty-hint" hidden>Ingen egne læringsmål denne uka</span><span class="chevron">⌄</span></summary><div id="goals-list" class="details-content"></div></details>
       <section class="panel" id="contacts-panel" hidden><div class="panel-head"><div><p class="eyebrow">SKOLEKONTAKT</p><h2>Kontaktlærere</h2></div><span class="section-icon">📞</span></div><div id="contacts-list" class="items"></div></section>
-      <p class="disclaimer">Ukeplanen leses automatisk fra skolens PDF. Ved tvil er skolens original alltid fasit. <a id="pdf-source" href="#" target="_blank" rel="noopener noreferrer" hidden>Se original-PDF ↗</a> · <button type="button" id="report-plan-issue" class="plan-report-link">Rapporter feil i ukeplanen</button></p>
+      <p class="disclaimer">Ukeplanen leses automatisk fra skolens PDF. Ved tvil er skolens original alltid fasit. <a class="sk-action sk-action--link" id="pdf-source" href="#" target="_blank" rel="noopener noreferrer" hidden>Se original-PDF ↗</a> · <button type="button" id="report-plan-issue" class="plan-report-link sk-action sk-action--modal">Rapporter feil i ukeplanen</button></p>
       </div>
     </div>
   </main>
@@ -536,7 +537,7 @@
 <dialog id="family-activity-dialog" class="family-activity-dialog" aria-modal="true" aria-labelledby="family-activity-form-title">
 <form id="family-activity-form" class="family-activity-form" aria-labelledby="family-activity-form-title">
           <div class="family-form-head"><h3 id="family-activity-form-title">Ny aktivitet</h3>
-            <button type="button" id="family-activity-cancel" class="family-form-close" aria-label="Lukk aktivitetsskjema">✕</button></div>
+            <button type="button" id="family-activity-cancel" class="family-form-close sk-action sk-action--close" aria-label="Lukk aktivitetsskjema">✕</button></div>
           <div class="family-activity-fields">
             <label class="family-activity-wide">Aktivitet<input id="family-activity-name" type="text" maxlength="120" placeholder="F.eks. Korpsøvelse" required></label>
             <label>Hvem gjelder det?<select id="family-activity-child"><option value="">Hele familien</option></select></label>
@@ -551,12 +552,12 @@
           </div>
           <p class="family-activity-help">Med familiekonto deles aktivitetene mellom foresatte. Uten innlogging lagres de kun på denne enheten. Endringer i en gjentakende aktivitet gjelder hele serien.</p>
           <p id="family-activity-form-status" class="family-form-status" role="status" aria-live="polite"></p>
-          <div class="family-activity-dialog-actions"><button id="family-activity-save" type="submit" class="family-add-button">Lagre aktivitet</button></div>
+          <div class="family-activity-dialog-actions"><button id="family-activity-save" type="submit" class="family-add-button sk-action sk-action--submit">Lagre aktivitet</button></div>
         </form>
 </dialog>
 <dialog id="family-child-dialog" class="family-child-dialog" aria-labelledby="family-form-title" aria-describedby="family-form-tip" aria-modal="true">
 <form id="family-form" class="family-form" aria-labelledby="family-form-title">
-        <div class="family-form-head"><h3 id="family-form-title">Legg til barn</h3><button type="button" id="family-cancel" class="family-form-close" aria-label="Lukk skjemaet">✕</button></div>
+        <div class="family-form-head"><h3 id="family-form-title">Legg til barn</h3><button type="button" id="family-cancel" class="family-form-close sk-action sk-action--close" aria-label="Lukk skjemaet">✕</button></div>
         <div class="family-fields">
           <label>Navn eller kallenavn<input id="family-name" type="text" maxlength="40" required autocomplete="off" placeholder="F.eks. Barn 1"></label>
           <label>Skole<select id="family-school" required><option value="">Velg skole</option></select></label>
@@ -565,13 +566,13 @@
         </div>
         <p id="family-form-tip" class="family-form-tip">Bruk gjerne kallenavn. Lagringen avhenger av om du bruker familiekonto.</p>
         <p id="family-form-status" class="family-form-status" role="status" aria-live="polite"></p>
-        <div class="family-child-dialog-actions"><button id="family-save" type="submit" class="family-add-button">Legg til i familien</button></div>
+        <div class="family-child-dialog-actions"><button id="family-save" type="submit" class="family-add-button sk-action sk-action--submit">Legg til i familien</button></div>
       </form>
 </dialog>
 <dialog id="child-pair-dialog" class="child-pair-dialog" aria-labelledby="child-pair-title" aria-describedby="child-pair-intro" aria-modal="true">
  <header class="child-pair-header"><div><p class="family-eyebrow">MIN EGEN UKEPLAN</p>
  <h2 id="child-pair-title">Installer barnets Skoleuka</h2></div>
- <button type="button" id="child-pair-close" class="family-form-close" aria-label="Lukk QR-invitasjon">✕</button></header>
+ <button type="button" id="child-pair-close" class="family-form-close sk-action sk-action--close" aria-label="Lukk QR-invitasjon">✕</button></header>
  <p id="child-pair-intro">Følg stegene under. På iPad: Åpne i Safari og legg appen på Hjem-skjerm.</p>
  <ol class="child-pair-steps" aria-label="Fremdrift for barneappen">
   <li data-child-pair-step="qr"><span aria-hidden="true">1</span><strong>QR-kode</strong></li>
@@ -583,39 +584,39 @@
   <p id="child-pair-stage-description">Henter status for barnets enhet.</p>
  </div>
  <div class="child-pair-toolbar">
-  <button type="button" id="child-pair-check" class="family-light-button">↻ Sjekk status</button>
+  <button type="button" id="child-pair-check" class="family-light-button sk-action sk-action--utility">↻ Sjekk status</button>
   <span class="child-pair-note">Status oppdateres også mens vinduet er åpent.</span>
  </div>
  <p id="child-pair-status" role="status" aria-live="polite"></p>
  <div id="child-pair-result" hidden>
    <img id="child-pair-qr" alt="QR-kode for barnets ukeplan" width="242" height="242">
    <label class="child-pair-label">Privat invitasjonslenke<input id="child-pair-link" type="text" readonly aria-label="Privat invitasjonslenke til barnet"></label>
-   <button type="button" id="child-pair-copy" class="family-light-button">Kopier lenke</button>
+   <button type="button" id="child-pair-copy" class="family-light-button sk-action sk-action--utility">Kopier lenke</button>
    <p class="child-pair-hint">QR-koden kan brukes én gang og utløper etter 10 minutter. Den skal bare åpnes på barnets enhet.</p>
  </div>
- <button type="button" id="child-pair-new" class="family-add-button">Lag ny QR-kode</button>
+ <button type="button" id="child-pair-new" class="family-add-button sk-action sk-action--utility">Lag ny QR-kode</button>
  <div class="child-pair-platform" role="group" aria-label="Velg barnets enhet">
-  <button type="button" data-child-pair-platform="ios" aria-pressed="true">iPad / iPhone</button>
-  <button type="button" data-child-pair-platform="android" aria-pressed="false">Android</button>
+  <button class="sk-action sk-action--choice" type="button" data-child-pair-platform="ios" aria-pressed="true">iPad / iPhone</button>
+  <button class="sk-action sk-action--choice" type="button" data-child-pair-platform="android" aria-pressed="false">Android</button>
  </div>
  <div id="child-pair-platform-instructions" class="child-pair-instructions">
   <strong>Installer på iPad eller iPhone</strong>
   <p>Skann QR-koden, åpne ukeplanen i Safari og velg Del → Legg til på Hjem-skjerm med «Åpne som webapp». Start deretter appikonet.</p>
  </div>
  <details id="child-pair-help" class="child-pair-help">
-  <summary>Trenger hjelp?</summary>
+  <summary class="sk-action sk-action--disclosure">Trenger hjelp?</summary>
   <div class="child-pair-help-content">
    <p id="child-pair-help-description">Hvis oppsettet stopper, kontroller at barnet åpner appen fra hjemskjermen og ikke bare i nettleseren.</p>
    <p>Hvis den installerte appen fortsatt ber om hjelp fra en foresatt, fjern bare det gamle appikonet, opprett en ny QR-kode og installer på nytt. Ingen familieprofiler slettes.</p>
   </div>
  </details>
- <details class="child-pair-devices"><summary>Administrer barnets enheter</summary>
+ <details class="child-pair-devices"><summary class="sk-action sk-action--disclosure">Administrer barnets enheter</summary>
   <div id="child-pair-devices"></div></details>
 </dialog>
 <dialog id="issue-report-dialog" class="issue-report-dialog" aria-labelledby="issue-report-title" aria-describedby="issue-report-intro">
   <header class="issue-report-header">
     <div><p class="family-eyebrow">HJELP OSS Å BLI BEDRE</p><h2 id="issue-report-title">Rapporter feil i ukeplanen</h2></div>
-    <button id="issue-report-close" type="button" class="family-form-close" aria-label="Lukk rapportering">✕</button>
+    <button id="issue-report-close" type="button" class="family-form-close sk-action sk-action--close" aria-label="Lukk rapportering">✕</button>
   </header>
   <p id="issue-report-intro">Rapporten går til dem som vedlikeholder Skoleuka, ikke direkte til skolen.</p>
   <form id="issue-report-form">
@@ -634,18 +635,18 @@
     <p id="issue-report-help" class="issue-report-help">Beskriv gjerne hva som er feil.</p>
     <p class="issue-report-privacy">Ikke skriv navn på barn, telefonnummer, e-post eller andre personopplysninger. Skole, trinn, uke, valgt beskjed og rapporttekst sendes – ikke familieprofil eller lekseprogresjon.</p>
     <p id="issue-report-status" class="issue-report-status" role="status" aria-live="polite" hidden></p>
-    <button id="issue-report-submit" type="submit" class="family-add-button">Send rapport</button>
+    <button id="issue-report-submit" type="submit" class="family-add-button sk-action sk-action--submit">Send rapport</button>
   </form>
 </dialog>
 <div id="helper-modal" class="helper-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="helper-title">
   <section class="helper-dialog">
-    <button type="button" data-helper-close class="helper-close" aria-label="Lukk leksehjelper">✕</button>
+    <button type="button" data-helper-close class="helper-close sk-action sk-action--utility" aria-label="Lukk leksehjelper">✕</button>
     <div class="helper-hero"><div class="helper-hero-icon" aria-hidden="true">✦</div><div><p class="eyebrow">DITT LEKSEHJØRNE</p>
  <h2 id="helper-title">Du klarer dette!</h2><p class="helper-intro">Velg om du vil ha en forklaring eller et hint. Du løser oppgaven selv.</p></div></div>
  <div class="helper-task-card"><span class="helper-overline">DIN OPPGAVE</span><p id="helper-task" class="helper-task"></p></div>
  <div class="helper-actions" role="group" aria-label="Velg type leksehjelp">
- <button type="button" data-helper-mode="explain"><span aria-hidden="true">💡</span><span><strong>Forklar oppgaven</strong><small>Forstå hva du skal gjøre</small></span></button>
- <button type="button" data-helper-mode="hint"><span aria-hidden="true">🧩</span><span><strong>Gi meg et hint</strong><small>Få hjelp uten fasit</small></span></button>
+ <button class="sk-action sk-action--utility" type="button" data-helper-mode="explain"><span aria-hidden="true">💡</span><span><strong>Forklar oppgaven</strong><small>Forstå hva du skal gjøre</small></span></button>
+ <button class="sk-action sk-action--utility" type="button" data-helper-mode="hint"><span aria-hidden="true">🧩</span><span><strong>Gi meg et hint</strong><small>Få hjelp uten fasit</small></span></button>
  </div>
  <p id="helper-status" class="helper-status" role="status" aria-live="polite"></p>
  <div class="helper-result-card"><div class="helper-result-head"><span aria-hidden="true">✨</span><strong>Din læringshjelp</strong></div>
