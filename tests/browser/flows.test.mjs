@@ -2219,3 +2219,52 @@ test('Opening a saved child plan hides school/grade switching and shows only tha
  await page.locator('#family-view').waitFor({state:'visible'});
  assert.deepEqual(errors,[]);
 });
+
+test('First-time landing is responsive, omits generic navigation and keeps two primary paths',async t=>{
+ for(const width of [375,768,1280]){
+  const {page,errors}=await openPage(t,{width,height:850});
+  await page.locator('#welcome-view').waitFor({state:'visible'});
+  assert.equal(await page.locator('.primary-nav').isVisible(),false,
+   'No redundant desktop or mobile navigation on the public landing at '+width);
+  assert.equal(await page.locator('.primary-nav').evaluate(el=>el.hidden&&el.inert),true);
+  assert.equal(await page.locator('#account-button').isVisible(),true);
+  assert.equal(await page.locator('#landing-create-family').isVisible(),true);
+  assert.equal(await page.locator('#landing-open-plan').isVisible(),true);
+  assert.equal(await page.locator('#landing-other-options').isVisible(),true);
+  assert.equal(await page.locator('#landing-local-family').isVisible(),false);
+  assert.equal(await page.locator('.welcome-choice').count(),2);
+  const cards=await page.locator('.welcome-choice').evaluateAll(nodes=>
+   nodes.map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};}));
+  if(width>=768)assert.ok(Math.abs(cards[0].y-cards[1].y)<=2,
+   'Desktop/tablet displays the two equal-priority choices side by side');
+  else assert.ok(cards[1].y>=cards[0].y+cards[0].h-1,
+   'Mobile stacks the two entry cards');
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+1),
+   false,'No horizontal overflow at '+width);
+  await page.locator('#landing-other-options').click();
+  assert.equal(await page.locator('#landing-other-options').getAttribute('aria-expanded'),'true');
+  assert.equal(await page.locator('#landing-local-family').isVisible(),true);
+  assert.match(await page.locator('#welcome-alternatives-panel').innerText(),/synkroniseres ikke med andre/);
+  await page.locator('#landing-other-options').click();
+  assert.equal(await page.locator('#landing-local-family').isVisible(),false);
+  assert.equal(await page.locator('#landing-other-options').getAttribute('aria-expanded'),'false');
+  assert.deepEqual(errors,[]);
+  await page.close();
+ }
+});
+
+test('Landing actions still open existing login and school flows; global nav returns off landing',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.locator('#landing-create-family').click();
+ assert.equal(await page.locator('#account-panel').evaluate(el=>el.open),true);
+ await page.locator('#account-close').click();
+ assert.equal(await page.locator('#account-panel').evaluate(el=>el.open),false);
+ await page.locator('#landing-open-plan').click();
+ assert.equal(await page.locator('#school-gate').isVisible(),true);
+ assert.equal(await page.locator('.primary-nav').isVisible(),true,
+  'Public school selector retains its existing navigation');
+ await page.locator('#school-back').click();
+ assert.equal(await page.locator('#welcome-view').isVisible(),true);
+ assert.equal(await page.locator('.primary-nav').isVisible(),false);
+ assert.deepEqual(errors,[]);
+});
