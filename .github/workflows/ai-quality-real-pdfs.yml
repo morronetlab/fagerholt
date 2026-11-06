@@ -48,6 +48,8 @@ jobs:
         run: node --test tests/quality-original-source-collection.test.mjs tests/ai-quality-original-pdfs.test.mjs tests/ai-quality-approved-baseline.test.mjs tests/parser-gap-triage.test.mjs
       - name: Fetch originals, verify SHA-256 and score existing rules parser
         run: node scripts/evaluate-original-pdf-quality.mjs quality-real-results
+      - name: Temporary closure source evidence diagnostic
+        run: node scripts/debug-closure-evidence.mjs
       - name: Enforce no regressions of previously correct original-PDF facts
         run: node scripts/check-approved-original-pdf-baseline.mjs quality-real-results/original-pdf-quality.json
       - name: Triage reviewed parser gaps and check source integrity
