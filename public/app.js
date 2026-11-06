@@ -114,7 +114,7 @@ function badge(status){
   return ({loading:'Henter ukeplan …',ok:'Ukeplan hentet',partial:'Delvis tolket PDF',unreadable:'PDF kunne ikke tolkes',unpublished:'Ikke publisert ennå',unavailable:'Finner ikke trinnside',error:'Ukeplan utilgjengelig'})[status]||'Ukeplan';
 }
 function getBag(){
-  const p=state.plan;if(!p)return [];
+  const p=state.plan;if(!p||p.days?.[DAYS[state.day]]?.closed)return [];
   const raw=[...(p.everyday||[]),...(p.days?.[DAYS[state.day]]?.bring||[])].filter(x=>x&&typeof x.label==='string');
   return [...new Map(raw.map(x=>[(x.label+'::'+(x.group||'')).toLocaleLowerCase('nb-NO'),x])).values()];
 }

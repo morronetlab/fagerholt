@@ -7,6 +7,10 @@ on:
       - '.github/workflows/ai-quality-real-pdfs.yml'
       - 'scripts/collect-quality-originals.mjs'
       - 'scripts/evaluate-original-pdf-quality.mjs'
+      - 'scripts/check-original-school-closures.mjs'
+      - 'tests/ai-quality-school-closures.test.mjs'
+      - 'tests/school-closure-source.test.mjs'
+      - 'lib/school-closure-source.mjs'
       - 'scripts/check-approved-original-pdf-baseline.mjs'
       - 'scripts/report-parser-gaps.mjs'
       - 'tests/quality/parser-gap-triage-v1.json'
@@ -22,6 +26,10 @@ on:
     paths:
       - '.github/workflows/ai-quality-real-pdfs.yml'
       - 'scripts/evaluate-original-pdf-quality.mjs'
+      - 'scripts/check-original-school-closures.mjs'
+      - 'tests/ai-quality-school-closures.test.mjs'
+      - 'tests/school-closure-source.test.mjs'
+      - 'lib/school-closure-source.mjs'
       - 'scripts/check-approved-original-pdf-baseline.mjs'
       - 'scripts/report-parser-gaps.mjs'
       - 'tests/quality/parser-gap-triage-v1.json'
@@ -45,9 +53,11 @@ jobs:
           node-version: '22'
       - run: npm ci --no-audit --no-fund
       - name: Validate visually reviewed source manifest and evaluator contracts
-        run: node --test tests/quality-original-source-collection.test.mjs tests/ai-quality-original-pdfs.test.mjs tests/ai-quality-approved-baseline.test.mjs tests/parser-gap-triage.test.mjs
+        run: node --test tests/quality-original-source-collection.test.mjs tests/ai-quality-original-pdfs.test.mjs tests/ai-quality-approved-baseline.test.mjs tests/parser-gap-triage.test.mjs tests/ai-quality-school-closures.test.mjs tests/school-closure-source.test.mjs
       - name: Fetch originals, verify SHA-256 and score existing rules parser
         run: node scripts/evaluate-original-pdf-quality.mjs quality-real-results
+      - name: Verify source-backed closure dates and future-week safety
+        run: node scripts/check-original-school-closures.mjs quality-real-results/original-pdf-quality.json
       - name: Enforce no regressions of previously correct original-PDF facts
         run: node scripts/check-approved-original-pdf-baseline.mjs quality-real-results/original-pdf-quality.json
       - name: Triage reviewed parser gaps and check source integrity

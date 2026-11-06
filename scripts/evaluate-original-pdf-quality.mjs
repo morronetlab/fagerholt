@@ -11,6 +11,7 @@ import {collectOfficialSamples} from './collect-quality-originals.mjs';
 import {evaluateExpectation} from './evaluate-plan-quality.mjs';
 import {pdfPages} from '../netlify/functions/plan.mjs';
 import {analyzePdfPages} from '../lib/plan-core.mjs';
+import {DAYS} from '../lib/calendar.mjs';
 import {ORIGINAL_PDF_GOLDEN_VERSION,ORIGINAL_PDF_GOLDENS} from '../tests/quality/original-pdf-goldens.mjs';
 
 const norm=s=>String(s??'').normalize('NFKC').toLocaleLowerCase('nb-NO')
@@ -51,11 +52,11 @@ export function reportOriginalPdfMarkdown(report){
   '- Failed: '+s.parserFailed,
   '- Fixture score: '+s.parserPassPercent+'%',
   '',
-  '| Original PDF | Source | PDF text anchors | Parser golden checks |',
-  '| --- | --- | ---: | ---: |'];
+  '| Original PDF | Source | PDF text anchors | Parser golden checks | Closed days |',
+  '| --- | --- | ---: | ---: | --- |'];
  for(const c of report.cases)lines.push('| '+c.id+' | '+c.sourceStatus+
    ' | '+c.anchors.filter(x=>x.found).length+'/'+c.anchors.length+
-   ' | '+c.checks.filter(x=>x.passed).length+'/'+c.checks.length+' |');
+   ' | '+c.checks.filter(x=>x.passed).length+'/'+c.checks.length+' | '+c.closedDays.join(', ')+' |');
  lines.push('','## By parser category','','| Category | Passed / Total |','| --- | ---: |');
  for(const [kind,score] of Object.entries(s.byKind))
   lines.push('| '+kind+' | '+score.passed+'/'+score.total+' |');
@@ -90,7 +91,8 @@ export async function evaluateOriginalPdfGoldens({
    const entry=entries.get(golden.id);
    const c={id:golden.id,school:golden.school,grade:golden.grade,
     reviewDate:golden.review?.date??null,expectedSha256:golden.sha256,
-    sourceStatus:'unavailable',reason:null,anchors:[],checks:[],parserStatus:null};
+    sourceStatus:'unavailable',reason:null,anchors:[],checks:[],parserStatus:null,
+    closedDays:[],closureNoticeKinds:{planning:false,schoolClosed:false}};
    if(!entry||entry.download!=='downloaded'){c.reason=entry?.reason||'Original not downloaded';cases.push(c);continue;}
    if(entry.sha256!==golden.sha256){c.sourceStatus='changed';c.reason='Official PDF SHA-256 mismatch; must review and refresh goldens';cases.push(c);continue;}
    if(entry.pages!==golden.pageCount){c.sourceStatus='changed';c.reason='PDF page count changed';cases.push(c);continue;}
@@ -106,6 +108,11 @@ export async function evaluateOriginalPdfGoldens({
     const plan=parsePlan(pages,golden.grade,golden.url,golden.week,golden.year,
       'https://www.minskole.no/'+golden.school+'/');
     c.parserStatus=plan.status||'unknown';
+    // Audit only source-derived structural facts; never include PDF snippets.
+    c.closedDays=DAYS.filter(day=>plan.days?.[day]?.closed===true);
+    const noticeTexts=(plan.notices||[]).map(x=>typeof x==='string'?x:x?.text||'');
+    c.closureNoticeKinds={planning:noticeTexts.some(x=>/planleggingsdag/i.test(x)),
+      schoolClosed:noticeTexts.some(x=>/skolen\s+stengt/i.test(x))};
     c.checks=golden.expectations.map(e=>realPdfCheck(e,plan));
    }catch(error){
     c.parserStatus='exception';
