@@ -24,15 +24,15 @@ export function familyAgendaItemHtml(item){
   '<div class="family-agenda-item-more">'+
   '<small>'+esc(item.scope||'')+'</small>'+
   (item.details?'<div class="family-agenda-meta">'+esc(item.details)+'</div>':'')+
-  (source?'<a class="family-agenda-source" target="_blank" rel="noopener noreferrer" href="'+
+  (source?'<a class="family-agenda-source sk-action sk-action--link" target="_blank" rel="noopener noreferrer" href="'+
     esc(source)+'">Kilde: '+esc(item.source?.name||'Offisiell kilde')+' ↗</a>':
    item.kind==='family'?'<span class="family-agenda-meta">Lagt inn av familien</span>':'')+
   (item.checked?'<span class="family-agenda-meta">✓ Fullført</span>':'')+
   (item.kind==='family'&&item.activityId?
-   '<button type="button" class="family-agenda-edit" data-family-agenda-edit="'+
+   '<button type="button" class="family-agenda-edit sk-action sk-action--modal" data-family-agenda-edit="'+
     esc(item.activityId)+'">Endre aktivitet</button>':'')+
   '</div>'+
-  '<button type="button" class="family-agenda-expand" data-family-agenda-details aria-expanded="false">Mer info</button>'+
+  '<button type="button" class="family-agenda-expand sk-action sk-action--disclosure" data-family-agenda-details aria-expanded="false">Mer info</button>'+
  '</article>';
 }
 export function familyAgendaMarkup(model,{today=''}={}){
