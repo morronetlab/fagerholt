@@ -306,8 +306,6 @@ footer{border-color:var(--line);color:#92a49c}
  .weather-icon{font-size:23px}
  .weather-main strong{font-size:17px;letter-spacing:-.5px}
  .weather-toggle{display:flex;align-items:center;justify-content:flex-end;gap:5px;min-height:44px;width:100%;padding:4px 6px;border:0;background:transparent;text-align:right;color:#3f6e5e;font-size:12px;font-weight:800}
- .weather-toggle span{font-size:19px;transition:transform .2s}
- .weather.is-expanded .weather-toggle span{transform:rotate(180deg)}
  .weather-details{display:none;grid-column:1/-1;border-top:1px solid #e8eee8;padding:9px 0 4px}
  .weather.is-expanded .weather-details{display:block}
  .weather-desc{font-size:13px;margin:0;line-height:1.4}
@@ -365,7 +363,6 @@ footer{border-color:var(--line);color:#92a49c}
  .panel{padding:13px}
 }
 @media(prefers-reduced-motion:reduce){
- .weather-toggle span{transition:none}
 }
 
 /* Verified school-group badge palette: background follows the named colour. */
