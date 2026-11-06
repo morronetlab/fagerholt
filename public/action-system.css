@@ -167,6 +167,31 @@ details[open] > summary.sk-action--disclosure {
 #family-view .family-important-actions .family-disclosure[open] > summary.sk-action--disclosure {
   background:var(--sk-action-soft-hover)!important;
 }
+/* Mobile "Vis flere" has a legacy double-ID selector; keep the same
+   disclosure paint as every other expandable control without changing
+   whether the button is hidden on desktop. */
+#family-view .family-important-actions #family-mobile-important-more.sk-action--disclosure {
+  min-height:42px;
+  padding:9px 12px;
+  border:1px solid #c9ddcf;
+  border-radius:var(--sk-action-radius);
+  background:var(--sk-action-soft);
+  color:var(--sk-action-ink);
+  font-size:13px;
+  font-weight:800;
+  box-shadow:none;
+}
+#family-view .family-important-actions #family-mobile-important-more.sk-action--disclosure[aria-expanded="true"] {
+  background:var(--sk-action-soft-hover);
+}
+/* High-specificity legacy dialog/family rules should not change the focus
+   indication of a control whose intent is already declared. */
+:is(#family-view,#app-view,#welcome-view,#account-panel,#child-app,#dashboard,#login,
+ #family-child-dialog,#child-pair-dialog,#family-activity-dialog,#issue-report-dialog)
+ :is(button,a,summary).sk-action:focus-visible {
+  outline:3px solid var(--sk-action-focus);
+  outline-offset:2px;
+}
 /* Existing layouts own their widths and breakpoints. Compact card buttons,
    tab choices and icon-only tools must keep those layouts. */
 @media(max-width:700px) {
