@@ -73,6 +73,9 @@ test('Explicitly dated closure must match actual selected ISO year and week',()=
  assert.deepEqual(extractSchoolClosuresFromPdf([s],2026,44)[0].closedDays,[]);
  const bad=source('Skolen stengt torsdag 31.november');
  assert.deepEqual(extractSchoolClosuresFromPdf([bad],2026,45)[0]?.closedDays||[],[]);
+ const explicitOtherYear=source('Skolen stengt torsdag 05.november 2027 og fredag 6.november 2027');
+ assert.deepEqual(extractSchoolClosuresFromPdf([explicitOtherYear],2026,45)[0]?.closedDays||[],[],
+  'A matching day/month in the WRONG printed year must not close school.');
 });
 
 test('Unproven, negated, historical or next-week phrases never cancel school days',()=>{
