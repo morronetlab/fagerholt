@@ -53,11 +53,17 @@ async function openPage(t,{width=1280,height=850,processing=false,mockNow=TEST_W
  await page.goto(server.baseURL+'/',{waitUntil:'domcontentloaded'});
  return {page,errors};
 }
+async function enterFamily(page){
+ if(await page.locator('#welcome-view').isVisible()){
+  // The landing has no redundant global navigation. Guest families use
+  // the explicitly described local-only option in the secondary disclosure.
+  await page.locator('#landing-other-options').click();
+  await page.locator('#landing-local-family').click();
+  await page.locator('#family-cancel').click();
+ }else await page.locator('#family-toggle').click();
+}
 async function chooseSchoolGrade(page,grade){
  if(await page.locator('#welcome-view').isVisible()){
-  const alternatives=page.locator('#landing-other-options');
-  if(await alternatives.isVisible()&&await alternatives.getAttribute('aria-expanded')==='false')
-   await alternatives.click();
   await page.locator('#landing-open-plan').click();
  }
  await page.locator('#school-search').fill('Sjøstrand');
@@ -69,12 +75,16 @@ test('New landing presents a family-first choice and keeps guest access visible'
  const {page,errors}=await openPage(t,{width:390,height:844});
  await page.locator('#welcome-view').waitFor({state:'visible'});
  assert.match(await page.locator('#welcome-title').innerText(),/Skole, lekser og fritid/);
- assert.equal(await page.locator('.welcome-choice').count(),3);
- assert.equal(await page.locator('a[href="/barn/"]').isVisible(),false,
-  'Mobile first-run keeps secondary choices collapsed');
- assert.equal(await page.locator('#landing-open-plan').isVisible(),false);
+ assert.equal(await page.locator('.welcome-choice').count(),2);
+ assert.equal(await page.locator('a[href="/barn/"]').isVisible(),true,
+  'Child access stays a low-priority explanation and link');
+ assert.equal(await page.locator('#landing-open-plan').isVisible(),true);
  assert.equal(await page.locator('#landing-create-family').isVisible(),true);
+ assert.equal(await page.locator('#landing-create-family').innerText().then(t=>t.trim().startsWith('Kom i gang')),true);
  assert.equal(await page.locator('#landing-other-options').isVisible(),true);
+ assert.equal(await page.locator('.primary-nav').isVisible(),false);
+ assert.equal(await page.locator('#account-button').isVisible(),true);
+ assert.equal(await page.locator('#landing-local-family').isVisible(),false);
  const layout=await page.locator('#welcome-view').evaluate(view=>({
   width:view.scrollWidth,viewport:window.innerWidth,
   primary:view.querySelector('#landing-create-family').getBoundingClientRect().bottom
@@ -82,9 +92,8 @@ test('New landing presents a family-first choice and keeps guest access visible'
  assert.ok(layout.width<=layout.viewport+1,'Welcome must fit a small phone');
  assert.ok(layout.primary<750,'Main signup action should appear in the first mobile viewport');
  await page.locator('#landing-other-options').click();
- assert.equal(await page.locator('a[href="/barn/"]').isVisible(),true);
- assert.equal(await page.locator('#landing-open-plan').isVisible(),true);
  assert.equal(await page.locator('#landing-local-family').isVisible(),true);
+ assert.match(await page.locator('#welcome-alternatives-panel').innerText(),/lagres bare på denne enheten/);
  assert.equal(await page.locator('#school-gate').isVisible(),false);
  await page.locator('#landing-open-plan').click();
  assert.equal(await page.locator('#school-gate').isVisible(),true);
@@ -101,7 +110,7 @@ test('School and grade selection remains available after navigating home and bac
  assert.match(await page.locator('#plan-context-class').innerText(),/Sjøstrand.*2/);
  await page.locator('#nav-home').click();
  assert.equal(await page.locator('#welcome-view').isVisible(),true);
- await page.locator('#nav-plan').click();
+ await page.locator('#landing-open-plan').click();
  assert.equal(await page.locator('#app-view').isVisible(),true);
  await page.locator('#mobile-selection-menu summary').click();
  await page.locator('#mobile-change-grade').click();
@@ -111,9 +120,16 @@ test('School and grade selection remains available after navigating home and bac
  assert.deepEqual(errors,[]);
 });
 
-test('Public desktop visitors keep a visible Forside navigation choice',async t=>{
+test('Public desktop landing uses only logo and Logg inn; two clear actions',async t=>{
  const {page,errors}=await openPage(t,{width:1280,height:850});
- assert.equal(await page.locator('#nav-home').isVisible(),true);
+ assert.equal(await page.locator('.primary-nav').isVisible(),false);
+ assert.equal(await page.locator('.primary-nav').evaluate(el=>el.inert),true);
+ assert.equal(await page.locator('#account-button').isVisible(),true);
+ assert.equal(await page.locator('#landing-open-plan').isVisible(),true);
+ assert.equal(await page.locator('#landing-create-family').isVisible(),true);
+ assert.equal(await page.locator('#landing-other-options').isVisible(),true);
+ assert.equal(await page.locator('#landing-local-family').isVisible(),false);
+ assert.equal(await page.locator('.welcome-choice').count(),2);
  assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('family-account-ready')),false);
  assert.equal(await page.locator('#home-link').getAttribute('aria-label'),'Gå til forsiden');
  assert.deepEqual(errors,[]);
@@ -277,7 +293,7 @@ async function addFamilyChild(page,name,grade='2'){
 }
 test('Header Ukeplan opens an existing child and reloading its plan stays on that child',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  await addFamilyChild(page,'Første barn');
  await addFamilyChild(page,'Andre barn');
  await page.locator('#nav-plan').click();
@@ -301,7 +317,7 @@ test('Header Ukeplan opens an existing child and reloading its plan stays on tha
 
 test('An explicitly selected welcome page survives reload even when family profiles exist',async t=>{
  const {page,errors}=await openPage(t);
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  await addFamilyChild(page,'Barn med egen profil');
  await page.locator('#nav-home').click();
  await page.locator('#welcome-view').waitFor({state:'visible'});
@@ -371,7 +387,7 @@ test('Tomorrow overview shows Thursday homework and packing, then opens that exa
   plan.days.Torsdag.bring=[{label:'Drikkeflaske'}];
   return reply(route,plan);
  });
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  await addFamilyChild(page,'Ailin');
  await page.locator('#family-tomorrow-brief').waitFor({state:'visible'});
  await page.locator('#family-tomorrow-brief-items').getByText(/Les 10 minutter/).waitFor();
@@ -408,7 +424,7 @@ test('Morning overview shows today, not tomorrow, and opens the correct calendar
   plan.days.Onsdag.bring=[{label:'Vannflaske onsdag'}];
   return reply(route,plan);
  });
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  await addFamilyChild(page,'Ailin');
  await page.locator('#family-tomorrow-brief-items').getByText('Vannflaske onsdag').waitFor();
  assert.equal(await page.locator('#family-tomorrow-brief-title').innerText(),'Hva skjer i dag?');
@@ -422,7 +438,7 @@ test('Morning overview shows today, not tomorrow, and opens the correct calendar
 });
 test('Friday afternoon: tomorrow means Saturday family activities, never next Monday lessons',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844,mockNow:'2026-10-30T14:00:00Z'});
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  await addFamilyChild(page,'Ailin');
  await page.locator('[data-family-mobile-tab="activities"]').click();
  await page.locator('#family-activity-add').click();
@@ -451,7 +467,7 @@ test('Skoleuka shares the same branded header and install icons on parent and ch
   '/brand/skoleuka-icon.svg');
  assert.equal(await page.locator('link[rel="manifest"]').getAttribute('href'),
   '/manifest.webmanifest');
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  assert.equal(await page.locator('#family-mobile-nav .family-nav-icon').count(),3);
  for(const button of await page.locator('#family-mobile-nav [data-family-mobile-tab]').all())
   assert.equal(await button.locator('svg').getAttribute('aria-hidden'),'true');
@@ -473,7 +489,7 @@ test('Skoleuka shares the same branded header and install icons on parent and ch
 test('Important this week renders above My children in family overview at phone and desktop widths',async t=>{
  for(const width of [390,1280]){
   const {page,errors}=await openPage(t,{width,height:850});
-  await page.locator('#family-toggle').click();
+  await enterFamily(page);
   await page.locator('#family-view').waitFor({state:'visible'});
   const actual=await page.evaluate(()=>{
    const important=document.querySelector('.family-important');
@@ -496,8 +512,8 @@ test('Important this week renders above My children in family overview at phone 
 test('Mobile local family keeps guest navigation and shares persistent header across tabs',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
  // Public pages and the individual child plan still use the generic navigation.
- assert.equal(await page.locator('.primary-nav').isVisible(),true);
- await page.locator('#family-toggle').click();
+ assert.equal(await page.locator('.primary-nav').isVisible(),false);
+ await enterFamily(page);
  await addFamilyChild(page,'Barn med familie');
  assert.equal(await page.locator('.primary-nav').isVisible(),true,
   'The public bottom navigation must remain usable for a guest/local family');
@@ -543,7 +559,7 @@ test('Mobile local family keeps guest navigation and shares persistent header ac
 });
 test('Desktop family navigation and overview header remain unchanged',async t=>{
  const {page,errors}=await openPage(t,{width:1280,height:850});
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  assert.equal(await page.locator('.primary-nav').isVisible(),true);
  assert.equal(await page.locator('.family-overview-top').isVisible(),true);
  assert.equal(await page.locator('#header-family-week').isVisible(),false);
@@ -552,7 +568,7 @@ test('Desktop family navigation and overview header remain unchanged',async t=>{
 });
 test('Mobile family layout uses one week label and keeps child actions aligned at 320px',async t=>{
  const {page,errors}=await openPage(t,{width:320,height:740});
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  await addFamilyChild(page,'Barn A');
  assert.equal(await page.locator('#header-family-week').isVisible(),false);
  assert.equal(await page.locator('#family-mobile-week').isVisible(),true);
@@ -583,7 +599,7 @@ test('Mobile family layout uses one week label and keeps child actions aligned a
 });
 test('Mobile Activities opens directly, has compact cards and retains edit actions',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:800});
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  await page.locator('[data-family-mobile-tab="activities"]').click();
  assert.equal(await page.locator('#family-activity-manage').evaluate(el=>el.open),true);
  assert.equal(await page.locator('#family-activity-manage>summary').isVisible(),false);
@@ -624,7 +640,7 @@ test('Mobile Activities opens directly, has compact cards and retains edit actio
 });
 test('Mobile family overview shows two compact tappable children, hides administration and keeps desktop intact',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  await addFamilyChild(page,'Barn A');
  await addFamilyChild(page,'Barn B');
  assert.equal(await page.locator('.family-overview-top').isVisible(),false);
@@ -657,7 +673,7 @@ test('Mobile family overview shows two compact tappable children, hides administ
 });
 test('Mobile family dashboard uses compact tabs, focused calendar day and fewer child actions',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  await addFamilyChild(page,'Barn A');
  await addFamilyChild(page,'Barn B');
  assert.equal(await page.locator('#family-mobile-nav').isVisible(),true);
@@ -695,7 +711,7 @@ test('Mobile family dashboard uses compact tabs, focused calendar day and fewer 
 });
 test('320px calendar shows five dates without scrolling and retains source details on demand',async t=>{
  const {page,errors}=await openPage(t,{width:320,height:700});
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  await addFamilyChild(page,'Barn på mobil');
  await page.locator('[data-family-mobile-tab="calendar"]').click();
  await page.locator('#family-agenda-days .family-agenda-item:visible').first().waitFor();
@@ -732,7 +748,7 @@ test('320px calendar shows five dates without scrolling and retains source detai
 });
 test('Desktop family tabs show each section and preserve child actions',async t=>{
  const {page,errors}=await openPage(t,{width:1280,height:850});
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  await addFamilyChild(page,'Barn desktop');
  const nav=page.locator('#family-mobile-nav');
  assert.equal(await nav.isVisible(),true);
@@ -771,7 +787,7 @@ test('V2 family overview combines two children and keeps completion independentl
   plan.days.Fredag.bring=[{label:'Gymtøy'}];
   return reply(route,plan);
  });
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  assert.equal(await page.locator('#family-view').isVisible(),true);
  await addFamilyChild(page,'Barn A');
  await addFamilyChild(page,'Barn B');
@@ -1395,7 +1411,7 @@ test('Browser Back visits grade selection, school selection and home in order',a
 
 test('Family grade selection, edited profiles and single-class navigation survive mobile screens',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844});
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  await addFamilyChild(page,'Min profil','5A');
  await page.locator('#family-mobile-admin-toggle').click();
  await page.locator('[data-family-more]').first().click();
@@ -1483,7 +1499,7 @@ test('Returning guardian sees a neutral startup shell, never a temporary empty f
  for(const width of [390,1280]){
   const {page,errors}=await openPage(t,{width,height:850});
   // A real signed-in family has a saved account session and returns to family.
-  await page.locator('#family-toggle').click();
+  await enterFamily(page);
   await page.evaluate(()=>{
    localStorage.setItem('ukeplanen.cloud.session.v1',JSON.stringify({
     access_token:'guardian-access',refresh_token:'guardian-refresh',
@@ -1547,7 +1563,7 @@ test('Returning guardian sees a neutral startup shell, never a temporary empty f
 });
 test('If a saved guardian session cannot be restored, the loading shell ends cleanly',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:800});
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  await page.evaluate(()=>localStorage.setItem('ukeplanen.cloud.session.v1',
   JSON.stringify({access_token:'stale',refresh_token:'stale',
    expires_at:Math.floor(Date.now()/1000)+3600})));
@@ -1870,7 +1886,7 @@ test('Account opens as a blocking modal and X or Escape restores underlying posi
 
 test('Family activities can be added, edited, repeated and persist locally without an account',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:740});
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  await page.locator('[data-family-mobile-tab="activities"]').click();
  await page.locator('#family-activity-add').click();
  await page.locator('#family-activity-name').fill('Korpsøvelse');
@@ -1911,7 +1927,7 @@ test('Family activities can be added, edited, repeated and persist locally witho
 });
 test('Family activity dates and optional end time are validated before saving',async t=>{
  const {page,errors}=await openPage(t);
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  await page.locator('[data-family-mobile-tab="activities"]').click();
  await page.locator('#family-activity-add').click();
  await page.locator('#family-activity-name').fill('Turnering');
@@ -1927,7 +1943,7 @@ test('Family activity dates and optional end time are validated before saving',a
 
 test('Activity editor is a keyboard-aware native dialog for add, edit and Escape',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:800,mockNow:'2026-10-28T10:00:00Z'});
- await page.locator('#family-toggle').click();
+ await enterFamily(page);
  await page.locator('[data-family-mobile-tab="activities"]').click();
  await page.locator('#family-activity-add').click();
  const dialog=page.locator('#family-activity-dialog');
@@ -2201,5 +2217,54 @@ test('Opening a saved child plan hides school/grade switching and shows only tha
  assert.doesNotMatch(await page.locator('#plan-day-activity-list').innerText(),/Søskenets aktivitet/);
  await page.locator('#plan-back-family').click();
  await page.locator('#family-view').waitFor({state:'visible'});
+ assert.deepEqual(errors,[]);
+});
+
+test('First-time landing is responsive, omits generic navigation and keeps two primary paths',async t=>{
+ for(const width of [375,768,1280]){
+  const {page,errors}=await openPage(t,{width,height:850});
+  await page.locator('#welcome-view').waitFor({state:'visible'});
+  assert.equal(await page.locator('.primary-nav').isVisible(),false,
+   'No redundant desktop or mobile navigation on the public landing at '+width);
+  assert.equal(await page.locator('.primary-nav').evaluate(el=>el.hidden&&el.inert),true);
+  assert.equal(await page.locator('#account-button').isVisible(),true);
+  assert.equal(await page.locator('#landing-create-family').isVisible(),true);
+  assert.equal(await page.locator('#landing-open-plan').isVisible(),true);
+  assert.equal(await page.locator('#landing-other-options').isVisible(),true);
+  assert.equal(await page.locator('#landing-local-family').isVisible(),false);
+  assert.equal(await page.locator('.welcome-choice').count(),2);
+  const cards=await page.locator('.welcome-choice').evaluateAll(nodes=>
+   nodes.map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};}));
+  if(width>=768)assert.ok(Math.abs(cards[0].y-cards[1].y)<=2,
+   'Desktop/tablet displays the two equal-priority choices side by side');
+  else assert.ok(cards[1].y>=cards[0].y+cards[0].h-1,
+   'Mobile stacks the two entry cards');
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+1),
+   false,'No horizontal overflow at '+width);
+  await page.locator('#landing-other-options').click();
+  assert.equal(await page.locator('#landing-other-options').getAttribute('aria-expanded'),'true');
+  assert.equal(await page.locator('#landing-local-family').isVisible(),true);
+  assert.match(await page.locator('#welcome-alternatives-panel').innerText(),/synkroniseres ikke med andre/);
+  await page.locator('#landing-other-options').click();
+  assert.equal(await page.locator('#landing-local-family').isVisible(),false);
+  assert.equal(await page.locator('#landing-other-options').getAttribute('aria-expanded'),'false');
+  assert.deepEqual(errors,[]);
+  await page.close();
+ }
+});
+
+test('Landing actions still open existing login and school flows; global nav returns off landing',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await page.locator('#landing-create-family').click();
+ assert.equal(await page.locator('#account-panel').evaluate(el=>el.open),true);
+ await page.locator('#account-close').click();
+ assert.equal(await page.locator('#account-panel').evaluate(el=>el.open),false);
+ await page.locator('#landing-open-plan').click();
+ assert.equal(await page.locator('#school-gate').isVisible(),true);
+ assert.equal(await page.locator('.primary-nav').isVisible(),true,
+  'Public school selector retains its existing navigation');
+ await page.locator('#school-back').click();
+ assert.equal(await page.locator('#welcome-view').isVisible(),true);
+ assert.equal(await page.locator('.primary-nav').isVisible(),false);
  assert.deepEqual(errors,[]);
 });

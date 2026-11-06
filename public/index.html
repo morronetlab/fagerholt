@@ -62,6 +62,7 @@
   <link rel="stylesheet" href="/guardian-plan.css">
   <link rel="stylesheet" href="/family-practical-controls.css">
   <link rel="stylesheet" href="/action-system.css">
+  <link rel="stylesheet" href="/landing-first-time.css">
 </head>
 <body>
 <a class="skip-link" href="#main-content">Hopp til innhold</a>
@@ -191,9 +192,8 @@
       <div class="welcome-hero">
         <div class="welcome-copy">
           <p class="welcome-eyebrow">SKOLEHVERDAGEN, LITT ENKLERE</p>
-          <h1 id="welcome-title">Skole, lekser og fritid. <span>Endelig samlet.</span></h1>
-          <p class="welcome-lead">Samle skolens ukeplaner, viktige beskjeder og familiens aktiviteter. Del oversikten mellom foresatte – og gi hvert barn sin egen app med QR-kode.</p>
-          <div class="welcome-points"><span>✓ Skolens ukeplan automatisk</span><span>✓ Familiens aktiviteter</span><span>✓ Barneapp med QR-kode</span></div>
+          <h1 id="welcome-title">Skole, lekser og fritid. <span>Samlet på ett sted.</span></h1>
+          <p class="welcome-lead">Ukeplaner, viktige beskjeder og aktiviteter for hele familien – på ett sted.</p>
         </div>
         <div class="welcome-illustration" aria-hidden="true">
           <div class="welcome-notebook"><span>UKEPLAN</span><strong id="welcome-week-number">Uke —</strong><i>✓ Norsk</i><i>✓ Engelsk</i><i>○ Pakk sekken</i></div>
@@ -204,32 +204,40 @@
         <article class="welcome-choice welcome-choice-main">
           <span class="welcome-choice-icon" aria-hidden="true">👨‍👩‍👧‍👦</span>
           <h2>For foresatte</h2>
-          <p>Opprett familie, legg til barna og få én oversikt med skole, frister og fritidsaktiviteter. Del med en annen foresatt.</p>
-          <button id="landing-create-family" type="button" class="welcome-button welcome-button-primary sk-action sk-action--modal">Opprett familiekonto <span aria-hidden="true">→</span></button>
-          <p class="welcome-helper">1. E-postkode · 2. Legg til barn · 3. Få oversikt</p>
+          <p>Samle barnas ukeplaner og aktiviteter. Del lekser og oversikt med en annen foresatt.</p>
+          <button id="landing-create-family" type="button" class="welcome-button welcome-button-primary sk-action sk-action--modal">Kom i gang <span aria-hidden="true">→</span></button>
+          <p class="welcome-helper">Opprett familie med kode på e-post</p>
         </article>
-        <button type="button" id="landing-other-options" class="welcome-other-options sk-action sk-action--disclosure" aria-expanded="false">Andre måter å bruke Skoleuka</button>
-        <article class="welcome-choice welcome-child-choice">
-          <span class="welcome-choice-icon" aria-hidden="true">📱</span>
-          <h2>For barn</h2>
-          <p>Få din egen ukeplan på telefonen eller nettbrettet, med lekser, pakkeliste og aktiviteter som gjelder deg.</p>
-          <a href="/barn/" class="welcome-button welcome-button-secondary sk-action sk-action--navigate">Åpne min ukeplan <span aria-hidden="true">→</span></a>
-          <p class="welcome-helper">En foresatt inviterer deg med QR-kode</p>
-        </article>
-        <article class="welcome-choice">
+        <article class="welcome-choice welcome-choice-plan">
           <span class="welcome-choice-icon" aria-hidden="true">📖</span>
-          <h2>Bare se en ukeplan?</h2>
-          <p>Du kan fortsatt finne en offentlig ukeplan uten registrering. Velg skole og klassetrinn.</p>
-          <button id="landing-open-plan" type="button" class="welcome-button welcome-button-secondary sk-action sk-action--navigate">Finn ukeplan <span aria-hidden="true">→</span></button>
+          <h2>Finn en ukeplan</h2>
+          <p>Se skolens ukeplan for et valgt klassetrinn, helt uten registrering.</p>
+          <button id="landing-open-plan" type="button" class="welcome-button welcome-button-secondary sk-action sk-action--navigate">Velg skole <span aria-hidden="true">→</span></button>
           <p class="welcome-helper">Ingen registrering nødvendig</p>
         </article>
       </div>
-      <p class="welcome-local">Vil du samle barna uten å registrere deg? <button class="sk-action sk-action--modal" id="landing-local-family" type="button">Bruk familieoversikt kun på denne enheten</button></p>
+      <aside class="welcome-child-info" aria-label="Skoleuka for barn">
+        <span class="welcome-child-info-icon" aria-hidden="true">📱</span>
+        <div class="welcome-child-info-copy">
+          <strong>Skal barnet bruke Skoleuka?</strong>
+          <p>En foresatt inviterer barnet med QR-kode.</p>
+        </div>
+        <a class="welcome-child-link sk-action sk-action--link" href="/barn/">Åpne barneappen</a>
+      </aside>
+      <section class="welcome-alternatives" aria-label="Andre måter å bruke Skoleuka">
+        <button type="button" id="landing-other-options" class="welcome-other-options sk-action sk-action--disclosure" aria-controls="welcome-alternatives-panel" aria-expanded="false">Andre måter å bruke Skoleuka</button>
+        <div class="welcome-alternatives-panel" id="welcome-alternatives-panel">
+          <div>
+            <strong>Familieoversikt på denne enheten</strong>
+            <p>Samle barna uten konto. Informasjonen lagres bare på denne enheten og synkroniseres ikke med andre.</p>
+          </div>
+          <button class="sk-action sk-action--modal" id="landing-local-family" type="button">Bruk familieoversikt lokalt</button>
+        </div>
+      </section>
       <section class="welcome-explain" aria-label="Slik fungerer Skoleuka">
-        <div><span aria-hidden="true">1</span><strong>Opprett familiekonto</strong><p>Logg inn som foresatt med kode på e-post.</p></div>
-        <div><span aria-hidden="true">2</span><strong>Legg til barna</strong><p>Velg riktig skole, trinn og eventuell gruppe én gang.</p></div>
-        <div><span aria-hidden="true">3</span><strong>Planlegg familiens uke</strong><p>Se skole, fridager og fritidsaktiviteter samlet.</p></div>
-        <div><span aria-hidden="true">4</span><strong>Inviter barnet med QR</strong><p>Åpne barnekortet, skann QR og legg ukeplanen på barnets hjemskjerm.</p></div>
+        <div><span aria-hidden="true">1</span><strong>Logg inn med e-postkode</strong><p>Ingen passord nødvendig.</p></div>
+        <div><span aria-hidden="true">2</span><strong>Legg til barna</strong><p>Velg skole og trinn for hvert barn.</p></div>
+        <div><span aria-hidden="true">3</span><strong>Følg skoleuka sammen</strong><p>Del ukeplan og avkrysninger med foresatte.</p></div>
       </section>
     </section>
     <section id="family-view" class="family-view" hidden aria-labelledby="family-title">

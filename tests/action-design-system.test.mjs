@@ -21,7 +21,8 @@ test('The canonical action CSS loads LAST on main, child and operations routes',
  for(const path of ['public/index.html','public/barn/index.html','public/drift/index.html']){
   const html=source(path),links=[...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*>/g)].map(m=>m[0]);
   assert.ok(links.length>=2,path);
-  assert.match(links.at(-1),/href="\/action-system\.css"/,path);
+  assert.match(links.at(-1),path==='public/index.html'?/href="\/landing-first-time\.css"/:/href="\/action-system\.css"/,path);
+  if(path==='public/index.html')assert.ok(links.some(link=>link.includes('href="/action-system.css"')));
   checkRoles(html,path);
  }
 });

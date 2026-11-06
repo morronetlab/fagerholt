@@ -1,0 +1,324 @@
+/* Public first-run experience: two clear choices and one quiet alternative.
+ * Loaded after legacy landing/action layers; scoped so authenticated family,
+ * child-plan, account, school and grade screens keep their established layout. */
+body.public-landing-active .topbar{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:16px;
+}
+body.public-landing-active .primary-nav,
+body .primary-nav[hidden]{
+ display:none!important;
+}
+body.public-landing-active .header-actions{
+ display:flex;
+ margin-left:auto;
+ flex:0 0 auto;
+}
+#home-link:focus-visible,
+#welcome-view :is(a,button):focus-visible{
+ outline:3px solid #c58d42;
+ outline-offset:3px;
+}
+/* The book illustration is useful on large screens; the same hero is concise
+ * on phones, where buttons must appear early and remain touch friendly. */
+#welcome-view{
+ padding-top:12px;
+}
+#welcome-view .welcome-hero{
+ grid-template-columns:minmax(0,1.35fr) minmax(215px,.7fr);
+ gap:24px;
+ min-height:290px;
+ padding:38px 48px;
+}
+#welcome-view .welcome-copy h1{
+ max-width:650px;
+ margin-bottom:16px;
+}
+#welcome-view .welcome-lead{
+ max-width:520px;
+ font-size:16px;
+ line-height:1.58;
+}
+#welcome-view .welcome-start{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:16px;
+ margin-top:20px;
+}
+#welcome-view .welcome-start .welcome-choice{
+ display:flex;
+ flex-direction:column;
+ grid-column:auto;
+ min-width:0;
+ padding:22px 25px 20px;
+ border-radius:20px;
+ box-shadow:0 8px 25px rgba(27,71,52,.045);
+}
+#welcome-view .welcome-start .welcome-choice-main{
+ border-color:#b7d9c2;
+ background:linear-gradient(145deg,#fff,#f4faf5);
+}
+#welcome-view .welcome-start .welcome-choice-plan{
+ border-color:#dce8df;
+ background:#fff;
+}
+#welcome-view .welcome-choice h2{
+ margin:13px 0 8px;
+ font-size:22px;
+}
+#welcome-view .welcome-choice>p:not(.welcome-helper){
+ font-size:14px;
+ line-height:1.52;
+ margin:0 0 18px;
+}
+#welcome-view .welcome-choice .welcome-helper{
+ margin:10px 0 0!important;
+ font-size:11px!important;
+}
+#welcome-view .welcome-choice .welcome-button{
+ width:100%;
+ min-height:46px;
+ padding:10px 15px;
+ border-radius:11px;
+ margin-top:auto;
+ font-size:14px;
+ justify-content:space-between;
+ text-decoration:none;
+}
+/* The highlighted onboarding CTA is deliberately emphasized on the public
+ * landing only. It still opens the existing account modal. */
+#welcome-view .welcome-choice-main #landing-create-family.sk-action--modal{
+ background:#286b53;
+ border-color:#286b53;
+ color:#fff;
+}
+#welcome-view .welcome-choice-main #landing-create-family.sk-action--modal:hover{
+ background:#1d5642;
+ border-color:#1d5642;
+}
+#welcome-view .welcome-choice-plan #landing-open-plan.sk-action--navigate{
+ background:#fff;
+ border-color:#b9d4c4;
+ color:#245e49;
+}
+#welcome-view .welcome-choice-plan #landing-open-plan.sk-action--navigate:hover{
+ background:#eef6f0;
+ border-color:#82b99c;
+}
+#welcome-view .welcome-child-info{
+ display:flex;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:13px;
+ margin-top:14px;
+ border:1px solid #dfe9e1;
+ border-radius:16px;
+ padding:15px 19px;
+ background:#f6faf6;
+}
+#welcome-view .welcome-child-info-icon{
+ display:grid;
+ place-items:center;
+ width:43px;
+ height:43px;
+ flex:0 0 43px;
+ border-radius:13px;
+ background:#e3f2e8;
+ font-size:21px;
+}
+#welcome-view .welcome-child-info-copy{
+ flex:1 1 210px;
+ min-width:0;
+}
+#welcome-view .welcome-child-info-copy strong{
+ display:block;
+ font-size:14px;
+ color:#245b47;
+}
+#welcome-view .welcome-child-info-copy p{
+ margin:3px 0 0;
+ font-size:13px;
+ line-height:1.5;
+ color:#617b6e;
+}
+#welcome-view .welcome-child-link.sk-action--link{
+ flex:0 0 auto;
+ color:#326b52;
+ margin-left:auto;
+ text-decoration:underline;
+ text-underline-offset:3px;
+}
+#welcome-view .welcome-alternatives{
+ max-width:650px;
+ margin:15px auto 0;
+}
+#welcome-view .welcome-other-options.sk-action--disclosure{
+ box-sizing:border-box;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ width:100%;
+ min-height:44px;
+ gap:12px;
+ padding:10px 14px;
+ border:1px solid #d6e6d9;
+ border-radius:12px;
+ background:#f0f6f1;
+ color:#2e694f;
+ font-size:12px;
+ font-weight:800;
+ text-align:left;
+}
+#welcome-view .welcome-other-options.sk-action--disclosure:hover,
+#welcome-view .welcome-other-options.sk-action--disclosure[aria-expanded="true"]{
+ background:#e4f2e8;
+ border-color:#add0b8;
+}
+#welcome-view .welcome-alternatives-panel{
+ display:none;
+ grid-template-columns:minmax(0,1fr) auto;
+ align-items:center;
+ gap:14px;
+ padding:15px 16px;
+ background:#fff;
+ border:1px solid #dce8df;
+ border-top:0;
+ border-radius:0 0 12px 12px;
+}
+#welcome-view.show-welcome-options .welcome-alternatives-panel{
+ display:grid;
+}
+#welcome-view .welcome-alternatives-panel strong{
+ display:block;
+ font-size:13px;
+ color:#245b47;
+}
+#welcome-view .welcome-alternatives-panel p{
+ margin:4px 0 0;
+ font-size:12px;
+ line-height:1.5;
+ color:#617b6e;
+}
+#welcome-view #landing-local-family.sk-action--modal{
+ min-height:42px;
+ width:auto;
+ white-space:normal;
+}
+#welcome-view .welcome-explain{
+ grid-template-columns:repeat(3,minmax(0,1fr));
+ max-width:950px;
+ gap:12px;
+ margin-top:26px;
+}
+#welcome-view .welcome-explain>div{
+ padding:12px 15px;
+}
+@media(max-width:900px){
+ #welcome-view .welcome-hero{
+  grid-template-columns:minmax(0,1fr) minmax(170px,.55fr);
+  padding:31px 32px;
+  gap:15px;
+  min-height:265px;
+ }
+ #welcome-view .welcome-illustration{transform:scale(.86)}
+ #welcome-view .welcome-start{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #welcome-view .welcome-start .welcome-choice-main{grid-column:auto}
+ #welcome-view .welcome-start .welcome-choice{padding:21px 19px}
+}
+@media(max-width:700px){
+ body.public-landing-active{padding-bottom:0;}
+ body.public-landing-active .topbar{
+  min-height:69px;
+  gap:12px;
+ }
+ #welcome-view{padding:4px 0 28px}
+ #welcome-view .welcome-hero{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  padding:22px 19px;
+  min-height:0;
+  border-radius:18px;
+ }
+ #welcome-view .welcome-illustration{display:none}
+ #welcome-view .welcome-eyebrow{margin-bottom:8px}
+ #welcome-view .welcome-copy h1{
+  font-size:clamp(27px,7vw,34px);
+  letter-spacing:-.8px;
+  line-height:1.15;
+  margin:0 0 9px;
+ }
+ #welcome-view .welcome-lead{
+  font-size:13px;
+  line-height:1.53;
+ }
+ #welcome-view .welcome-start{
+  grid-template-columns:minmax(0,1fr);
+  margin-top:11px;
+  gap:10px;
+ }
+ #welcome-view .welcome-start .welcome-choice,
+ #welcome-view .welcome-start .welcome-choice:not(.welcome-choice-main){
+  display:flex;
+  grid-column:auto;
+  border-radius:16px;
+  padding:17px 17px 16px;
+ }
+ #welcome-view .welcome-start .welcome-choice-icon{
+  display:none;
+ }
+ #welcome-view .welcome-start .welcome-choice h2{
+  margin:0 0 5px;
+  font-size:18px;
+ }
+ #welcome-view .welcome-start .welcome-choice>p:not(.welcome-helper){
+  margin:0 0 12px;
+  font-size:12px;
+  line-height:1.5;
+ }
+ #welcome-view .welcome-start .welcome-choice .welcome-button{
+  min-height:45px;
+  font-size:13px;
+  padding:10px 13px;
+ }
+ #welcome-view .welcome-child-info{
+  gap:10px;
+  padding:13px 14px;
+  margin-top:11px;
+  border-radius:13px;
+ }
+ #welcome-view .welcome-child-info-icon{
+  width:35px;
+  height:35px;
+  flex-basis:35px;
+  font-size:17px;
+  border-radius:10px;
+ }
+ #welcome-view .welcome-child-info-copy strong{font-size:13px}
+ #welcome-view .welcome-child-info-copy p{font-size:12px}
+ #welcome-view .welcome-child-link.sk-action--link{
+  flex:0 0 auto;
+  margin:0 0 0 45px;
+  padding:3px 0;
+  font-size:12px;
+ }
+ #welcome-view .welcome-alternatives{margin-top:11px}
+ #welcome-view .welcome-alternatives-panel{
+  grid-template-columns:minmax(0,1fr);
+ }
+ #welcome-view .welcome-alternatives-panel #landing-local-family{
+  justify-self:start;
+ }
+ #welcome-view .welcome-explain{display:none}
+}
+@media(max-width:380px){
+ #welcome-view .welcome-hero{padding:19px 16px}
+ #welcome-view .welcome-start .welcome-choice{padding:16px 14px}
+ #welcome-view .welcome-child-link.sk-action--link{
+  margin-left:0;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ #welcome-view :is(button,a){transition:none}
+}

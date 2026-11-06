@@ -111,5 +111,10 @@ test('Public visitor keeps school wizard and no guardian toolbar',async t=>{
  await page.goto(server.baseURL+'/',{waitUntil:'domcontentloaded'});
  await page.locator('#welcome-view').waitFor({state:'visible'});
  assert.equal(await page.locator('#guardian-plan-toolbar').isVisible(),false);
- assert.equal(await page.locator('.primary-nav').isVisible(),true);
+ assert.equal(await page.locator('.primary-nav').isVisible(),false);
+ assert.equal(await page.locator('#account-button').isVisible(),true);
+ await page.locator('#landing-open-plan').click();
+ assert.equal(await page.locator('#school-gate').isVisible(),true);
+ assert.equal(await page.locator('.primary-nav').isVisible(),true,
+  'Navigation still works in the school-plan wizard');
 });

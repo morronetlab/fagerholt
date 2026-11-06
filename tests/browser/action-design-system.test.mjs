@@ -38,9 +38,14 @@ test('Primary navigation and modal triggers have different, repeatable styles ac
  const weekNav=await palette(page,'#landing-open-plan');
  const returnNav=await palette(page,'#plan-back-family');
  const accountNav=await palette(page,'#account-open-family');
- assert.deepEqual(paint(weekNav),paint(returnNav));
- assert.deepEqual(paint(weekNav),paint(accountNav));
- assert.notEqual(weekNav.background,familyModal.background,'Navigate must be recognizably different from opening a dialog');
+ assert.deepEqual(paint(returnNav),paint(accountNav));
+ assert.notEqual(weekNav.background,returnNav.background,
+  'The public guest action is a quieter choice than authenticated primary navigation');
+ const parentStart=await palette(page,'#landing-create-family');
+ assert.notEqual(parentStart.background,weekNav.background,
+  'Getting started is the clear primary CTA on the public landing');
+ assert.notEqual(returnNav.background,familyModal.background,
+  'Authenticated navigation must remain distinct from opening a dialog');
 });
 test('Disclosure rows, buttons and utilities remain visually grouped in the responsive family view',async t=>{
  const page=await openPage(t,'/',390);

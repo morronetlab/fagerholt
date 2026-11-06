@@ -202,6 +202,13 @@ function renderShell(){
   // Family tabs replace the generic fixed mobile navigation. Keep this state
   // on the body so desktop and the child's own week-plan remain unchanged.
   document.body.classList.toggle('family-dashboard-active',inFamily);
+  // The public first-run page already has its own two entry paths. The
+  // three-way app navigation belongs to school/family views only, on both
+  // desktop and mobile. Hidden also removes it from the accessibility tree.
+  document.body.classList.toggle('public-landing-active',welcome);
+  const primaryNav=document.querySelector('.primary-nav');
+  primaryNav.hidden=welcome;
+  primaryNav.inert=welcome;
   $('header-family-week').hidden=!inFamily;
   $('home-link').setAttribute('aria-label',inFamily?'Gå til toppen av Min familie':
    hasCloudFamily||guardianProfile?'Gå til Min familie':'Gå til forsiden');
