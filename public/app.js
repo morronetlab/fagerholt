@@ -207,10 +207,10 @@ function renderShell(){
   // desktop and mobile. Hidden also removes it from the accessibility tree.
   document.body.classList.toggle('public-landing-active',welcome);
   const primaryNav=document.querySelector('.primary-nav');
-  // Family tabs and the child-plan return button provide contextual navigation.
-  // The old global Family/Weekplan switch only duplicated these routes.
-  primaryNav.hidden=true;
-  primaryNav.inert=true;
+  // Public visitors still need navigation; authenticated family dashboards
+  // use their contextual tabs, while a child plan retains its own return link.
+  primaryNav.hidden=welcome;
+  primaryNav.inert=welcome;
   $('header-family-week').hidden=!inFamily;
   $('home-link').setAttribute('aria-label',inFamily?'Gå til toppen av Min familie':
    hasCloudFamily||guardianProfile?'Gå til Min familie':'Gå til forsiden');
