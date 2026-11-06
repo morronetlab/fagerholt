@@ -4,13 +4,13 @@ import {adultImpactRank,adultImpactType} from './adult-impact.mjs';
 const canonical=value=>String(value||'').normalize('NFKC').toLocaleLowerCase('nb-NO')
  .replace(/\s+/gu,' ').trim();
 const planningDay=value=>/\b(?:planleggingsdag(?:er)?|lærerstevne)\b/iu.test(canonical(value));
-export function importantFamilyNotices(model,{limit=3}={}){
+export function importantFamilyNotices(model,{limit=3,includeOrdinaryWhenEmpty=false}={}){
  const all=[...(model?.days||[]).flatMap(day=>day.items||[]),...(model?.undated||[])];
  // If no high-priority messages exist, show actual school communications
  // instead of a seemingly empty overview. Keep family activities and homework
  // out of the important-notices preview.
  const hasImportant=all.some(item=>item?.important&&['school','municipal'].includes(item.kind));
- const fallback=!hasImportant;
+ const fallback=includeOrdinaryWhenEmpty&&!hasImportant;
  const unique=new Map();
  for(const item of all){
   if(!item||!['school','municipal'].includes(item.kind)||(!fallback&&!item.important))continue;
