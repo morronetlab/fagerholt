@@ -1,0 +1,24 @@
+/* Main navigation is redundant: public landing has two entry actions,
+ * family has Overview/Calendar/Activities tabs, and child plans have their
+ * own contextual Back to family link. Keep the old nav inert in markup only
+ * to support legacy routing; never show its desktop tabs or mobile bottom bar. */
+html .primary-nav { display:none!important; }
+html .topbar{
+ display:grid;
+ grid-template-columns:minmax(0,1fr) auto;
+ align-items:center;
+ gap:14px;
+}
+html .topbar .header-actions{
+ margin-left:auto;
+ justify-self:end;
+}
+@media(max-width:700px){
+ html body{padding-bottom:0;}
+ html .topbar{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+ }
+ html .topbar .header-actions{margin-left:auto}
+}
