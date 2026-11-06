@@ -84,7 +84,8 @@ export function profileSummary(profile,plan,calendar,storage=()=>null,cloudCheck
  const dayNotes=day=>day==null?[]:(plan.dayNotes?.[DAYS[day]]||[])
    .filter(x=>groupApplies(x,profile)).map(x=>String(x?.text||'').trim()).filter(Boolean);
  const getBag=day=>{
-  if(day==null)return [];
+  // Never surface routine/everyday equipment on a source-confirmed day off.
+  if(day==null||plan.days?.[DAYS[day]]?.closed)return [];
   const raw=[...(plan.everyday||[]),...(plan.days?.[DAYS[day]]?.bring||[])].filter(x=>x&&x.label&&groupApplies(x,profile));
   return [...new Map(raw.map(x=>[norm(x.label)+'|'+norm(x.group),x])).values()]
    .map((x,i)=>({...x,checked:cloudBagChecked?
