@@ -356,14 +356,15 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const briefingDay=selectBriefingDay(new Date());
   const key=overviewContentKey(now)+'|'+briefingDay.date;
   el('family-tomorrow-brief-title').textContent=briefingDay.isToday?
-   'Hva skjer i dag?':'Hva skjer i morgen?';
+   'Hva skjer i dag?':briefingDay.nextSchoolDay?'Hva skjer på mandag?':'Hva skjer i morgen?';
   section.querySelector('.family-tomorrow-eyebrow').textContent=briefingDay.isToday?
-   'OVERSIKT FOR I DAG':'FORBERED MORGENDAGEN';
+   'OVERSIKT FOR I DAG':briefingDay.nextSchoolDay?'FORBERED NESTE SKOLEDAG':'FORBERED MORGENDAGEN';
   if(overviewSourcesPending(now)){
    if(tomorrowDisplayedKey===key)return; // retain complete contents during revalidation
    section.dataset.loading='true';
    el('family-tomorrow-brief-date').textContent=briefingDay.isToday?
-    'Klargjør dagens oversikt':'Klargjør morgendagens oversikt';
+    'Klargjør dagens oversikt':briefingDay.nextSchoolDay?
+    'Klargjør mandagens oversikt':'Klargjør morgendagens oversikt';
    el('family-tomorrow-brief-count').textContent='Sjekker …';
    el('family-tomorrow-brief-notice').textContent='Samler ukeplaner, skolerute og familieaktiviteter.';
    setHtml('family-tomorrow-brief-items',
@@ -376,7 +377,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   tomorrowDisplayedKey=key;
   section.dataset.loading='false';
   const next=buildTomorrowBriefing({actualToday:briefingDay.actualToday,
-   targetDate:briefingDay.date,calendar:now,agenda:fullAgenda,
+   targetDate:briefingDay.date,nextSchoolDay:briefingDay.nextSchoolDay,
+   calendar:now,agenda:fullAgenda,
    profiles,summaries,activities:activityUI.getRows()});
   if(lastTomorrowBriefing?.date!==next.date)showAllTomorrow=false;
   lastTomorrowBriefing=next;
