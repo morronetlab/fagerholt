@@ -63,8 +63,10 @@ test('Expandable controls have one semantic disclosure role and keep live aria-e
  }
  for(const id of ['weather-toggle','landing-other-options']){
   const tag=controls(html).find(c=>c.includes('id="'+id+'"'));
-  assert.ok(tag.includes('data-sk-chevron="off"'),id+' has a glyph already');
+  assert.ok(!tag.includes('data-sk-chevron="off"'),id+' now uses the shared CSS chevron');
  }
+ const admin=controls(html).find(c=>c.includes('id="family-mobile-admin-toggle"'));
+ assert.ok(admin.includes('data-sk-chevron="off"'),'Icon-only settings action keeps its own gear, never a second arrow');
  assert.match(source('public/shared/family-week-agenda-html.mjs'),/sk-action--disclosure[^>]*data-family-agenda-details/);
 });
 test('Centralized hover, keyboard focus, disabled and reduced-motion states are present',()=>{
@@ -74,4 +76,28 @@ test('Centralized hover, keyboard focus, disabled and reduced-motion states are 
   assert.ok(css.includes(rule),rule);
  }
  assert.ok(!/\.sk-action[^{}]*\{[^{}]*display\s*:\s*none/mi.test(css),'Do not alter layout/visibility');
+});
+
+
+test('Disclosure arrows are CSS-only; old glyphs and markers cannot stack',()=>{
+ const html=source('public/index.html');
+ const family=source('public/family-v3.css');
+ const controlsToCheck=['landing-other-options','weather-toggle','notices-panel','goals-panel'];
+ for(const id of controlsToCheck){
+  const i=html.indexOf('id="'+id+'"');
+  assert.ok(i>=0,id);
+  const nearby=html.slice(i,i+450);
+  assert.ok(!nearby.includes('class="chevron"'),id+' should not keep a duplicate inline chevron');
+  if(['weather-toggle','landing-other-options'].includes(id))
+   assert.ok(!nearby.includes('aria-hidden="true">⌄</span>'),id+' should not keep a Unicode arrow');
+ }
+ assert.ok(!/::after\s*\{\s*content:\s*['"](?:⌄|⌃| ⌄| ⌃)/.test(family),
+  'Legacy family summary arrows must not render Unicode glyphs');
+ const css=source('public/action-system.css');
+ assert.match(css,/details\[open\] > summary\.sk-action--disclosure/);
+ assert.match(css,/border-right:2px solid currentColor/);
+ assert.match(css,/border-bottom:2px solid currentColor/);
+ assert.match(css,/transform:rotate\(225deg\)/);
+ assert.match(css,/#family-tomorrow-brief-more\.sk-action--disclosure/);
+ assert.match(css,/#family-reminders-more|\.family-reminders-more\.sk-action--disclosure/);
 });
