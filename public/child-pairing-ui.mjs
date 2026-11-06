@@ -127,7 +127,7 @@ export function initChildPairingUI({getCloud,onStatusChange=()=>{}}){
     e(new Date(item.created_at).toLocaleDateString('nb-NO'))+
     ' · '+(item.installed_at?'App åpnet fra hjemskjerm':'App ikke bekreftet installert')+
     ' · Tilgang utløper '+e(new Date(item.expires_at).toLocaleDateString('nb-NO'))+
-    '</small></div><button type="button" data-child-revoke="'+e(item.id)+'">Fjern tilgang</button></div>').join(''):
+    '</small></div><button class="sk-action sk-action--danger" type="button" data-child-revoke="'+e(item.id)+'">Fjern tilgang</button></div>').join(''):
     '<p class="family-muted">Ingen aktive barneenheter ennå.</p>';
   }catch(err){$('child-pair-devices').textContent=err.message;}
  }
