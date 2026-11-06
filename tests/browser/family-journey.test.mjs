@@ -255,7 +255,7 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  assert.equal(await second.locator('#family-toggle').isVisible(),false);
  assert.equal(await second.locator('#nav-plan').isVisible(),false);
  // Open a child's plan from the actual family card, not an obsolete tab.
- await second.locator('#family-cards .family-child-compact').first().click();
+ await second.locator('#family-cards .family-child [data-family-open]').first().click();
  await second.locator('#app-view').waitFor({state:'visible'});
  assert.equal(await second.locator('#nav-home').isVisible(),false);
  assert.equal(await second.locator('#home-link').getAttribute('aria-label'),'Gå til Min familie');
