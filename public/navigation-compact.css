@@ -35,3 +35,12 @@ html .topbar .header-actions{
  line-height:1.5;
 }
 #family-view .family-important-partial[hidden]{display:none!important}
+
+/* When next week's PDF isn't ready, don't reserve a large blank 335px panel.
+ * The real status message and a calendar shortcut stay readable. */
+#family-view #family-tomorrow-brief[data-loading="false"][data-empty="true"]{
+ min-height:0;
+}
+#family-view #family-tomorrow-brief[data-empty="true"] .family-tomorrow-brief-items:empty{
+ display:none;
+}
