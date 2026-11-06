@@ -60,7 +60,7 @@ async function enterFamily(page){
   await page.locator('#landing-other-options').click();
   await page.locator('#landing-local-family').click();
   await page.locator('#family-cancel').click();
- }else await page.locator('#family-toggle').click();
+ }else await page.locator('#home-link').click();
 }
 async function chooseSchoolGrade(page,grade){
  if(await page.locator('#welcome-view').isVisible()){
@@ -108,7 +108,7 @@ test('School and grade selection remains available after navigating home and bac
  await chooseSchoolGrade(page,'2');
  await page.locator('#homework-list .checkrow').first().waitFor();
  assert.match(await page.locator('#plan-context-class').innerText(),/Sjøstrand.*2/);
- await page.locator('#nav-home').click();
+ await page.locator('#nav-home').evaluate(el=>el.click());
  assert.equal(await page.locator('#welcome-view').isVisible(),true);
  await page.locator('#landing-open-plan').click();
  assert.equal(await page.locator('#app-view').isVisible(),true);
@@ -144,7 +144,7 @@ test('Local family entry and account CTA can both start from the new welcome scr
  assert.equal(await page.locator('#family-form').isVisible(),true);
  await page.locator('#family-cancel').click();
  assert.equal(await page.locator('#family-child-dialog').evaluate(el=>el.open),false);
- await page.locator('#nav-home').click();
+ await page.locator('#nav-home').evaluate(el=>el.click());
  assert.equal(await page.locator('#welcome-view').isVisible(),true);
  await page.locator('#landing-create-family').click();
  assert.equal(await page.locator('#account-panel').isVisible(),true);
@@ -296,7 +296,7 @@ test('Header Ukeplan opens an existing child and reloading its plan stays on tha
  await enterFamily(page);
  await addFamilyChild(page,'Første barn');
  await addFamilyChild(page,'Andre barn');
- await page.locator('#nav-plan').click();
+ await page.locator('#family-cards .family-child-compact').first().click();
  await page.locator('#app-view').waitFor({state:'visible'});
  assert.match(await page.locator('#plan-context-class').innerText(),/Første barn/);
  assert.equal(await page.locator('#school-gate').isVisible(),false);
@@ -319,7 +319,7 @@ test('An explicitly selected welcome page survives reload even when family profi
  const {page,errors}=await openPage(t);
  await enterFamily(page);
  await addFamilyChild(page,'Barn med egen profil');
- await page.locator('#nav-home').click();
+ await page.locator('#nav-home').evaluate(el=>el.click());
  await page.locator('#welcome-view').waitFor({state:'visible'});
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#welcome-view').waitFor({state:'visible'});
@@ -515,8 +515,8 @@ test('Mobile local family keeps guest navigation and shares persistent header ac
  assert.equal(await page.locator('.primary-nav').isVisible(),false);
  await enterFamily(page);
  await addFamilyChild(page,'Barn med familie');
- assert.equal(await page.locator('.primary-nav').isVisible(),true,
-  'The public bottom navigation must remain usable for a guest/local family');
+ assert.equal(await page.locator('.primary-nav').isVisible(),false,
+  'All families use the same contextual navigation, not a bottom bar');
  assert.equal(await page.locator('body').evaluate(x=>x.classList.contains('family-cloud-active')),false);
  assert.equal(await page.locator('body').evaluate(x=>x.classList.contains('family-dashboard-active')),true);
  assert.equal(await page.locator('.topbar').evaluate(x=>getComputedStyle(x).position),'sticky');
@@ -560,7 +560,7 @@ test('Mobile local family keeps guest navigation and shares persistent header ac
 test('Desktop family navigation and overview header remain unchanged',async t=>{
  const {page,errors}=await openPage(t,{width:1280,height:850});
  await enterFamily(page);
- assert.equal(await page.locator('.primary-nav').isVisible(),true);
+ assert.equal(await page.locator('.primary-nav').isVisible(),false);
  assert.equal(await page.locator('.family-overview-top').isVisible(),true);
  assert.equal(await page.locator('#header-family-week').isVisible(),false);
  assert.notEqual(await page.locator('.topbar').evaluate(x=>getComputedStyle(x).position),'sticky');
@@ -1555,8 +1555,8 @@ test('Returning guardian sees a neutral startup shell, never a temporary empty f
   assert.equal(await page.locator('#account-button').innerText(),'Min konto');
   assert.match(await page.locator('#family-cards').innerText(),/Første barn/);
   assert.match(await page.locator('#family-cards').innerText(),/Andre barn/);
-  assert.equal(await page.locator('.primary-nav').isVisible(),width>700,
-   'Authenticated mobile dashboard has its own tabs, not generic bottom bar');
+  assert.equal(await page.locator('.primary-nav').isVisible(),false,
+   'Neither desktop nor mobile show the redundant global navigation');
   assert.deepEqual(errors,[]);
   await page.close();
  }
@@ -2261,8 +2261,8 @@ test('Landing actions still open existing login and school flows; global nav ret
  assert.equal(await page.locator('#account-panel').evaluate(el=>el.open),false);
  await page.locator('#landing-open-plan').click();
  assert.equal(await page.locator('#school-gate').isVisible(),true);
- assert.equal(await page.locator('.primary-nav').isVisible(),true,
-  'Public school selector retains its existing navigation');
+ assert.equal(await page.locator('.primary-nav').isVisible(),false,
+  'Public school selector uses its Back control, not global navigation');
  await page.locator('#school-back').click();
  assert.equal(await page.locator('#welcome-view').isVisible(),true);
  assert.equal(await page.locator('.primary-nav').isVisible(),false);
