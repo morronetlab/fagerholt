@@ -1,0 +1,295 @@
+{
+  "schemaVersion": 1,
+  "reviewedOn": "2026-11-06",
+  "basisRun": "https://github.com/morronetlab/fagerholt/actions/runs/42021927248",
+  "engine": "real-pdf-rules-fallback",
+  "sourceType": "sha-verified original PDFs, manually reviewed goldens",
+  "scope": "Diagnosis and prioritization only, no production parsing or AI-model comparison",
+  "issues": [
+    {
+      "id": "sjostrand-2-w44-2026:5",
+      "sourceId": "sjostrand-2-w44-2026",
+      "sourceSha256": "945c339a8cab3c8a954ceb6d9cb6e007b4825355ffb524e5528829e90f19c771",
+      "expectationIndex": 5,
+      "expected": {
+        "kind": "packing",
+        "day": "Fredag",
+        "contains": "Gymsko"
+      },
+      "category": "packing_day_attribution",
+      "priority": "P2",
+      "symptom": "Gym shoes for Friday are not present on Friday's packing checklist.",
+      "causeHypothesis": "Likely source segmentation/gear alias or weekday anchoring; unconfirmed until tracing PDF.js tokens.",
+      "proposedFix": "Trace the Friday source sentence through textSegments → classifySegments → gearFromStatement and days[Friday].bring; preserve explicit-instruction requirement.",
+      "acceptance": "Friday contains Gymsko; no ungrounded packing reminders.",
+      "investigateFiles": [
+        "lib/plan-core.mjs",
+        "lib/packing-source.mjs"
+      ]
+    },
+    {
+      "id": "fagerholt-4-w44-2026:5",
+      "sourceId": "fagerholt-4-w44-2026",
+      "sourceSha256": "3886c3cd628cd4c3ed5c0ef859eaa4939b9057eda5d13b55660390149c7a6067",
+      "expectationIndex": 5,
+      "expected": {
+        "kind": "packing",
+        "day": "Mandag",
+        "contains": "vedkubbe"
+      },
+      "category": "packing_day_attribution",
+      "priority": "P2",
+      "symptom": "Monday's wood-log instruction is missing from the packing checklist.",
+      "causeHypothesis": "Likely item vocabulary does not recognise vedkubbe or day context is lost; unconfirmed.",
+      "proposedFix": "Trace Monday's verb plus item and add a source-backed item extraction path rather than a global keyword guess.",
+      "acceptance": "Monday includes vedkubbe and other days do not acquire it.",
+      "investigateFiles": [
+        "lib/plan-core.mjs",
+        "lib/packing-source.mjs"
+      ]
+    },
+    {
+      "id": "lovisenlund-4-w45-2026:0",
+      "sourceId": "lovisenlund-4-w45-2026",
+      "sourceSha256": "b7480b4ae5f9ff6206434d9c792554a2c7f70a536c9e01568973dbd983cdd597",
+      "expectationIndex": 0,
+      "expected": {
+        "kind": "homework",
+        "contains": "side 135",
+        "dueDay": "Onsdag"
+      },
+      "category": "homework_extraction_deadline",
+      "priority": "P1",
+      "symptom": "Reading task with Wednesday deadline is not matched.",
+      "causeHypothesis": "Possible multi-page weekly-homework extraction or due-day binding loss; unconfirmed.",
+      "proposedFix": "Inspect page-2 task cells and sentence-level deadline evidence; retain source page and explicit Wednesday due date.",
+      "acceptance": "Reading side 135 is present with dueDay Onsdag.",
+      "investigateFiles": [
+        "lib/homework-grid.mjs",
+        "lib/homework-source-truth.mjs"
+      ]
+    },
+    {
+      "id": "lovisenlund-4-w45-2026:1",
+      "sourceId": "lovisenlund-4-w45-2026",
+      "sourceSha256": "b7480b4ae5f9ff6206434d9c792554a2c7f70a536c9e01568973dbd983cdd597",
+      "expectationIndex": 1,
+      "expected": {
+        "kind": "homework",
+        "contains": "Matteark med divisjon",
+        "dueDay": "Onsdag"
+      },
+      "category": "homework_extraction_deadline",
+      "priority": "P1",
+      "symptom": "Math division worksheet with Wednesday deadline is not matched.",
+      "causeHypothesis": "Possible cross-page homework grouping and due-date inheritance issue; unconfirmed.",
+      "proposedFix": "Extract the worksheet as a discrete source-backed homework task and bind it to source-stated Wednesday cutoff.",
+      "acceptance": "Matteark med divisjon is present with dueDay Onsdag.",
+      "investigateFiles": [
+        "lib/homework-grid.mjs",
+        "lib/homework-day-sections.mjs"
+      ]
+    },
+    {
+      "id": "lovisenlund-4-w45-2026:2",
+      "sourceId": "lovisenlund-4-w45-2026",
+      "sourceSha256": "b7480b4ae5f9ff6206434d9c792554a2c7f70a536c9e01568973dbd983cdd597",
+      "expectationIndex": 2,
+      "expected": {
+        "kind": "homework",
+        "contains": "gloser"
+      },
+      "category": "homework_extraction_deadline",
+      "priority": "P1",
+      "symptom": "Vocabulary homework is absent or not recognisable as a task.",
+      "causeHypothesis": "Possible vocabulary-versus-homework classification and heading split; unconfirmed.",
+      "proposedFix": "Trace English vocabulary section through source text routing; include as homework only when PDF explicitly presents it as assigned work.",
+      "acceptance": "Homework contains gloser without inventing a due day.",
+      "investigateFiles": [
+        "lib/homework-routing.mjs",
+        "lib/homework-grid.mjs"
+      ]
+    },
+    {
+      "id": "lovisenlund-4-w45-2026:4",
+      "sourceId": "lovisenlund-4-w45-2026",
+      "sourceSha256": "b7480b4ae5f9ff6206434d9c792554a2c7f70a536c9e01568973dbd983cdd597",
+      "expectationIndex": 4,
+      "expected": {
+        "kind": "packing",
+        "day": "Mandag",
+        "contains": "gymtøy"
+      },
+      "category": "packing_day_attribution",
+      "priority": "P2",
+      "symptom": "Explicit Monday gymwear is not present in Monday's packing checklist.",
+      "causeHypothesis": "Possible day-scoped gymtøy detection failure; unconfirmed.",
+      "proposedFix": "Add source-backed day-context tests for gymtøy; do not infer equipment solely from ordinary timetable gym entries.",
+      "acceptance": "Monday includes gymtøy, with no unrelated packing added.",
+      "investigateFiles": [
+        "lib/plan-core.mjs",
+        "lib/packing-source.mjs"
+      ]
+    },
+    {
+      "id": "lovisenlund-4-w45-2026:5",
+      "sourceId": "lovisenlund-4-w45-2026",
+      "sourceSha256": "b7480b4ae5f9ff6206434d9c792554a2c7f70a536c9e01568973dbd983cdd597",
+      "expectationIndex": 5,
+      "expected": {
+        "kind": "notice",
+        "contains": "planleggingsdager"
+      },
+      "category": "critical_school_notice",
+      "priority": "P0",
+      "symptom": "Thursday/Friday school planning days are missing from notices.",
+      "causeHypothesis": "Likely cross-page notice classification/section detection failure; unconfirmed.",
+      "proposedFix": "Preserve explicit planning-day notices from page 1, bind the actual calendar week, check precedence over routine timetable.",
+      "acceptance": "Plan includes planleggingsdager and does not imply school on closed days.",
+      "investigateFiles": [
+        "lib/plan-core.mjs",
+        "lib/practical-source-audit.mjs"
+      ]
+    },
+    {
+      "id": "nygaard-4-w45-2026:0",
+      "sourceId": "nygaard-4-w45-2026",
+      "sourceSha256": "f55de892837f698ad5a2c5be2c5bf49c7aeccfd155454b97bb46e413eb5e8456",
+      "expectationIndex": 0,
+      "expected": {
+        "kind": "homework",
+        "contains": "Les side 53"
+      },
+      "category": "homework_extraction_deadline",
+      "priority": "P1",
+      "symptom": "Monday's reading side 53 is not recognised as homework.",
+      "causeHypothesis": "Possible weekday-labelled section extraction failure; unconfirmed.",
+      "proposedFix": "Read the page-2 daily homework cells and preserve task/date evidence across fragmented PDF text.",
+      "acceptance": "Homework includes Les side 53 with source day preserved when stated.",
+      "investigateFiles": [
+        "lib/homework-day-sections.mjs",
+        "lib/homework-grid.mjs"
+      ]
+    },
+    {
+      "id": "nygaard-4-w45-2026:1",
+      "sourceId": "nygaard-4-w45-2026",
+      "sourceSha256": "f55de892837f698ad5a2c5be2c5bf49c7aeccfd155454b97bb46e413eb5e8456",
+      "expectationIndex": 1,
+      "expected": {
+        "kind": "homework",
+        "contains": "Les side 54"
+      },
+      "category": "homework_extraction_deadline",
+      "priority": "P1",
+      "symptom": "Tuesday's reading side 54 is not recognised as homework.",
+      "causeHypothesis": "Possible adjacent day-column merging or line segmentation; unconfirmed.",
+      "proposedFix": "Ensure one explicit homework cell per weekday and preserve independent reading tasks.",
+      "acceptance": "Homework includes Les side 54 without merging into another day.",
+      "investigateFiles": [
+        "lib/homework-day-sections.mjs",
+        "lib/homework-grid.mjs"
+      ]
+    },
+    {
+      "id": "nygaard-4-w45-2026:2",
+      "sourceId": "nygaard-4-w45-2026",
+      "sourceSha256": "f55de892837f698ad5a2c5be2c5bf49c7aeccfd155454b97bb46e413eb5e8456",
+      "expectationIndex": 2,
+      "expected": {
+        "kind": "homework",
+        "contains": "Quest textbook"
+      },
+      "category": "homework_extraction_deadline",
+      "priority": "P1",
+      "symptom": "English textbook task is not recognised as homework.",
+      "causeHypothesis": "Possible subject label and homework evidence span separate PDF tokens; unconfirmed.",
+      "proposedFix": "Preserve source task/subject association and protect against cross-column contamination.",
+      "acceptance": "Homework includes Quest textbook as an explicit school assignment.",
+      "investigateFiles": [
+        "lib/homework-grid.mjs",
+        "lib/homework-source-truth.mjs"
+      ]
+    },
+    {
+      "id": "nygaard-4-w45-2026:3",
+      "sourceId": "nygaard-4-w45-2026",
+      "sourceSha256": "f55de892837f698ad5a2c5be2c5bf49c7aeccfd155454b97bb46e413eb5e8456",
+      "expectationIndex": 3,
+      "expected": {
+        "kind": "homework",
+        "contains": "Velg ti oppgaver"
+      },
+      "category": "homework_extraction_deadline",
+      "priority": "P1",
+      "symptom": "Mathematics choose-ten-exercises task is missing.",
+      "causeHypothesis": "Possible task-splitting or section heading precedence issue; unconfirmed.",
+      "proposedFix": "Handle repeated/segmented homework rows while retaining distinct task text.",
+      "acceptance": "Homework includes Velg ti oppgaver exactly from source evidence.",
+      "investigateFiles": [
+        "lib/homework-grid.mjs",
+        "lib/homework-routing.mjs"
+      ]
+    },
+    {
+      "id": "nygaard-4-w45-2026:6",
+      "sourceId": "nygaard-4-w45-2026",
+      "sourceSha256": "f55de892837f698ad5a2c5be2c5bf49c7aeccfd155454b97bb46e413eb5e8456",
+      "expectationIndex": 6,
+      "expected": {
+        "kind": "notice",
+        "contains": "skolen stengt"
+      },
+      "category": "critical_school_notice",
+      "priority": "P0",
+      "symptom": "Explicit Thursday/Friday school closure is missing from notices.",
+      "causeHypothesis": "Possible page-2 override ignored by generic section parser; unconfirmed.",
+      "proposedFix": "Detect source-backed stengt notices, resolve real date and let explicit closure override routine timetable. Never infer closure from normal schedule.",
+      "acceptance": "Notice contains skolen stengt and closure dates match week 45.",
+      "investigateFiles": [
+        "lib/plan-core.mjs",
+        "lib/practical-source-audit.mjs"
+      ]
+    },
+    {
+      "id": "nygaard-4-w45-2026:7",
+      "sourceId": "nygaard-4-w45-2026",
+      "sourceSha256": "f55de892837f698ad5a2c5be2c5bf49c7aeccfd155454b97bb46e413eb5e8456",
+      "expectationIndex": 7,
+      "expected": {
+        "kind": "exclude_packing",
+        "day": "Torsdag",
+        "contains": "gymtøy"
+      },
+      "category": "closed_day_packing_conflict",
+      "priority": "P1",
+      "symptom": "Thursday gym equipment remains suggested even though school is closed.",
+      "causeHypothesis": "Routine timetable appears to outrank explicit closure; hypothesis, not confirmed.",
+      "proposedFix": "Suppress Thursday routine packing only after a matching, verified closed-school notice. Preserve real exceptions and source provenance.",
+      "acceptance": "No Thursday gymtøy when Thursday is a source-confirmed closed day.",
+      "investigateFiles": [
+        "lib/plan-core.mjs",
+        "lib/practical-source-audit.mjs",
+        "lib/packing-source.mjs"
+      ]
+    }
+  ],
+  "sourceExtractionIssues": [
+    {
+      "id": "nygaard-4-w45-2026:anchor:0",
+      "sourceId": "nygaard-4-w45-2026",
+      "sourceSha256": "f55de892837f698ad5a2c5be2c5bf49c7aeccfd155454b97bb46e413eb5e8456",
+      "anchorIndex": 0,
+      "expected": {
+        "page": 1,
+        "contains": "KUNNSKAPSHJØRNET"
+      },
+      "category": "pdf_text_layer",
+      "priority": "P2",
+      "symptom": "Rendered heading KUNNSKAPSHJØRNET not found verbatim in PDF.js text tokens.",
+      "causeHypothesis": "Possible grapheme separation, font encoding, or PDF.js token order; no proof that visible PDF content is missing.",
+      "proposedFix": "Inspect rendered page versus PDF.js tokens and glyph normalization; do not modify parser expectations from OCR guesses.",
+      "acceptance": "Source heading anchor is extractable or documented as unavoidable text-layer limitation."
+    }
+  ]
+}
