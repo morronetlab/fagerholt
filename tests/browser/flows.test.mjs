@@ -2166,7 +2166,22 @@ test('Upcoming week shows available child school notices instead of a false all-
  }));
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('#family-view').waitFor({state:'visible'});
- await page.locator('#family-important-cards').getByText(/bibliotekboka/).waitFor({timeout:20000});
+ try{
+  await page.locator('#family-important-cards').getByText(/bibliotekboka/).waitFor({timeout:12000});
+ }catch(error){
+  const state=await page.evaluate(()=>({
+   screen:document.querySelector('#family-view')?.hidden,
+   title:document.querySelector('#family-tomorrow-title')?.textContent,
+   cards:document.querySelector('#family-important-cards')?.innerText,
+   details:document.querySelector('#family-reminders')?.innerText.slice(0,500),
+   status:document.querySelector('#family-important-status')?.innerText,
+   children:document.querySelector('#family-cards')?.innerText.slice(0,650),
+   week:document.querySelector('#family-week')?.textContent,
+   pending:document.querySelector('#family-load-status')?.textContent
+  }));
+  console.log('NEXT_WEEK_FALLBACK_DIAG',JSON.stringify(state));
+  throw error;
+ }
  assert.equal(await page.locator('#family-tomorrow-title').innerText(),'Beskjeder denne uka');
  assert.doesNotMatch(await page.locator('#family-important-cards').innerText(),/Ukeplaner mangler eller kunne ikke hentes/);
  assert.match(await page.locator('#family-important-status').innerText(),/Andre barn/);
