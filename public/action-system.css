@@ -109,7 +109,7 @@ details > summary.sk-action--disclosure:not([data-sk-chevron="off"]) {
  min-width:0;
  list-style:none;
 }
-details > summary.sk-action--disclosure::-webkit-details-marker {
+details > summary::-webkit-details-marker {
  display:none;
 }
 :is(button,summary).sk-action.sk-action--disclosure:not([data-sk-chevron="off"])::after {
