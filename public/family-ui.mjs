@@ -536,7 +536,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    details+'<div class="family-child-actions">'+
    (plan?.aiStatus==='failed'?'<button type="button" class="family-soft sk-action sk-action--utility" data-family-retry="'+escape(pairOf(p))+'">Prøv AI-tolkning igjen</button>':'')+
    '<button type="button" class="family-open sk-action sk-action--navigate" data-family-open="'+escape(p.id)+'">Åpne ukeplan →</button>'+ 
-   '<button type="button" class="family-mobile-more sk-action sk-action--disclosure" data-family-more="'+escape(p.id)+'" aria-expanded="'+String(mobileMoreOpen.has(p.id))+'">⋯ Flere</button>'+
+   '<button type="button" class="family-mobile-more sk-action sk-action--disclosure" data-family-more="'+escape(p.id)+'" aria-expanded="'+String(mobileMoreOpen.has(p.id))+'">Flere</button>'+
    (cloud&&childSetupInfo(childPairingUI.getStatus(p.id)).complete?
     '<button type="button" class="family-child-invite sk-action sk-action--modal" data-family-pair="'+escape(p.id)+'">Administrer barneapp</button>':'')+
    '<button type="button" class="family-soft sk-action sk-action--modal" data-family-edit="'+escape(p.id)+'">Endre</button>'+
