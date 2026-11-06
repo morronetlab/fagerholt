@@ -15,6 +15,15 @@ export function nextIsoDate(today){
 /** Switch from today to tomorrow after school in Oslo time. The Friday
  * 14:00 cutover matches familyWeekCalendar's next-week rollover.
  */
+export function nextSchoolIsoDate(today){
+ let date=nextIsoDate(today);
+ while(date){
+  const weekday=new Date(date+'T12:00:00Z').getUTCDay();
+  if(weekday!==0&&weekday!==6)return date;
+  date=nextIsoDate(date);
+ }
+ return null;
+}
 export function selectBriefingDay(now=new Date(),zone='Europe/Oslo',schoolEndsAt=15){
  const actualToday=schoolCalendar(now,zone).today;
  const hourParts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{
@@ -23,8 +32,8 @@ export function selectBriefingDay(now=new Date(),zone='Europe/Oslo',schoolEndsAt
  const hour=Number(hourParts.hour)+Number(hourParts.minute)/60;
  const weekday=(new Date(actualToday+'T12:00:00Z').getUTCDay()+6)%7;
  const cutoff=weekday===4?14:schoolEndsAt;
- const isToday=hour<cutoff;
- return {actualToday,date:isToday?actualToday:nextIsoDate(actualToday),isToday};
+ const isToday=weekday<5&&hour<cutoff;
+ return {actualToday,date:isToday?actualToday:nextSchoolIsoDate(actualToday),isToday};
 }
 export function buildTomorrowBriefing({
  actualToday,targetDate,calendar,agenda,profiles=[],summaries=new Map(),activities=[]
