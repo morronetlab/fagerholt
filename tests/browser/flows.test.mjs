@@ -2159,6 +2159,7 @@ test('Upcoming week shows available child school notices instead of a false all-
   if(grade==='5A')return reply(route,{status:'unpublished',schoolId:'sjostrand',
    grade,week:45,year:2026,aiStatus:'disabled'});
   return reply(route,{...basePlan('2'),schoolId:'sjostrand',year:2026,week:45,
+   dayNotes:{}, // no critical vaccine: exercise the ordinary-notice fallback
    notices:['Husk å lese ukebrevet og ta med bibliotekboka.']});
  });
  await page.route('**/api/school-calendar?**',route=>reply(route,{
