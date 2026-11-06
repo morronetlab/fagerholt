@@ -22,3 +22,16 @@ html .topbar .header-actions{
  }
  html .topbar .header-actions{margin-left:auto}
 }
+
+/* Supplementary information must never replace real cards with an error.
+ * It is a quiet note only when another child's PDF is still pending. */
+#family-view .family-important-partial{
+ margin:10px 0 0;
+ padding:8px 10px;
+ border-radius:9px;
+ background:#f5f9f5;
+ color:#627c6b;
+ font-size:12px;
+ line-height:1.5;
+}
+#family-view .family-important-partial[hidden]{display:none!important}
