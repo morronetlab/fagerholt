@@ -14,7 +14,7 @@ test('Landing offers exactly two primary destinations, with child app as guidanc
  assert.match(welcome,/id="landing-open-plan"[^>]+>Velg skole/);
  assert.match(welcome,/Skal barnet bruke Skoleuka/);
  assert.match(welcome,/inviterer barnet med QR-kode/);
- assert.match(welcome,/href="\/barn\/" class="welcome-child-link/);
+ assert.match(welcome,/class="welcome-child-link[^"]*" href="\/barn\/"/);
  assert.ok(!welcome.includes('welcome-child-choice'),'Child app is not a third registration path');
  assert.ok(!welcome.includes('welcome-points'),'No duplicate feature badges');
 });
