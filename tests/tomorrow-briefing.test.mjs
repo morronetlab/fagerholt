@@ -54,7 +54,7 @@ test('Friday afternoon never presents next Monday homework as Saturday tasks',()
  assert.equal(r.inDisplayedWeek,false);
  assert.equal(r.weekend,true);
  assert.deepEqual(r.items.map(x=>x.title),['Fotball']);
- assert.match(r.notice,/annen uke/);
+ assert.match(r.notice,/neste skoledag er ikke tilgjengelig her/);
 });
 test('If tomorrow school sources are missing, the briefing warns instead of claiming all clear',()=>{
  const r=buildTomorrowBriefing({actualToday:'2026-10-28',
