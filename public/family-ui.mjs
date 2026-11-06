@@ -322,6 +322,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   }
   importantDisplayedKey=key;
   const notices=importantFamilyNotices(model,{limit:3});
+  el('family-tomorrow-title').textContent=notices.fallback&&notices.total?
+   'Beskjeder denne uka':'Viktig denne uka';
   const html=notices.visible.map(item=>{
    const when=item.date?new Intl.DateTimeFormat('nb-NO',{
     timeZone:'UTC',weekday:'long',day:'numeric',month:'short'
@@ -331,9 +333,9 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     familyAgendaItemHtml(item)+'</div>';
   }).join('');
   const message=!profiles.length?'Legg til barn for å se viktige skolebeskjeder.':
-   model.missingProfiles.length?
-    'Ukeplaner mangler eller kunne ikke hentes. Sjekk status for hvert barn.':
-    'Ingen særskilte viktige beskjeder registrert for denne uka.';
+   model.missingProfiles.length===profiles.length?
+    'Ukeplanene er ikke tilgjengelige ennå. Sjekk status for hvert barn.':
+    'Ingen skolebeskjeder registrert for denne uka.';
   setHtml('family-important-cards',html||
    '<p class="family-important-empty">'+escape(message)+'</p>');
   const moreButton=el('family-mobile-important-more');
@@ -355,8 +357,11 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   if(!profiles.length){lastTomorrowBriefing=null;tomorrowDisplayedKey=null;return;}
   const briefingDay=selectBriefingDay(new Date());
   const key=overviewContentKey(now)+'|'+briefingDay.date;
+  const nextMonday=!briefingDay.isToday&&
+   new Date(briefingDay.date+'T12:00:00Z').getUTCDay()===1&&
+   [5,6,0].includes(new Date(briefingDay.actualToday+'T12:00:00Z').getUTCDay());
   el('family-tomorrow-brief-title').textContent=briefingDay.isToday?
-   'Hva skjer i dag?':'Hva skjer i morgen?';
+   'Hva skjer i dag?':nextMonday?'Hva skjer mandag?':'Hva skjer i morgen?';
   section.querySelector('.family-tomorrow-eyebrow').textContent=briefingDay.isToday?
    'OVERSIKT FOR I DAG':'FORBERED MORGENDAGEN';
   if(overviewSourcesPending(now)){
