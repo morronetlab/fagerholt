@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="/mobile-keyboard.css">
 <link rel="stylesheet" href="/barn/content-categories.css">
 <link rel="stylesheet" href="/brand/skoleuka-brand.css">
+<link rel="stylesheet" href="/action-system.css">
 <title>Min Skoleuka – ukeplanen min</title>
 </head>
 <body>
@@ -26,7 +27,7 @@
   <span class="child-sun">☀️</span><p class="eyebrow">DIN HELT EGEN UKEPLAN</p>
   <h1>Hei! Klar for skoleuka?</h1>
   <p id="child-setup-message">Be en foresatt åpne «Inviter barn» under din profil og skann QR-koden med denne enheten.</p>
-  <button id="child-retry" class="child-primary" type="button">Prøv igjen</button>
+  <button id="child-retry" class="child-primary sk-action sk-action--utility" type="button">Prøv igjen</button>
   <p class="child-small">Du trenger ingen e-postadresse eller passord. QR-koden fungerer bare én gang og utløper etter 10 minutter.</p>
  </section>
  <section id="child-ready" hidden>
@@ -38,8 +39,8 @@
   <div class="child-install" id="child-install-box" hidden>
    <div><strong>📱 Ha ukeplanen på hjemskjermen</strong>
     <p id="child-install-help">Du kan åpne Skoleuka som en vanlig app neste gang.</p></div>
-   <button id="child-install-button" type="button" class="child-outline">Legg til på hjemskjermen</button>
-   <button id="child-install-dismiss" type="button" class="child-close" aria-label="Skjul installasjonsinfo">✕</button>
+   <button id="child-install-button" type="button" class="child-outline sk-action sk-action--modal">Legg til på hjemskjermen</button>
+   <button id="child-install-dismiss" type="button" class="child-close sk-action sk-action--close" aria-label="Skjul installasjonsinfo">✕</button>
   </div>
   <nav id="child-days" class="child-days" aria-label="Velg skoledag"></nav>
   <div class="child-type-key" aria-label="Typer innlegg i ukeplanen">
@@ -51,7 +52,7 @@
   <section class="child-panel" aria-labelledby="child-events-heading"><div class="child-panel-heading"><span aria-hidden="true">📚</span><h2 id="child-events-heading">Dette skjer på skolen</h2></div>
    <div id="child-events"></div><div id="child-attendance"></div><div id="child-notes"></div>
    <details id="child-other-groups" class="child-secondary-groups" hidden>
-    <summary>Hva skal de andre gruppene gjøre?</summary><div id="child-other-events"></div>
+    <summary class="sk-action sk-action--disclosure">Hva skal de andre gruppene gjøre?</summary><div id="child-other-events"></div>
    </details></section>
   <section class="child-panel child-municipal" id="child-municipal-section" hidden aria-labelledby="child-municipal-heading">
    <div class="child-panel-heading"><span aria-hidden="true">🏫</span><h2 id="child-municipal-heading">Fra skoleruta</h2></div>
@@ -67,7 +68,7 @@
    <p class="child-check-progress" id="child-homework-progress" aria-live="polite"></p>
    <div id="child-homework"></div>
    <p class="child-sync-note" id="child-homework-sync" role="status" aria-live="polite">Henter felles lekseprogresjon …</p>
-   <button type="button" id="child-import-homework" class="child-outline" hidden>Overfør tidligere avkrysninger</button>
+   <button type="button" id="child-import-homework" class="child-outline sk-action sk-action--utility" hidden>Overfør tidligere avkrysninger</button>
    <p class="child-local-note">Lekser og pakkeliste synkroniseres med familiekontoen. Quizfremdriften lagres bare på denne enheten.</p></section>
   <section class="child-panel child-quiz-panel" id="child-quiz-section" hidden aria-labelledby="child-quiz-title">
    <div class="child-panel-heading"><span aria-hidden="true">🎮</span><h2 id="child-quiz-title">Ordøving og quiz</h2></div>
@@ -76,28 +77,28 @@
    <div id="child-quiz-game" hidden>
     <p id="child-quiz-progress" class="child-check-progress" aria-live="polite"></p>
     <div id="child-quiz-question" class="child-quiz-question"></div>
-    <button id="child-quiz-peek" type="button" class="child-outline" hidden>👀 Se ordet i 4 sekunder</button>
+    <button id="child-quiz-peek" type="button" class="child-outline sk-action sk-action--utility" hidden>👀 Se ordet i 4 sekunder</button>
     <p id="child-quiz-preview" class="child-quiz-preview" hidden></p>
     <div id="child-quiz-options" class="child-quiz-choices" hidden></div>
     <form id="child-quiz-form" class="child-quiz-form" hidden>
      <label for="child-quiz-answer">Ditt svar</label>
      <input id="child-quiz-answer" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="80" required>
-     <button type="submit" class="child-primary">Sjekk svaret</button>
+     <button type="submit" class="child-primary sk-action sk-action--submit">Sjekk svaret</button>
     </form>
     <p id="child-quiz-feedback" role="status" aria-live="polite"></p>
-    <button id="child-quiz-next" type="button" class="child-primary" hidden>Neste oppgave →</button>
-    <button id="child-quiz-pause" type="button" class="child-link">Tilbake til ordøving</button>
+    <button id="child-quiz-next" type="button" class="child-primary sk-action sk-action--submit" hidden>Neste oppgave →</button>
+    <button id="child-quiz-pause" type="button" class="child-link sk-action sk-action--utility">Tilbake til ordøving</button>
    </div>
    <p class="child-local-note">Quizfremdrift lagres på denne enheten. Ikke alle ukeplaner inneholder øveord.</p>
   </section>
   <dialog id="child-helper" class="child-helper" aria-labelledby="child-helper-title">
    <div class="child-helper-top"><h2 id="child-helper-title">✨ Leksehjelper</h2>
-    <button id="child-helper-close" type="button" class="child-close" aria-label="Lukk leksehjelper">✕</button></div>
+    <button id="child-helper-close" type="button" class="child-close sk-action sk-action--close" aria-label="Lukk leksehjelper">✕</button></div>
    <p id="child-helper-task" class="child-helper-task"></p>
    <p>Velg en forklaring eller et hint. Du skal løse oppgaven selv.</p>
    <div class="child-helper-actions">
-    <button type="button" data-child-help="explain" class="child-outline">💡 Forklar oppgaven</button>
-    <button type="button" data-child-help="hint" class="child-outline">🧩 Gi meg et hint</button>
+    <button type="button" data-child-help="explain" class="child-outline sk-action sk-action--utility">💡 Forklar oppgaven</button>
+    <button type="button" data-child-help="hint" class="child-outline sk-action sk-action--utility">🧩 Gi meg et hint</button>
    </div>
    <p id="child-helper-status" role="status" aria-live="polite"></p>
    <div id="child-helper-result" class="child-helper-result"></div>
@@ -105,8 +106,8 @@
   </dialog>
   <p class="child-source" id="child-source"></p>
   <div class="child-footer-actions">
-   <button id="child-refresh" type="button" class="child-outline">↻ Oppdater ukeplan</button>
-   <button id="child-remove" type="button" class="child-link">Fjern denne enhetens tilgang</button>
+   <button id="child-refresh" type="button" class="child-outline sk-action sk-action--utility">↻ Oppdater ukeplan</button>
+   <button id="child-remove" type="button" class="child-link sk-action sk-action--danger">Fjern denne enhetens tilgang</button>
   </div>
  </section>
  <p class="child-status" id="child-status" role="status" aria-live="polite"></p>

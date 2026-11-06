@@ -74,8 +74,8 @@ export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar,onChang
      (item.responsible?'<p>Ansvarlig: '+esc(item.responsible)+'</p>':'')+
      (item.notes?'<p>'+esc(item.notes)+'</p>':'')+'</div>'+
      '<div class="family-activity-actions">'+
-      '<button type="button" data-activity-edit="'+esc(item.id)+'" aria-label="Endre '+esc(item.title)+'">Endre</button>'+
-      '<button type="button" data-activity-delete="'+esc(item.id)+'" aria-label="Slett '+esc(item.title)+'">Slett</button>'+
+      '<button class="sk-action sk-action--modal" type="button" data-activity-edit="'+esc(item.id)+'" aria-label="Endre '+esc(item.title)+'">Endre</button>'+
+      '<button class="sk-action sk-action--danger" type="button" data-activity-delete="'+esc(item.id)+'" aria-label="Slett '+esc(item.title)+'">Slett</button>'+
      '</div></article>').join('')+'</div>').join('');
  }
  function formStatus(message){$('family-activity-form-status').textContent=message||'';}

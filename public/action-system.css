@@ -1,0 +1,209 @@
+/* Skoleuka action system v1.
+ * All actions declare their INTENT, not their visual priority.
+ * Navigate = dark filled, modal = outlined, disclosure = soft tinted,
+ * utility = quiet outlined, submit = dark filled, danger = muted red.
+ * Choice tabs, entire clickable cards and external source links retain
+ * their distinct accessible patterns. Loaded last on all three routes.
+ */
+:root {
+  --sk-action-forest:#286b53;
+  --sk-action-forest-hover:#1d5642;
+  --sk-action-ink:#245e49;
+  --sk-action-stroke:#b9d4c4;
+  --sk-action-surface:#ffffff;
+  --sk-action-soft:#eef6f0;
+  --sk-action-soft-hover:#e0f0e5;
+  --sk-action-danger:#944c42;
+  --sk-action-danger-stroke:#e7c9c3;
+  --sk-action-danger-surface:#fff6f4;
+  --sk-action-radius:11px;
+  --sk-action-focus:#d49a44;
+}
+:where(button,a,summary).sk-action {
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+  transition:background-color .15s ease,border-color .15s ease,color .15s ease;
+}
+/* Match the intent roles in both the public site and standalone child/drift apps.
+   The ID-scoped form outranks older #family-view and dialog-specific CSS without
+   forcing changes to display, width, grid positioning or responsive visibility. */
+:is(button,a,summary).sk-action:is(
+ .sk-action--navigate,.sk-action--modal,.sk-action--disclosure,
+ .sk-action--utility,.sk-action--submit,.sk-action--danger),
+:is(#family-view,#app-view,#welcome-view,#account-panel,#child-app,#dashboard,#login,
+ #family-child-dialog,#child-pair-dialog,#family-activity-dialog,#issue-report-dialog,
+ #helper-modal,#school-gate,#grade-gate) :is(button,a,summary).sk-action:is(
+ .sk-action--navigate,.sk-action--modal,.sk-action--disclosure,
+ .sk-action--utility,.sk-action--submit,.sk-action--danger) {
+  min-height:42px;
+  padding:9px 13px;
+  border:1px solid var(--sk-intent-border,var(--sk-action-stroke));
+  border-radius:var(--sk-action-radius);
+  background:var(--sk-intent-bg,var(--sk-action-surface));
+  color:var(--sk-intent-color,var(--sk-action-ink));
+  box-shadow:none;
+  font-family:inherit;
+  font-size:13px;
+  font-weight:800;
+  line-height:1.35;
+  text-decoration:none;
+  text-align:center;
+}
+.sk-action--navigate,.sk-action--submit {
+  --sk-intent-bg:var(--sk-action-forest);
+  --sk-intent-border:var(--sk-action-forest);
+  --sk-intent-color:#ffffff;
+}
+.sk-action--modal {
+  --sk-intent-bg:#ffffff;
+  --sk-intent-border:var(--sk-action-stroke);
+  --sk-intent-color:var(--sk-action-ink);
+}
+.sk-action--disclosure {
+  --sk-intent-bg:var(--sk-action-soft);
+  --sk-intent-border:#c9ddcf;
+  --sk-intent-color:var(--sk-action-ink);
+}
+.sk-action--utility {
+  --sk-intent-bg:#f8fbf8;
+  --sk-intent-border:#cfdfd3;
+  --sk-intent-color:#376b54;
+}
+.sk-action--danger {
+  --sk-intent-bg:var(--sk-action-danger-surface);
+  --sk-intent-border:var(--sk-action-danger-stroke);
+  --sk-intent-color:var(--sk-action-danger);
+}
+:is(button,a,summary).sk-action:is(.sk-action--navigate,.sk-action--submit):hover:not(:disabled) {
+  --sk-intent-bg:var(--sk-action-forest-hover);
+  --sk-intent-border:var(--sk-action-forest-hover);
+}
+:is(button,a,summary).sk-action.sk-action--modal:hover:not(:disabled) {
+  --sk-intent-bg:#edf7f1;
+  --sk-intent-border:#82b99c;
+}
+:is(button,a,summary).sk-action.sk-action--disclosure:hover:not(:disabled),
+:is(button,a,summary).sk-action.sk-action--disclosure[aria-expanded="true"] {
+  --sk-intent-bg:var(--sk-action-soft-hover);
+  --sk-intent-border:#a8d0b7;
+}
+:is(button,a,summary).sk-action.sk-action--utility:hover:not(:disabled) {
+  --sk-intent-bg:var(--sk-action-soft);
+}
+:is(button,a,summary).sk-action.sk-action--danger:hover:not(:disabled) {
+  --sk-intent-bg:#ffece8;
+  --sk-intent-border:#dcb0a8;
+}
+/* Clear, shared disclosure cue for buttons; native details keep their own
+   ::after/chevron mechanisms, avoiding duplicated arrows. */
+button.sk-action--disclosure:not([data-sk-chevron="off"])::after {
+  content:"⌄";
+  display:inline-block;
+  margin-left:7px;
+  font-size:18px;
+  font-weight:700;
+  line-height:1;
+  vertical-align:middle;
+  transition:transform .15s ease;
+}
+button.sk-action--disclosure[aria-expanded="true"]:not([data-sk-chevron="off"])::after {
+  transform:rotate(180deg);
+}
+details[open] > summary.sk-action--disclosure {
+  --sk-intent-bg:var(--sk-action-soft-hover);
+  --sk-intent-border:#a8d0b7;
+}
+:is(button,a,summary).sk-action.sk-action--link,
+:is(#family-view,#app-view,#welcome-view,#account-panel,#child-app) .sk-action.sk-action--link {
+  min-height:35px;
+  background:transparent;
+  border:0;
+  border-radius:6px;
+  padding:5px 2px;
+  box-shadow:none;
+  color:var(--sk-action-ink);
+  font-size:12px;
+  font-weight:800;
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+:is(button,a,summary).sk-action.sk-action--close,
+:is(#family-view,#app-view,#account-panel,#child-app) .sk-action.sk-action--close {
+  flex:0 0 40px;
+  width:40px;
+  height:40px;
+  min-height:40px;
+  padding:0;
+  border:1px solid #cfdfd3;
+  border-radius:50%;
+  background:#f3f8f4;
+  color:var(--sk-action-ink);
+  font-size:19px;
+  line-height:1;
+  box-shadow:none;
+}
+/* Choices are deliberately not CTAs: preserve the existing nav and day tiles. */
+.sk-action--choice,.sk-action--card { -webkit-tap-highlight-color:transparent; }
+:is(button,a,summary).sk-action:focus-visible {
+  outline:3px solid var(--sk-action-focus);
+  outline-offset:2px;
+}
+:is(button,a,summary).sk-action:is([disabled],[aria-disabled="true"]) {
+  opacity:.58;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+/* Earlier one-off styles used !important for the large "all messages"
+   disclosure. Bring that actual expandable row into the common language. */
+#family-view .family-important-actions .family-disclosure > summary.sk-action--disclosure {
+  min-height:43px;
+  padding:9px 12px;
+  border:1px solid var(--sk-action-stroke);
+  border-radius:var(--sk-action-radius);
+  background:var(--sk-action-soft)!important;
+  color:var(--sk-action-ink);
+  box-shadow:none;
+}
+#family-view .family-important-actions .family-disclosure[open] > summary.sk-action--disclosure {
+  background:var(--sk-action-soft-hover)!important;
+}
+/* Mobile "Vis flere" has a legacy double-ID selector; keep the same
+   disclosure paint as every other expandable control without changing
+   whether the button is hidden on desktop. */
+#family-view .family-important-actions #family-mobile-important-more.sk-action--disclosure {
+  min-height:42px;
+  padding:9px 12px;
+  border:1px solid #c9ddcf;
+  border-radius:var(--sk-action-radius);
+  background:var(--sk-action-soft);
+  color:var(--sk-action-ink);
+  font-size:13px;
+  font-weight:800;
+  box-shadow:none;
+}
+#family-view .family-important-actions #family-mobile-important-more.sk-action--disclosure[aria-expanded="true"] {
+  background:var(--sk-action-soft-hover);
+}
+/* High-specificity legacy dialog/family rules should not change the focus
+   indication of a control whose intent is already declared. */
+:is(#family-view,#app-view,#welcome-view,#account-panel,#child-app,#dashboard,#login,
+ #family-child-dialog,#child-pair-dialog,#family-activity-dialog,#issue-report-dialog)
+ :is(button,a,summary).sk-action:focus-visible {
+  outline:3px solid var(--sk-action-focus);
+  outline-offset:2px;
+}
+/* Existing layouts own their widths and breakpoints. Compact card buttons,
+   tab choices and icon-only tools must keep those layouts. */
+@media(max-width:700px) {
+  :is(button,a,summary).sk-action:is(
+   .sk-action--navigate,.sk-action--modal,.sk-action--disclosure,
+   .sk-action--utility,.sk-action--submit,.sk-action--danger) {
+    min-height:40px;
+    font-size:12px;
+  }
+  .sk-action--close { min-width:40px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .sk-action { transition:none!important; }
+  button.sk-action--disclosure::after { transition:none!important; }
+}

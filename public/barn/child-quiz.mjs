@@ -40,7 +40,7 @@ function paint(){
   $('child-quiz-answer').value='';
   $('child-quiz-answer').placeholder=round.kind==='vowels'?'Skriv vokalene':'Skriv ditt svar';
   if(round.kind==='recognize')$('child-quiz-options').innerHTML=(round.choices||[]).map((text,i)=>
-   '<button type="button" data-child-quiz-choice="'+i+'"></button>').join('');
+   '<button class="sk-action sk-action--choice" type="button" data-child-quiz-choice="'+i+'"></button>').join('');
   if(round.kind==='recognize')$('child-quiz-options').querySelectorAll('button').forEach((b,i)=>{
    b.textContent=round.choices[i];
   });
@@ -106,6 +106,6 @@ export function renderChildQuiz(vocabulary,{child,school,grade,year,week}){
  $('child-quiz-game').hidden=true;
  $('child-quiz-choose').hidden=false;
  $('child-quiz-choose').innerHTML=choices.map(lang=>
-  '<button type="button" class="child-primary" data-child-quiz-language="'+lang+'">'+
+  '<button type="button" class="child-primary sk-action sk-action--choice" data-child-quiz-language="'+lang+'">'+
   (lang==='en'?'🇬🇧 Engelsk quiz':'🇳🇴 Norsk ordøving')+'</button>').join('');
 }

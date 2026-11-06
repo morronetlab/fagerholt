@@ -9,6 +9,7 @@
   <title>Driftsstatus – Skoleuka</title>
   <link rel="icon" href="/brand/skoleuka-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/drift/drift.css">
+<link rel="stylesheet" href="/action-system.css">
 </head>
 <body>
   <main class="container">
@@ -22,13 +23,13 @@
       <p>Bruk <code>OPS_DASHBOARD_TOKEN</code> fra Netlify. Nøkkelen beholdes bare i denne nettleserfanens minne.</p>
       <form id="credentials">
         <label for="ops-token">Tilgangsnøkkel</label>
-        <div class="formrow"><input id="ops-token" type="password" autocomplete="off" spellcheck="false" required minlength="24" placeholder="Minst 24 tegn"><button type="submit">Åpne oversikt</button></div>
+        <div class="formrow"><input id="ops-token" type="password" autocomplete="off" spellcheck="false" required minlength="24" placeholder="Minst 24 tegn"><button class="sk-action sk-action--submit" type="submit">Åpne oversikt</button></div>
       </form>
       <p id="auth-error" class="error" role="alert"></p>
     </section>
     <section id="dashboard" hidden>
       <div class="toolbar"><p id="last-update" role="status"></p>
-        <div><button id="refresh" type="button">Oppdater</button><button id="logout" type="button" class="secondary">Lås oversikten</button></div></div>
+        <div><button class="sk-action sk-action--utility" id="refresh" type="button">Oppdater</button><button id="logout" type="button" class="secondary sk-action sk-action--utility">Lås oversikten</button></div></div>
       <div class="metrics">
         <article class="metric"><span>Skoler i registeret</span><strong id="schools-count">–</strong></article>
         <article class="metric"><span>Kontrollerte trinn</span><strong id="grades-count">–</strong></article>

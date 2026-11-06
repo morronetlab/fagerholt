@@ -40,6 +40,7 @@ function render(){
  for(const school of schools){
   const details=document.createElement('details');details.className='school';
   const label=document.createElement('summary');
+  label.classList.add('sk-action','sk-action--disclosure');
   label.append(document.createTextNode(school.name+' '));
   label.append(indicator(school.status));
   const info=document.createElement('small');

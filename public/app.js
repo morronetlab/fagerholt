@@ -124,13 +124,13 @@ function renderSchoolChoices(query=''){
   const list=Object.values(siteConfig.schools).filter(s=>normalize(s.name).includes(term))
     .sort((a,b)=>a.name.localeCompare(b.name,'nb-NO'));
   $('school-match-count').textContent=`${list.length} skoler`;
-  $('school-choices').innerHTML=list.length?list.map(s=>`<button class="school-choice" type="button" data-school="${safe(s.id)}"><span>${safe(s.name)}${s.kind==='combined'?'<br><small class="school-type">1.–10. skole</small>':''}</span><span class="school-chevron" aria-hidden="true">→</span></button>`).join(''):
+  $('school-choices').innerHTML=list.length?list.map(s=>`<button class="school-choice sk-action sk-action--choice" type="button" data-school="${safe(s.id)}"><span>${safe(s.name)}${s.kind==='combined'?'<br><small class="school-type">1.–10. skole</small>':''}</span><span class="school-chevron" aria-hidden="true">→</span></button>`).join(''):
     '<p class="school-empty">Fant ingen skoler. Prøv et annet søk.</p>';
 }
 function renderGradeChoices(){
   const grades=state.availableGrades||[];
   $('grade-loading-message').textContent=state.gradeError||(!state.availableGrades?'Henter klassetrinn fra skolen …':!grades.length?'Ingen publiserte trinnsider funnet. Sjekk skolens nettside.':'Velg barnets klassetrinn eller gruppe.');
-  $('grade-choices').innerHTML=grades.map(g=>`<button type="button" class="grade" data-grade="${safe(g.code)}"><strong>${safe(g.code)}</strong><span>${g.code.length>1?'gruppe':'trinn'}</span></button>`).join('');
+  $('grade-choices').innerHTML=grades.map(g=>`<button type="button" class="grade sk-action sk-action--choice" data-grade="${safe(g.code)}"><strong>${safe(g.code)}</strong><span>${g.code.length>1?'gruppe':'trinn'}</span></button>`).join('');
   $('grade-missing').hidden=!state.availableGrades||grades.length>0;
   if(state.school)$('grade-school-link').href=state.school.homepage;
 }
@@ -153,7 +153,7 @@ function renderGuardianToolbar(profile){
  if(!active)return;
  const children=familyUI.profilesForNavigation();
  $('guardian-plan-profiles').innerHTML=children.map(child=>
-  '<button type="button" data-guardian-profile="'+safe(child.id)+'" aria-pressed="'+
+  '<button class="sk-action sk-action--choice" type="button" data-guardian-profile="'+safe(child.id)+'" aria-pressed="'+
   String(child.id===profile.id)+'" aria-label="Vis ukeplanen til '+safe(child.name)+'">'+
   safe(child.name)+'</button>').join('');
  $('guardian-plan-week').textContent='Uke '+calendar.week;
@@ -239,7 +239,7 @@ function renderShell(){
   $('smart-week').textContent=viewingNextWeek?'Neste uke · automatisk valgt':'';
   $('back-this-week').hidden=!viewingNextWeek||
     (Boolean(state.profileId)&&familyWeekCalendar(new Date(),siteConfig.school.timezone).upcoming);
-  $('day-buttons').innerHTML=DAYS.map((d,i)=>`<button type="button" class="day ${i===state.day?'active':''} ${i<calendar.weekday?'past':''}" data-day="${i}" aria-current="${i===state.day?'date':'false'}"><span>${safe(d)}</span><strong>${titleDay(i)}</strong></button>`).join('');
+  $('day-buttons').innerHTML=DAYS.map((d,i)=>`<button type="button" class="day ${i===state.day?'active':''} ${i<calendar.weekday?'past':''} sk-action sk-action--choice" data-day="${i}" aria-current="${i===state.day?'date':'false'}"><span>${safe(d)}</span><strong>${titleDay(i)}</strong></button>`).join('');
   renderContent();
 }
 function navigateTo(view,{record=true}={}){
@@ -287,7 +287,7 @@ function checklist(items,section,day='all'){
     const category=section==='homework'?'homework':'practical';
     // The section heading already identifies homework; keep a type badge only for packing.
     const typeLabel=section==='homework'?'':`<span class="content-type-label content-kind-${category}">${contentCategoryLabel(category)}</span>`;
-    if(section==='homework')return `<div class="homework-assist-row"><label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${dueBadge}${repeatBadge}${typeLabel}${meta}${safe(displayLabel)}${hint}</span></label>${needsHomeworkHelp(item)?`<button type="button" class="helper-open" data-helper-task="${i}" aria-label="Få hjelp til denne leksen">✨ Få hjelp</button>`:''}</div>`;
+    if(section==='homework')return `<div class="homework-assist-row"><label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${dueBadge}${repeatBadge}${typeLabel}${meta}${safe(displayLabel)}${hint}</span></label>${needsHomeworkHelp(item)?`<button type="button" class="helper-open sk-action sk-action--modal" data-helper-task="${i}" aria-label="Få hjelp til denne leksen">✨ Få hjelp</button>`:''}</div>`;
     return `<label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${dueBadge}${repeatBadge}${typeLabel}${meta}${safe(displayLabel)}${hint}</span></label>`;
   }).join('');
 }
@@ -410,7 +410,7 @@ function renderContent(){
     norwegianWords.map(x=>`<li><strong>${safe(x.word)}</strong></li>`).join('')+'</ul>':'';
   const contacts=Array.isArray(p?.contacts)?p.contacts:[];
   $('contacts-panel').hidden=!contacts.length;
-  $('contacts-list').innerHTML=contacts.map(c=>typeof c==='string'?`<p>${safe(c)}</p>`:`<p><strong>${safe(c.name)}</strong> ${safe(c.role)} ${c.email?`<a href="mailto:${encodeURIComponent(c.email)}">${safe(c.email)}</a>`:''} ${c.phone?`<span>${safe(c.phone)}</span>`:''}</p>`).join('');
+  $('contacts-list').innerHTML=contacts.map(c=>typeof c==='string'?`<p>${safe(c)}</p>`:`<p><strong>${safe(c.name)}</strong> ${safe(c.role)} ${c.email?`<a class="sk-action sk-action--link" href="mailto:${encodeURIComponent(c.email)}">${safe(c.email)}</a>`:''} ${c.phone?`<span>${safe(c.phone)}</span>`:''}</p>`).join('');
   const hw=expandHomework(p?.homework||[]);
   $('homework-list').innerHTML=hw.length?checklist(hw,'homework'):empty(state.loading?'Henter lekser …':'Ingen lekser ble funnet i PDF-en.');
   renderHomeworkProgress(hw);
@@ -428,7 +428,7 @@ function renderContent(){
   $('subjects-list').innerHTML=subjects.length?subjects.map(x=>`<p class="subject-item">${safe(x)}</p>`).join(''):empty('Ingen egne fagoversikter oppgitt i denne ukeplanen.');
   $('theme-content').hidden=!hasTheme;$('theme-content').textContent=p?.weekTheme||'';
   $('mission-slot').innerHTML=(!hasMission?'':
-    isChecked('mission',0)?`<button type="button" class="mission-done" id="undo-mission">✓ Frivillig oppdrag fullført · Vis igjen</button>`:
+    isChecked('mission',0)?`<button type="button" class="mission-done sk-action sk-action--utility" id="undo-mission">✓ Frivillig oppdrag fullført · Vis igjen</button>`:
     `<div class="mission"><div><strong>🌟 Frivillig oppdrag ${isSuggestedMission?'· forslag fra Ukeplanen':''}</strong><p>${safe(missionText)}</p></div><label class="mission-check"><input type="checkbox" data-check="mission" data-index="0" data-progress-day="all"> Fullført</label></div>`);
   const notices=p?.notices||[];
   $('notices-count').textContent=notices.length?notices.length:'';
@@ -473,8 +473,8 @@ function renderSpecialContent(){
     return `<article class="special-card">
       <div class="special-copy"><p class="special-type">${item.kind==='knowledge'?'💡 KUNNSKAPSHJØRNET':item.kind==='illustration'?'🖼️ FRA PDF-EN':'✨ EKSTRA FRA SKOLEN'}</p>
       <h3>${groupBadge(item.group)}${safe(item.title)}</h3><p>${safe(item.description)}</p>
-      ${p.pdf?`<a href="${safe(pageLink)}" target="_blank" rel="noopener noreferrer">Se side ${page} i original-PDF ↗</a>`:''}</div>
-      ${item.hasVisual&&crop&&p.pdf&&Number.isInteger(page)&&page>=1&&page<=16?`<div id="special-visual-${index}" class="special-visual" data-special-page="${page}" data-special-index="${index}" role="img" aria-label="Utsnitt fra original PDF-side ${page}: ${safe(item.title)}"><span>Henter illustrasjonen fra skolens PDF …</span></div><div class="special-crop-actions"><button type="button" class="special-crop-button" data-special-widen="horizontal" data-special-index="${index}">↔ Mer bredde</button><button type="button" class="special-crop-button" data-special-widen="vertical" data-special-index="${index}">↕ Mer over/under</button></div><button type="button" class="special-expand" data-special-expand="${index}" aria-controls="special-visual-${index}" aria-expanded="false">↗ Vis hele PDF-siden</button>`:''}
+      ${p.pdf?`<a class="sk-action sk-action--link" href="${safe(pageLink)}" target="_blank" rel="noopener noreferrer">Se side ${page} i original-PDF ↗</a>`:''}</div>
+      ${item.hasVisual&&crop&&p.pdf&&Number.isInteger(page)&&page>=1&&page<=16?`<div id="special-visual-${index}" class="special-visual" data-special-page="${page}" data-special-index="${index}" role="img" aria-label="Utsnitt fra original PDF-side ${page}: ${safe(item.title)}"><span>Henter illustrasjonen fra skolens PDF …</span></div><div class="special-crop-actions"><button type="button" class="special-crop-button sk-action sk-action--utility" data-special-widen="horizontal" data-special-index="${index}">↔ Mer bredde</button><button type="button" class="special-crop-button sk-action sk-action--utility" data-special-widen="vertical" data-special-index="${index}">↕ Mer over/under</button></div><button type="button" class="special-expand sk-action sk-action--disclosure" data-special-expand="${index}" aria-controls="special-visual-${index}" aria-expanded="false">↗ Vis hele PDF-siden</button>`:''}
       </article>`;
   }).join('');
   if(p.pdf)void renderSpecialPdfPages(key);

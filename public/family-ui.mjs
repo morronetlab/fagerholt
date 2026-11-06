@@ -464,10 +464,10 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    '<span class="family-child-setup-info"><strong>'+(info.complete?'✓ ':'📱 ')+
    escape(info.label)+'</strong>'+
    (!info.complete?'<small>'+escape(info.description)+'</small>':'')+'</span>'+
-   (info.action?'<button type="button" class="family-child-qr" data-family-pair="'+
+   (info.action?'<button type="button" class="family-child-qr sk-action sk-action--modal" data-family-pair="'+
    escape(p.id)+'" aria-label="'+escape(info.action+' for '+p.name)+'">'+
    escape(info.action)+'</button>':'')+
-   (!info.complete?'<button type="button" class="family-child-help" data-family-help="'+
+   (!info.complete?'<button type="button" class="family-child-help sk-action sk-action--modal" data-family-help="'+
    escape(p.id)+'" aria-label="Trenger hjelp med barneappen til '+escape(p.name)+'?">Trenger hjelp?</button>':'')+
    '</div>';
  }
@@ -492,7 +492,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const details=s.ready?[
    '<div class="family-child-progress"><div><span>Lekser i uke '+now.week+'</span><b>'+s.done+' / '+s.total+' fullført</b></div>',
    '<div class="family-progress-track" role="progressbar" aria-label="Fullført for '+escape(p.name)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><span style="width:'+pct+'%"></span></div></div>',
-   '<details class="family-child-extra"'+(expandedChildren.has(p.id)?' open':'')+'><summary>Se lekser, pakkeliste og ordøving</summary><div class="family-child-extra-content">',
+   '<details class="family-child-extra"'+(expandedChildren.has(p.id)?' open':'')+'><summary class="sk-action sk-action--disclosure">Se lekser, pakkeliste og ordøving</summary><div class="family-child-extra-content">',
    now.upcoming?
     '<div class="family-child-columns"><div><h4>📚 Lekser i uke '+now.week+'</h4>'+taskList(p,s.tasks,'Ingen lekser registrert')+'</div>'+
     '<div><h4>🎒 Pakk til mandag</h4>'+packingList(s.todayBag,DAYS[0])+'</div></div>':
@@ -500,7 +500,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     '<div><h4>🎒 Pakk til '+(s.nextIndex==null?'neste skoledag':DAYS[s.nextIndex])+'</h4>'+
      (s.nextIndex==null?'<p class="family-muted">Neste uke er ikke hentet ennå</p>':
       packingList(s.bag,DAYS[s.nextIndex]))+'</div></div>',
-   '<details class="family-packing-week"><summary>🎒 Se og kryss av utstyr alle dager</summary>'+
+   '<details class="family-packing-week"><summary class="sk-action sk-action--disclosure">🎒 Se og kryss av utstyr alle dager</summary>'+
     allPacking.map(({day,items})=>'<section><h4>'+escape(day)+'</h4>'+
       packingList(items,day)+'</section>').join('')+'</details>'+
    '<p class="family-word-state">'+(practice?'✦ Ordøving: '+practice.attempted+' / '+practice.total+(practice.weak?', '+practice.weak+' trenger øving':''):'✦ Ingen ordøving i denne ukeplanen')+'</p></div></details>'
@@ -509,7 +509,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const compactStatus=s.ready?'<span class="family-mobile-progress-label">Lekser</span><span>'+
    s.done+' av '+s.total+' ferdig</span>':
    '<span class="family-mobile-progress-label">'+escape(availability.label)+'</span>';
-  const compact='<button type="button" class="family-child-compact" data-family-compact-open="'+escape(p.id)+'" '+
+  const compact='<button type="button" class="family-child-compact sk-action sk-action--card" data-family-compact-open="'+escape(p.id)+'" '+
    'aria-label="Åpne ukeplan for '+escape(p.name)+'">'+
    '<span class="family-mobile-child-head"><span class="family-avatar" aria-hidden="true">'+
    escape(p.name.slice(0,1).toUpperCase())+'</span><span class="family-mobile-child-identity">'+
@@ -526,13 +526,13 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    '<span class="family-child-week">UKE '+now.week+' · '+now.year+(now.upcoming?' · NESTE UKE':'')+'</span></div></div>'+
    (aiLabel?'<p class="family-ai-label" role="status">'+escape(aiLabel)+'</p>':'')+
    details+'<div class="family-child-actions">'+
-   (plan?.aiStatus==='failed'?'<button type="button" class="family-soft" data-family-retry="'+escape(pairOf(p))+'">Prøv AI-tolkning igjen</button>':'')+
-   '<button type="button" class="family-open" data-family-open="'+escape(p.id)+'">Åpne ukeplan →</button>'+ 
-   '<button type="button" class="family-mobile-more" data-family-more="'+escape(p.id)+'" aria-expanded="'+String(mobileMoreOpen.has(p.id))+'">⋯ Flere</button>'+
+   (plan?.aiStatus==='failed'?'<button type="button" class="family-soft sk-action sk-action--utility" data-family-retry="'+escape(pairOf(p))+'">Prøv AI-tolkning igjen</button>':'')+
+   '<button type="button" class="family-open sk-action sk-action--navigate" data-family-open="'+escape(p.id)+'">Åpne ukeplan →</button>'+ 
+   '<button type="button" class="family-mobile-more sk-action sk-action--disclosure" data-family-more="'+escape(p.id)+'" aria-expanded="'+String(mobileMoreOpen.has(p.id))+'">⋯ Flere</button>'+
    (cloud&&childSetupInfo(childPairingUI.getStatus(p.id)).complete?
-    '<button type="button" class="family-child-invite" data-family-pair="'+escape(p.id)+'">Administrer barneapp</button>':'')+
-   '<button type="button" class="family-soft" data-family-edit="'+escape(p.id)+'">Endre</button>'+
-   '<button type="button" class="family-remove" data-family-remove="'+escape(p.id)+'">Fjern</button>'+
+    '<button type="button" class="family-child-invite sk-action sk-action--modal" data-family-pair="'+escape(p.id)+'">Administrer barneapp</button>':'')+
+   '<button type="button" class="family-soft sk-action sk-action--modal" data-family-edit="'+escape(p.id)+'">Endre</button>'+
+   '<button type="button" class="family-remove sk-action sk-action--danger" data-family-remove="'+escape(p.id)+'">Fjern</button>'+
    '</div></article>';
  }
  function dismissFirstRunGuide(){
@@ -666,13 +666,13 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
      '<p class="family-municipal-context">'+escape(summary)+' '+escape(sfo)+'</p>'+
      '<p class="family-municipal-caution">Kommunal standard: skolen kan ha lokale avvik.</p>'+
      '<span class="family-municipal-source">'+sourceName+'</span>'+
-     '<a class="family-reminder-pdf" href="'+escape(authority)+
+     '<a class="family-reminder-pdf sk-action sk-action--link" href="'+escape(authority)+
      '" target="_blank" rel="noopener noreferrer">Se offisiell skolerute ↗</a> · '+
-     '<a class="family-reminder-pdf" href="'+escape(schoolLink)+
+     '<a class="family-reminder-pdf sk-action sk-action--link" href="'+escape(schoolLink)+
      '" target="_blank" rel="noopener noreferrer">Se skolens nettside ↗</a>'+
      '</div><div class="family-reminder-actions">'+
-     '<button type="button" data-family-open="'+escape(x.id)+'">Se ukeplan →</button>'+
-     '<button type="button" class="family-report-button" data-family-report="'+cards.indexOf(x)+'">Rapporter feil</button>'+
+     '<button class="sk-action sk-action--navigate" type="button" data-family-open="'+escape(x.id)+'">Se ukeplan →</button>'+
+     '<button type="button" class="family-report-button sk-action sk-action--modal" data-family-report="'+cards.indexOf(x)+'">Rapporter feil</button>'+
      '</div></article>';
    }
    const impact=x.adultImpact;
@@ -685,9 +685,9 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    const shortened=digest.shortText!==digest.fullText;
    const sourceQuote=digest.sourceQuote&&digest.sourceQuote!==digest.fullText?
     '<p class="family-reminder-quote"><span>Kildeutdrag:</span> '+escape(digest.sourceQuote)+'</p>':'';
-   const pdfLink=digest.pdfUrl?'<a class="family-reminder-pdf" href="'+escape(digest.pdfUrl)+
+   const pdfLink=digest.pdfUrl?'<a class="family-reminder-pdf sk-action sk-action--link" href="'+escape(digest.pdfUrl)+
     '" target="_blank" rel="noopener noreferrer">Se original PDF ↗</a>':'';
-   const details='<details class="family-reminder-detail"><summary>'+
+   const details='<details class="family-reminder-detail"><summary class="sk-action sk-action--disclosure">'+
     (shortened?'Les hele beskjeden':'Se kildedetaljer')+'</summary>'+
     '<p>'+escape(digest.fullText)+'</p>'+sourceQuote+pdfLink+'</details>';
    return '<article class="family-reminder content-kind-practical'+(emphasized?' family-reminder-priority':'')+
@@ -697,13 +697,13 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     (tag?'<span class="family-reminder-importance">'+escape(tag)+'</span>':'')+
     (digest.dateLabel?'<span class="family-reminder-date">'+escape(digest.dateLabel)+'</span>':'')+
     '<p class="family-reminder-short">'+escape(digest.shortText)+'</p>'+
-    details+'</div><div class="family-reminder-actions"><button type="button" data-family-open="'+escape(x.id)+
+    details+'</div><div class="family-reminder-actions"><button class="sk-action sk-action--navigate" type="button" data-family-open="'+escape(x.id)+
     '" aria-label="Åpne ukeplan for '+escape(x.name)+'">Se ukeplan →</button>'+
-    '<button type="button" class="family-report-button" data-family-report="'+cards.indexOf(x)+
+    '<button type="button" class="family-report-button sk-action sk-action--modal" data-family-report="'+cards.indexOf(x)+
     '" aria-label="Rapporter feil i beskjeden for '+escape(x.name)+'">Rapporter feil</button></div></article>';
   }).join('');
   const expand=cards.length>limit?
-   '<button id="family-reminders-more" class="family-reminders-more" type="button" aria-expanded="'+
+   '<button id="family-reminders-more" class="family-reminders-more sk-action sk-action--disclosure" type="button" aria-expanded="'+
    String(showAllHighlights)+'">'+(showAllHighlights?'Vis færre':'Vis alle '+cards.length+' praktiske beskjeder')+'</button>':'';
   const noPlan=now.upcoming?'Ukeplan for uke '+now.week+' er ikke tilgjengelig ennå. Vi sjekker automatisk når skolen publiserer PDF-en.':
    'Ingen tilgjengelige ukeplaner akkurat nå.';

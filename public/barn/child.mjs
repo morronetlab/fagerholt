@@ -90,7 +90,7 @@ function render(){
   plan.aiStatus!=='processing';
  $('child-days').innerHTML=DAYS.map((day,i)=>
   '<button type="button" data-child-day="'+i+'" '+(i===state.day?'aria-current="date"':'')+
-  ' class="'+(i===state.day?'selected':'')+'"><strong>'+esc(day.slice(0,3))+
+  ' class="'+(i===state.day?'selected':'')+' sk-action sk-action--choice"><strong>'+esc(day.slice(0,3))+
   '</strong><span>'+new Date(schoolDay(i)+'T12:00:00Z').getUTCDate()+'</span></button>').join('');
  const day=DAYS[state.day];
  const details=childSchoolDayDetails(ok?plan:null,child,day);
@@ -172,7 +172,7 @@ function render(){
     (item.repeatLabel?'<small>'+esc(item.repeatLabel)+'</small>':'')+
     (item.subject?'<small class="child-homework-subject">'+esc(item.subject)+'</small>':'')+
     '<strong>'+esc(item.text||'')+'</strong></span></label>'+
-    (needsHomeworkHelp(item)?'<button class="child-outline child-help-button" data-child-help-task="'+item.index+
+    (needsHomeworkHelp(item)?'<button class="child-outline child-help-button sk-action sk-action--modal" data-child-help-task="'+item.index+
      '" type="button">✨ Få leksehjelp</button>':'')+'</article>';
   }).join('')+'</div>':empty('Ingen lekser registrert for denne uka.');
  renderChildQuiz(ok?plan?.vocabulary:[],{child,school:child.school,grade:child.grade,
