@@ -322,14 +322,14 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  await parent.locator('#family-cards .family-child').first().getByText(/1 av 1 ferdig/).waitFor();
  await second.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
  await second.locator('#family-cards .family-child').first()
-  .locator('.family-child-progress b').getByText('1 / 1 fullført').waitFor();
+  .locator('.family-child-progress b').getByText('1 av 1 fullført').waitFor();
  assert.ok(backend.state.homework.size>0);
  // Guardian 2 can change a child's existing homework status, and guardian 1
  // must see the change after its next authenticated cloud refresh.
  const secondCard=second.locator('#family-cards .family-child').first();
  await secondCard.locator('.family-child-extra > summary').click();
  await secondCard.locator('input[data-family-check]').first().uncheck();
- await second.waitForFunction(()=>document.querySelector('#family-cards .family-child .family-child-progress b')?.textContent?.includes('0 / 1'));
+ await second.waitForFunction(()=>document.querySelector('#family-cards .family-child .family-child-progress b')?.textContent?.includes('0 av 1'));
  const until=async predicate=>{
   for(let attempt=0;attempt<50;attempt++){
    if(predicate())return;
@@ -349,7 +349,7 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
  await parentCard.locator('input[data-family-check]').first().check();
  await until(()=>[...backend.state.homework.values()].some(x=>x.completed===true));
  await second.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
- await secondCard.locator('.family-child-progress b').getByText('1 / 1 fullført').waitFor();
+ await secondCard.locator('.family-child-progress b').getByText('1 av 1 fullført').waitFor();
 
  // Packing is a different table/key set and must sync in both directions too.
  await parentCard.locator('.family-packing-week > summary').click();
