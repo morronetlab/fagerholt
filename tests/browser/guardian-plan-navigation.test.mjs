@@ -115,6 +115,6 @@ test('Public visitor keeps school wizard and no guardian toolbar',async t=>{
  assert.equal(await page.locator('#account-button').isVisible(),true);
  await page.locator('#landing-open-plan').click();
  assert.equal(await page.locator('#school-gate').isVisible(),true);
- assert.equal(await page.locator('.primary-nav').isVisible(),true,
-  'Navigation still works in the school-plan wizard');
+ assert.equal(await page.locator('.primary-nav').isVisible(),false,
+  'The school wizard uses contextual Back, not redundant global tabs');
 });
