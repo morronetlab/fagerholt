@@ -48,3 +48,31 @@ export function importantFamilyNotices(model,{limit=3}={}){
   remaining:Math.max(0,sorted.length-visible.length),
   undated:sorted.filter(item=>!item.date).length};
 }
+
+/**
+ * When no school/municipal message qualifies as *important*, still show
+ * useful source-backed school notices instead of an empty warning. Never
+ * substitute homework, local family activities or unverified content.
+ * The existing priority preview is unchanged whenever it has any results.
+ */
+export function familyNoticePreview(model,{limit=3}={}){
+ const important=importantFamilyNotices(model,{limit});
+ if(important.total)return {...important,mode:'important'};
+ const all=[...(model?.days||[]).flatMap(day=>day.items||[]),...(model?.undated||[])];
+ const unique=new Map();
+ for(const item of all){
+  if(!item||!['school','municipal'].includes(item.kind)||!String(item.title||'').trim())continue;
+  const key=[item.kind,item.date||'',canonical(item.title)].join('|');
+  if(!unique.has(key))unique.set(key,{...item,scopes:item.scope?[item.scope]:[]});
+  else if(item.scope&&!unique.get(key).scopes.includes(item.scope))
+   unique.get(key).scopes.push(item.scope);
+ }
+ const sorted=[...unique.values()].sort((a,b)=>
+  (a.date||'9999-12-31').localeCompare(b.date||'9999-12-31')||
+  a.title.localeCompare(b.title,'nb-NO'))
+  .map(item=>({...item,scope:item.scopes.join(', ')}));
+ const max=Math.min(10,Math.max(1,Math.trunc(Number(limit)||3)));
+ return {visible:sorted.slice(0,max),total:sorted.length,
+  remaining:Math.max(0,sorted.length-max),
+  undated:sorted.filter(item=>!item.date).length,mode:'school-notices'};
+}
