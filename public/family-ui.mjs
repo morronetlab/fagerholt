@@ -321,7 +321,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    return;
   }
   importantDisplayedKey=key;
-  const notices=importantFamilyNotices(model,{limit:3});
+  const notices=importantFamilyNotices(model,{limit:3,includeOrdinaryWhenEmpty:true});
   el('family-tomorrow-title').textContent=notices.fallback&&notices.total?
    'Beskjeder denne uka':'Viktig denne uka';
   const html=notices.visible.map(item=>{
