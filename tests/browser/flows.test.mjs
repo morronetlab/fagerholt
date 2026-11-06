@@ -806,7 +806,7 @@ test('V2 family overview combines two children and keeps completion independentl
  await page.locator('#family-cards .family-child').first().locator('.family-child-extra > summary').click();
  await page.locator('#family-cards .family-child').first().locator('input[data-family-index="0"]').uncheck();
  assert.match(await page.locator('#family-cards .family-child').first().locator('.family-mobile-progress').innerText(),/0 av 2/);
- assert.match(await page.locator('#family-cards .family-child').nth(1).locator('.family-child-progress').innerText(),/1 \/ 2/);
+ assert.match(await page.locator('#family-cards .family-child').nth(1).locator('.family-child-progress').innerText(),/1 av 2 fullført/);
  await page.reload();
  await page.locator('#family-cards .family-child').nth(1).waitFor();
  assert.equal(await page.locator('#family-cards .family-child').count(),2);
