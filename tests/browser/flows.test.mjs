@@ -2145,6 +2145,39 @@ test('Skoleuka 2.2 mobile hierarchy makes children and critical notices prominen
  assert.deepEqual(errors,[]);
 });
 
+test('Upcoming week shows available child school notices instead of a false all-plans-missing warning',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844,mockNow:'2026-10-30T14:51:00Z'});
+ await page.evaluate(()=>localStorage.setItem('ukeplanen.family.v2',JSON.stringify({
+  version:2,profiles:[
+   {id:'child-ready-1',name:'Ailin',school:'sjostrand',grade:'2',group:''},
+   {id:'child-pending-2',name:'Andre barn',school:'sjostrand',grade:'5A',group:''}
+  ]
+ })));
+ await page.route('**/api/plan?**',route=>{
+  const query=new URL(route.request().url()).searchParams;
+  const grade=query.get('grade');
+  if(grade==='5A')return reply(route,{status:'unpublished',schoolId:'sjostrand',
+   grade,week:45,year:2026,aiStatus:'disabled'});
+  return reply(route,{...basePlan('2'),schoolId:'sjostrand',year:2026,week:45,
+   notices:['Husk å lese ukebrevet og ta med bibliotekboka.']});
+ });
+ await page.route('**/api/school-calendar?**',route=>reply(route,{
+  schoolId:'sjostrand',year:2026,week:45,sourceStatus:'live',events:[]
+ }));
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#family-view').waitFor({state:'visible'});
+ await page.locator('#family-important-cards').getByText(/bibliotekboka/).waitFor({timeout:20000});
+ assert.equal(await page.locator('#family-tomorrow-title').innerText(),'Beskjeder denne uka');
+ assert.doesNotMatch(await page.locator('#family-important-cards').innerText(),/Ukeplaner mangler eller kunne ikke hentes/);
+ assert.match(await page.locator('#family-important-status').innerText(),/Andre barn/);
+ assert.equal(await page.locator('#family-important-status').isVisible(),true);
+ await page.locator('#family-practical-details > summary').click();
+ await page.locator('#family-reminders').getByText(/bibliotekboka/).first().waitFor();
+ assert.equal(await page.locator('#family-tomorrow-brief-title').innerText(),'Hva skjer på mandag?');
+ assert.match(await page.locator('#family-tomorrow-brief-date').innerText(),/mandag 2. november/);
+ assert.deepEqual(errors,[]);
+});
+
 test('2.2 family administration is minimized and opens the correct editor from calendar',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:740,mockNow:'2026-10-28T10:00:00Z'});
  await page.evaluate(()=>{
