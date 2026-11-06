@@ -212,7 +212,7 @@ function renderShell(){
   primaryNav.inert=true;
   $('header-family-week').hidden=!inFamily;
   $('home-link').setAttribute('aria-label',inFamily?'Gå til toppen av Min familie':
-   hasCloudFamily||guardianProfile?'Gå til Min familie':'Gå til forsiden');
+   hasCloudFamily||familyUI?.hasProfiles()||guardianProfile?'Gå til Min familie':'Gå til forsiden');
   $('welcome-view').hidden=!welcome;
   $('family-view').hidden=!inFamily;
   $('school-gate').hidden=inFamily||welcome||hasSchool;
@@ -803,7 +803,7 @@ function boot(){
     e.preventDefault();
     // On the guardian dashboard the logo is a safe "back to family top" action,
     // never an accidental trip to the public registration landing page.
-    navigateTo(familyUI.isActive()||familyUI.hasCloudFamily()||
+    navigateTo(familyUI.isActive()||familyUI.hasCloudFamily()||familyUI.hasProfiles()||
      (state.profileId&&familyUI.profileById(state.profileId))?'family':'welcome');
   });
   $('nav-home').addEventListener('click',()=>navigateTo('welcome'));
