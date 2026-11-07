@@ -65,3 +65,9 @@
 @media(min-width:701px){
   body.family-account-ready #nav-home{display:none!important}
 }
+
+/* Only authenticated families use dashboard tabs in place of the top-level
+   Family/Weekplan switch; public visitors retain their original routes. */
+@media(min-width:701px){
+ body.family-cloud-active .primary-nav{display:none!important}
+}

@@ -207,6 +207,8 @@ function renderShell(){
   // desktop and mobile. Hidden also removes it from the accessibility tree.
   document.body.classList.toggle('public-landing-active',welcome);
   const primaryNav=document.querySelector('.primary-nav');
+  // Public visitors still need navigation; authenticated family dashboards
+  // use their contextual tabs, while a child plan retains its own return link.
   primaryNav.hidden=welcome;
   primaryNav.inert=welcome;
   $('header-family-week').hidden=!inFamily;

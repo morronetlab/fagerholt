@@ -436,7 +436,7 @@ test('Morning overview shows today, not tomorrow, and opens the correct calendar
  assert.equal(await page.locator('#family-agenda-days .family-agenda-day:visible').getAttribute('data-date'),'2026-10-28');
  assert.deepEqual(errors,[]);
 });
-test('Friday afternoon: tomorrow means Saturday family activities, never next Monday lessons',async t=>{
+test('Friday afternoon previews next Monday instead of Saturday activities',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:844,mockNow:'2026-10-30T14:00:00Z'});
  await enterFamily(page);
  await addFamilyChild(page,'Ailin');
@@ -447,13 +447,12 @@ test('Friday afternoon: tomorrow means Saturday family activities, never next Mo
  await page.locator('#family-activity-start').fill('12:00');
  await page.locator('#family-activity-save').click();
  await page.locator('[data-family-mobile-tab="overview"]').click();
- await page.locator('#family-tomorrow-brief-items').getByText('Lørdagsfotball').waitFor();
- assert.match(await page.locator('#family-tomorrow-brief-date').innerText(),/lørdag 31. oktober/i);
- assert.doesNotMatch(await page.locator('#family-tomorrow-brief-items').innerText(),/Mandagslekse|Neste mandag/);
- assert.equal(await page.locator('#family-tomorrow-brief-calendar').isVisible(),false);
- assert.match(await page.locator('#family-tomorrow-brief-notice').innerText(),/annen uke/);
+ await page.getByText('Hva skjer mandag?').waitFor();
+ assert.match(await page.locator('#family-tomorrow-brief-date').innerText(),/mandag 2. november/i);
+ assert.doesNotMatch(await page.locator('#family-tomorrow-brief-items').innerText(),/Lørdagsfotball/);
+ assert.equal(await page.locator('#family-tomorrow-brief-calendar').isVisible(),true);
  assert.equal(await page.locator('#family-tomorrow-brief-items button[data-family-tomorrow-child]').count(),0,
-  'Family activities should not pretend to be school-plan shortcuts');
+  'A weekend activity must not be presented as Monday school homework');
  assert.deepEqual(errors,[]);
 });
 test('Skoleuka shares the same branded header and install icons on parent and child mobile pages',async t=>{
@@ -1555,8 +1554,8 @@ test('Returning guardian sees a neutral startup shell, never a temporary empty f
   assert.equal(await page.locator('#account-button').innerText(),'Min konto');
   assert.match(await page.locator('#family-cards').innerText(),/Første barn/);
   assert.match(await page.locator('#family-cards').innerText(),/Andre barn/);
-  assert.equal(await page.locator('.primary-nav').isVisible(),width>700,
-   'Authenticated mobile dashboard has its own tabs, not generic bottom bar');
+  assert.equal(await page.locator('.primary-nav').isVisible(),false,
+   'Authenticated family dashboards use contextual tabs rather than global navigation');
   assert.deepEqual(errors,[]);
   await page.close();
  }

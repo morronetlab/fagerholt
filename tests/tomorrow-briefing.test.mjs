@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {nextIsoDate,buildTomorrowBriefing,selectBriefingDay} from '../public/shared/tomorrow-briefing.mjs';
+import {nextIsoDate,nextSchoolIsoDate,buildTomorrowBriefing,selectBriefingDay} from '../public/shared/tomorrow-briefing.mjs';
 
 const child={id:'one',name:'Ailin',school:'fagerholt',grade:'3'};
 const emptyWeek=(year,week)=>({year,week});
@@ -82,7 +82,7 @@ test('Morning in Oslo uses today; at the school cutoff it switches to tomorrow',
   actualToday:'2026-11-03',date:'2026-11-04',isToday:false});
  // Friday follows the family calendar's earlier 14:00 week rollover.
  assert.equal(select('2026-10-30T12:59:00Z').date,'2026-10-30');
- assert.equal(select('2026-10-30T13:00:00Z').date,'2026-10-31');
+ assert.equal(select('2026-10-30T13:00:00Z').date,'2026-11-02');
  // Oslo DST and day boundaries must not depend on UTC or device locale.
  assert.equal(select('2026-06-03T12:59:00Z').date,'2026-06-03');
  assert.equal(select('2026-06-03T13:00:00Z').date,'2026-06-04');
@@ -110,13 +110,25 @@ test('Morning briefing selects today tasks and packing; afternoon keeps tomorrow
  assert.equal(afternoon.isToday,false);
  assert.deepEqual(afternoon.items.map(x=>x.title),['Morgendagens besøk','Pakk: Gymtøy']);
 });
-test('Weekend morning shows activities on the actual date despite next-week school calendar',()=>{
+test('Weekend morning previews Monday school tasks rather than Saturday activities',()=>{
  const childActivity={id:'sat',title:'Lørdagstur',child_id:child.id,occurs_on:'2026-10-31',
   repeat_rule:'none',start_time:'11:00'};
  const morning=selectBriefingDay(new Date('2026-10-31T07:00:00Z'));
  const result=buildTomorrowBriefing({actualToday:morning.actualToday,targetDate:morning.date,
   calendar:emptyWeek(2026,45),profiles:[child],activities:[childActivity]});
- assert.equal(result.isToday,true);
- assert.deepEqual(result.items.map(x=>x.title),['Lørdagstur']);
- assert.match(result.notice,/i dag/);
+ assert.equal(result.isToday,false);
+ assert.equal(morning.date,'2026-11-02');
+ assert.deepEqual(result.items.map(x=>x.title),[]);
+ assert.match(result.notice,/Ukeplanen er ikke klar/);
+});
+
+test('After Friday school and throughout the weekend, target next Monday',()=>{
+ assert.equal(nextSchoolIsoDate('2026-11-06'),'2026-11-09');
+ assert.equal(nextSchoolIsoDate('2026-11-07'),'2026-11-09');
+ assert.equal(nextSchoolIsoDate('2026-11-08'),'2026-11-09');
+ for(const iso of ['2026-11-06T13:00:00Z','2026-11-07T10:00:00Z','2026-11-08T10:00:00Z']){
+  const result=selectBriefingDay(new Date(iso));
+  assert.equal(result.date,'2026-11-09');
+  assert.equal(result.isToday,false);
+ }
 });

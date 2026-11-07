@@ -4,11 +4,16 @@ import {adultImpactRank,adultImpactType} from './adult-impact.mjs';
 const canonical=value=>String(value||'').normalize('NFKC').toLocaleLowerCase('nb-NO')
  .replace(/\s+/gu,' ').trim();
 const planningDay=value=>/\b(?:planleggingsdag(?:er)?|lærerstevne)\b/iu.test(canonical(value));
-export function importantFamilyNotices(model,{limit=3}={}){
+export function importantFamilyNotices(model,{limit=3,includeOrdinaryWhenEmpty=false}={}){
  const all=[...(model?.days||[]).flatMap(day=>day.items||[]),...(model?.undated||[])];
+ // If no high-priority messages exist, show actual school communications
+ // instead of a seemingly empty overview. Keep family activities and homework
+ // out of the important-notices preview.
+ const hasImportant=all.some(item=>item?.important&&['school','municipal'].includes(item.kind));
+ const fallback=includeOrdinaryWhenEmpty&&!hasImportant;
  const unique=new Map();
  for(const item of all){
-  if(!item?.important||!['school','municipal'].includes(item.kind))continue;
+  if(!item||!['school','municipal'].includes(item.kind)||(!fallback&&!item.important))continue;
   const impact=adultImpactType(item.title);
   // A school PDF and the municipal skolerute may say the same thing in
   // different words. Group ONLY the same dated planning day; do not merge
@@ -44,7 +49,7 @@ export function importantFamilyNotices(model,{limit=3}={}){
   visible=[...visible.slice(0,max-1),medical].sort((a,b)=>b.rank-a.rank||
    (a.date||'9999-12-31').localeCompare(b.date||'9999-12-31'));
  }
- return {visible,total:sorted.length,
+ return {visible,fallback,total:sorted.length,
   remaining:Math.max(0,sorted.length-visible.length),
   undated:sorted.filter(item=>!item.date).length};
 }
