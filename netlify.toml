@@ -63,6 +63,12 @@
   force = true
 
 [[redirects]]
+  from = "/api/admin-reports"
+  to = "/.netlify/functions/admin-reports"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/report-review"
   to = "/.netlify/functions/report-review"
   status = 200
@@ -133,6 +139,23 @@
 
 [[headers]]
   for = "/api/operations-health"
+  [headers.values]
+    Cache-Control = "private, no-store"
+    Referrer-Policy = "no-referrer"
+    X-Robots-Tag = "noindex, nofollow"
+    X-Content-Type-Options = "nosniff"
+
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    Cache-Control = "private, no-store"
+    Referrer-Policy = "no-referrer"
+    X-Robots-Tag = "noindex, nofollow"
+    X-Content-Type-Options = "nosniff"
+    Content-Security-Policy = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://qxejliyfgfeigvxsqupg.supabase.co; font-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+
+[[headers]]
+  for = "/api/admin-reports"
   [headers.values]
     Cache-Control = "private, no-store"
     Referrer-Policy = "no-referrer"
