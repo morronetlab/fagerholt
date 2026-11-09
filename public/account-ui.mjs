@@ -177,16 +177,25 @@ export function initAccountUI({familyUI,onGoFamily=()=>familyUI.enter(),onCloudR
   void refreshDigestSettings();
  }
  async function restore(){
+  const started=performance.now();
+  const timings={};
+  const mark=stage=>{timings[stage]=Math.round(performance.now()-started);};
   try{
    const res=await fetch('/api/account-config',{cache:'no-store'});
    const cfg=await res.json();
+   mark('configMs');
    if(!res.ok||!cfg.enabled||!validSupabaseConfig(cfg)){unconfigured();return;}
    client=new CloudAccount(cfg);accountReady=true;
    if(!client.isSignedIn()){show('login');return;}
    const user=await client.restore();
+   mark('authMs');
    if(user)await syncFamilies();else show('login');
+   mark('familyMs');
   }catch{unconfigured();}
-  finally{restoring=false;}
+  finally{
+   restoring=false;
+   if(client?.isSignedIn())console.info('skoleuka.startup',JSON.stringify({...timings,totalMs:Math.round(performance.now()-started)}));
+  }
  }
  const panel=$('account-panel');
  let returnFocus=null,returnScrollY=0,returnToPage=true;

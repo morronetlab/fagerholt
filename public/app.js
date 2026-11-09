@@ -941,6 +941,7 @@ function boot(){
   // been resolved. Otherwise the temporary 0-child guest dashboard flashes.
   // Guest users have no network wait and can render immediately.
   const hasSavedSession=Boolean(storageRead(SESSION_KEY));
+  const startupStarted=performance.now();
   const finishStartup=()=>{
    if(navigationReady)return;
    const startupSnapshot=!hasSavedSession&&initialRoute?.view==='plan'&&initialRoute.profileId?
@@ -953,6 +954,7 @@ function boot(){
    try{history.replaceState(startupSnapshot,'',location.href);}catch{}
    navigationReady=true;
    document.documentElement.classList.add('skoleuka-route-ready');
+   if(hasSavedSession)console.info('skoleuka.first_paint',JSON.stringify({readyMs:Math.round(performance.now()-startupStarted)}));
   };
   if(hasSavedSession){
    // Account restoration handles offline/error cases and always settles.

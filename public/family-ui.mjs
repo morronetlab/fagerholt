@@ -61,6 +61,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  let firstRunFamilyId='';
  try{firstRunFamilyId=sessionStorage.getItem(FIRST_RUN_KEY)||'';}catch{}
  let cloud=null,cloudChecks=new Map(),bagChecks=new Map(),focus='next',lastSynced=null,syncError='';
+ let initialProgressPending=false;
  // Public/guest family mode still needs the bottom navigation. Only a
  // signed-in family account uses the three dashboard tabs exclusively.
  const syncCloudChrome=()=>{
@@ -261,7 +262,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    ]);
    if(cloud!==current)return;
    cloudChecks=new Map();bagChecks=new Map();
-   syncError='';lastSynced=new Date();
+   syncError='';lastSynced=new Date();initialProgressPending=false;
    for(const row of rows){
     if(!cloudChecks.has(row.child_id))cloudChecks.set(row.child_id,new Map());
     cloudChecks.get(row.child_id).set(row.task_key,row.completed);
@@ -271,10 +272,15 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     bagChecks.get(row.child_id).set(row.task_key,row.completed);
    }
    render();
-  }catch(error){syncError='Kunne ikke synkronisere: '+error.message;render();}
+  }catch(error){
+   if(cloud!==current)return;
+   initialProgressPending=false;
+   syncError='Kunne ikke synkronisere: '+error.message;render();
+  }
  }
  async function updateCloud(p,task,checked){
   if(!cloud)throw Error('Ingen familiekonto aktiv.');
+  if(initialProgressPending)throw Error('Venter på synkronisering av lekser.');
   const current=cloud,now=calendar(),key=cloudKey(p,task,now);
   const previous=cloudChecks.get(p.id)?.get(key);
   if(!cloudChecks.has(p.id))cloudChecks.set(p.id,new Map());
@@ -291,6 +297,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  }
  async function updateBag(p,item,day,checked){
   if(!cloud)throw Error('Ingen familiekonto aktiv.');
+  if(initialProgressPending)throw Error('Venter på synkronisering av pakkeliste.');
   const current=cloud,now=calendar(),key=bagKey(p,item,now,day);
   const previous=bagChecks.get(p.id)?.get(key);
   if(!bagChecks.has(p.id))bagChecks.set(p.id,new Map());
@@ -578,7 +585,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   el('family-storage-label').textContent=cloud?'☁ Synkronisert familie · lekser deles mellom foresatte':'🔒 Kun på denne enheten';
   const ready=[...summaries.values()].filter(x=>x.ready);
   const done=ready.reduce((n,x)=>n+x.done,0),total=ready.reduce((n,x)=>n+x.total,0);
-  el('family-week-progress').textContent=ready.length?done+' av '+total+' lekser fullført':
+  el('family-week-progress').textContent=initialProgressPending?
+   'Synkroniserer lekser …':ready.length?done+' av '+total+' lekser fullført':
    now.upcoming?'Avventer ukeplan':'Ukeoversikt';
   el('family-week-context').textContent=now.upcoming?
    'Skoleuka er over for denne uken. Viser kun uke '+now.week+'.':
@@ -586,9 +594,9 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   // Preserve errors and loading messages while allowing success text to stay
   // unobtrusive on mobile (the account panel still exposes sync details).
   el('family-sync-status').dataset.syncState=cloud?
-   (syncError?'error':lastSynced?'ok':'loading'):'local';
+   (syncError?'error':initialProgressPending?'loading':lastSynced?'ok':'loading'):'local';
   el('family-sync-status').textContent=cloud?
-    (syncError|| (lastSynced?'Sist synkronisert kl. '+lastSynced.toLocaleTimeString('nb-NO',{hour:'2-digit',minute:'2-digit'}):'Henter synkronisert progresjon …')) :
+    (syncError|| (initialProgressPending?'Henter synkronisert progresjon …':lastSynced?'Sist synkronisert kl. '+lastSynced.toLocaleTimeString('nb-NO',{hour:'2-digit',minute:'2-digit'}):'Henter synkronisert progresjon …')) :
     'Avkrysninger lagres lokalt i nettleseren';
   el('family-form-tip').textContent=cloud?
    'Bruk gjerne kallenavn. Profilene synkroniseres mellom foresatte i familien.':
@@ -612,6 +620,9 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   if(presentCards.length)expandedPacking=new Set(presentCards.filter(card=>
    card.querySelector('.family-packing-week')?.open).map(card=>card.dataset.childId));
   setHtml('family-cards',profiles.map(p=>childCard(p,summaries.get(p.id),now)).join(''));
+  // Never permit an unverified unchecked state to overwrite cloud progress.
+  for(const input of el('family-cards').querySelectorAll('input[type="checkbox"]'))
+   input.disabled=Boolean(cloud&&initialProgressPending);
   for(const card of el('family-cards').querySelectorAll('.family-child[data-child-id]'))
    card.classList.toggle('mobile-more-open',mobileMoreOpen.has(card.dataset.childId));
   const {next}=schoolDayIndices(now);
@@ -994,6 +1005,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   isCloudProfile:id=>Boolean(cloud&&byId(id)),
   childAppStatus:id=>childPairingUI.getStatus(id),
   openChildInvite:id=>{const p=byId(id);if(cloud&&p)childPairingUI.open(p);},
+  isInitialProgressPending:()=>Boolean(cloud&&initialProgressPending),
   isHomeworkChecked:(id,task)=>{
     const p=byId(id);return Boolean(p&&cloud&&cloudIsChecked(p,task,calendar()));
   },
@@ -1015,15 +1027,17 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     cloud={client,familyId};syncCloudChrome();
     profiles=remoteChildren.map(x=>({id:x.id,name:x.nickname,school:x.school_id,
       grade:x.grade,group:x.group_name||''})).filter(x=>Object.hasOwn(siteConfig.schools,x.school));
-    // Resolve device statuses as part of initial account restoration, so the
-    // first family screen doesn't present unverified QR states as facts.
-    const statusReady=childPairingUI.loadStatuses(profiles);
+    // Credentials, family membership and children are already verified at this point.
+    // Progress and QR device status are independent; neither should keep the
+    // entire dashboard behind the startup gate on a slow network.
+    initialProgressPending=true;lastSynced=null;syncError='';
     plans.clear();cloudChecks.clear();bagChecks.clear();loadedWeekKey=null;activityUI.onFamilyChanged();
-    await Promise.all([syncCloud(),statusReady]);
     if(active){render();void fetchPlans();}
+    void syncCloud();
+    void childPairingUI.loadStatuses(profiles);
   },
   clearCloud:()=>{
-    cloud=null;syncCloudChrome();childPairingUI.clearStatuses();cloudChecks.clear();bagChecks.clear();lastSynced=null;syncError='';profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
+    cloud=null;initialProgressPending=false;syncCloudChrome();childPairingUI.clearStatuses();cloudChecks.clear();bagChecks.clear();lastSynced=null;syncError='';profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
     plans.clear();loadedWeekKey=null;activityUI.onFamilyChanged();if(active){render();void fetchPlans();}
   },
   refreshCloud:async()=>{await Promise.all([syncCloud(),activityUI.refresh()]);},
@@ -1227,6 +1241,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  el('family-cards').addEventListener('change',e=>{
   const input=e.target.closest('input[data-family-check]');
   if(!input)return;
+  if(cloud&&initialProgressPending){render();return;}
   const p=byId(input.dataset.familyCheck),index=Number(input.dataset.familyIndex);
   if(!p||!Number.isInteger(index)||index<0)return;
   const now=calendar(),key=childProgressKey(p,now.year,now.week,'homework');

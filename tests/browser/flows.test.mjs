@@ -1560,6 +1560,69 @@ test('Returning guardian sees a neutral startup shell, never a temporary empty f
   await page.close();
  }
 });
+test('Verified family renders before slow progress and QR status, without writable stale checks',async t=>{
+ const {page,errors}=await openPage(t,{width:390,height:844});
+ await enterFamily(page);
+ await page.evaluate(()=>{
+  localStorage.setItem('ukeplanen.cloud.session.v1',JSON.stringify({
+   access_token:'guardian-access',refresh_token:'guardian-refresh',
+   expires_at:Math.floor(Date.now()/1000)+3600,
+   user:{id:'guardian-one',email:'parent@example.no'}
+  }));
+ });
+ await page.addInitScript(()=>{
+  const original=window.fetch.bind(window);
+  window.__progressReleased=false;
+  window.__releaseProgress=()=>{window.__progressReleased=true;window.dispatchEvent(new Event('mock-progress-release'));};
+  window.fetch=(input,init={})=>{
+   const url=typeof input==='string'?input:input.url;
+   if(!url.startsWith('https://testprojectabc.supabase.co/'))return original(input,init);
+   const response=value=>new Response(JSON.stringify(value),{
+    status:200,headers:{'Content-Type':'application/json'}});
+   if(url.includes('/rest/v1/homework_progress')||url.includes('/rest/v1/packing_progress')){
+    return new Promise(resolve=>{
+     if(window.__progressReleased){resolve(response([]));return;}
+     window.addEventListener('mock-progress-release',()=>resolve(response([])),{once:true});
+    });
+   }
+   if(url.includes('/auth/v1/user'))return Promise.resolve(response({id:'guardian-one',email:'parent@example.no'}));
+   if(url.includes('/rest/v1/families'))return Promise.resolve(response([{
+    id:'family-1',name:'Familien',created_by:'guardian-one'}]));
+   if(url.includes('/rest/v1/children'))return Promise.resolve(response([{
+    id:'child-one',family_id:'family-1',nickname:'Ailin',
+    school_id:'sjostrand',grade:'2',group_name:''}]));
+   return Promise.resolve(response([]));
+  };
+ });
+ await page.route('**/api/account-config*',route=>reply(route,{
+  enabled:true,url:'https://testprojectabc.supabase.co/',
+  publishableKey:'sb_publishable_test_not_a_real_key'
+ }));
+ // Keep QR lookup pending until the dashboard has appeared.
+ let releaseQr;
+ const qrHeld=new Promise(resolve=>{releaseQr=resolve;});
+ await page.route('**/api/child-access**',async route=>{
+  await qrHeld;
+  await reply(route,{status:'not_invited'});
+ });
+ try{
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#family-cards .family-child').waitFor({state:'visible',timeout:10000});
+  assert.equal(await page.locator('#startup-loading').isVisible(),false);
+  assert.match(await page.locator('#family-cards').innerText(),/Ailin/);
+  assert.match(await page.locator('#family-sync-status').innerText(),/Henter synkronisert progresjon/);
+  assert.match(await page.locator('#family-week-progress').innerText(),/Synkroniserer lekser/);
+  assert.equal(await page.evaluate(()=>window.__progressReleased),false);
+  assert.equal(await page.locator('#family-cards input[type="checkbox"]:not([disabled])').count(),0);
+  await page.evaluate(()=>window.__releaseProgress());
+  await page.waitForFunction(()=>{
+   const status=document.getElementById('family-sync-status');
+   return status?.dataset.syncState==='ok'&&
+    /Sist synkronisert kl\./.test(status.textContent||'');
+  });
+  assert.deepEqual(errors,[]);
+ }finally{releaseQr();}
+});
 test('If a saved guardian session cannot be restored, the loading shell ends cleanly',async t=>{
  const {page,errors}=await openPage(t,{width:390,height:800});
  await enterFamily(page);
