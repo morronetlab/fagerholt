@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="nb">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+ <meta name="robots" content="noindex,nofollow">
+ <meta name="referrer" content="no-referrer">
+ <title>Administrasjon · Skoleuka</title>
+ <link rel="icon" href="/brand/skoleuka-icon.svg" type="image/svg+xml">
+ <link rel="stylesheet" href="/admin/style.css">
+ <script type="module" src="/admin/app.mjs"></script>
+</head>
+<body>
+ <header class="top">
+  <div class="wrap top-row"><a class="brand" href="/"><img src="/brand/skoleuka-icon.svg" width="42" height="42" alt=""><span>Skoleuka <small>Administrasjon</small></span></a>
+   <button type="button" class="secondary" id="signout" hidden>Logg ut</button></div>
+ </header>
+ <main class="wrap">
+  <section id="login" class="login-card" aria-labelledby="login-title">
+   <p class="eyebrow">ADMINISTRASJON</p><h1 id="login-title">Feilrapporter</h1>
+   <p>Logg inn med Skoleuka-kontoen din. Bare godkjente administratorer kan lese rapporter.</p>
+   <form id="login-form">
+    <label for="email">E-postadresse</label><input type="email" id="email" required autocomplete="email" placeholder="din@epost.no">
+    <button type="submit" id="send-code">Send innloggingskode</button>
+   </form>
+   <form id="verify-form" hidden>
+    <label for="otp">Engangskode fra e-post</label><input type="text" id="otp" required inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,8}" maxlength="8">
+    <button type="submit" id="verify-code">Logg inn</button>
+    <button class="secondary" type="button" id="back-email">Bruk en annen e-post</button>
+   </form>
+  </section>
+  <section id="dashboard" hidden aria-labelledby="title">
+   <div class="heading"><div><p class="eyebrow">SKOLEUKA · DRIFT</p><h1 id="title">Innsendte feilrapporter</h1>
+    <p class="intro">Rapporter om ukeplaner, AI-tolking og manglende skolebeskjeder.</p></div>
+    <button id="refresh" type="button" class="secondary">Oppdater</button>
+   </div>
+   <div class="stats" aria-label="Oppsummering">
+    <div class="stat"><strong id="count-total">–</strong><span>Rapporter</span></div>
+    <div class="stat"><strong id="count-new">–</strong><span>Nye</span></div>
+    <div class="stat"><strong id="count-progress">–</strong><span>Under arbeid</span></div>
+    <div class="stat"><strong id="count-done">–</strong><span>Løste</span></div>
+   </div>
+   <div class="filters">
+    <label>Periode<select id="days"><option value="7">Siste 7 dager</option><option value="14" selected>Siste 14 dager</option><option value="30">Siste 30 dager</option></select></label>
+    <label>Status<select id="filter-status"><option value="all">Alle statuser</option><option value="new">Nye</option><option value="in_progress">Under arbeid</option><option value="resolved">Løste</option></select></label>
+    <label>Type<select id="filter-kind"><option value="all">Alle typer</option><option value="wrong_interpretation">Feil i AI-tolking</option><option value="wrong_date">Feil dato</option><option value="missing_notice">Manglende beskjed</option></select></label>
+    <label>Søk<input id="search" type="search" placeholder="Skole, trinn eller tekst"></label>
+   </div>
+   <p id="list-summary" class="summary"></p>
+   <div id="reports" class="reports" aria-live="polite"></div>
+  </section>
+  <p role="status" id="message" class="message" aria-live="polite"></p>
+ </main>
+ <footer class="wrap footer">Privat administrasjon · Ingen admin-token lagres i nettleseren</footer>
+</body>
+</html>
