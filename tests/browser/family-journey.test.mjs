@@ -289,9 +289,13 @@ test('Two guardians, two children: OTP, invite, QR, install, shared homework and
    body:JSON.stringify(result.body)});
  });
  await parent.reload({waitUntil:'domcontentloaded'});
- await parent.locator('#startup-loading').waitFor({state:'visible'});
- assert.equal(await parent.locator('#family-cards').isVisible(),false,
-  'No unverified device status should appear during account restoration');
+ // Faster signed-in startup shows verified children while QR verification
+ // continues separately; never invent a not-invited or installed state.
+ await parent.locator('#family-cards [data-setup-status="checking"]').first().waitFor();
+ assert.equal(await parent.locator('#family-cards [data-setup-status="not_invited"]').count(),0,
+  'Do not claim that QR was never scanned before its status has been verified');
+ assert.equal(await parent.locator('#family-cards [data-setup-status="installed"]').count(),0,
+  'Do not claim installation before verification');
  releaseStatus();
  await parent.locator('#family-cards [data-setup-status="activated"]').first().waitFor();
  await parent.locator('#family-cards .family-child').nth(1).waitFor();
