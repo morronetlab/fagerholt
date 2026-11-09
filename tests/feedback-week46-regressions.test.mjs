@@ -7,6 +7,7 @@ import {reconcileHomeworkWithPdf} from '../lib/homework-source-truth.mjs';
 import {extractHomeworkDeadlineCells} from '../lib/homework-grid.mjs';
 import {analyzePdfPages} from '../lib/plan-core.mjs';
 import {normalizeAIPlan} from '../lib/ai-plan.mjs';
+import {needsCachedEvidenceRefresh,refreshCachedEvidence} from '../lib/plan-cache-evidence.mjs';
 
 // Source-shaped regression tests for reports filed for week 46, not claims
 // that the original URLs have been downloaded or their contents verified.
@@ -118,6 +119,29 @@ test('Original week 46 paragraph positions recover conditional Monday and Friday
   [['Fredag','Bamse (valgfritt)']]);
  assert.equal(withoutContactFooter('Les 15 minutter i valgfri bok. minskole.no/wildsminne'),
   'Les 15 minutter i valgfri bok.');
+});
+
+
+test('Cached AI plans are repaired against original PDF, without new model requests',()=>{
+ const empty=()=>({events:[],bring:[]});
+ const old={schoolId:'wildsminne',grade:'7',year:2026,week:46,parser:'ai',
+  aiStatus:'ready',sourceAudit:{status:'ok'},
+  homework:[{subject:'Norsk',dueDay:'Torsdag',
+   text:'Les 15 minutter i valgfri bok. minskole.no/wildsminne'}],
+  days:Object.fromEntries(['Mandag','Tirsdag','Onsdag','Torsdag','Fredag'].map(d=>[d,empty()])),
+  notices:[],dayNotes:{},everyday:[],contacts:[],vocabulary:[]};
+ const page={width:595,height:842,items:[
+  tok('Fredag markerer vi avslutning. Elevene kan da ta med seg en',79,222),
+  tok('bamse hvis de har lyst.',79,239)
+ ]};
+ assert.equal(needsCachedEvidenceRefresh(old),true);
+ const result=refreshCachedEvidence(old,[page]);
+ assert.equal(result.changed,true);
+ assert.equal(result.plan.feedbackSourceRepairVersion,1);
+ assert.deepEqual(result.plan.days.Fredag.bring,[{label:'Bamse (valgfritt)'}]);
+ assert.equal(result.plan.homework[0].text,'Les 15 minutter i valgfri bok.');
+ assert.equal(old.homework[0].text,'Les 15 minutter i valgfri bok. minskole.no/wildsminne');
+ assert.deepEqual(old.days.Fredag.bring,[],'Never mutate shared cached source objects');
 });
 
 test('AI normalization does not invent a weekday when the instruction contains no day',()=>{
