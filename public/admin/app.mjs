@@ -149,6 +149,16 @@ $('verify-form').addEventListener('submit',async event=>{
 $('back-email').addEventListener('click',()=>{$('verify-form').hidden=true;$('login-form').hidden=false;$('otp').value='';message('');});
 $('days').addEventListener('change',()=>void load());
 for(const id of ['filter-status','filter-kind','search'])$(id).addEventListener(id==='search'?'input':'change',render);
+$('export').addEventListener('click',()=>{
+ if(!reports.length){message('Det finnes ingen rapporter å eksportere.',true);return;}
+ const data=JSON.stringify({exportedAt:new Date().toISOString(),
+  periodDays:Number($('days').value),reports},null,2);
+ const blob=new Blob([data],{type:'application/json'});
+ const href=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=href;a.download='skoleuka-feilrapporter-'+new Date().toISOString().slice(0,10)+'.json';
+ document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(href),1000);
+ message('Rapportene er eksportert. Behandle filen som intern informasjon.');
+});
 $('refresh').addEventListener('click',()=>void load());
 $('signout').addEventListener('click',async()=>{
  try{await account.signOut();}catch{account.signOutLocal();}
