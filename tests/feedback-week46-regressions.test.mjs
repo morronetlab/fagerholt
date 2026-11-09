@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {withoutContactFooter} from '../lib/homework-contact-boundary.mjs';
 import {routeHomeworkPieces,classifyHomeworkText,packingLabels} from '../lib/homework-routing.mjs';
-import {explicitPackingInPdf} from '../lib/packing-source.mjs';
+import {explicitPackingInPdf,extractExplicitSchoolPacking} from '../lib/packing-source.mjs';
+import {reconcileHomeworkWithPdf} from '../lib/homework-source-truth.mjs';
 import {extractHomeworkDeadlineCells} from '../lib/homework-grid.mjs';
 import {analyzePdfPages} from '../lib/plan-core.mjs';
 import {normalizeAIPlan} from '../lib/ai-plan.mjs';
@@ -69,6 +70,54 @@ test('Explicit Lekser til headers are individually source-backed deadlines in a 
  assert.deepEqual(extractHomeworkDeadlineCells([{...page,items:page.items.filter(x=>x.text!=='LEKSEPLAN UKE 46'
   &&!x.text.startsWith('Lekser til')).concat([tok('Tirsdag',95,150),tok('Onsdag',355,150),
    tok('Torsdag',615,150)])}]),[],'Timetable weekdays alone are not homework proof');
+});
+
+
+test('Original week 46 Sjøstrand text positions: centred day headers, weekly reading, Wed–Thu counting and Friday shoes',()=>{
+ const page={width:800,height:850,items:[
+  tok('Lekser til tirsdag',91,373),tok('Lekser til onsdag',306,373),
+  tok('Lekser til torsdag',501,373),tok('Lekser til fredag',687,373),
+  tok('Norsk:',27,403),tok('Les s.',65,403),tok('68',98,403),
+  tok('-',110,403),tok('69',114,403),tok('i Fabel lesebok.',129,403),
+  tok('Teksten leses 3 ganger. Dette gjøres',27,416),tok('3',211,416),
+  tok('dager i løpet av uka, velg dag selv.',27,429),
+  tok('Ukelekse:',27,454),tok('Gjør eget ark i leksemappa.',85,454),
+  tok('Elevene får utdelt leksemappa mandager',27,479),
+  tok('og vi samler den inn torsdager.',27,492),
+  tok('Øv på å telle oppover til 40 og',247,404),tok('nedover fra 40.',247,418),
+  tok('Øv på å telle oppover til 40',459,404),tok('og nedover fra 40.',459,418),
+  tok('Ta med gymsko.',639,404),tok('Kontaktlærere:',27,523)
+ ]};
+ const raw=extractHomeworkDeadlineCells([page]);
+ assert.ok(raw.some(x=>x.text.includes('Les s.')&&x.dueDay===null));
+ assert.ok(raw.some(x=>x.text.includes('Gjør eget ark')&&x.dueDay===null));
+ assert.ok(raw.some(x=>x.text.includes('Øv på å telle')&&x.dueDay==='Onsdag'));
+ assert.ok(raw.some(x=>x.text.includes('Øv på å telle')&&x.dueDay==='Torsdag'));
+ assert.ok(raw.some(x=>x.text==='Ta med gymsko.'&&x.dueDay==='Fredag'));
+ const checked=reconcileHomeworkWithPdf([], [page]).homework;
+ assert.ok(checked.some(x=>x.repeatDays?.join('|')==='Onsdag|Torsdag'));
+ assert.ok(!checked.some(x=>/Kontaktlærere|Elevene får utdelt|gymsko/i.test(x.text)));
+ const pieces=routeHomeworkPieces(raw,task=>task.dueDay);
+ assert.ok(pieces.some(x=>x.kind==='packing'&&x.day==='Fredag'&&x.labels.includes('Gymsko')));
+});
+
+test('Original week 46 paragraph positions recover conditional Monday and Friday equipment',()=>{
+ const fagerholt={width:595,height:842,items:[
+  tok('Uteskole:',76,163),
+  tok('Mandag er det tid for uteskole igjen. Denne gangen går turen til Speiderhytta. De som',126,163),
+  tok('vil kan ta med seg bålmat. Ta med en vedkubbe hvis du har. Husk å kle deg godt!',76,178)
+ ]};
+ const wilds={width:595,height:842,items:[
+  tok('Fredag markerer vi avslutning av perioden. Elevene kan da ta med seg en',79,222),
+  tok('bamse hvis de har lyst.',79,239)
+ ]};
+ assert.deepEqual(extractExplicitSchoolPacking([fagerholt])
+  .map(x=>[x.day,x.label]).sort(),[
+  ['Mandag','Bålmat (valgfritt)'],['Mandag','Vedkubbe (valgfritt)']]);
+ assert.deepEqual(extractExplicitSchoolPacking([wilds]).map(x=>[x.day,x.label]),
+  [['Fredag','Bamse (valgfritt)']]);
+ assert.equal(withoutContactFooter('Les 15 minutter i valgfri bok. minskole.no/wildsminne'),
+  'Les 15 minutter i valgfri bok.');
 });
 
 test('AI normalization does not invent a weekday when the instruction contains no day',()=>{
