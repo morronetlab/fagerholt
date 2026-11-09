@@ -18,6 +18,14 @@ for(const item of samples){
   const bytes=await officialFetch(item.url,{pdf:true});
   const pages=await pdfPages(bytes);
   console.log('SOURCE '+JSON.stringify({key:item.key,bytes:bytes.length,pages:pages.length}));
+  const spans=item.key.startsWith('wildsminne')?[[1,375,610],[2,185,255]]:
+   item.key.startsWith('sjostrand')?[[1,365,470]]:[[2,145,205]];
+  for(const [page,yMin,yMax] of spans){
+   for(const t of pages[page-1]?.items||[]){
+    if(t.y>=yMin&&t.y<=yMax)
+     console.log('DETAIL '+JSON.stringify({key:item.key,page,x:Math.round(t.x),y:Math.round(t.y),text:safe(t.text)}));
+   }
+  }
   for(let pageIndex=0;pageIndex<pages.length;pageIndex++){
    const p=pages[pageIndex];
    const relevant=(p.items||[]).map((t,i)=>({t,i})).filter(({t})=>re.test(String(t.text||''))).slice(0,45);
