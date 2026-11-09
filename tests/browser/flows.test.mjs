@@ -1615,7 +1615,11 @@ test('Verified family renders before slow progress and QR status, without writab
   assert.equal(await page.evaluate(()=>window.__progressReleased),false);
   assert.equal(await page.locator('#family-cards input[type="checkbox"]:not([disabled])').count(),0);
   await page.evaluate(()=>window.__releaseProgress());
-  await page.getByText(/Sist synkronisert kl\./).waitFor();
+  await page.waitForFunction(()=>{
+   const status=document.getElementById('family-sync-status');
+   return status?.dataset.syncState==='ok'&&
+    /Sist synkronisert kl\./.test(status.textContent||'');
+  });
   assert.deepEqual(errors,[]);
  }finally{releaseQr();}
 });
