@@ -4,6 +4,9 @@
  */
 import {pdfPages} from '../netlify/functions/plan.mjs';
 import {officialFetch} from './collect-quality-originals.mjs';
+import {extractExplicitSchoolPacking} from '../lib/packing-source.mjs';
+import {extractHomeworkDeadlineCells} from '../lib/homework-grid.mjs';
+import {analyzePdfPages} from '../lib/plan-core.mjs';
 const samples=[
  {key:'wildsminne-7-w46',url:'https://www.minskole.no/DynamicContent//Documents/870-wildsminne-Uke-46-(4)-523be8af-d25e.pdf'},
  {key:'sjostrand-2-w46',url:'https://www.minskole.no/DynamicContent//Documents/866-Sjostrand-Ukebrev-uke-46-51d394b5-3078.pdf'},
@@ -18,6 +21,19 @@ for(const item of samples){
   const bytes=await officialFetch(item.url,{pdf:true});
   const pages=await pdfPages(bytes);
   console.log('SOURCE '+JSON.stringify({key:item.key,bytes:bytes.length,pages:pages.length}));
+  const grade=item.key.startsWith('wildsminne')?'7':item.key.startsWith('sjostrand')?'2':'3';
+  const plan=analyzePdfPages(pages,grade,item.url,46,2026,item.url);
+  const sourcePacking=extractExplicitSchoolPacking(pages);
+  const homeworkCells=extractHomeworkDeadlineCells(pages);
+  console.log('VERIFIED_CHECK '+JSON.stringify({
+   key:item.key,
+   originalSourcePacking:sourcePacking.map(x=>({day:x.day,label:x.label})),
+   resultingPacking:Object.entries(plan.days).flatMap(([day,v])=>v.bring.map(x=>({day,label:x.label})))
+    .filter(x=>/bålmat|vedkubbe|bamse|gymsko/i.test(x.label)),
+   extractedHomework:homeworkCells.map(x=>({day:x.dueDay,subject:x.subject,text:safe(x.text)})).slice(0,12),
+   resultingHomework:plan.homework.map(x=>({day:x.dueDay,repeatDays:x.repeatDays,subject:x.subject,text:safe(x.text)})).slice(0,12)
+  }));
+
   const spans=item.key.startsWith('wildsminne')?[[1,375,610],[2,185,255]]:
    item.key.startsWith('sjostrand')?[[1,365,470]]:[[2,145,205]];
   for(const [page,yMin,yMax] of spans){
