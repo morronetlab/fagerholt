@@ -34,22 +34,25 @@ for(const item of samples){
    resultingHomework:plan.homework.map(x=>({day:x.dueDay,repeatDays:x.repeatDays,subject:x.subject,text:safe(x.text)})).slice(0,12)
   }));
 
-  const spans=item.key.startsWith('wildsminne')?[[1,375,610],[2,185,255]]:
-   item.key.startsWith('sjostrand')?[[1,365,470]]:[[2,145,205]];
-  for(const [page,yMin,yMax] of spans){
-   for(const t of pages[page-1]?.items||[]){
-    if(t.y>=yMin&&t.y<=yMax)
-     console.log('DETAIL '+JSON.stringify({key:item.key,page,x:Math.round(t.x),y:Math.round(t.y),text:safe(t.text)}));
-   }
+  const itemText=plan.homework.map(x=>String(x.text||'').toLowerCase());
+  const gear=Object.entries(plan.days).flatMap(([day,v])=>v.bring.map(x=>({day,label:x.label})));
+  const found=(day,word)=>gear.some(x=>x.day===day&&x.label.toLowerCase().includes(word));
+  let passing=true;
+  if(item.key==='wildsminne-7-w46')passing=
+   found('Fredag','bamse')&&
+   !itemText.some(x=>x.includes('minskole.no/wildsminne'))&&
+   itemText.some(x=>x.includes('valgfri bok'));
+  if(item.key==='fagerholt-3-w46')passing=
+   found('Mandag','bålmat')&&found('Mandag','vedkubbe');
+  if(item.key==='sjostrand-2-w46'){
+   const count=plan.homework.filter(x=>/tell.*40/i.test(x.text));
+   passing=found('Fredag','gymsko')&&
+    plan.homework.some(x=>/les s|les.*fabel/i.test(x.text)&&!x.dueDay)&&
+    plan.homework.some(x=>/eget ark/i.test(x.text)&&!x.dueDay)&&
+    count.some(x=>x.repeatDays?.join('|')==='Onsdag|Torsdag')&&
+    !itemText.some(x=>x.includes('kontaktlærere'));
   }
-  for(let pageIndex=0;pageIndex<pages.length;pageIndex++){
-   const p=pages[pageIndex];
-   const relevant=(p.items||[]).map((t,i)=>({t,i})).filter(({t})=>re.test(String(t.text||''))).slice(0,45);
-   for(const {t,i} of relevant){
-    const peers=(p.items||[]).filter(x=>Math.abs(x.y-t.y)<9&&Math.abs(x.x-t.x)<Math.max(100,p.width*.43));
-    const nearby=peers.length?peers.map(x=>x.text).join(' '):t.text;
-    console.log('ROW '+JSON.stringify({key:item.key,page:pageIndex+1,token:i,x:Math.round(t.x),y:Math.round(t.y),text:safe(nearby)}));
-   }
-  }
+  console.log('SOURCE_ACCEPTANCE '+JSON.stringify({key:item.key,pass:passing}));
+  if(!passing)process.exitCode=1;
  }catch(error){console.log('SOURCE_ERROR '+JSON.stringify({key:item.key,error:String(error?.message||error).slice(0,130)}));}
 }
