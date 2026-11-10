@@ -59,15 +59,28 @@ test('A repeated homework feedback submission is idempotent and excludes child i
   assert.ok(!(field in reports[0][1]));
 });
 
-test('Homework reporting button is outside checkbox label and uses existing reporter',()=>{
+test('Section reporting replaces individual homework buttons without changing checkboxes',()=>{
  const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
  const dialog=readFileSync(new URL('../public/report-issue.mjs',import.meta.url),'utf8');
  const admin=readFileSync(new URL('../public/admin/app.mjs',import.meta.url),'utf8');
- assert.match(app,/data-report-homework="\$\{i\}"/);
- assert.match(app,/const reportHomework=e\.target\.closest/);
- assert.match(app,/issueReporter\.open\(\{contexts:/);
- assert.match(dialog,/homeworkContext/);
+ assert.doesNotMatch(app,/data-report-homework/);
+ for(const name of ['homework','bag','program','notices','vocabulary','vocabulary-nb'])
+  assert.ok(html.includes('data-report-section="'+name+'"'),name);
+ assert.match(app,/const sectionControl=e.target.closest/);
+ assert.match(app,/homeworkDisplayGroups\(homework\)/);
+ assert.match(dialog,/issue-report-item-field/);
  assert.match(dialog,/target:'homework'/);
- assert.match(admin,/taskIndex/);
  assert.match(admin,/lignende rapporter/);
+});
+test('Section metadata is optional, bounded and never admits private account fields',()=>{
+ const example={kind:'wrong_interpretation',school:'fagerholt',grade:'3',year:2026,
+  week:46,pdf,sourcePage:null,sourceText:'',details:'Matte mangler',section:'homework',
+  childId:'not-public'};
+ const checked=validateIssueReport(example);
+ assert.equal(checked.section,'homework');
+ assert.equal(checked.childId,undefined);
+ assert.equal(validateIssueReport({...example,section:'family-activities'}),null);
+ assert.deepEqual(validateIssueReport({...base,section:'homework'}),{...base,section:'homework'});
+ assert.equal(validateIssueReport({...base,section:'bag'}),null);
 });
