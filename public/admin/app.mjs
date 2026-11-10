@@ -5,7 +5,8 @@ import {CloudAccount,validSupabaseConfig} from '../shared/cloud-account.mjs';
 import {siteConfig} from '../site-config.mjs';
 const $=id=>document.getElementById(id);
 const kinds={wrong_interpretation:'Feil i AI-tolking',wrong_date:'Feil dato',
- missing_notice:'Manglende beskjed'};
+ missing_notice:'Manglende beskjed',duplicate_homework:'Duplisert lekse',
+ not_homework:'Ikke en lekse',missing_homework:'Manglende lekseinnhold'};
 const states={new:'Ny',in_progress:'Under arbeid',resolved:'Løst'};
 let account=null,reports=[],email='';
 function message(value='',error=false){
@@ -59,6 +60,10 @@ function makeReport(item){
  for(const [label,value] of [
   ['Feilbeskrivelse',item.details||'Ikke oppgitt'],
   ['Kildetekst',item.sourceText||'Ikke oppgitt'],
+  ...(item.target==='homework'?[['Rapportert element','Lekse #'+(Number(item.taskIndex)+1)],
+    ['Fag',item.taskSubject||'Ikke oppgitt'],
+    ['Frist',item.dueDay||'Ikke oppgitt'],
+    ['Gjentakelsesdag',item.repeatDay||'Ikke oppgitt']]:[]),
   ['År / uke',String(item.year)+' / '+String(item.week)],
   ['PDF-side',item.sourcePage||'Ikke angitt']]){
   dl.append(html('dt','',label),html('dd','',value));
@@ -107,14 +112,24 @@ function render(){
  const filtered=reports.filter(x=>
   (status==='all'||(x.reviewStatus||'new')===status)&&
   (kind==='all'||x.kind===kind)&&
-  (!query||[x.school,siteConfig.schools[x.school]?.name,x.grade,x.details,x.sourceText]
+  (!query||[x.school,siteConfig.schools[x.school]?.name,x.grade,x.details,x.sourceText,x.taskSubject]
    .some(value=>String(value||'').toLocaleLowerCase('nb-NO').includes(query))));
  $('list-summary').textContent='Viser '+filtered.length+' av '+total+' rapporter';
  const target=$('reports');target.replaceChildren();
  if(!filtered.length){target.append(html('div','empty',total?
   'Ingen rapporter samsvarer med filtrene.':'Ingen rapporter er mottatt i valgt periode.'));return;}
+ // Similar reports remain separate records with independent review statuses.
+ const reportKey=item=>item.target==='homework'?
+  [item.school,item.grade,item.year,item.week,item.taskSubject,item.sourceText,
+   item.kind].join('::').toLocaleLowerCase('nb-NO'):null;
+ const counts=new Map();
+ for(const item of reports){const key=reportKey(item);if(key)counts.set(key,(counts.get(key)||0)+1);}
  const fragment=document.createDocumentFragment();
- for(const item of filtered)fragment.append(makeReport(item));
+ for(const item of filtered){
+  const card=makeReport(item),count=counts.get(reportKey(item))||0;
+  if(count>1)card.querySelector('.report-meta')?.append(' · '+count+' lignende rapporter');
+  fragment.append(card);
+ }
  target.append(fragment);
 }
 async function boot(){
