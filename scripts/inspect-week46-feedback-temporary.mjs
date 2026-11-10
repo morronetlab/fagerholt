@@ -23,6 +23,10 @@ for(const [school,grade,url] of candidates){
   }));
   console.log('SOURCEPACK '+JSON.stringify({school,packing:extractExplicitSchoolPacking(pages).map(x=>({day:x.day,label:x.label}))}));
   console.log('SOURCEHOME '+JSON.stringify({school,cells:extractHomeworkEvidenceCells(pages).map(x=>({day:x.dueDay,subject:x.subject,text:scrub(x.text)})).slice(0,25)}));
+  const focus=school==='lovisenlund'?[[1,420,605]]:school==='wildsminne'?[[1,375,594]]:school==='hellemyr'?[[1,450,790]]:[];
+  for(const [pg,low,high] of focus)
+   for(const t of pages[pg-1]?.items||[])if(t.y>=low&&t.y<=high)
+    console.log('TOKEN '+JSON.stringify({school,page:pg,x:Math.round(t.x),y:Math.round(t.y),text:scrub(t.text)}));
   const terms=/gym|såpe|håndkle|lekse|les|tirsdag|onsdag|torsdag|fredag|pakk|ta med|penal|norsk|husk|skole|beskjed|matte/iu;
   for(let i=0;i<pages.length;i++){
    const p=pages[i];
