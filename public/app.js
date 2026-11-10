@@ -298,7 +298,7 @@ function checklist(items,section,day='all'){
     const text=`<span class="homework-card-body">${safe(label)}</span>`;
     const help=needsHomeworkHelp(item)?
       `<button type="button" class="helper-open sk-action sk-action--modal" data-helper-task="${i}" aria-label="Få hjelp til denne leksen">✨ Få hjelp</button>`:'';
-    const actions=`<div class="homework-card-actions">${help}<button type="button" class="homework-report sk-action sk-action--utility" data-report-homework="${i}" aria-label="Rapporter feil i denne leksen">⚑ Rapporter feil</button></div>`;
+    const actions=`<div class="homework-card-actions">${help}<button type="button" class="homework-report sk-action sk-action--link" data-report-homework="${i}" aria-label="Rapporter feil i denne leksen">⚑ Rapporter feil</button></div>`;
     if(group.kind==='daily'){
       const completed=group.entries.filter(entry=>isChecked('homework',entry.index,day)).length;
       const days=group.entries.map(entry=>{
