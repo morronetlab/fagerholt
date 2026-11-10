@@ -33,10 +33,12 @@ export function initIssueReporter(){
  function selectItem(){
   const ctx=currentContext();
   const chosen=itemSelect.value===''?null:availableItems[Number(itemSelect.value)];
-  fromItem=chosen&&ctx===availableItems.context?
-   {context:ctx,text:chosen.text,page:chosen.page}:null;
-  homework=chosen?.homework&&fromItem?
-   {context:ctx,...chosen.homework}:null;
+  if(availableItems.length){
+   fromItem=chosen&&ctx===availableItems.context?
+    {context:ctx,text:chosen.text,page:chosen.page}:null;
+   homework=chosen?.homework&&fromItem?
+    {context:ctx,...chosen.homework}:null;
+  }
   kindSelect.querySelectorAll('[data-homework-kind]').forEach(option=>{
    option.disabled=!homework;option.hidden=!homework;
   });
