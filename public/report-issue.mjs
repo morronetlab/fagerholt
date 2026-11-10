@@ -74,7 +74,7 @@ export function initIssueReporter(){
   event.preventDefault();
   if(sending)return;
   const ctx=currentContext(),kind=kindSelect.value,details=description.value.trim();
-  if(!ctx||!KINDS.includes(kind)||kind==='missing_notice'&&details.length<12){
+  if(!ctx||!KINDS.includes(kind)||['missing_notice','missing_homework'].includes(kind)&&details.length<12){
    status.textContent='Velg feiltype og beskriv hva som mangler (minst 12 tegn).';
    status.hidden=false;return;
   }
