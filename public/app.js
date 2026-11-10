@@ -199,6 +199,7 @@ function renderShell(){
   // Child plans selected from a signed-in family keep one clear return route.
   document.body.classList.toggle('family-child-plan-active',childCloudPlan);
   document.body.classList.toggle('guardian-plan-active',Boolean(guardianProfile));
+  if(!guardianProfile)$('app-view').style.minHeight='';
   renderGuardianToolbar(guardianProfile);
   // Family tabs replace the generic fixed mobile navigation. Keep this state
   // on the body so desktop and the child's own week-plan remain unchanged.
