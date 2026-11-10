@@ -111,3 +111,11 @@
 @media(prefers-reduced-motion:reduce){
  .homework-studio .homework-assist-row,.homework-studio .helper-open{transition:none}
 }
+
+/* Quiet feedback action belongs inside the same card, not a new column. */
+.homework-studio .homework-card-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:2px}
+.homework-studio .homework-card-actions .homework-report.sk-action--link{
+ width:auto;flex:0 0 auto;min-height:35px;padding:5px 3px;
+ font-size:12px;color:#6b786d;text-decoration:underline;text-underline-offset:3px;
+}
+.homework-studio .homework-card-actions .homework-report:hover{color:#285b49}
