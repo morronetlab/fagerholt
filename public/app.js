@@ -297,18 +297,19 @@ function checklist(items,section,day='all'){
     const groupLabel=groupBadge(item?.group);
     const text=`<span class="homework-card-body">${safe(label)}</span>`;
     const help=needsHomeworkHelp(item)?
-      `<div class="homework-card-actions"><button type="button" class="helper-open sk-action sk-action--modal" data-helper-task="${i}" aria-label="Få hjelp til denne leksen">✨ Få hjelp</button></div>`:'';
+      `<button type="button" class="helper-open sk-action sk-action--modal" data-helper-task="${i}" aria-label="Få hjelp til denne leksen">✨ Få hjelp</button>`:'';
+    const actions=`<div class="homework-card-actions">${help}<button type="button" class="homework-report sk-action sk-action--utility" data-report-homework="${i}" aria-label="Rapporter feil i denne leksen">⚑ Rapporter feil</button></div>`;
     if(group.kind==='daily'){
       const completed=group.entries.filter(entry=>isChecked('homework',entry.index,day)).length;
       const days=group.entries.map(entry=>{
         const checked=isChecked('homework',entry.index,day);
         return `<label class="homework-daily-day"><input type="checkbox" data-check="homework" data-index="${entry.index}" data-progress-day="${day}" ${checked?'checked':''} aria-label="Ferdig med ${safe(entry.day.toLowerCase())}"><span>${safe(entry.day.slice(0,3))}</span></label>`;
       }).join('');
-      return `<div class="homework-daily-card"><div class="homework-daily-header"><span class="homework-daily-title">📖 Daglig oppgave</span><span class="homework-daily-count">${completed} av ${group.entries.length} dager</span></div><div class="homework-card-tags">${groupLabel}${meta}${dueBadge}</div><p class="homework-daily-description">${safe(label)}</p><div class="homework-daily-days" role="group" aria-label="Marker ferdige lesedager">${days}</div>${help}</div>`;
+      return `<div class="homework-daily-card"><div class="homework-daily-header"><span class="homework-daily-title">📖 Daglig oppgave</span><span class="homework-daily-count">${completed} av ${group.entries.length} dager</span></div><div class="homework-card-tags">${groupLabel}${meta}${dueBadge}</div><p class="homework-daily-description">${safe(label)}</p><div class="homework-daily-days" role="group" aria-label="Marker ferdige lesedager">${days}</div>${actions}</div>`;
     }
     const repeatBadge=repeatDayLabel(item)?
       `<span class="homework-repeat">${safe(repeatDayLabel(item))}</span>`:'';
-    return `<div class="homework-assist-row"><div class="homework-card-tags">${groupLabel}${dueBadge}${repeatBadge}${meta}</div><label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''} aria-label="Marker leksen som ferdig"><span class="checktext">${text}</span></label>${help}</div>`;
+    return `<div class="homework-assist-row"><div class="homework-card-tags">${groupLabel}${dueBadge}${repeatBadge}${meta}</div><label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''} aria-label="Marker leksen som ferdig"><span class="checktext">${text}</span></label>${actions}</div>`;
   }).join('');
   return items.map((item,i)=>{
     const label=typeof item==='string'?item:(item?.text||item?.label||'');
@@ -865,6 +866,21 @@ function boot(){
     const selectedSchool=e.target.closest('[data-school]');if(selectedSchool){selectSchool(selectedSchool.dataset.school);return;}
     const grade=e.target.closest('[data-grade]');if(grade){selectGrade(grade.dataset.grade);return;}
     const day=e.target.closest('[data-day]');if(day){dayWasSelected=true;state.day=Number(day.dataset.day);renderShell();recordNavigation('replace');return;}
+    const reportHomework=e.target.closest('[data-report-homework]');if(reportHomework){
+      const index=Number(reportHomework.dataset.reportHomework);
+      const task=expandHomework(state.plan?.homework||[])[index];
+      if(task&&state.school?.id&&state.grade){
+        const page=Number(task.sourcePage);
+        issueReporter.open({contexts:[{school:state.school.id,grade:state.grade,
+          year:state.plan?.year||calendar.year,week:state.plan?.week||calendar.week,
+          pdf:state.plan?.pdf||null}],kind:'wrong_interpretation',
+          sourceItem:task.text||task.label||'',
+          sourcePage:Number.isInteger(page)&&page>=1&&page<=100?page:null,
+          homework:{index,subject:task.subject||'',dueDay:task.dueDay||'',
+            repeatDay:task.repeatDay||''}});
+      }
+      return;
+    }
     const tutor=e.target.closest('[data-helper-task]');if(tutor){
       const item=expandHomework(state.plan?.homework||[])[Number(tutor.dataset.helperTask)];
       if(item)openHomeworkHelper({text:item.text,subject:item.subject,grade:state.grade});
