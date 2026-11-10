@@ -30,6 +30,24 @@
  border:0;
  background:none;
 }
+/* The legacy category stylesheet uses #homework-list .checkrow (ID
+   specificity), painting a second yellow card inside each new card.
+   Only the OUTER homework card owns its border/background. */
+#homework-list .homework-assist-row > .checkrow{
+ flex:0 1 auto;
+ min-width:0;
+ margin:0;
+ padding:0;
+ padding-left:0;
+ border:0;
+ border-left:0;
+ border-radius:0;
+ background:transparent;
+ box-shadow:none;
+}
+#homework-list .homework-assist-row > .checkrow:hover{
+ background:transparent;
+}
 .homework-studio .homework-assist-row .checkrow.done{opacity:1}
 .homework-studio .homework-assist-row .checkrow.done .checktext{
  color:#788b7d;text-decoration:line-through;
