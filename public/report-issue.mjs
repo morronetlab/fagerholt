@@ -13,7 +13,8 @@ export function initIssueReporter(){
  const contextSelect=el('issue-report-context'),kindSelect=el('issue-report-kind');
  const description=el('issue-report-details'),source=el('issue-report-source');
  const status=el('issue-report-status'),submit=el('issue-report-submit');
- let contexts=[],fromItem=null,homework=null,sending=false;
+ const itemField=el('issue-report-item-field'),itemSelect=el('issue-report-item');
+ let contexts=[],fromItem=null,homework=null,sending=false,section=null,availableItems=[];
  function changeKind(){
   const missing=['missing_notice','missing_homework'].includes(kindSelect.value);
   description.required=missing;
@@ -29,13 +30,32 @@ export function initIssueReporter(){
   const ctx=currentContext();
   return fromItem&&ctx===fromItem.context?fromItem.text:'';
  }
+ function selectItem(){
+  const ctx=currentContext();
+  const chosen=itemSelect.value===''?null:availableItems[Number(itemSelect.value)];
+  fromItem=chosen&&ctx===availableItems.context?
+   {context:ctx,text:chosen.text,page:chosen.page}:null;
+  homework=chosen?.homework&&fromItem?
+   {context:ctx,...chosen.homework}:null;
+  kindSelect.querySelectorAll('[data-homework-kind]').forEach(option=>{
+   option.disabled=!homework;option.hidden=!homework;
+  });
+  if(!homework&&['duplicate_homework','not_homework','missing_homework'].includes(kindSelect.value))
+   kindSelect.value='wrong_interpretation';
+  el('issue-report-title').textContent=homework?'Rapporter feil i leksen':
+   section?'Rapporter feil i '+({homework:'lekser',bag:'pakkeliste',program:'dagsprogram',
+    notices:'skolebeskjeder',vocabulary:'gloser','vocabulary-nb':'øveord'}[section]||'ukeplanen'):
+   'Rapporter feil i ukeplanen';
+  changeKind();refreshSource();
+ }
  function refreshSource(){
   const text=sourceText();
   source.hidden=!text;
   source.textContent=text?(homework?'Leksens tekst: ':'Beskjeden du rapporterer: ')+text:'';
  }
  function open({contexts:sourceContexts=[],selected=0,kind='wrong_interpretation',
-  sourceItem='',sourcePage=null,homework:homeworkContext=null}={}){
+  sourceItem='',sourcePage=null,homework:homeworkContext=null,
+  section:sourceSection=null,items:sourceItems=[]}={}){
   const inputs=sourceContexts.filter(validContext);
   if(!inputs.length)return false;
   contexts=inputs.map(x=>({school:x.school,grade:x.grade,year:x.year,
@@ -48,7 +68,28 @@ export function initIssueReporter(){
   });
   contextSelect.value=String(Math.min(Math.max(Number(selected)||0,0),contexts.length-1));
   const fromContext=currentContext();
+  section=typeof sourceSection==='string'?sourceSection:null;
   const text=String(sourceItem||'').slice(0,450);
+  availableItems=Array.isArray(sourceItems)?sourceItems.slice(0,200).map(item=>({
+   text:String(item?.text||'').slice(0,450),
+   page:Number.isInteger(Number(item?.sourcePage))&&Number(item.sourcePage)>=1&&
+    Number(item.sourcePage)<=100&&fromContext?.pdf?Number(item.sourcePage):null,
+   homework:item?.homework&&Number.isInteger(item.homework.index)?
+    {index:item.homework.index,subject:String(item.homework.subject||'').slice(0,65),
+     dueDay:item.homework.dueDay||'',repeatDay:item.homework.repeatDay||''}:null
+  })).filter(item=>item.text):[];
+  availableItems.context=fromContext;
+  itemSelect.replaceChildren();
+  const none=document.createElement('option');
+  none.value='';none.textContent='Hele seksjonen / annet';itemSelect.append(none);
+  availableItems.forEach((item,index)=>{
+   const option=document.createElement('option');
+   option.value=String(index);
+   option.textContent=item.text.length>90?item.text.slice(0,87)+'…':item.text;
+   itemSelect.append(option);
+  });
+  itemSelect.value='';
+  itemField.hidden=!availableItems.length;
   fromItem=text?{context:fromContext,text,page:sourcePage}:null;
   homework=homeworkContext&&text&&Number.isInteger(homeworkContext.index)&&
    homeworkContext.index>=0&&homeworkContext.index<=500?
@@ -56,10 +97,11 @@ export function initIssueReporter(){
     subject:String(homeworkContext.subject||'').slice(0,65),
     dueDay:String(homeworkContext.dueDay||'').slice(0,20),
     repeatDay:String(homeworkContext.repeatDay||'').slice(0,20)}:null;
-  const homeworkOnly=el('issue-report-kind').querySelectorAll('[data-homework-kind]');
-  homeworkOnly.forEach(option=>{option.disabled=!homework;option.hidden=!homework;});
-  el('issue-report-title').textContent=homework?'Rapporter feil i leksen':'Rapporter feil i ukeplanen';
+  if(availableItems.length){fromItem=null;homework=null;}
+  selectItem();
   kindSelect.value=KINDS.includes(kind)?kind:'wrong_interpretation';
+  if(!homework&&['duplicate_homework','not_homework','missing_homework'].includes(kindSelect.value))
+   kindSelect.value='wrong_interpretation';
   description.value='';status.textContent='';status.hidden=true;submit.disabled=false;submit.hidden=false;
   form.hidden=false;sending=false;
   changeKind();refreshSource();
@@ -67,7 +109,8 @@ export function initIssueReporter(){
   kindSelect.focus();
   return true;
  }
- contextSelect.addEventListener('change',refreshSource);
+ contextSelect.addEventListener('change',()=>{if(availableItems.length)itemSelect.value='';selectItem();});
+ itemSelect.addEventListener('change',selectItem);
  kindSelect.addEventListener('change',changeKind);
  el('issue-report-close').addEventListener('click',()=>{if(!sending)dialog.close();});
  form.addEventListener('submit',async event=>{
@@ -83,6 +126,7 @@ export function initIssueReporter(){
    kind,school:ctx.school,grade:ctx.grade,year:ctx.year,week:ctx.week,
    pdf:ctx.pdf||null,sourcePage:sourceText()?fromItem.page:null,
    sourceText:sourceText(),details,
+   ...(section?{section}:{}),
    ...(selectedHomework?{target:'homework',taskIndex:selectedHomework.index,
     taskSubject:selectedHomework.subject,dueDay:selectedHomework.dueDay,
     repeatDay:selectedHomework.repeatDay}:{})
