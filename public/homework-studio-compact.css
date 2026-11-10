@@ -1,0 +1,95 @@
+/* PR A: compact, accessible homework cards; presentation only. */
+.homework-studio #homework-list{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:12px;
+ align-items:start;
+}
+.homework-studio .homework-assist-row,
+.homework-studio .homework-daily-card{
+ display:flex;
+ flex-direction:column;
+ align-self:start;
+ min-width:0;
+ height:auto;
+ border:1px solid #dee8df;
+ border-left:3px solid #d0a249;
+ background:#fffdf8;
+ border-radius:14px;
+ padding:14px 15px;
+ gap:10px;
+ overflow:visible;
+}
+.homework-studio .homework-assist-row .checkrow{
+ display:flex;
+ gap:11px;
+ flex:initial;
+ align-items:flex-start;
+ min-height:0;
+ padding:0;
+ border:0;
+ background:none;
+}
+.homework-studio .homework-assist-row .checkrow.done{opacity:1}
+.homework-studio .homework-assist-row .checkrow.done .checktext{
+ color:#788b7d;text-decoration:line-through;
+}
+.homework-studio .homework-assist-row .checkrow input{
+ flex:0 0 22px;width:22px;height:22px;margin:2px 0 0;
+ accent-color:#278364;
+}
+.homework-studio .homework-assist-row .checktext{
+ display:block;min-width:0;line-height:1.55;
+ overflow-wrap:anywhere;
+}
+.homework-studio .homework-card-tags{
+ display:flex;gap:6px;flex-wrap:wrap;align-items:center;
+}
+.homework-studio .homework-card-tags .subject,
+.homework-studio .homework-card-tags .homework-due,
+.homework-studio .homework-card-tags .homework-repeat{
+ margin:0;display:inline-flex;align-items:center;
+ padding:4px 8px;line-height:1.3;border-radius:8px;
+ font-size:11px;font-weight:750;
+}
+.homework-studio .homework-card-tags .homework-repeat{background:#eaf1fc;color:#2b568c}
+.homework-studio .homework-card-tags .homework-due{background:#fff3dd;color:#87551b}
+.homework-studio .homework-card-body{display:block;font-size:13px;line-height:1.65;color:#223b31}
+.homework-studio .homework-card-actions{display:flex;justify-content:flex-start;align-items:center;gap:8px;margin-top:auto}
+.homework-studio .helper-open{
+ flex:0 0 auto;width:auto;min-width:0;min-height:36px;
+ padding:7px 12px;border:1px solid #c6dbce;border-radius:9px;
+ background:#fff;color:#255d47;
+ font-size:12px;font-weight:750;line-height:1.3;white-space:nowrap;
+}
+.homework-studio .helper-open:hover{background:#eaf5ee;border-color:#96bfa7}
+.homework-studio .helper-open:focus-visible{outline:3px solid #7ab89d;outline-offset:2px}
+.homework-studio .homework-daily-card{grid-column:1/-1;border-left-color:#6ea88d;background:#f8fcf8}
+.homework-studio .homework-daily-header{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.homework-studio .homework-daily-title{font-size:14px;font-weight:800;color:#255d47}
+.homework-studio .homework-daily-count{font-size:12px;font-weight:750;color:#587765;white-space:nowrap}
+.homework-studio .homework-daily-description{margin:0;font-size:13px;line-height:1.6}
+.homework-studio .homework-daily-days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.homework-studio .homework-daily-day{
+ display:flex;gap:8px;align-items:center;justify-content:center;
+ min-width:0;min-height:47px;padding:8px 5px;
+ border:1px solid #dbe6df;border-radius:10px;background:#fff;
+ font-size:12px;font-weight:750;color:#365c47;cursor:pointer;
+}
+.homework-studio .homework-daily-day input{
+ margin:0;flex:0 0 18px;width:18px;height:18px;accent-color:#278364;cursor:pointer
+}
+.homework-studio .homework-daily-day:has(input:checked){background:#e5f4ea;border-color:#8bbca0}
+.homework-studio .homework-daily-day:focus-within{outline:2px solid #278364;outline-offset:2px}
+.homework-studio #homework-progress{padding:13px 17px;margin-bottom:16px}
+.homework-studio .homework-progress-top{gap:12px}
+@media(max-width:760px){
+ .homework-studio #homework-list{grid-template-columns:minmax(0,1fr)}
+ .homework-studio .homework-assist-row,.homework-studio .homework-daily-card{padding:13px}
+ .homework-studio .helper-open{width:auto;min-height:36px;flex:0 0 auto;border:1px solid #c6dbce;border-radius:9px}
+ .homework-studio .homework-daily-days{gap:5px}
+ .homework-studio .homework-daily-day{flex-direction:column;gap:5px;padding:8px 2px}
+}
+@media(prefers-reduced-motion:reduce){
+ .homework-studio .homework-assist-row,.homework-studio .helper-open{transition:none}
+}
