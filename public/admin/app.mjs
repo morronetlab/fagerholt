@@ -60,6 +60,7 @@ function makeReport(item){
  for(const [label,value] of [
   ['Feilbeskrivelse',item.details||'Ikke oppgitt'],
   ['Kildetekst',item.sourceText||'Ikke oppgitt'],
+  ...(item.section?[['Seksjon',({homework:'Lekser',bag:'Pakkeliste',program:'Dagsprogram',notices:'Beskjeder',vocabulary:'Gloser','vocabulary-nb':'Norske øveord'}[item.section]||item.section)]]:[]),
   ...(item.target==='homework'?[['Rapportert element','Lekse #'+(Number(item.taskIndex)+1)],
     ['Fag',item.taskSubject||'Ikke oppgitt'],
     ['Frist',item.dueDay||'Ikke oppgitt'],
