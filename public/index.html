@@ -635,6 +635,9 @@
         <option value="wrong_date">Feil dato eller dag</option>
         <option value="missing_notice">Mangler viktig beskjed</option>
         <option value="wrong_interpretation">Feil tolkning eller innhold</option>
+        <option value="duplicate_homework" data-homework-kind hidden disabled>Leksen er duplisert</option>
+        <option value="not_homework" data-homework-kind hidden disabled>Dette er ikke en lekse</option>
+        <option value="missing_homework" data-homework-kind hidden disabled>Det mangler noe i leksen</option>
       </select>
     </label>
     <p id="issue-report-source" class="issue-report-source" hidden></p>
@@ -642,7 +645,7 @@
       <textarea id="issue-report-details" rows="4" maxlength="350" placeholder="Beskriv kort hva original-PDF-en sier."></textarea>
     </label>
     <p id="issue-report-help" class="issue-report-help">Beskriv gjerne hva som er feil.</p>
-    <p class="issue-report-privacy">Ikke skriv navn på barn, telefonnummer, e-post eller andre personopplysninger. Skole, trinn, uke, valgt beskjed og rapporttekst sendes – ikke familieprofil eller lekseprogresjon.</p>
+    <p class="issue-report-privacy">Ikke skriv navn på barn, telefonnummer, e-post eller andre personopplysninger. Skole, trinn, uke, den valgte leksens tekst og plassering samt rapporttekst sendes – ikke familieprofil eller lekseprogresjon.</p>
     <p id="issue-report-status" class="issue-report-status" role="status" aria-live="polite" hidden></p>
     <button id="issue-report-submit" type="submit" class="family-add-button sk-action sk-action--submit">Send rapport</button>
   </form>
