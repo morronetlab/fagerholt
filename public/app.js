@@ -579,7 +579,8 @@ async function reload({quiet=false,statusOnly=quiet}={}){
     // A ready AI-status response can hold older, unverified homework data.
     // Read the canonical cached plan through /api/plan, which validates PDF
     // columns and repairs any stale source deadlines before displaying it.
-    if(statusOnly&&fresh.aiStatus==='ready'&&fresh.homeworkSourceVersion!==3){
+    if(statusOnly&&fresh.aiStatus==='ready'&&
+       (fresh.homeworkSourceVersion!==3||fresh.feedbackSourceRepairVersion!==2)){
       try{
         fresh=await fetchJSON(`/api/plan?school=${encodeURIComponent(schoolId)}&grade=${encodeURIComponent(grade)}${viewingNextWeek?'&nextWeek=1':''}`,60000);
       }catch(error){
@@ -699,7 +700,7 @@ function openFamilyProfile(profile,{upcoming=false,cachedPlan=null,record=true,
   // A source-verified AI plan is already available from the family dashboard.
   // Render it immediately: do not show the loading screen or repeat /api/plan.
   const initial= cachedPlan?.aiStatus==='ready'&&cachedPlan?.parser==='ai'&&
-   cachedPlan.homeworkSourceVersion===3&&cachedPlan.status==='ok' ? cachedPlan:null;
+   cachedPlan.homeworkSourceVersion===3&&cachedPlan.feedbackSourceRepairVersion===2&&cachedPlan.status==='ok' ? cachedPlan:null;
   state.plan=initial;state.loading=!initial;state.planError=null;
   state.weather=null;state.weatherError=null;
   const previousDay=state.day;
