@@ -83,4 +83,6 @@ test('Section metadata is optional, bounded and never admits private account fie
  assert.equal(validateIssueReport({...example,section:'family-activities'}),null);
  assert.deepEqual(validateIssueReport({...base,section:'homework'}),{...base,section:'homework'});
  assert.equal(validateIssueReport({...base,section:'bag'}),null);
+ assert.ok(validateIssueReport({...example,kind:'missing_homework',details:'Det mangler en lekse i ukeplanen'}));
+ assert.equal(validateIssueReport({...example,kind:'missing_homework',section:'bag'}),null);
 });
