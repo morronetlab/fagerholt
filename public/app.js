@@ -875,9 +875,9 @@ function boot(){
           year:state.plan?.year||calendar.year,week:state.plan?.week||calendar.week,
           pdf:state.plan?.pdf||null}],kind:'wrong_interpretation',
           sourceItem:task.text||task.label||'',
-          sourcePage:Number.isInteger(page)&&page>=1&&page<=100?page:null,
-          homework:{index,subject:task.subject||'',dueDay:task.dueDay||'',
-            repeatDay:task.repeatDay||''}});
+          sourcePage:state.plan?.pdf&&Number.isInteger(page)&&page>=1&&page<=100?page:null,
+          homework:{index,subject:task.subject||'',dueDay:DAYS.includes(task.dueDay)?task.dueDay:'',
+            repeatDay:DAYS.includes(task.repeatDay)?task.repeatDay:''}});
       }
       return;
     }
