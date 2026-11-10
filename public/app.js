@@ -298,7 +298,7 @@ function checklist(items,section,day='all'){
     const text=`<span class="homework-card-body">${safe(label)}</span>`;
     const help=needsHomeworkHelp(item)?
       `<button type="button" class="helper-open sk-action sk-action--modal" data-helper-task="${i}" aria-label="Få hjelp til denne leksen">✨ Få hjelp</button>`:'';
-    const actions=`<div class="homework-card-actions">${help}<button type="button" class="homework-report sk-action sk-action--link" data-report-homework="${i}" aria-label="Rapporter feil i denne leksen">⚑ Rapporter feil</button></div>`;
+    const actions=help?`<div class="homework-card-actions">${help}</div>`:"";
     if(group.kind==='daily'){
       const completed=group.entries.filter(entry=>isChecked('homework',entry.index,day)).length;
       const days=group.entries.map(entry=>{
@@ -866,19 +866,38 @@ function boot(){
     const selectedSchool=e.target.closest('[data-school]');if(selectedSchool){selectSchool(selectedSchool.dataset.school);return;}
     const grade=e.target.closest('[data-grade]');if(grade){selectGrade(grade.dataset.grade);return;}
     const day=e.target.closest('[data-day]');if(day){dayWasSelected=true;state.day=Number(day.dataset.day);renderShell();recordNavigation('replace');return;}
-    const reportHomework=e.target.closest('[data-report-homework]');if(reportHomework){
-      const index=Number(reportHomework.dataset.reportHomework);
-      const task=expandHomework(state.plan?.homework||[])[index];
-      if(task&&state.school?.id&&state.grade){
-        const page=Number(task.sourcePage);
-        issueReporter.open({contexts:[{school:state.school.id,grade:state.grade,
-          year:state.plan?.year||calendar.year,week:state.plan?.week||calendar.week,
-          pdf:state.plan?.pdf||null}],kind:'wrong_interpretation',
-          sourceItem:task.text||task.label||'',
-          sourcePage:state.plan?.pdf&&Number.isInteger(page)&&page>=1&&page<=100?page:null,
-          homework:{index,subject:task.subject||'',dueDay:DAYS.includes(task.dueDay)?task.dueDay:'',
-            repeatDay:DAYS.includes(task.repeatDay)?task.repeatDay:''}});
-      }
+    const sectionControl=e.target.closest('[data-report-section]');if(sectionControl){
+      if(!state.school?.id||!state.grade)return;
+      const section=sectionControl.dataset.reportSection;
+      const plan=state.plan||{},profile=state.profileId?familyUI?.profileById(state.profileId):null;
+      const homework=expandHomework(plan.homework||[]);
+      const list={
+        homework:homeworkDisplayGroups(homework).map(group=>({
+          text:group.item?.text||group.item?.label||'',
+          sourcePage:group.item?.sourcePage,
+          homework:{index:group.index,subject:group.item?.subject||'',
+            dueDay:DAYS.includes(group.item?.dueDay)?group.item.dueDay:'',
+            repeatDay:DAYS.includes(group.item?.repeatDay)?group.item.repeatDay:''}
+        })),
+        bag:getBag().filter(item=>!profile||groupApplies(item,profile)).map(item=>({
+          text:typeof item==='string'?item:item?.text||item?.label||'',sourcePage:item?.sourcePage
+        })),
+        program:(plan.days?.[DAYS[state.day]]?.events||[]).filter(item=>!profile||groupApplies(item,profile))
+          .map(item=>({text:item?.title||'',sourcePage:item?.sourcePage})),
+        notices:(plan.notices||[]).map(item=>({
+          text:typeof item==='string'?item:item?.text||item?.detail||item?.title||'',
+          sourcePage:item?.sourcePage
+        })),
+        vocabulary:quizItems(plan.vocabulary||[]).filter(x=>x.language==='en')
+          .map(item=>({text:item.word||'',sourcePage:item.sourcePage})),
+        'vocabulary-nb':quizItems(plan.vocabulary||[]).filter(x=>x.language==='nb')
+          .map(item=>({text:item.word||'',sourcePage:item.sourcePage}))
+      }[section];
+      if(list)issueReporter.open({
+        contexts:[{school:state.school.id,grade:state.grade,
+          year:plan.year||calendar.year,week:plan.week||calendar.week,pdf:plan.pdf||null}],
+        kind:'wrong_interpretation',section,items:list.filter(x=>x.text)
+      });
       return;
     }
     const tutor=e.target.closest('[data-helper-task]');if(tutor){
