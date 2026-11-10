@@ -21,6 +21,19 @@ for(const [school,grade,url] of candidates){
    days:Object.fromEntries(Object.entries(plan.days).map(([day,x])=>[day,{events:x.events.map(e=>scrub(e.title)),bring:x.bring.map(e=>e.label)}])),
    homework:plan.homework.map(x=>({day:x.dueDay,repeat:x.repeatDays,subject:x.subject,text:scrub(x.text)}))
   }));
+  const expected=school==='lovisenlund'?
+    [{day:'Torsdag',label:'Gymtøy'},{day:'Torsdag',label:'Håndkle'}]:
+    school==='hellemyr'?
+    [{day:'Torsdag',label:'Zeppelin lesebok'},{day:'Torsdag',label:'Skrivebok'},{day:'Fredag',label:'Flaskeposten'}]:
+    school==='sjostrand'?[{day:'Fredag',label:'Gymsko'}]:[];
+  const missing=expected.filter(({day,label})=>
+   !plan.days[day]?.bring?.some(x=>x.label===label));
+  const norwegian=school==='wildsminne'?
+    ['Tirsdag','Onsdag','Torsdag'].filter(day=>!
+      plan.homework.some(x=>/les i bok/i.test(x.text)&&
+       (x.dueDay===day||x.repeatDays?.includes(day)))):[];
+  console.log('CHECK '+JSON.stringify({school,missing,norwegian,
+   mondayText:school==='hellemyr'?plan.days.Mandag.events.map(x=>scrub(x.title)):[]}));
   console.log('SOURCEPACK '+JSON.stringify({school,packing:extractExplicitSchoolPacking(pages).map(x=>({day:x.day,label:x.label}))}));
   console.log('SOURCEHOME '+JSON.stringify({school,cells:extractHomeworkEvidenceCells(pages).map(x=>({day:x.dueDay,subject:x.subject,text:scrub(x.text)})).slice(0,25)}));
   const focus=school==='lovisenlund'?[[1,420,605]]:school==='wildsminne'?[[1,375,594]]:school==='hellemyr'?[[1,450,790]]:[];
