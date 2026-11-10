@@ -17,7 +17,7 @@ function plan(grade){
  return {
   grade,week:44,year:2026,source:'https://www.minskole.no/sjostrand/',
   pdf:'https://www.minskole.no/sjostrand/uke44.pdf',status:'ok',parser:'ai',
-  aiStatus:'ready',homeworkSourceVersion:3,
+  aiStatus:'ready',homeworkSourceVersion:3,feedbackSourceRepairVersion:2,
   days:schoolDays,dayNotes:{},everyday:[],attendance:[],
   homework:[{subject:'Norsk',text:grade==='2'?'Les for A':'Skriv for B',dueDay:'Torsdag'}],
   notices:[],learningGoals:[],subjects:[],vocabulary:[],specialContent:[]
