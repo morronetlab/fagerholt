@@ -317,7 +317,7 @@ function checklist(items,section,day='all'){
     const displayLabel=packingText(label);
     const hint=item?.note?`<small>${safe(item.note)}</small>`:'';
     const typeLabel=`<span class="content-type-label content-kind-practical">${contentCategoryLabel('practical')}</span>`;
-    return `<label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${typeLabel}${safe(displayLabel)}${hint}</span></label>`;
+    return `<label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${typeLabel}<span class="packing-item-label">${safe(displayLabel)}</span>${hint}</span></label>`;
   }).join('');
 }
 function empty(msg){return `<p class="empty"><span aria-hidden="true">ℹ️</span> ${safe(msg)}</p>`;}
