@@ -15,6 +15,7 @@ import {planFeedback} from './shared/plan-feedback.mjs';
 import {normalizeVisualRegion,adjustableVisualRegion,visualCropGeometry,fullPageGeometry} from './shared/visual-region.mjs';
 import {homeworkProgress,groupColorClass} from './shared/group-scope.mjs';
 import {expandHomework,repeatDayLabel} from './shared/homework-view.mjs';
+import {homeworkDisplayGroups} from './shared/homework-card-groups.mjs';
 import {contentCategoryLabel} from './shared/content-categories.mjs';
 import {dueDayLabel,packingText} from './shared/plan-display.mjs';
 import {uniqueDayEvents,groupSimultaneousEvents,notesWithImportantEvents,isVaccineNotice,noDayScheduleMessage} from './shared/day-view.mjs';
@@ -285,19 +286,36 @@ function groupBadge(group){
     .map(label=>`<span class="group-badge ${groupColorClass(label)}">${safe(label)}</span>`).join('');
 }
 function checklist(items,section,day='all'){
+  if(section==='homework')return homeworkDisplayGroups(items).map(group=>{
+    const item=group.item,i=group.index;
+    const label=typeof item==='string'?item:(item?.text||item?.label||'');
+    const due=dueDayLabel(item,{allowTextFallback:state.plan?.parser!=='ai'});
+    const meta=typeof item==='object'&&item?.subject&&
+      !(due&&item.subject.toLowerCase()===due.toLowerCase())?
+      `<span class="subject">${safe(item.subject)}</span>`:'';
+    const dueBadge=due?`<span class="homework-due">📅 ${safe(due)}</span>`:'';
+    const groupLabel=groupBadge(item?.group);
+    const text=`<span class="homework-card-body">${safe(label)}</span>`;
+    const help=needsHomeworkHelp(item)?
+      `<div class="homework-card-actions"><button type="button" class="helper-open sk-action sk-action--modal" data-helper-task="${i}" aria-label="Få hjelp til denne leksen">✨ Få hjelp</button></div>`:'';
+    if(group.kind==='daily'){
+      const completed=group.entries.filter(entry=>isChecked('homework',entry.index,day)).length;
+      const days=group.entries.map(entry=>{
+        const checked=isChecked('homework',entry.index,day);
+        return `<label class="homework-daily-day"><input type="checkbox" data-check="homework" data-index="${entry.index}" data-progress-day="${day}" ${checked?'checked':''} aria-label="Ferdig med ${safe(entry.day.toLowerCase())}"><span>${safe(entry.day.slice(0,3))}</span></label>`;
+      }).join('');
+      return `<div class="homework-daily-card"><div class="homework-daily-header"><span class="homework-daily-title">📖 Daglig oppgave</span><span class="homework-daily-count">${completed} av ${group.entries.length} dager</span></div><div class="homework-card-tags">${groupLabel}${meta}${dueBadge}</div><p class="homework-daily-description">${safe(label)}</p><div class="homework-daily-days" role="group" aria-label="Marker ferdige lesedager">${days}</div>${help}</div>`;
+    }
+    const repeatBadge=repeatDayLabel(item)?
+      `<span class="homework-repeat">${safe(repeatDayLabel(item))}</span>`:'';
+    return `<div class="homework-assist-row"><div class="homework-card-tags">${groupLabel}${dueBadge}${repeatBadge}${meta}</div><label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''} aria-label="Marker leksen som ferdig"><span class="checktext">${text}</span></label>${help}</div>`;
+  }).join('');
   return items.map((item,i)=>{
     const label=typeof item==='string'?item:(item?.text||item?.label||'');
-    const due=section==='homework'?dueDayLabel(item,{allowTextFallback:state.plan?.parser!=='ai'}):null;
-    const meta=typeof item==='object'&&item?.subject&&!(due&&item.subject.toLowerCase()===due.toLowerCase())?`<span class="subject">${safe(item.subject)}</span>`:'';
-    const hint=section==='bag'&&item?.note?`<small>${safe(item.note)}</small>`:'';
-    const dueBadge=due?`<span class="homework-due">📅 ${safe(due)}</span>`:'';
-    const repeatBadge=section==='homework'&&repeatDayLabel(item)?`<span class="homework-repeat">${safe(repeatDayLabel(item))}</span>`:'';
-    const displayLabel=section==='bag'?packingText(label):label;
-    const category=section==='homework'?'homework':'practical';
-    // The section heading already identifies homework; keep a type badge only for packing.
-    const typeLabel=section==='homework'?'':`<span class="content-type-label content-kind-${category}">${contentCategoryLabel(category)}</span>`;
-    if(section==='homework')return `<div class="homework-assist-row"><label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${dueBadge}${repeatBadge}${typeLabel}${meta}${safe(displayLabel)}${hint}</span></label>${needsHomeworkHelp(item)?`<button type="button" class="helper-open sk-action sk-action--modal" data-helper-task="${i}" aria-label="Få hjelp til denne leksen">✨ Få hjelp</button>`:''}</div>`;
-    return `<label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${dueBadge}${repeatBadge}${typeLabel}${meta}${safe(displayLabel)}${hint}</span></label>`;
+    const displayLabel=packingText(label);
+    const hint=item?.note?`<small>${safe(item.note)}</small>`:'';
+    const typeLabel=`<span class="content-type-label content-kind-practical">${contentCategoryLabel('practical')}</span>`;
+    return `<label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''}><span class="checktext">${groupBadge(item?.group)}${typeLabel}${safe(displayLabel)}${hint}</span></label>`;
   }).join('');
 }
 function empty(msg){return `<p class="empty"><span aria-hidden="true">ℹ️</span> ${safe(msg)}</p>`;}
