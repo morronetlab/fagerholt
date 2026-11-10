@@ -710,6 +710,11 @@ async function showBuildVersion(){
 }
 function openFamilyProfile(profile,{upcoming=false,cachedPlan=null,record=true,
  preserveDay=false,preserveScroll=false}={}){
+  // Switching siblings re-renders the whole plan. Keep the viewport stable
+  // even if the next child's content is shorter or a focused control is replaced.
+  const preservedY=preserveScroll?window.scrollY:null;
+  const planNode=preserveScroll?$('app-view'):null;
+  if(planNode)planNode.style.minHeight=Math.ceil(planNode.getBoundingClientRect().height)+'px';
   primaryView="plan";
   const school=siteConfig.schools[profile.school];
   if(!school)return;
@@ -734,6 +739,11 @@ function openFamilyProfile(profile,{upcoming=false,cachedPlan=null,record=true,
   renderShell();
   if(record)recordNavigation();
   if(!preserveScroll)scrollNewViewToTop();
+  else requestAnimationFrame(()=>{
+    // scrollTo is needed after renderShell replaces the sibling controls.
+    // Do not scroll when only focus moves between the recreated buttons.
+    window.scrollTo({top:preservedY,left:0,behavior:'instant'});
+  });
   if(!initial){reload();return;}
   if(features.weather){
    const requestId=state.requestId;
