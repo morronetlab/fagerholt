@@ -2,7 +2,8 @@
 import {siteConfig} from './site-config.mjs';
 
 const el=id=>document.getElementById(id);
-const KINDS=['wrong_date','missing_notice','wrong_interpretation'];
+const KINDS=['wrong_date','missing_notice','wrong_interpretation',
+ 'duplicate_homework','not_homework','missing_homework'];
 const validContext=x=>x&&typeof x.school==='string'&&typeof x.grade==='string'&&
  Number.isInteger(x.year)&&Number.isInteger(x.week);
 const contextName=x=>(siteConfig.schools[x.school]?.name||'Skole')+
@@ -12,9 +13,9 @@ export function initIssueReporter(){
  const contextSelect=el('issue-report-context'),kindSelect=el('issue-report-kind');
  const description=el('issue-report-details'),source=el('issue-report-source');
  const status=el('issue-report-status'),submit=el('issue-report-submit');
- let contexts=[],fromItem=null,sending=false;
+ let contexts=[],fromItem=null,homework=null,sending=false;
  function changeKind(){
-  const missing=kindSelect.value==='missing_notice';
+  const missing=['missing_notice','missing_homework'].includes(kindSelect.value);
   description.required=missing;
   el('issue-report-help').textContent=missing?
    'Beskriv kort hva som mangler i den offentlige ukeplanen (minst 12 tegn).':
@@ -31,10 +32,10 @@ export function initIssueReporter(){
  function refreshSource(){
   const text=sourceText();
   source.hidden=!text;
-  source.textContent=text?'Beskjeden du rapporterer: '+text:'';
+  source.textContent=text?(homework?'Leksens tekst: ':'Beskjeden du rapporterer: ')+text:'';
  }
  function open({contexts:sourceContexts=[],selected=0,kind='wrong_interpretation',
-  sourceItem='',sourcePage=null}={}){
+  sourceItem='',sourcePage=null,homework:homeworkContext=null}={}){
   const inputs=sourceContexts.filter(validContext);
   if(!inputs.length)return false;
   contexts=inputs.map(x=>({school:x.school,grade:x.grade,year:x.year,
@@ -49,6 +50,15 @@ export function initIssueReporter(){
   const fromContext=currentContext();
   const text=String(sourceItem||'').slice(0,450);
   fromItem=text?{context:fromContext,text,page:sourcePage}:null;
+  homework=homeworkContext&&text&&Number.isInteger(homeworkContext.index)&&
+   homeworkContext.index>=0&&homeworkContext.index<=500?
+   {context:fromContext,index:homeworkContext.index,
+    subject:String(homeworkContext.subject||'').slice(0,65),
+    dueDay:String(homeworkContext.dueDay||'').slice(0,20),
+    repeatDay:String(homeworkContext.repeatDay||'').slice(0,20)}:null;
+  const homeworkOnly=el('issue-report-kind').querySelectorAll('[data-homework-kind]');
+  homeworkOnly.forEach(option=>{option.disabled=!homework;option.hidden=!homework;});
+  el('issue-report-title').textContent=homework?'Rapporter feil i leksen':'Rapporter feil i ukeplanen';
   kindSelect.value=KINDS.includes(kind)?kind:'wrong_interpretation';
   description.value='';status.textContent='';status.hidden=true;submit.disabled=false;submit.hidden=false;
   form.hidden=false;sending=false;
@@ -68,10 +78,14 @@ export function initIssueReporter(){
    status.textContent='Velg feiltype og beskriv hva som mangler (minst 12 tegn).';
    status.hidden=false;return;
   }
+  const selectedHomework=homework&&ctx===homework.context?homework:null;
   const report={
    kind,school:ctx.school,grade:ctx.grade,year:ctx.year,week:ctx.week,
    pdf:ctx.pdf||null,sourcePage:sourceText()?fromItem.page:null,
-   sourceText:sourceText(),details
+   sourceText:sourceText(),details,
+   ...(selectedHomework?{target:'homework',taskIndex:selectedHomework.index,
+    taskSubject:selectedHomework.subject,dueDay:selectedHomework.dueDay,
+    repeatDay:selectedHomework.repeatDay}:{})
   };
   sending=true;submit.disabled=true;status.hidden=false;status.textContent='Sender rapport …';
   try{
@@ -84,7 +98,8 @@ export function initIssueReporter(){
    });}finally{clearTimeout(timer);}
    const result=await response.json().catch(()=>({}));
    if(!response.ok)throw Error(result.error||'Kunne ikke sende rapporten.');
-   status.textContent='Takk! Rapporten er registrert for '+contextName(ctx)+'.';
+   status.textContent=result.duplicate?'Denne rapporten er allerede registrert.':
+    'Takk! Rapporten er registrert for '+contextName(ctx)+'.';
    submit.hidden=true;
   }catch(error){
    status.textContent=error.name==='AbortError'?
