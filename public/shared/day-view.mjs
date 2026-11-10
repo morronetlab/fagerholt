@@ -25,7 +25,9 @@ export function uniqueDayEvents(events){
  for(const e of Array.isArray(events)?events:[]){
   const v=displayDayEvent(e);
   const meaningful=norm(v.title).toLocaleLowerCase('nb-NO');
-  if(!meaningful&&v.time&&events.some(other=>other!==e&&displayDayEvent(other).time===v.time&&displayDayEvent(other).title))continue;
+  // A time stamp or an empty AI event is not a standalone activity.
+  // Never render a bare icon with no description.
+  if(!meaningful)continue;
   const key=[meaningful,v.time||'',v.endTime||'',e.group||''].join('|');
   if(seen.has(key))continue;
   seen.add(key);out.push({...e,...v});
