@@ -40,9 +40,10 @@ export function initIssueReporter(){
     {context:ctx,...chosen.homework}:null;
   }
   kindSelect.querySelectorAll('[data-homework-kind]').forEach(option=>{
-   option.disabled=!homework;option.hidden=!homework;
+   const enabled=Boolean(homework)||(option.value==='missing_homework'&&section==='homework');
+   option.disabled=!enabled;option.hidden=!enabled;
   });
-  if(!homework&&['duplicate_homework','not_homework','missing_homework'].includes(kindSelect.value))
+  if(!homework&&['duplicate_homework','not_homework'].includes(kindSelect.value))
    kindSelect.value='wrong_interpretation';
   el('issue-report-title').textContent=homework?'Rapporter feil i leksen':
    section?'Rapporter feil i '+({homework:'lekser',bag:'pakkeliste',program:'dagsprogram',
@@ -102,7 +103,7 @@ export function initIssueReporter(){
   if(availableItems.length){fromItem=null;homework=null;}
   selectItem();
   kindSelect.value=KINDS.includes(kind)?kind:'wrong_interpretation';
-  if(!homework&&['duplicate_homework','not_homework','missing_homework'].includes(kindSelect.value))
+  if(!homework&&['duplicate_homework','not_homework'].includes(kindSelect.value))
    kindSelect.value='wrong_interpretation';
   description.value='';status.textContent='';status.hidden=true;submit.disabled=false;submit.hidden=false;
   form.hidden=false;sending=false;
