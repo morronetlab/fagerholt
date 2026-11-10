@@ -53,7 +53,7 @@ test('Hellemyr source homework columns yield equipment, including Thursday books
 });
 test('Wilds Minne split LEKSER heading and split Norsk colon retain Tue–Thu reading assignments',()=>{
  const page={width:590,height:850,items:[
-  token('L',274,385),token('ekser',281,385),
+  {...token('L',274,385),width:7},token('ekser',281,385),
   token('Mandag',77,405),token('Tirsdag',77,493),
   token('Onsdag',77,523),token('Torsdag',77,553),token('Fredag',77,584),
   ...[405,493,523,553].flatMap(y=>[
