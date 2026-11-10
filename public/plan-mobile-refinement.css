@@ -1,0 +1,69 @@
+/* Mobile school plan: corrective layer after the legacy styles and action system. */
+@media (max-width:700px){
+ #app-view,#app-view #plan-body,#app-view #plan-columns{min-width:0;max-width:100%}
+ #app-view #plan-columns{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
+ #app-view #plan-columns>.panel{min-width:0}
+ #app-view .panel{min-width:0;padding:16px 15px;margin-bottom:12px;border-radius:18px}
+ #app-view .panel-head{gap:10px;margin-bottom:12px;align-items:flex-start}
+ #app-view .panel-head>div,#app-view .practice-head>div{min-width:0;flex:1 1 auto}
+ #app-view .panel-head h2,#app-view .practice-head h2{font-size:20px;line-height:1.3;overflow-wrap:break-word}
+ /* Action always stays on one line; explanatory copy gets the full row. */
+ #app-view .panel-head .section-report,#app-view .practice-head .section-report{
+  display:inline-flex;align-items:center;justify-content:center;
+  flex:0 0 auto;align-self:flex-start;max-width:none;width:auto;
+  min-height:36px;margin:0 0 0 auto;padding:5px 2px;
+  font-size:12px;line-height:1.3;white-space:nowrap;text-align:right
+ }
+ #app-view .homework-studio .panel-head,#app-view .practice-panel .practice-head{
+  display:flex;flex-wrap:wrap;align-items:flex-start;gap:3px 10px
+ }
+ #app-view .homework-studio .panel-head>div,#app-view .practice-panel .practice-head>div{flex:1 0 100%}
+ #app-view .homework-studio .panel-head .section-report,#app-view .practice-panel .practice-head .section-report{margin:0 0 0 auto;flex:0 0 auto}
+ #app-view .homework-studio .homework-studio-lead{margin:7px 0 0;font-size:13px;line-height:1.5}
+ /* Packing checkbox, source badge and actual reminder never compete for a row. */
+ #app-view #bag-list{gap:9px}
+ #app-view #bag-list .checkrow{
+  display:grid;grid-template-columns:24px minmax(0,1fr);align-items:start;
+  column-gap:11px;min-width:0;min-height:0;padding:12px 13px;margin:0;
+  font-size:14px;line-height:1.5
+ }
+ #app-view #bag-list .checkrow input{margin:3px 0 0;width:22px;height:22px}
+ #app-view #bag-list .checktext{display:block;min-width:0;overflow-wrap:anywhere;font-weight:500}
+ #app-view #bag-list .content-type-label{display:table;width:fit-content;margin:0 0 6px;font-size:11px}
+ #app-view #bag-list .packing-item-label{display:block;font-size:14px;line-height:1.5}
+ #app-view #bag-list .checktext small{display:block;margin-top:4px;font-weight:500}
+ /* Homework progress and each lesson stay inside their own panel/card. */
+ #app-view .homework-studio #homework-progress{margin:0 0 12px;padding:12px 13px}
+ #app-view .homework-studio #homework-list{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+ #app-view .homework-studio .homework-assist-row,#app-view .homework-studio .homework-daily-card{min-width:0;padding:13px;gap:9px}
+ #app-view .homework-studio .homework-assist-row>.checkrow{
+  display:grid;grid-template-columns:24px minmax(0,1fr);align-items:start;gap:10px;
+  min-width:0;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none
+ }
+ #app-view .homework-studio .homework-assist-row>.checkrow input{margin:3px 0 0;width:22px;height:22px}
+ #app-view .homework-studio .homework-card-body{font-size:14px;line-height:1.55}
+ #app-view .homework-studio .homework-card-actions{margin-top:0}
+ #app-view .homework-studio .helper-open{width:auto;min-height:38px;padding:7px 12px;white-space:nowrap}
+ #app-view .subjects-panel #subjects-list{grid-template-columns:minmax(0,1fr);gap:7px}
+ #app-view .subjects-panel .subject-item{padding:11px 13px}
+ #app-view #contacts-panel .panel-head{margin-bottom:9px}
+ #app-view .theme #theme-content{font-size:16px;line-height:1.48}
+ #app-view .details{margin-bottom:11px}
+ #app-view .details>summary{padding:14px 16px;font-size:14px;min-height:51px}
+ #app-view .details .details-content{padding:0 16px 14px}
+ #app-view .plan-source-note{margin:17px 2px 23px;color:#6c8177;font-size:12px;line-height:1.55}
+ #app-view .plan-source-note p{margin:0 0 10px}
+ #app-view .plan-source-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px}
+ #app-view .plan-source-actions #report-plan-issue{width:auto;max-width:100%;min-height:40px;padding:9px 11px;white-space:normal}
+ footer{display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:17px 0 24px;line-height:1.55;font-size:12px}
+ footer .footer-title{font-weight:750;color:#537467}
+ footer .footer-storage-note{color:#82998f}
+ footer .footer-meta{display:flex;flex-wrap:wrap;gap:10px 17px;margin:3px 0 0}
+ footer .footer-meta #git-version{display:none!important}
+}
+@media(max-width:390px){
+ #app-view .panel{padding:14px 12px}
+ #app-view .panel-head h2,#app-view .practice-head h2{font-size:19px}
+ #app-view .panel-head .section-report{font-size:11px}
+ #app-view .homework-studio .homework-daily-day{font-size:11px}
+}

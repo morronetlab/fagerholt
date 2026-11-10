@@ -63,7 +63,7 @@
   <link rel="stylesheet" href="/family-practical-controls.css">
   <link rel="stylesheet" href="/homework-studio-compact.css">
   <link rel="stylesheet" href="/action-system.css">
-  <link rel="stylesheet" href="/landing-first-time.css">
+  <link rel="stylesheet" href="/landing-first-time.css"><link rel="stylesheet" href="/plan-mobile-refinement.css">
 </head>
 <body>
 <a class="skip-link" href="#main-content">Hopp til innhold</a>
@@ -480,8 +480,8 @@
       <div class="smart-week-row"><span id="smart-week" hidden></span><button class="sk-action sk-action--navigate" id="back-this-week" type="button" hidden>← Vis denne uka</button></div><nav class="weekdays" id="day-buttons" aria-label="Velg dag"></nav>
       <div id="day-group-summary" class="day-group-summary" hidden aria-live="polite"></div>
       <div id="plan-columns" class="columns">
-        <section class="panel" aria-labelledby="program-title"><div class="panel-head"><div><p class="eyebrow">SKOLEDAGEN</p><h2 id="program-title">Dette skjer i dag</h2></div><button type="button" class="section-report sk-action sk-action--link" data-report-section="program" aria-label="Rapporter feil i dagsprogrammet">⚑ Rapporter feil</button></div></div><div id="day-program" class="items"></div><section id="day-notes" class="day-notes" hidden aria-label="Praktisk informasjon for dagen"><h3>📌 Praktisk informasjon for dagen</h3><div id="day-notes-list"></div></section><div id="day-attendance" class="day-attendance" hidden aria-label="Særskilt oppmøte for enkelte grupper"></div></section>
-        <section class="panel bag" aria-labelledby="bag-title"><div class="panel-head"><div><p class="eyebrow">FØR DU GÅR</p><h2 id="bag-title">Pakk skolesekken</h2></div><button type="button" class="section-report sk-action sk-action--link" data-report-section="bag" aria-label="Rapporter feil i pakkelisten">⚑ Rapporter feil</button></div></div><div id="bag-list" class="items"></div></section>
+        <section class="panel" aria-labelledby="program-title"><div class="panel-head"><div><p class="eyebrow">SKOLEDAGEN</p><h2 id="program-title">Dette skjer i dag</h2></div><button type="button" class="section-report sk-action sk-action--link" data-report-section="program" aria-label="Rapporter feil i dagsprogrammet">⚑ Rapporter feil</button></div><div id="day-program" class="items"></div><section id="day-notes" class="day-notes" hidden aria-label="Praktisk informasjon for dagen"><h3>📌 Praktisk informasjon for dagen</h3><div id="day-notes-list"></div></section><div id="day-attendance" class="day-attendance" hidden aria-label="Særskilt oppmøte for enkelte grupper"></div></section>
+        <section class="panel bag" aria-labelledby="bag-title"><div class="panel-head"><div><p class="eyebrow">FØR DU GÅR</p><h2 id="bag-title">Pakk skolesekken</h2></div><button type="button" class="section-report sk-action sk-action--link" data-report-section="bag" aria-label="Rapporter feil i pakkelisten">⚑ Rapporter feil</button></div><div id="bag-list" class="items"></div></section>
       </div>
       <section id="plan-day-activities" class="panel plan-day-activities" hidden aria-labelledby="plan-day-activities-title">
         <div class="panel-head"><div><p class="eyebrow">ETTER SKOLETID</p>
@@ -490,12 +490,12 @@
         <div id="plan-day-activity-list" class="items"></div>
       </section>
       <section class="panel homework homework-studio" aria-labelledby="homework-title"><div class="panel-head"><div><p class="eyebrow">✦ DITT LEKSEHJØRNE</p><h2 id="homework-title">Lekser og oppgaver</h2>
- <p class="homework-studio-lead">Kryss av når du er ferdig. Trenger du et lite dytt? Leksehjelperen kan forklare og gi hint.</p></div><button type="button" class="section-report sk-action sk-action--link" data-report-section="homework" aria-label="Rapporter feil i leksene">⚑ Rapporter feil</button></div></div><div id="homework-progress" class="homework-progress" hidden aria-label="Lekseprogresjon">
+ <p class="homework-studio-lead">Kryss av når du er ferdig. Trenger du et lite dytt? Leksehjelperen kan forklare og gi hint.</p></div><button type="button" class="section-report sk-action sk-action--link" data-report-section="homework" aria-label="Rapporter feil i leksene">⚑ Rapporter feil</button></div><div id="homework-progress" class="homework-progress" hidden aria-label="Lekseprogresjon">
           <div class="homework-progress-top"><strong id="homework-progress-count">0 av 0 lekser ferdig</strong><span id="homework-progress-stars" aria-hidden="true">☆☆☆</span></div>
           <div id="homework-progress-track" class="homework-progress-track" role="progressbar" aria-label="Lekser fullført" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="homework-progress-bar" class="homework-progress-fill"></div></div>
           <p id="homework-progress-message" aria-live="polite">✨ Klar for å samle stjerner?</p>
         </div><div id="homework-list" class="items"></div></section>
-      <section class="panel practice-panel" id="vocabulary-panel" hidden><div class="practice-head"><div><p class="eyebrow">✦ DITT ØVESTUDIO</p><h2 id="vocabulary-title">Engelske gloser</h2><p class="practice-lead">Små steg. Store ord. Lær i ditt tempo – vi husker hvor langt du kom.</p></div><button type="button" class="section-report sk-action sk-action--link" data-report-section="vocabulary" aria-label="Rapporter feil i glosene">⚑ Rapporter feil</button></div></div><div id="vocabulary-list" class="items practice-words"></div><div id="word-quiz" hidden>
+      <section class="panel practice-panel" id="vocabulary-panel" hidden><div class="practice-head"><div><p class="eyebrow">✦ DITT ØVESTUDIO</p><h2 id="vocabulary-title">Engelske gloser</h2><p class="practice-lead">Små steg. Store ord. Lær i ditt tempo – vi husker hvor langt du kom.</p></div><button type="button" class="section-report sk-action sk-action--link" data-report-section="vocabulary" aria-label="Rapporter feil i glosene">⚑ Rapporter feil</button></div><div id="vocabulary-list" class="items practice-words"></div><div id="word-quiz" hidden>
  <div class="quiz-header"><strong>🎮 Ordutfordringen</strong><span class="practice-local">🔒 Fremdrift lagres kun på denne enheten</span></div>
  <div class="practice-stats" aria-label="Fremdrift i øvingen"><div><strong id="word-quiz-stat-correct">0</strong><small>Riktige svar</small></div><div><strong id="word-quiz-stat-progress">0 / 0</strong><small>Gjennomgått</small></div><div><strong id="word-quiz-stat-weak">0</strong><small>Trenger mer øving</small></div></div>
  <div id="word-quiz-language" role="group" aria-label="Velg språk">
@@ -524,7 +524,7 @@
       <section class="panel practice-panel practice-panel-nb" id="vocabulary-panel-nb" hidden aria-labelledby="vocabulary-title-nb">
        <div class="practice-head"><div><p class="eyebrow">✦ NORSK ØVING</p><h2 id="vocabulary-title-nb">Norske øveord</h2>
        <p class="practice-lead">Lær ordene, øv på staving og finn vokalene – helt i ditt tempo.</p></div>
-       <button type="button" class="section-report sk-action sk-action--link" data-report-section="vocabulary-nb" aria-label="Rapporter feil i øveordene">⚑ Rapporter feil</button></div></div>
+       <button type="button" class="section-report sk-action sk-action--link" data-report-section="vocabulary-nb" aria-label="Rapporter feil i øveordene">⚑ Rapporter feil</button></div>
        <div id="vocabulary-list-nb" class="items practice-words"></div>
        <div id="word-quiz-nb" hidden></div>
       </section>
@@ -537,11 +537,11 @@
       <details class="details" id="notices-panel"><summary class="sk-action sk-action--disclosure">📬 Beskjeder fra skolen <span id="notices-count" class="count"></span><span id="notices-empty-hint" class="section-empty-hint" hidden>Ingen egne beskjeder denne uka</span></summary><div class="section-report-details"><button type="button" class="section-report sk-action sk-action--link" data-report-section="notices" aria-label="Rapporter feil i skolebeskjedene">⚑ Rapporter feil</button></div><div id="notices-list" class="details-content"></div></details>
       <details class="details" id="goals-panel"><summary class="sk-action sk-action--disclosure">🎯 Læringsmål <span id="goals-count" class="count"></span><span id="goals-empty-hint" class="section-empty-hint" hidden>Ingen egne læringsmål denne uka</span></summary><div id="goals-list" class="details-content"></div></details>
       <section class="panel" id="contacts-panel" hidden><div class="panel-head"><div><p class="eyebrow">SKOLEKONTAKT</p><h2>Kontaktlærere</h2></div><span class="section-icon">📞</span></div><div id="contacts-list" class="items"></div></section>
-      <p class="disclaimer">Ukeplanen leses automatisk fra skolens PDF. Ved tvil er skolens original alltid fasit. <a class="sk-action sk-action--link" id="pdf-source" href="#" target="_blank" rel="noopener noreferrer" hidden>Se original-PDF ↗</a> · <button type="button" id="report-plan-issue" class="plan-report-link sk-action sk-action--modal">Rapporter feil i ukeplanen</button></p>
+      <div class="disclaimer plan-source-note"><p>Ukeplanen leses automatisk fra skolens PDF. Ved tvil er skolens original alltid fasit.</p><div class="plan-source-actions"><a class="sk-action sk-action--link" id="pdf-source" href="#" target="_blank" rel="noopener noreferrer" hidden>Se original-PDF ↗</a><button type="button" id="report-plan-issue" class="plan-report-link sk-action sk-action--modal">Rapporter feil i ukeplanen</button></div></div>
       </div>
     </div>
   </main>
-  <footer>Skoleuka · <span id="footer-school">Kristiansand</span> · Uten familiekonto lagres valg på denne enheten. Med familiekonto deles lekseprogresjonen. <span class="footer-meta"><a href="https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/grunnskole/" target="_blank" rel="noopener noreferrer">Skoleoversikten ↗</a> · <a href="mailto:mortenronn@gmail.com?subject=Feilrapport%20Skoleuka">Rapporter feil: mortenronn@gmail.com</a> · <a id="git-version" href="#" target="_blank" rel="noopener noreferrer" hidden>Git-versjon</a></span></footer>
+  <footer><span class="footer-title">Skoleuka · <span id="footer-school">Kristiansand</span></span><span class="footer-storage-note">Uten familiekonto lagres valg på denne enheten. Med familiekonto deles lekseprogresjonen.</span><span class="footer-meta"><a href="https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/grunnskole/" target="_blank" rel="noopener noreferrer">Skoleoversikten ↗</a><a href="mailto:mortenronn@gmail.com?subject=Feilrapport%20Skoleuka">Kontakt oss</a><a id="git-version" href="#" target="_blank" rel="noopener noreferrer" hidden>Git-versjon</a></span></footer>
 </div>
 <dialog id="family-activity-dialog" class="family-activity-dialog" aria-modal="true" aria-labelledby="family-activity-form-title">
 <form id="family-activity-form" class="family-activity-form" aria-labelledby="family-activity-form-title">
