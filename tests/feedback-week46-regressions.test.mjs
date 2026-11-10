@@ -137,7 +137,7 @@ test('Cached AI plans are repaired against original PDF, without new model reque
  assert.equal(needsCachedEvidenceRefresh(old),true);
  const result=refreshCachedEvidence(old,[page]);
  assert.equal(result.changed,true);
- assert.equal(result.plan.feedbackSourceRepairVersion,1);
+ assert.equal(result.plan.feedbackSourceRepairVersion,2);
  assert.deepEqual(result.plan.days.Fredag.bring,[{label:'Bamse (valgfritt)'}]);
  assert.equal(result.plan.homework[0].text,'Les 15 minutter i valgfri bok.');
  assert.equal(old.homework[0].text,'Les 15 minutter i valgfri bok. minskole.no/wildsminne');
