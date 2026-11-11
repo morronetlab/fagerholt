@@ -48,7 +48,9 @@ test('No authenticated data or cloud progress APIs are written into cached snaps
  assert.match(family,/readPublicPlanSnapshot\(sessionStorage/);
  assert.match(family,/storePublicPlanSnapshot\(sessionStorage/);
  assert.match(family,/await fetchPair\(pair,sequence\)/);
- assert.doesNotMatch(helper,/localStorage|accountId|childId|familyId|progress|access_token/);
+ // Inspect executable code, not the privacy explanation in the header comment.
+ const code=helper.replace(/^\\/\\*[\\s\\S]*?\\*\\//u,'');
+ assert.doesNotMatch(code,/localStorage|accountId|childId|familyId|progress|access_token/);
 });
 test('Static assets revalidate and HTML stays fresh; no global API edge caching',()=>{
  const toml=readFileSync(new URL('../netlify.toml',import.meta.url),'utf8');
