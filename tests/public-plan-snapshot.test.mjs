@@ -49,7 +49,7 @@ test('No authenticated data or cloud progress APIs are written into cached snaps
  assert.match(family,/storePublicPlanSnapshot\(sessionStorage/);
  assert.match(family,/await fetchPair\(pair,sequence\)/);
  // Inspect executable code, not the privacy explanation in the header comment.
- const code=helper.replace(/^\\/\\*[\\s\\S]*?\\*\\//u,'');
+ const code=helper.slice(helper.indexOf('export const PUBLIC_PLAN_SNAPSHOT_PREFIX'));
  assert.doesNotMatch(code,/localStorage|accountId|childId|familyId|progress|access_token/);
 });
 test('Static assets revalidate and HTML stays fresh; no global API edge caching',()=>{
