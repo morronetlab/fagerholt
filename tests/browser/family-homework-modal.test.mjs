@@ -40,12 +40,12 @@ for(const width of [390,1280]){
   await page.route('**/api/practical-priority?**',route=>reply(route,{items:[]}));
   await page.route('**/api/weather?**',route=>reply(route,{days:{}}));
   await page.goto(server.baseURL+'/',{waitUntil:'domcontentloaded'});
-  await page.locator('#family-week-progress').getByText('0 av 2 lekser fullført').waitFor();
-  await page.locator('#family-homework-open').click();
+  await page.waitForFunction(()=>document.querySelector('#family-week-progress')?.textContent==='0 av 2 lekser fullført');
+  await page.locator(width<700?'#family-homework-open-mobile':'#family-homework-open').click();
   const dialog=page.locator('#family-homework-dialog');
   assert.equal(await dialog.evaluate(x=>x.open),true);
   assert.equal(await dialog.locator('.family-homework-task').count(),2);
-  await dialog.locator('input[data-modal-homework-child]').first().check();
+  await dialog.locator('input[data-modal-homework-child]').first().click();
   await dialog.locator('.family-homework-task').count().then(n=>assert.equal(n,1));
   assert.match(await page.locator('#family-week-progress').innerText(),/1 av 2/);
   await dialog.locator('[data-homework-filter="completed"]').click();
