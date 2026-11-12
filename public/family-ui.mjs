@@ -366,7 +366,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
      '" data-modal-homework-index="'+task.index+'" '+(task.checked?'checked ':'')+
      (disabled?'disabled ':'')+'aria-label="Lekse for '+escape(p.name)+'">'+
      '<span>'+escape(task.text||task.label||'')+'</span></label>'+
-     '<div class="family-homework-task-actions"><button type="button" data-modal-homework-open="'+escape(p.id)+'">Åpne ukeplan →</button></div></article>';
+     '<div class="family-homework-task-actions"><button type="button" class="sk-action sk-action--navigate" data-modal-homework-open="'+escape(p.id)+'">Åpne ukeplan →</button></div></article>';
    }).join('');
    return '<section>'+header+(cards?'<div class="family-homework-task-grid">'+cards+'</div>':
     '<p class="family-homework-empty">'+(homeworkFilter==='remaining'?'Ingen gjenstående lekser 🎉':'Ingen lekser i denne visningen.')+'</p>')+'</section>';
