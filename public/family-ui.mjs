@@ -665,6 +665,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    'Synkroniserer lekser …':ready.length?done+' av '+total+' lekser fullført':
    now.upcoming?'Avventer ukeplan':'Ukeoversikt';
   el('family-homework-meter-fill').style.width=(total?Math.round(done/total*100):0)+'%';
+  el('family-homework-mobile-count').textContent=initialProgressPending?'Synkroniserer …':ready.length?(total-done)+' gjenstår':'Se lekser';
   renderHomeworkModal(now,summaries);
   el('family-week-context').textContent=now.upcoming?
    'Skoleuka er over for denne uken. Viser kun uke '+now.week+'.':
@@ -1291,14 +1292,16 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const button=e.target.closest('[data-family-open]');
   if(button){const p=byId(button.dataset.familyOpen);if(p)openChildProfile(p);}
  });
- el('family-homework-open').addEventListener('click',()=>{
-  if(!active)return;
-  homeworkFilter='remaining';homeworkChild='';
-  homeworkReturnFocus=el('family-homework-open');
-  homeworkDialog.showModal();
-  const {now,summaries}=getSummaries();renderHomeworkModal(now,summaries);
-  el('family-homework-close').focus();
- });
+ for(const id of ['family-homework-open','family-homework-open-mobile']){
+  el(id).addEventListener('click',()=>{
+   if(!active)return;
+   homeworkFilter='remaining';homeworkChild='';
+   homeworkReturnFocus=el(id);
+   homeworkDialog.showModal();
+   const {now,summaries}=getSummaries();renderHomeworkModal(now,summaries);
+   el('family-homework-close').focus();
+  });
+ }
  el('family-homework-close').addEventListener('click',()=>homeworkDialog.close());
  homeworkDialog.addEventListener('close',()=>homeworkReturnFocus?.focus({preventScroll:true}));
  el('family-homework-child').addEventListener('change',e=>{
