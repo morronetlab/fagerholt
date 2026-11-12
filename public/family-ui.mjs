@@ -55,6 +55,9 @@ function wordStatus(profile,plan,calendar){
 }
 export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIssue,onChildAppStatusChange=()=>{}}){
  let active=false,profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
+ const homeworkDialog=el('family-homework-dialog');
+ let homeworkFilter='remaining',homeworkChild='',homeworkReturnFocus=null;
+ const homeworkSaving=new Set();
  const mobileUI=initFamilyMobileUI();
  let mobileMoreOpen=new Set();
  const FIRST_RUN_KEY='skoleuka.first-run-guide.v1';
@@ -317,6 +320,79 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   for(const p of profiles)summaries.set(p.id,profileSummary(p,plans.get(p.id),now,read,cloud?cloudIsChecked:null,
    cloud?cloudBagChecked:null));
   return {now,summaries};
+ }
+ function renderHomeworkModal(now,summaries){
+  if(!homeworkDialog.open)return;
+  el('family-homework-week').textContent=' · UKE '+now.week+' · '+now.year;
+  const ready=profiles.filter(p=>summaries.get(p.id)?.ready);
+  const done=ready.reduce((n,p)=>n+summaries.get(p.id).done,0);
+  const total=ready.reduce((n,p)=>n+summaries.get(p.id).total,0);
+  el('family-homework-total').textContent=done+' av '+total;
+  const pct=total?Math.round(100*done/total):0;
+  el('family-homework-percent').textContent=pct+' %';
+  el('family-homework-track-fill').style.width=pct+'%';
+  const childSelect=el('family-homework-child'),selected=homeworkChild;
+  childSelect.replaceChildren();
+  const all=document.createElement('option');all.value='';all.textContent='Alle barn';childSelect.append(all);
+  for(const p of profiles){
+   const option=document.createElement('option');option.value=p.id;option.textContent=p.name;
+   childSelect.append(option);
+  }
+  homeworkChild=profiles.some(p=>p.id===selected)?selected:'';
+  childSelect.value=homeworkChild;
+  for(const button of homeworkDialog.querySelectorAll('[data-homework-filter]'))
+   button.setAttribute('aria-pressed',String(button.dataset.homeworkFilter===homeworkFilter));
+  const unavailable=profiles.filter(p=>!summaries.get(p.id)?.ready).map(p=>p.name);
+  el('family-homework-status').textContent=initialProgressPending?'Synkroniserer lekser. Avkryssing er midlertidig låst.':
+   unavailable.length?'Ukeplan er ikke klar for '+unavailable.join(', ')+'. Oversikten kan være ufullstendig.':'';
+  const sections=profiles.filter(p=>!homeworkChild||p.id===homeworkChild).map(p=>{
+   const summary=summaries.get(p.id);
+   const header='<div class="family-homework-child-heading"><h3>'+escape(p.name)+'</h3>'+
+    (summary?.ready?'<small>'+summary.done+' av '+summary.total+' fullført</small>':'')+'</div>';
+   if(!summary?.ready)return '<section>'+header+'<p class="family-homework-empty">Ukeplanen er ikke tilgjengelig ennå.</p></section>';
+   const tasks=summary.tasks.filter(task=>homeworkFilter==='all'||
+     (homeworkFilter==='remaining'?!task.checked:task.checked)).sort((a,b)=>{
+      const dayA=DAYS.indexOf(a.dueDay),dayB=DAYS.indexOf(b.dueDay);
+      return (dayA<0?8:dayA)-(dayB<0?8:dayB)||a.index-b.index;
+     });
+   const cards=tasks.map(task=>{
+    const due=task.repeatDay||task.dueDay;
+    const disabled=Boolean(cloud&&initialProgressPending)||homeworkSaving.has(p.id+':'+task.index);
+    return '<article class="family-homework-task'+(task.checked?' is-done':'')+'">'+
+     '<div class="family-homework-tags">'+
+      (task.subject?'<span class="family-homework-tag">'+escape(task.subject)+'</span>':'')+
+      (due?'<span class="family-homework-tag family-homework-due">'+escape(task.repeatDay?'Daglig · '+due:'Til '+due.toLowerCase())+'</span>':'')+
+     '</div><label><input type="checkbox" data-modal-homework-child="'+escape(p.id)+
+     '" data-modal-homework-index="'+task.index+'" '+(task.checked?'checked ':'')+
+     (disabled?'disabled ':'')+'aria-label="Lekse for '+escape(p.name)+'">'+
+     '<span>'+escape(task.text||task.label||'')+'</span></label>'+
+     '<div class="family-homework-task-actions"><button type="button" data-modal-homework-open="'+escape(p.id)+'">Åpne ukeplan →</button></div></article>';
+   }).join('');
+   return '<section>'+header+(cards?'<div class="family-homework-task-grid">'+cards+'</div>':
+    '<p class="family-homework-empty">'+(homeworkFilter==='remaining'?'Ingen gjenstående lekser 🎉':'Ingen lekser i denne visningen.')+'</p>')+'</section>';
+  }).join('');
+  el('family-homework-items').innerHTML=sections||'<p class="family-homework-empty">Ingen barn lagt til.</p>';
+ }
+ async function changeHomeworkCheck(p,index,value){
+  if(!Number.isInteger(index)||index<0)return;
+  const task=expandHomework(plans.get(p.id)?.homework||[])[index];
+  if(!task)return;
+  if(cloud){
+   if(initialProgressPending)return;
+   const key=p.id+':'+index;
+   if(homeworkSaving.has(key))return;
+   homeworkSaving.add(key);
+   try{await updateCloud(p,task,value);}
+   catch(error){el('family-load-status').textContent='Endringen ble ikke lagret: '+error.message;}
+   finally{homeworkSaving.delete(key);render();}
+  }else{
+   const now=calendar(),key=childProgressKey(p,now.year,now.week,'homework');
+   let checked={};try{checked=JSON.parse(read(key)||'{}')||{};}catch{}
+   checked[index]=value;
+   if(!write(key,JSON.stringify(checked)))
+    el('family-load-status').textContent='Kunne ikke lagre avkrysning lokalt.';
+   render();
+  }
  }
  function renderImportantNotices(model){
   const now=calendar(),key=overviewContentKey(now);
@@ -588,6 +664,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   el('family-week-progress').textContent=initialProgressPending?
    'Synkroniserer lekser …':ready.length?done+' av '+total+' lekser fullført':
    now.upcoming?'Avventer ukeplan':'Ukeoversikt';
+  el('family-homework-meter-fill').style.width=(total?Math.round(done/total*100):0)+'%';
+  renderHomeworkModal(now,summaries);
   el('family-week-context').textContent=now.upcoming?
    'Skoleuka er over for denne uken. Viser kun uke '+now.week+'.':
    'Lekser, pakkeliste og beskjeder for barna i uke '+now.week+'.';
@@ -1213,6 +1291,33 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   const button=e.target.closest('[data-family-open]');
   if(button){const p=byId(button.dataset.familyOpen);if(p)openChildProfile(p);}
  });
+ el('family-homework-open').addEventListener('click',()=>{
+  if(!active)return;
+  homeworkFilter='remaining';homeworkChild='';
+  homeworkReturnFocus=el('family-homework-open');
+  homeworkDialog.showModal();
+  const {now,summaries}=getSummaries();renderHomeworkModal(now,summaries);
+  el('family-homework-close').focus();
+ });
+ el('family-homework-close').addEventListener('click',()=>homeworkDialog.close());
+ homeworkDialog.addEventListener('close',()=>homeworkReturnFocus?.focus({preventScroll:true}));
+ el('family-homework-child').addEventListener('change',e=>{
+  homeworkChild=e.target.value;const {now,summaries}=getSummaries();renderHomeworkModal(now,summaries);
+ });
+ homeworkDialog.addEventListener('click',e=>{
+  const filter=e.target.closest('[data-homework-filter]');
+  if(filter){homeworkFilter=filter.dataset.homeworkFilter;
+   const {now,summaries}=getSummaries();renderHomeworkModal(now,summaries);return;}
+  const open=e.target.closest('[data-modal-homework-open]');
+  if(open){const p=byId(open.dataset.modalHomeworkOpen);
+   if(p){homeworkDialog.close();openChildProfile(p);}return;}
+ });
+ homeworkDialog.addEventListener('change',e=>{
+  const input=e.target.closest('input[data-modal-homework-child]');
+  if(!input)return;
+  const p=byId(input.dataset.modalHomeworkChild),index=Number(input.dataset.modalHomeworkIndex);
+  if(p)void changeHomeworkCheck(p,index,input.checked);
+ });
  childDialog.addEventListener('close',cleanupChildDialog);
  el('family-cancel').addEventListener('click',closeForm);
  el('family-refresh').addEventListener('click',api.refresh);
@@ -1241,21 +1346,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  el('family-cards').addEventListener('change',e=>{
   const input=e.target.closest('input[data-family-check]');
   if(!input)return;
-  if(cloud&&initialProgressPending){render();return;}
   const p=byId(input.dataset.familyCheck),index=Number(input.dataset.familyIndex);
-  if(!p||!Number.isInteger(index)||index<0)return;
-  const now=calendar(),key=childProgressKey(p,now.year,now.week,'homework');
-  let checked={};try{checked=JSON.parse(read(key)||'{}')||{};}catch{}
-  if(cloud){
-   const item=expandHomework(plans.get(p.id)?.homework||[])[index];
-   if(item)void updateCloud(p,item,input.checked).catch(error=>{
-    el('family-load-status').textContent='Endringen ble ikke lagret: '+error.message;
-   });
-  }else{
-   checked[index]=input.checked;
-   if(!write(key,JSON.stringify(checked)))el('family-load-status').textContent='Kunne ikke lagre avkrysning lokalt.';
-   render();
-  }
+  if(p)void changeHomeworkCheck(p,index,input.checked);
  });
  el('family-cards').addEventListener('change',e=>{
   const input=e.target.closest('input[data-family-bag]');
