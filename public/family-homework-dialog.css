@@ -59,3 +59,20 @@
  .family-homework-summary-meter{max-width:42%}
 }
 @media(prefers-reduced-motion:reduce){.family-homework-trigger{transition:none}}
+
+/* The large desktop family hero is intentionally hidden on phones. */
+.family-homework-mobile-trigger{display:none}
+@media(max-width:700px){
+ body.family-dashboard-active #family-view .family-mobile-overview-heading{
+  display:flex;flex-wrap:wrap;gap:7px
+ }
+ body.family-dashboard-active #family-view .family-homework-mobile-trigger{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  margin-left:auto;padding:8px 10px;min-height:36px;
+  background:#e6f3ea;border:1px solid #bfd9c8;border-radius:10px;
+  color:#205c45;font-size:11px;font-weight:850;white-space:nowrap;cursor:pointer
+ }
+ body.family-dashboard-active #family-view .family-homework-mobile-trigger:focus-visible{
+  outline:3px solid #248663;outline-offset:2px
+ }
+}
