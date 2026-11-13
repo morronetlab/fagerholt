@@ -1,0 +1,78 @@
+/* Family homework modal: matches Skoleuka's understated green palette. */
+.family-homework-trigger{position:relative;cursor:pointer;text-align:center;font:inherit;color:inherit;appearance:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;transition:box-shadow .15s ease,transform .15s ease}
+.family-homework-trigger:hover{box-shadow:0 9px 28px #1e513422;transform:translateY(-1px)}
+.family-homework-trigger:focus-visible{outline:3px solid #2a8866;outline-offset:3px}
+.family-homework-meter{display:block;width:100%;max-width:170px;height:6px;border-radius:20px;background:#d8e8dc;overflow:hidden}
+.family-homework-meter span{display:block;width:0;height:100%;background:#278666;border-radius:20px}
+.family-homework-trigger-hint{font-size:11px;font-weight:800;color:#27664c}
+.family-homework-dialog{width:min(790px,calc(100vw - 32px));max-height:min(88dvh,850px);padding:0;border:1px solid #cbded0;border-radius:22px;background:#fcfdfa;color:#214b39;box-shadow:0 25px 80px #173a2838;overflow:hidden}
+.family-homework-dialog::backdrop{background:#18382f91;backdrop-filter:blur(3px)}
+.family-homework-modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;padding:22px 25px 16px;background:#edf6ee;border-bottom:1px solid #d8e8dc}
+.family-homework-modal-head h2{font-size:24px;line-height:1.18;margin:2px 0 5px;color:#17533e}
+.family-homework-eyebrow{font-size:10px;font-weight:850;letter-spacing:.12em;color:#587d68;margin:0}
+.family-homework-modal-intro{font-size:13px;color:#607c6c;margin:0}
+.family-homework-close{flex:0 0 38px;min-height:38px;border-radius:10px;border:1px solid #d4e4d8;background:#fff;color:#2c624b;cursor:pointer}
+.family-homework-modal-content{padding:20px 25px 24px;overflow-y:auto;max-height:calc(min(88dvh,850px) - 106px)}
+.family-homework-summary{display:flex;gap:20px;align-items:center;justify-content:space-between;padding:17px 19px;background:#eef7ef;border:1px solid #d6e7d9;border-radius:15px}
+.family-homework-summary>div:first-child{display:grid;gap:3px}
+.family-homework-summary strong{font-size:23px;font-weight:850;color:#185940}
+.family-homework-summary span{font-size:12px;color:#567563}
+.family-homework-summary-meter{flex:1;max-width:270px;text-align:right}
+.family-homework-track{height:9px;margin-top:7px;background:#d1e3d6;border-radius:20px;overflow:hidden}
+.family-homework-track span{display:block;height:100%;width:0;background:#278765;border-radius:20px}
+.family-homework-controls{display:flex;justify-content:space-between;align-items:end;gap:14px;margin:19px 0 14px}
+.family-homework-controls label,.family-homework-controls fieldset{display:grid;gap:6px;font-size:12px;font-weight:800;color:#345f47}
+.family-homework-controls fieldset{padding:0;border:0;margin:0}
+.family-homework-controls legend{margin-bottom:6px}
+.family-homework-controls select{min-height:40px;padding:8px 12px;min-width:165px;background:#fff;border:1px solid #bdd6c6;border-radius:9px;color:#245641;font:inherit}
+.family-homework-filters{display:flex;gap:4px;padding:4px;background:#edf3ee;border-radius:11px}
+.family-homework-filters button{padding:7px 12px;min-height:33px;font-size:12px;font-weight:800;border:0;border-radius:8px;background:transparent;color:#547361;cursor:pointer}
+.family-homework-filters button[aria-pressed=true]{background:white;color:#1c684a;box-shadow:0 2px 7px #183b2614}
+.family-homework-filters button:focus-visible,.family-homework-controls select:focus-visible{outline:2px solid #258567;outline-offset:2px}
+.family-homework-status{min-height:15px;color:#7c6946;font-size:12px;margin:0 0 8px}
+.family-homework-items{display:grid;gap:16px}
+.family-homework-child-heading{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:0 0 8px}
+.family-homework-child-heading h3{margin:0;font-size:16px;color:#20543e}
+.family-homework-child-heading small{font-size:12px;color:#62806d}
+.family-homework-task-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.family-homework-task{display:grid;gap:9px;min-width:0;padding:12px 13px;background:#fffefa;border:1px solid #dbe7dc;border-left:3px solid #c79d46;border-radius:11px}
+.family-homework-task.is-done{background:#f6faf6;border-left-color:#78b598}
+.family-homework-tags{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.family-homework-tag{display:inline-flex;align-items:center;padding:3px 7px;background:#e9f2eb;color:#295d45;border-radius:7px;font-size:11px;font-weight:750}
+.family-homework-due{background:#fff2d9;color:#875c1c}
+.family-homework-task label{display:flex;align-items:flex-start;gap:10px;cursor:pointer;line-height:1.55;font-size:13px;color:#273f32;overflow-wrap:anywhere}
+.family-homework-task input{width:21px;height:21px;flex:0 0 21px;margin:0;accent-color:#278765;cursor:pointer}
+.family-homework-task.is-done label span{text-decoration:line-through;color:#758779}
+.family-homework-task-actions{display:flex;justify-content:flex-end}
+.family-homework-task-actions button{border:0;background:none;color:#216348;font-size:12px;font-weight:750;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.family-homework-empty{padding:24px 16px;border-radius:12px;text-align:center;background:#f1f7f1;color:#587761;font-size:13px}
+@media(max-width:700px){
+ .family-homework-dialog{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;margin:0;border-radius:0;border:0}
+ .family-homework-modal-head{padding:20px 16px 14px}
+ .family-homework-modal-head h2{font-size:22px}
+ .family-homework-modal-content{padding:16px;max-height:calc(100dvh - 100px)}
+ .family-homework-controls{align-items:stretch;flex-direction:column}
+ .family-homework-controls label,.family-homework-controls select,.family-homework-controls fieldset{width:100%}
+ .family-homework-filters button{flex:1;padding:9px 5px}
+ .family-homework-task-grid{grid-template-columns:minmax(0,1fr)}
+ .family-homework-summary{gap:9px;padding:14px}
+ .family-homework-summary-meter{max-width:42%}
+}
+@media(prefers-reduced-motion:reduce){.family-homework-trigger{transition:none}}
+
+/* The large desktop family hero is intentionally hidden on phones. */
+.family-homework-mobile-trigger{display:none}
+@media(max-width:700px){
+ body.family-dashboard-active #family-view .family-mobile-overview-heading{
+  display:flex;flex-wrap:wrap;gap:7px
+ }
+ body.family-dashboard-active #family-view .family-homework-mobile-trigger{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  margin-left:auto;padding:8px 10px;min-height:36px;
+  background:#e6f3ea;border:1px solid #bfd9c8;border-radius:10px;
+  color:#205c45;font-size:11px;font-weight:850;white-space:nowrap;cursor:pointer
+ }
+ body.family-dashboard-active #family-view .family-homework-mobile-trigger:focus-visible{
+  outline:3px solid #248663;outline-offset:2px
+ }
+}

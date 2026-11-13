@@ -62,7 +62,7 @@
   <link rel="stylesheet" href="/guardian-plan.css">
   <link rel="stylesheet" href="/family-practical-controls.css">
   <link rel="stylesheet" href="/homework-studio-compact.css">
-  <link rel="stylesheet" href="/action-system.css">
+  <link rel="stylesheet" href="/family-homework-dialog.css"><link rel="stylesheet" href="/action-system.css">
   <link rel="stylesheet" href="/plan-mobile-refinement.css"><link rel="stylesheet" href="/landing-first-time.css">
 </head>
 <body>
@@ -243,9 +243,9 @@
     </section>
     <section id="family-view" class="family-view" hidden aria-labelledby="family-title">
       <div class="family-mobile-overview-heading">
-        <h2>Min familie</h2><span id="family-mobile-week">Uke —</span>
+        <h2>Min familie</h2><span id="family-mobile-week">Uke —</span><button id="family-homework-open-mobile" type="button" class="family-homework-mobile-trigger sk-action sk-action--card" aria-haspopup="dialog" aria-controls="family-homework-dialog"><span id="family-homework-mobile-count">Lekser</span><span aria-hidden="true">›</span></button>
       </div>
-      <div class="family-overview-top"><div><p class="family-eyebrow">FAMILIEOVERSIKT</p><h1 id="family-title" tabindex="-1">God oversikt over skoleuka</h1><p id="family-week-context" class="family-overview-subtitle">Lekser, pakkeliste og beskjeder for barna.</p></div><div class="family-overview-stats"><span id="family-week">Uke —</span><strong id="family-week-progress">—</strong><small id="family-count">0 barn</small></div></div>
+      <div class="family-overview-top"><div><p class="family-eyebrow">FAMILIEOVERSIKT</p><h1 id="family-title" tabindex="-1">God oversikt over skoleuka</h1><p id="family-week-context" class="family-overview-subtitle">Lekser, pakkeliste og beskjeder for barna.</p></div><button id="family-homework-open" type="button" class="family-overview-stats family-homework-trigger sk-action sk-action--card" aria-haspopup="dialog" aria-controls="family-homework-dialog"><span id="family-week">Uke —</span><strong id="family-week-progress">—</strong><span class="family-homework-meter" aria-hidden="true"><span id="family-homework-meter-fill"></span></span><small id="family-count">0 barn</small><span class="family-homework-trigger-hint">Se alle lekser <span aria-hidden="true">›</span></span></button></div>
       <nav id="family-mobile-nav" class="family-mobile-nav" aria-label="Naviger i Min familie">
         <button class="sk-action sk-action--choice" type="button" data-family-mobile-tab="overview" aria-pressed="true" aria-controls="family-tomorrow-brief family-children"><svg class="family-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/></svg><span>Oversikt</span></button>
         <button class="sk-action sk-action--choice" type="button" data-family-mobile-tab="calendar" aria-pressed="false" aria-controls="family-agenda-days"><svg class="family-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/><path d="M8 14h2m4 0h2m-8 4h2"/></svg><span>Kalender</span></button>
@@ -543,6 +543,14 @@
   </main>
   <footer><span class="footer-title">Skoleuka · <span id="footer-school">Kristiansand</span></span><span class="footer-storage-note">Uten familiekonto lagres valg på denne enheten. Med familiekonto deles lekseprogresjonen.</span><span class="footer-meta"><a href="https://www.kristiansand.kommune.no/navigasjon/barnehage-og-skole/skole-og-sfo/grunnskole/" target="_blank" rel="noopener noreferrer">Skoleoversikten ↗</a><a href="mailto:mortenronn@gmail.com?subject=Feilrapport%20Skoleuka">Kontakt oss</a><a id="git-version" href="#" target="_blank" rel="noopener noreferrer" hidden>Git-versjon</a></span></footer>
 </div>
+<dialog id="family-homework-dialog" class="family-homework-dialog" aria-modal="true" aria-labelledby="family-homework-title">
+ <div class="family-homework-modal-head"><div><p class="family-homework-eyebrow">FAMILIENS LEKSER <span id="family-homework-week"></span></p><h2 id="family-homework-title">Lekseoversikt</h2><p class="family-homework-modal-intro">Se hva som gjenstår for hvert barn.</p></div><button type="button" id="family-homework-close" class="family-homework-close sk-action sk-action--close" aria-label="Lukk lekseoversikten">✕</button></div>
+ <div class="family-homework-modal-content">
+ <div class="family-homework-summary"><div><strong id="family-homework-total">0 av 0</strong><span>lekser fullført</span></div><div class="family-homework-summary-meter"><span id="family-homework-percent">0 %</span><div class="family-homework-track"><span id="family-homework-track-fill"></span></div></div></div>
+ <div class="family-homework-controls"><label>Barn <select id="family-homework-child"><option value="">Alle barn</option></select></label><fieldset><legend>Vis lekser</legend><div class="family-homework-filters"><button type="button" class="sk-action sk-action--choice" data-homework-filter="remaining" aria-pressed="true">Gjenstår</button><button type="button" class="sk-action sk-action--choice" data-homework-filter="all" aria-pressed="false">Alle</button><button type="button" class="sk-action sk-action--choice" data-homework-filter="completed" aria-pressed="false">Fullført</button></div></fieldset></div>
+ <p id="family-homework-status" class="family-homework-status" role="status" aria-live="polite"></p><div id="family-homework-items" class="family-homework-items"></div>
+ </div>
+</dialog>
 <dialog id="family-activity-dialog" class="family-activity-dialog" aria-modal="true" aria-labelledby="family-activity-form-title">
 <form id="family-activity-form" class="family-activity-form" aria-labelledby="family-activity-form-title">
           <div class="family-form-head"><h3 id="family-activity-form-title">Ny aktivitet</h3>
