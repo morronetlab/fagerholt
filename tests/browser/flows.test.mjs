@@ -659,7 +659,10 @@ test('Mobile family overview shows two compact tappable children, hides administ
   return {heights:cards.map(rect=>rect.height),scroll:node.scrollWidth>node.clientWidth+1};
  });
  assert.equal(bounds.scroll,false);
- assert.ok(bounds.heights.every(h=>h<=115),'Mobile child cards should be compact');
+ // A two-line next-homework preview intentionally adds height; cards must
+ // still stay compact, tappable and free of horizontal overflow.
+ assert.ok(bounds.heights.every(h=>h<=155),
+  'Mobile child cards should be compact with homework preview, heights: '+bounds.heights.join(', '));
  await page.locator('#family-mobile-admin-toggle').click();
  assert.equal(await page.locator('#family-refresh').isVisible(),true);
  assert.equal(await page.locator('[data-family-more]:visible').count(),2);
