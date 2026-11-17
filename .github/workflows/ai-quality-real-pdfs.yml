@@ -56,6 +56,8 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Validate visually reviewed source manifest and evaluator contracts
         run: node --test tests/quality-original-source-collection.test.mjs tests/ai-quality-original-pdfs.test.mjs tests/ai-quality-approved-baseline.test.mjs tests/parser-gap-triage.test.mjs tests/ai-quality-school-closures.test.mjs tests/school-closure-source.test.mjs tests/ai-quality-homework-shared-deadline.test.mjs
+      - name: Inspect reviewed homework geometry without logging personal source text
+        run: node scripts/inspect-homework-b2.mjs
       - name: Fetch originals, verify SHA-256 and score existing rules parser
         run: node scripts/evaluate-original-pdf-quality.mjs quality-real-results
       - name: Verify source-backed closure dates and future-week safety
