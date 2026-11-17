@@ -41,6 +41,11 @@ for(const width of [390,1280]){
   await page.route('**/api/weather?**',route=>reply(route,{days:{}}));
   await page.goto(server.baseURL+'/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#family-week-progress')?.textContent==='0 av 2 lekser fullført');
+  if(width<700){
+   const compact=page.locator('.family-child-compact');
+   await compact.locator('.family-mobile-next-task').waitFor();
+   assert.match(await compact.locator('.family-mobile-next-task').innerText(),/Les 15 minutter/);
+  }
   await page.locator(width<700?'#family-homework-open-mobile':'#family-homework-open').click();
   const dialog=page.locator('#family-homework-dialog');
   assert.equal(await dialog.evaluate(x=>x.open),true);
