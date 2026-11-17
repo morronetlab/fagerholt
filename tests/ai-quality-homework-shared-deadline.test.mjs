@@ -60,3 +60,13 @@ test('Shared deadline on the same heading line is source evidence, not a second 
  assert.deepEqual(tasks.map(x=>x.dueDay),['Onsdag','Onsdag','Onsdag']);
  assert.equal(tasks.length,3);
 });
+
+test('Source-explicit reading page in a narrative sentence is homework; bringing a book is not',()=>{
+ const p=page([t('LEKSER som leveres senest onsdag',45,60),
+  t('Norsk: I norskboka skal du lese side 135.',175,93),
+  t('Husk å ta med en bok fra side 135.',170,120)]);
+ const tasks=extractHomeworkSharedDeadline([p]);
+ assert.equal(tasks.length,1);
+ assert.equal(tasks[0].dueDay,'Onsdag');
+ assert.match(tasks[0].text,/side 135/);
+});
