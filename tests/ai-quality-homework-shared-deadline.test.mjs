@@ -70,3 +70,12 @@ test('Source-explicit reading page in a narrative sentence is homework; bringing
  assert.equal(tasks[0].dueDay,'Onsdag');
  assert.match(tasks[0].text,/side 135/);
 });
+
+test('Husk å øve på gloser is homework, while husk å ta med is packing',()=>{
+ const p=page([t('LEKSER som leveres senest onsdag',45,60),
+  t('Engelsk: Husk å øve på gloser',160,190),
+  t('Husk å ta med gymsko',160,222)]);
+ const tasks=extractHomeworkSharedDeadline([p]);
+ assert.equal(tasks.length,1);
+ assert.match(tasks[0].text,/gloser/);
+});
