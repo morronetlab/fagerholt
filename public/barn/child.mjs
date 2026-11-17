@@ -1,5 +1,6 @@
 /** A separate, child-only UI. No parent account, Supabase key or sibling data. */
 import {siteConfig} from '../site-config.mjs';
+import {initSchoolWeather} from '../shared/school-weather-ui.mjs';
 import {planAvailability} from '../shared/plan-availability.mjs';
 import {DAYS,dayDate,familyWeekCalendar} from '../shared/calendar.mjs';
 import {groupColorClass} from '../shared/group-scope.mjs';
@@ -15,6 +16,7 @@ import {contentCategoryLabel} from '../shared/content-categories.mjs';
 
 const $=id=>document.getElementById(id);
 const KEY='skoleuka.child.device.v1';
+const schoolWeather=initSchoolWeather({host:$('child-school-weather')});
 const esc=s=>String(s??'').replace(/[&<>"']/gu,c=>({
  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
 }[c]));
@@ -52,6 +54,7 @@ async function get(path,{method='GET',body,token=null}={}){
  return data;
 }
 function setup(message){
+ schoolWeather.updateSchools([]);
  state.child=null;state.plan=null;state.planError=null;state.activities=[];state.municipal=null;state.progress=null;
  state.progressBusy=false;state.progressError='';state.packing=null;state.packingBusy=false;state.packingError='';
  $('child-ready').hidden=true;$('child-setup').hidden=false;
@@ -78,6 +81,7 @@ async function reportInstalled(fromInstallEvent=false){
 function render(){
  const {child,plan,calendar}=state;if(!child||!calendar)return;
  $('child-setup').hidden=true;$('child-ready').hidden=false;
+ schoolWeather.updateSchools([child.school]);
  $('child-grade').textContent=(siteConfig.schools[child.school]?.name||'Skolen')+
   ' · '+child.grade+'. trinn';
  $('child-greeting').textContent='Hei, '+child.name+'! 👋';

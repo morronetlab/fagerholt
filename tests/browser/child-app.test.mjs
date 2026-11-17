@@ -343,3 +343,34 @@ test('iPadOS installed app without transfer cookie explains how to reinstall saf
  assert.equal(calls.some(c=>c.body?.action==='redeem'),false);
  assert.deepEqual(errors,[]);
 });
+
+test('Child sees today weather immediately and opens hourly details on a phone',async t=>{
+ const {page,errors}=await open(t,'?pair='+pair);
+ await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
+ await page.route('**/api/weather?**',route=>route.fulfill({
+  status:200,contentType:'application/json',body:JSON.stringify({
+   source:'Meteorologisk institutt / Yr',locationLabel:'Ved Fagerholt skole',
+   days:{'2026-10-28':{
+    date:'2026-10-28',icon:'⛅',temperature:6,description:'Lettskyet',
+    rainMm:0, hours:[
+     {hour:8,icon:'⛅',description:'Lettskyet',temperature:5,wind:2,rainMm:0,rainPeriod:1},
+     {hour:9,icon:'🌧️',description:'Regn',temperature:6,wind:3,rainMm:0.2,rainPeriod:1}
+    ]
+   }}
+  })
+ }));
+ await page.reload({waitUntil:'domcontentloaded'});
+ const card=page.locator('#child-school-weather .school-weather-open');
+ await card.waitFor({state:'visible'});
+ await page.waitForFunction(()=>document.querySelector('#child-school-weather .school-weather-temperature')?.textContent==='6 °C');
+ assert.match(await card.innerText(),/Været i skoleområdet/);
+ await card.click();
+ const dialog=page.locator('#child-school-weather .school-weather-dialog');
+ assert.equal(await dialog.evaluate(node=>node.open),true);
+ assert.match(await dialog.innerText(),/08:00/);
+ assert.match(await dialog.innerText(),/09:00/);
+ assert.match(await dialog.innerText(),/0,2 mm/);
+ await page.keyboard.press('Escape');
+ assert.equal(await dialog.evaluate(node=>node.open),false);
+ assert.deepEqual(errors,[]);
+});
