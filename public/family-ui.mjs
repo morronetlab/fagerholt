@@ -28,6 +28,7 @@ import {firstRunGuideState} from './shared/first-run-guide.mjs';
 import {familyAgendaMarkup,familyAgendaItemHtml} from './shared/family-week-agenda-html.mjs';
 import {importantFamilyNotices} from './shared/family-important-notices.mjs';
 import {FAMILY_OVERVIEW_BATCH_MS,holdInitialHighlights,readCalendarCache,storeCalendarCache,cacheableCalendar,stableHighlightOrder,highlightIdentity} from './shared/family-overview-load.mjs';
+import {readPublicPlanSnapshot,storePublicPlanSnapshot} from './shared/public-plan-snapshot.mjs';
 
 const el=id=>document.getElementById(id);
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -896,6 +897,10 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   catch(e){error=e.message||'Klarte ikke hente ukeplan.';}
   if(!active||sequence!==run||!pairProfiles(pair).length)return;
   applyPair(pair,plan,error,sequence);
+  if(!error&&plan){
+   const now=calendar();
+   try{storePublicPlanSnapshot(sessionStorage,plan,school,grade,now.year,now.week);}catch{}
+  }
   setPending(pair,plan,sequence);
   if(overviewBatch?.sequence===sequence){
    overviewBatch.pairs.delete(pair);releaseOverviewIfReady();
@@ -975,12 +980,24 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   loading.clear();errors.clear();
   for(const p of profiles)loading.add(p.id);
   const pairs=[...new Set(profiles.map(pairOf))];
+  // Immediate first paint from verified public school content only.
+  // Keep fresh in-memory plans, and never cache private progress.
+  for(const pair of pairs){
+   const [school,grade]=pair.split('|');
+   let snapshot=null;
+   try{snapshot=readPublicPlanSnapshot(sessionStorage,school,grade,now.year,now.week);}catch{}
+   if(snapshot)for(const p of pairProfiles(pair)){
+    const current=plans.get(p.id);
+    if(!current||current.year!==now.year||current.week!==now.week||current.aiStatus!=='ready')plans.set(p.id,snapshot);
+   }
+  }
   clearOverviewTimer();
   if(pairs.length&&profiles.some(p=>{
    const value=plans.get(p.id);
    return !value||value.year!==now.year||value.week!==now.week;
   })){
-   const batch={sequence,startedAt:Date.now(),pairs:new Set(pairs),
+   const batch={sequence,startedAt:Date.now(),pairs:new Set(pairs.filter(pair=>
+    !pairProfiles(pair).every(p=>plans.get(p.id)?.aiStatus==='ready'))),
     schools:[...new Set(profiles.map(p=>p.school))]};
    overviewBatch=batch;
    overviewTimer=setTimeout(()=>{
