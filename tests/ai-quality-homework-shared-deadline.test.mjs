@@ -50,3 +50,13 @@ test('PDF.js fragments on one baseline are joined without copying unrelated righ
  assert.match(rows[0].text,/Matteark med divisjon/);
  assert.equal(rows[1].text,'Gym på skolen');
 });
+
+test('Shared deadline on the same heading line is source evidence, not a second invented task',()=>{
+ const source=page([t('LEKSER som leveres senest onsdag',45,60),
+  t('Norsk: Les side 135 i boka.',185,95),
+  t('Matte: Matteark med divisjon',162,157),
+  t('Engelsk: Øv på gloser',162,194)]);
+ const tasks=extractHomeworkSharedDeadline([source]);
+ assert.deepEqual(tasks.map(x=>x.dueDay),['Onsdag','Onsdag','Onsdag']);
+ assert.equal(tasks.length,3);
+});
