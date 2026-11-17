@@ -1,5 +1,6 @@
 /** Device-local family UI; one source-grounded weekly plan per class. */
 import {siteConfig} from './site-config.mjs';
+import {initSchoolWeather} from './shared/school-weather-ui.mjs';
 import {initChildPairingUI} from './child-pairing-ui.mjs';
 import {childSetupInfo} from './shared/child-setup-state.mjs';
 import {planAvailability} from './shared/plan-availability.mjs';
@@ -56,6 +57,7 @@ function wordStatus(profile,plan,calendar){
 export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIssue,onChildAppStatusChange=()=>{}}){
  let active=false,profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
  const homeworkDialog=el('family-homework-dialog');
+ const schoolWeather=initSchoolWeather({host:el('family-school-weather')});
  let homeworkFilter='remaining',homeworkChild='',homeworkReturnFocus=null;
  const homeworkSaving=new Set();
  const mobileUI=initFamilyMobileUI();
@@ -653,6 +655,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  function render(){
   if(!active)return;
   renderFirstRunGuide();
+  schoolWeather.updateSchools(profiles.map(p=>p.school));
   const {now,summaries}=getSummaries();
   el('family-week').textContent='Uke '+now.week+' · '+now.year+(now.upcoming?' · neste uke':'');
   el('family-count').textContent=profiles.length+' barn';
