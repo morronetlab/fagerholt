@@ -363,7 +363,7 @@ test('Child sees today weather immediately and opens hourly details on a phone',
  const card=page.locator('#child-school-weather .school-weather-open');
  await card.waitFor({state:'visible'});
  await page.waitForFunction(()=>document.querySelector('#child-school-weather .school-weather-temperature')?.textContent==='6 °C');
- assert.match(await card.innerText(),/Været på skolen/);
+ assert.match(await card.innerText(),/Været i skoleområdet/);
  await card.click();
  const dialog=page.locator('#child-school-weather .school-weather-dialog');
  assert.equal(await dialog.evaluate(node=>node.open),true);
