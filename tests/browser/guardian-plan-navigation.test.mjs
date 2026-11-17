@@ -103,6 +103,40 @@ for(const width of [390,1280]){
   assert.deepEqual(errors,[]);
  });
 }
+for(const width of [390,1280]){
+ test('Individual child plan uses Weather 2.0 and selected school day at '+width+'px',async t=>{
+  const {page,errors}=await open(t,width);
+  await page.route('**/api/weather?**',route=>reply(route,{
+   locationLabel:'Kristiansand-området',days:{
+    '2026-10-28':{date:'2026-10-28',icon:'⛅',temperature:6,description:'Lettskyet',
+     rainMm:0,hours:[{hour:8,icon:'⛅',description:'Lettskyet',temperature:5,wind:2,rainMm:0,rainPeriod:1}]},
+    '2026-10-29':{date:'2026-10-29',icon:'🌧️',temperature:9,description:'Regn',
+     rainMm:1.5,hours:[{hour:9,icon:'🌧️',description:'Regn',temperature:8,wind:4,rainMm:1.5,rainPeriod:1}]}
+   }
+  }));
+  const first=page.locator('#family-cards .family-child').first();
+  await first.locator(width<700?'[data-family-compact-open]':'[data-family-open]').click();
+  const card=page.locator('#plan-school-weather .school-weather-open');
+  await card.waitFor({state:'visible'});
+  await page.waitForFunction(()=>document.querySelector('#plan-school-weather .school-weather-temperature')?.textContent==='6 °C');
+  assert.equal(await page.locator('#weather-panel').count(),0,'Legacy weather tile was replaced');
+  assert.match(await card.innerText(),/ons.*28/i);
+  await card.click();
+  const dialog=page.locator('#plan-school-weather .school-weather-dialog');
+  assert.equal(await dialog.evaluate(node=>node.open),true);
+  assert.match(await dialog.innerText(),/08:00/);
+  assert.match(await dialog.innerText(),/5 °C/);
+  await page.keyboard.press('Escape');
+  assert.equal(await dialog.evaluate(node=>node.open),false);
+  await page.locator('[data-day="3"]').click();
+  await page.waitForFunction(()=>document.querySelector('#plan-school-weather .school-weather-temperature')?.textContent==='9 °C');
+  await card.click();
+  assert.match(await dialog.innerText(),/09:00/);
+  assert.match(await dialog.innerText(),/1,5 mm/);
+  await page.keyboard.press('Escape');
+  assert.deepEqual(errors,[]);
+ });
+}
 test('Public visitor keeps school wizard and no guardian toolbar',async t=>{
  const context=await browser.newContext({viewport:{width:390,height:840}});
  t.after(()=>context.close());
