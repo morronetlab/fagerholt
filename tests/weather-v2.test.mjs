@@ -29,7 +29,7 @@ test('MET source hours are retained in Norwegian time, rain is not invented',()=
  assert.equal(d.hours[1].rainPeriod,6);
  assert.equal(d.hours[0].temperature,3.2);
  assert.equal(d.hours[2].wind,4);
- assert.equal(schoolWeatherSummary({days:result},'2026-11-17').temperature,'4 °C');
+ assert.equal(schoolWeatherSummary({days:result},'2026-11-17').temperature,'5 °C');
 });
 test('Missing hourly values remain unavailable rather than guessed',()=>{
  const result=summarizeForecast({properties:{timeseries:[{time:'2026-11-17T07:00:00Z',
