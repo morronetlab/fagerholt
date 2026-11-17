@@ -127,7 +127,7 @@ export function initSchoolWeather({host,external=false}){
  dialog.addEventListener('close',()=>button.focus({preventScroll:true}));
  paint();
  function setDate(date){
-  const next=typeof date==='string'&&/^\\d{4}-\\d{2}-\\d{2}$/.test(date)?date:'';
+  const next=typeof date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(date)?date:'';
   if(next===preferredDate)return;
   preferredDate=next;chosenDate=next;paint();
  }
