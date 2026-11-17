@@ -17,22 +17,28 @@ test('Mobile selection preserves access to switching school and grade',()=>{
  assert.match(app,/mobile-change-school'\)\.addEventListener\('click'/);
  assert.match(app,/mobile-change-grade'\)\.addEventListener\('click'/);
 });
-test('Weather hides during PDF download and AI analysis, but not completed or failed states',()=>{
- assert.match(html,/id="weather-panel" class="weather"/);
- assert.match(app,/waitingForPlan=state\.loading\|\|p\?\.aiStatus==='processing'/);
- assert.match(app,/\$\('weather-panel'\)\.hidden=waitingForPlan\|\|!features\.weather/);
- assert.match(app,/\$\('app-hero'\)\.classList\.toggle\('is-awaiting',waitingForPlan\)/);
- assert.match(shared,/\.hero\.is-awaiting \.weather\{display:none!important\}/);
- assert.match(shared,/\.weather:not\(\[hidden\]\)/);
+test('Individual school plans show the shared Weather 2.0 card even during PDF processing',()=>{
+ assert.match(html,/id="plan-school-weather"/);
+ assert.doesNotMatch(html,/id="weather-panel"/);
+ assert.doesNotMatch(html,/id="weather-toggle"/);
+ assert.match(html,/href="\/plan-weather-unified\.css"/);
+ assert.match(app,/initSchoolWeather\(\{host:\$\('plan-school-weather'\),external:true\}\)/);
+ assert.match(app,/planSchoolWeather\?\.updateSchools\(features\.weather/);
+ assert.match(app,/planSchoolWeather\?\.setDate\(weekDayDate\(state\.day\)\)/);
+ assert.doesNotMatch(app,/\$\('weather-panel'\)/);
+ assert.doesNotMatch(app,/\$\('weather-toggle'\)/);
 });
-test('Compact weather bar can be expanded and has accessible state',()=>{
- assert.match(html,/id="weather-toggle"[^>]*aria-expanded="false"[^>]*aria-controls="weather-details"/);
- assert.match(html,/id="weather-details"/);
- assert.match(html,/id="weather-desc"/);
- assert.match(html,/id="weather-location"/);
- assert.match(app,/\$\('weather-toggle'\)\.addEventListener\('click'/);
- assert.match(app,/setAttribute\('aria-expanded',String\(expanded\)\)/);
- assert.match(shared,/\.weather\.is-expanded \.weather-details\{display:block\}/);
+test('Weather fetch is independent from the PDF and keeps the existing rainwear hint',()=>{
+ const weatherSource=app.slice(app.indexOf('async function reload('),app.indexOf('function openFamilyProfile('));
+ assert.match(weatherSource,/void fetchJSON\(`\/api\/weather\?school=/);
+ assert.match(weatherSource,/planSchoolWeather\?\.setForecast\(weather\)/);
+ assert.match(weatherSource,/planSchoolWeather\?\.setError\(state\.weatherError\)/);
+ assert.match(app,/\$\('rain-reminder'\)\.hidden=!rainy/);
+ const ui=readFileSync(new URL('../public/shared/school-weather-ui.mjs',import.meta.url),'utf8');
+ assert.match(ui,/function setDate\(date\)/);
+ assert.match(ui,/const compactDate=preferredDate\|\|/);
+ assert.match(ui,/aria-haspopup="dialog"/);
+ assert.match(ui,/data-weather-date/);
 });
 test('Mobile breakpoint has usable day buttons, readable text and 44px actions',()=>{
  assert.match(shared,/@media \(max-width: 700px\)/);
@@ -51,9 +57,10 @@ test('Reduce top-of-page height during AI analysis without changing AI polling',
  assert.match(app,/statusOnly=1/);
  assert.match(app,/state\.plan\?\.aiStatus==='processing'\?reload\(\{quiet:true,statusOnly:true\}\):reload\(\)/);
 });
-test('Responsive layer preserves reduced-motion behavior and desktop weather',()=>{
- assert.match(shared,/\.mobile-selection-menu,\.weather-toggle\{display:none\}/);
- assert.match(shared,/\.weather-details\{min-width:0\}/);
+test('Weather 2.0 adapts to the individual plan hero on desktop and mobile',()=>{
+ const css=readFileSync(new URL('../public/plan-weather-unified.css',import.meta.url),'utf8');
+ assert.match(css,/#app-hero #plan-school-weather/);
+ assert.match(css,/@media\(max-width:700px\)/);
+ assert.match(css,/min-height:66px/);
  assert.match(shared,/@media\(prefers-reduced-motion:reduce\)/);
- assert.match(css,/\.weather\{background:#fff/);
 });

@@ -18,10 +18,11 @@ export function schoolWeatherSummary(forecast,date){
   rain:typeof day.rainMm==='number'?amount(day.rainMm)+' mm nedbør':null,
   date,day};
 }
-/** Returns an instance with updateSchools(ids) and refresh(). */
-export function initSchoolWeather({host}){
- if(!host)return {updateSchools(){},refresh(){}};
- let schools=[],selected='',forecast=null,chosenDate='',loading=false,error='',sequence=0;
+/** Shared UI: default self-fetch for child/family, external data for individual plan. */
+export function initSchoolWeather({host,external=false}){
+ if(!host)return {updateSchools(){},refresh(){},setDate(){},setForecast(){},setError(){}};
+ let schools=[],selected='',forecast=null,chosenDate='',preferredDate='',loading=false,error='',sequence=0;
+ const titleId='school-weather-title-'+(host.id||'weather');
  host.classList.add('school-weather');
  host.innerHTML=`<div class="school-weather-card">
   <button type="button" class="school-weather-open sk-action sk-action--card" aria-haspopup="dialog" aria-label="Se detaljert værmelding">
@@ -30,8 +31,8 @@ export function initSchoolWeather({host}){
    <span class="school-weather-temperature">— °C</span><span class="school-weather-arrow" aria-hidden="true">›</span>
   </button>
  </div>
- <dialog class="school-weather-dialog" aria-modal="true" aria-labelledby="school-weather-title">
-  <div class="school-weather-dialog-head"><div><p class="school-weather-eyebrow">VÆRET I SKOLEOMRÅDET</p><h2 id="school-weather-title">Time for time</h2><p class="school-weather-place"></p></div>
+ <dialog class="school-weather-dialog" aria-modal="true" aria-labelledby="${titleId}">
+  <div class="school-weather-dialog-head"><div><p class="school-weather-eyebrow">VÆRET I SKOLEOMRÅDET</p><h2 id="${titleId}">Time for time</h2><p class="school-weather-place"></p></div>
    <button type="button" class="school-weather-close sk-action sk-action--close" aria-label="Lukk værmeldingen">✕</button></div>
   <div class="school-weather-dialog-body"><label class="school-weather-school-field">Skole<select class="school-weather-school"></select></label>
    <div class="school-weather-days" role="group" aria-label="Velg dag"></div>
@@ -42,26 +43,33 @@ export function initSchoolWeather({host}){
  </dialog>`;
  const q=selector=>host.querySelector(selector);
  const dialog=q('.school-weather-dialog'),button=q('.school-weather-open'),selector=q('.school-weather-school');
- const getDates=()=>Object.keys(forecast?.days||{}).filter(date=>{
-  if(date<osloToday())return false;
-  const day=new Date(date+'T12:00:00Z').getUTCDay();
-  return day>=1&&day<=5;
- }).sort().slice(0,5);
+ const getDates=()=>{
+  const days=Object.keys(forecast?.days||{}).filter(date=>{
+   if(date<osloToday())return false;
+   const day=new Date(date+'T12:00:00Z').getUTCDay();
+   return day>=1&&day<=5;
+  }).sort().slice(0,5);
+  // The selected school-day may already have passed or be too far ahead for
+  // MET. Show it explicitly as unavailable instead of silently showing today.
+  if(preferredDate&&!days.includes(preferredDate))days.push(preferredDate);
+  return days.sort();
+ };
  const fillDays=()=>{
   const days=getDates();
-  if(!days.includes(chosenDate))chosenDate=days[0]||'';
+  if(!days.includes(chosenDate))chosenDate=preferredDate||days[0]||'';
   q('.school-weather-days').innerHTML=days.map(date=>
    '<button type="button" class="sk-action sk-action--choice" data-weather-date="'+esc(date)+'" aria-pressed="'+String(date===chosenDate)+'">'+esc(dayLabel(date))+'</button>'
   ).join('');
  };
  function paint(){
   const dates=getDates(),today=osloToday();
-  const compactDate=dates.includes(today)?today:dates[0];
+  const compactDate=preferredDate||(dates.includes(today)?today:dates[0]);
   const summary=schoolWeatherSummary(forecast,compactDate);
   q('.school-weather-icon').textContent=summary?.icon||'🌤️';
   q('.school-weather-temperature').textContent=summary?.temperature||'— °C';
   q('.school-weather-subtitle').textContent=loading?'Henter værmelding …':
-   error|| (summary?dayLabel(compactDate)+' · '+summary.description+' · '+(forecast?.locationLabel||schoolTitle(selected)):'Værmelding ikke tilgjengelig');
+   error|| (summary?dayLabel(compactDate)+' · '+summary.description+' · '+(forecast?.locationLabel||schoolTitle(selected)):
+    (compactDate?dayLabel(compactDate)+' · Ingen tilgjengelig prognose':'Værmelding ikke tilgjengelig'));
   q('.school-weather-place').textContent=(forecast?.locationLabel||schoolTitle(selected))+
    (forecast?.stale?' · Sist lagrede varsel':'');
   fillDays();
@@ -104,7 +112,11 @@ export function initSchoolWeather({host}){
   for(const id of schools){const option=document.createElement('option');option.value=id;option.textContent=schoolTitle(id);selector.append(option);}
   selector.value=selected;
   q('.school-weather-school-field').hidden=schools.length<2;
-  if(prior!==selected){forecast=null;chosenDate='';void refresh();}
+  if(prior!==selected){
+   forecast=null;chosenDate=preferredDate;
+   if(external){loading=true;error='';paint();}
+   else void refresh();
+  }
  }
  button.addEventListener('click',()=>{if(host.hidden)return;paint();dialog.showModal();q('.school-weather-close').focus();});
  q('.school-weather-close').addEventListener('click',()=>dialog.close());
@@ -114,5 +126,21 @@ export function initSchoolWeather({host}){
  });
  dialog.addEventListener('close',()=>button.focus({preventScroll:true}));
  paint();
- return {updateSchools,refresh};
+ function setDate(date){
+  const next=typeof date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(date)?date:'';
+  if(next===preferredDate)return;
+  preferredDate=next;chosenDate=next;paint();
+ }
+ function setForecast(data){
+  if(!external)return;
+  forecast=data?.days?data:null;loading=false;
+  error=data?.stale?'Viser sist lagrede værmelding.':'';
+  paint();
+ }
+ function setError(message){
+  if(!external)return;
+  forecast=null;loading=false;error=String(message||'Værmelding midlertidig utilgjengelig.');
+  paint();
+ }
+ return {updateSchools,refresh,setDate,setForecast,setError};
 }

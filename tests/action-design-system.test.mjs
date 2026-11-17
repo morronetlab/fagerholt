@@ -57,18 +57,23 @@ test('Actions that open different dialogs share the modal role, navigation is di
 test('Expandable controls have one semantic disclosure role and keep live aria-expanded state',()=>{
  const html=source('public/index.html');
  for(const id of ['family-mobile-important-more','family-tomorrow-brief-more',
-  'family-agenda-weekend-toggle','weather-toggle','landing-other-options']){
+  'family-agenda-weekend-toggle','landing-other-options']){
   const button=controls(html).find(c=>c.includes('id="'+id+'"'));
   assert.ok(button?.includes('sk-action--disclosure'),id);
   assert.match(button,/aria-expanded/);
  }
- for(const id of ['weather-toggle','landing-other-options']){
+ for(const id of ['landing-other-options']){
   const tag=controls(html).find(c=>c.includes('id="'+id+'"'));
   assert.ok(!tag.includes('data-sk-chevron="off"'),id+' now uses the shared CSS chevron');
  }
  const admin=controls(html).find(c=>c.includes('id="family-mobile-admin-toggle"'));
  assert.ok(admin.includes('data-sk-chevron="off"'),'Icon-only settings action keeps its own gear, never a second arrow');
  assert.match(source('public/shared/family-week-agenda-html.mjs'),/sk-action--disclosure[^>]*data-family-agenda-details/);
+ const weather=source('public/shared/school-weather-ui.mjs');
+ assert.match(weather,/school-weather-open sk-action sk-action--card/);
+ assert.match(weather,/school-weather-close sk-action sk-action--close/);
+ assert.match(weather,/data-weather-date/);
+ assert.doesNotMatch(html,/id="weather-toggle"/);
 });
 test('Centralized hover, keyboard focus, disabled and reduced-motion states are present',()=>{
  const css=source('public/action-system.css');
@@ -83,13 +88,13 @@ test('Centralized hover, keyboard focus, disabled and reduced-motion states are 
 test('Disclosure arrows are CSS-only; old glyphs and markers cannot stack',()=>{
  const html=source('public/index.html');
  const family=source('public/family-v3.css');
- const controlsToCheck=['landing-other-options','weather-toggle','notices-panel','goals-panel'];
+ const controlsToCheck=['landing-other-options','notices-panel','goals-panel'];
  for(const id of controlsToCheck){
   const i=html.indexOf('id="'+id+'"');
   assert.ok(i>=0,id);
   const nearby=html.slice(i,i+450);
   assert.ok(!nearby.includes('class="chevron"'),id+' should not keep a duplicate inline chevron');
-  if(['weather-toggle','landing-other-options'].includes(id))
+  if(id==='landing-other-options')
    assert.ok(!nearby.includes('aria-hidden="true">⌄</span>'),id+' should not keep a Unicode arrow');
  }
  assert.ok(!/::after\s*\{\s*content:\s*['"](?:⌄|⌃| ⌄| ⌃)/.test(family),
