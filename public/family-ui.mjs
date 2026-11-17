@@ -68,6 +68,9 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  try{firstRunFamilyId=sessionStorage.getItem(FIRST_RUN_KEY)||'';}catch{}
  let cloud=null,cloudChecks=new Map(),bagChecks=new Map(),focus='next',lastSynced=null,syncError='';
  let initialProgressPending=false;
+ // A stale read must not overwrite optimistic child/guardian writes.
+ let cloudReadSequence=0,cloudWriteRevision=0,cloudWrites=0,cloudResyncPending=false;
+ let lastAutoProgressCheck=0;
  // Public/guest family mode still needs the bottom navigation. Only a
  // signed-in family account uses the three dashboard tabs exclusively.
  const syncCloudChrome=()=>{
@@ -260,13 +263,20 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const cloudBagChecked=(p,item,now,day)=>bagChecks.get(p.id)?.get(bagKey(p,item,now,day))===true;
  async function syncCloud(){
   if(!cloud)return;
-  const current=cloud,now=calendar();
+  if(cloudWrites){cloudResyncPending=true;return;}
+  const current=cloud,now=calendar(),revision=cloudWriteRevision;
+  const readSequence=++cloudReadSequence;
   try{
    const [rows,bags]=await Promise.all([
     current.client.progress(current.familyId,now.year,now.week),
     current.client.packingProgress(current.familyId,now.year,now.week)
    ]);
-   if(cloud!==current)return;
+   if(cloud!==current||readSequence!==cloudReadSequence)return;
+   if(cloudWrites||revision!==cloudWriteRevision){
+    cloudResyncPending=true;
+    if(!cloudWrites)void syncCloud();
+    return;
+   }
    cloudChecks=new Map();bagChecks=new Map();
    syncError='';lastSynced=new Date();initialProgressPending=false;
    for(const row of rows){
@@ -279,15 +289,25 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    }
    render();
   }catch(error){
-   if(cloud!==current)return;
+   if(cloud!==current||readSequence!==cloudReadSequence)return;
+   if(cloudWrites||revision!==cloudWriteRevision){
+    cloudResyncPending=true;
+    if(!cloudWrites)void syncCloud();
+    return;
+   }
    initialProgressPending=false;
    syncError='Kunne ikke synkronisere: '+error.message;render();
   }
+ }
+ function finishCloudWrite(){
+  cloudWrites=Math.max(0,cloudWrites-1);
+  if(!cloudWrites&&cloudResyncPending){cloudResyncPending=false;void syncCloud();}
  }
  async function updateCloud(p,task,checked){
   if(!cloud)throw Error('Ingen familiekonto aktiv.');
   if(initialProgressPending)throw Error('Venter på synkronisering av lekser.');
   const current=cloud,now=calendar(),key=cloudKey(p,task,now);
+  cloudWrites++;cloudWriteRevision++;
   const previous=cloudChecks.get(p.id)?.get(key);
   if(!cloudChecks.has(p.id))cloudChecks.set(p.id,new Map());
   cloudChecks.get(p.id).set(key,checked);render();
@@ -299,12 +319,13 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    if(previous===undefined)cloudChecks.get(p.id)?.delete(key);
    else cloudChecks.get(p.id)?.set(key,previous);
    render();throw error;
-  }
+  }finally{finishCloudWrite();}
  }
  async function updateBag(p,item,day,checked){
   if(!cloud)throw Error('Ingen familiekonto aktiv.');
   if(initialProgressPending)throw Error('Venter på synkronisering av pakkeliste.');
   const current=cloud,now=calendar(),key=bagKey(p,item,now,day);
+  cloudWrites++;cloudWriteRevision++;
   const previous=bagChecks.get(p.id)?.get(key);
   if(!bagChecks.has(p.id))bagChecks.set(p.id,new Map());
   bagChecks.get(p.id).set(key,checked);render();
@@ -316,7 +337,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    if(previous===undefined)bagChecks.get(p.id)?.delete(key);
    else bagChecks.get(p.id)?.set(key,previous);
    render();throw error;
-  }
+  }finally{finishCloudWrite();}
  }
  function getSummaries(){
   const now=calendar(),summaries=new Map();
@@ -604,6 +625,10 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    '</div></details>'
   ].join(''):'<div class="family-not-ready" role="status">'+
     escape(availability.label+'. '+(errors.get(p.id)||s.reason||availability.detail))+'</div>';
+  const nextHomework=s.ready?s.tasks.find(task=>!task.checked):null;
+  const nextHomeworkText=nextHomework?
+   (nextHomework.subject?nextHomework.subject+': ':'')+(nextHomework.text||nextHomework.label||''):
+   s.ready?(s.total?'Alle lekser fullført':'Ingen lekser registrert'):'';
   const compactStatus=s.ready?'<span class="family-mobile-progress-label">Lekser</span><span>'+
    s.done+' av '+s.total+' ferdig</span>':
    '<span class="family-mobile-progress-label">'+escape(availability.label)+'</span>';
@@ -616,6 +641,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    '<span class="family-mobile-child-chevron" aria-hidden="true">›</span></span>'+
    '<span class="family-mobile-progress">'+compactStatus+'</span>'+
    (s.ready?'<span class="family-mobile-progress-track" aria-hidden="true"><span style="width:'+pct+'%"></span></span>':'')+
+   (nextHomeworkText?'<span class="family-mobile-next-task"><span aria-hidden="true">📚</span> '+
+    escape(nextHomeworkText)+'</span>':'')+
    '</button>';
   return '<article class="family-child" data-child-id="'+escape(p.id)+'">'+compact+
    '<div class="family-child-heading">'+
@@ -1123,7 +1150,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     await updateBag(p,item,day,checked);
   },
   setCloud:async(client,familyId,remoteChildren)=>{
-    cloud={client,familyId};syncCloudChrome();
+    cloud={client,familyId};cloudReadSequence++;cloudWriteRevision++;cloudResyncPending=false;
+    syncCloudChrome();
     profiles=remoteChildren.map(x=>({id:x.id,name:x.nickname,school:x.school_id,
       grade:x.grade,group:x.group_name||''})).filter(x=>Object.hasOwn(siteConfig.schools,x.school));
     // Credentials, family membership and children are already verified at this point.
@@ -1136,7 +1164,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     void childPairingUI.loadStatuses(profiles);
   },
   clearCloud:()=>{
-    cloud=null;initialProgressPending=false;syncCloudChrome();childPairingUI.clearStatuses();cloudChecks.clear();bagChecks.clear();lastSynced=null;syncError='';profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
+    cloud=null;cloudReadSequence++;cloudWriteRevision++;cloudResyncPending=false;
+    initialProgressPending=false;syncCloudChrome();childPairingUI.clearStatuses();cloudChecks.clear();bagChecks.clear();lastSynced=null;syncError='';profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
     plans.clear();loadedWeekKey=null;activityUI.onFamilyChanged();if(active){render();void fetchPlans();}
   },
   refreshCloud:async()=>{await Promise.all([syncCloud(),activityUI.refresh()]);},
@@ -1426,6 +1455,18 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    }
   }
  });
+ // Recheck when a guardian returns after the child has marked work complete.
+ // Avoid background polling and avoid rereading over an in-flight write.
+ function refreshProgressOnReturn(){
+  if(!active||!cloud||document.visibilityState!=='visible'||!navigator.onLine)return;
+  const now=Date.now();
+  if(now-lastAutoProgressCheck<15_000)return;
+  lastAutoProgressCheck=now;
+  void syncCloud();
+ }
+ document.addEventListener('visibilitychange',refreshProgressOnReturn);
+ window.addEventListener('focus',refreshProgressOnReturn);
+ window.addEventListener('online',refreshProgressOnReturn);
  window.addEventListener('storage',e=>{
   if(e.key!==FAMILY_STORAGE_KEY||cloud)return;
   profiles=readFamily(e.newValue,siteConfig.schools);
