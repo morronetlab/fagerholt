@@ -1,0 +1,22 @@
+/* One weather design in guardians' individual plan, family overview and /barn/.
+   Keep the selected day visible even while a PDF is being analyzed. */
+#app-hero #plan-school-weather{align-self:stretch;margin:0;min-width:0}
+#app-hero #plan-school-weather .school-weather-card{height:100%;background:#fff;border-radius:22px}
+#app-hero #plan-school-weather .school-weather-open{
+  min-height:148px;height:100%;padding:18px 15px;gap:10px;align-content:center;
+  flex-wrap:wrap
+}
+#app-hero #plan-school-weather .school-weather-copy{flex-basis:calc(100% - 51px)}
+#app-hero #plan-school-weather .school-weather-copy small{overflow-wrap:anywhere}
+#app-hero #plan-school-weather .school-weather-temperature{margin-left:48px}
+#app-hero #plan-school-weather .school-weather-arrow{margin-left:auto}
+@media(max-width:700px){
+ #app-hero #plan-school-weather{margin:0}
+ #app-hero #plan-school-weather .school-weather-card{border-radius:14px}
+ #app-hero #plan-school-weather .school-weather-open{
+  min-height:66px;height:auto;padding:10px 12px;flex-wrap:nowrap;gap:8px
+ }
+ #app-hero #plan-school-weather .school-weather-copy{flex-basis:auto;min-width:0}
+ #app-hero #plan-school-weather .school-weather-temperature{margin-left:0}
+ #app-hero #plan-school-weather .school-weather-arrow{margin-left:0}
+}
