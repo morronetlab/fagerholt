@@ -1,5 +1,6 @@
 import {siteConfig} from './site-config.mjs';
 import {initFamilyUI} from './family-ui.mjs';
+import {initSchoolWeather} from './shared/school-weather-ui.mjs';
 import {childSetupInfo} from './shared/child-setup-state.mjs';
 import {initAccountUI} from './account-ui.mjs';
 import {SESSION_KEY} from './shared/cloud-account.mjs';
@@ -26,6 +27,7 @@ const safe=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':
 const {brand,features}=siteConfig;
 let familyUI=null;
 let accountUI=null;
+let planSchoolWeather=null;
 // Only the visible section changes; existing school, child and progress storage keys stay intact.
 let primaryView="welcome";
 let navigationReady=false,restoringRoute=false;
@@ -369,7 +371,9 @@ function renderContent(){
   const p=state.plan;
   renderGuardianSummary();
   const waitingForPlan=state.loading||p?.aiStatus==='processing';
-  $('weather-panel').hidden=waitingForPlan||!features.weather;
+  // Weather remains visible while the PDF is downloading or AI is working.
+  planSchoolWeather?.updateSchools(features.weather&&state.school?.id?[state.school.id]:[]);
+  planSchoolWeather?.setDate(weekDayDate(state.day));
   $('app-hero').classList.toggle('is-awaiting',waitingForPlan);
   const status=state.loading?'loading':state.planError?'error':p?.status||'loading';
   $('status-pill').textContent=p?.aiStatus==='processing'?'AI analyserer · foreløpig ukeplan':p?.status==='partial'?'Ukeplan delvis tolket':p?.status==='unreadable'?'PDF kunne ikke tolkes':p?.aiStatus==='ready'?'AI-tolket ukeplan':p?.aiStatus==='failed'?'AI-feil · foreløpig ukeplan':badge(status);
@@ -552,13 +556,12 @@ async function renderSpecialPdfPages(key){
   }finally{if(pdf)try{await pdf.destroy();}catch{}}
 }
 function renderWeather(){
+  // The same Weather 2.0 widget now renders the plan; preserve the existing
+  // rainwear reminder without a second/legacy weather card.
   const weatherDay=state.weather?.days?.[weekDayDate(state.day)];
-  $('weather-icon').textContent=weatherDay?.icon||'🌤️';
-  $('weather-temp').textContent=typeof weatherDay?.temperature==='number'?`${Math.round(weatherDay.temperature)} °C`:'— °C';
-  $('weather-location').textContent=state.weather?.locationLabel||'Kristiansand-området · Meteorologisk institutt / Yr';
-  $('weather-desc').textContent=weatherDay?`${weatherDay.description}${typeof weatherDay.rainMm==='number'?` · ca. ${weatherDay.rainMm} mm nedbør`:''}`:state.weatherError||'Ingen tilgjengelig prognose for valgt dag.';
   const rainy=Boolean(features.rainReminder&&weatherDay&&
-    ((typeof weatherDay.rainMm==='number'&&weatherDay.rainMm>=0.8)||/rain|sleet|snow/.test(weatherDay.symbol||'')));
+    ((typeof weatherDay.rainMm==='number'&&weatherDay.rainMm>=0.8)||
+      /rain|sleet|snow/.test(weatherDay.symbol||'')));
   $('rain-reminder').hidden=!rainy;
   $('rain-reminder').textContent=rainy?'☔ Regntøy kan være lurt å pakke for denne dagen.':'';
 }
@@ -582,6 +585,7 @@ async function reload({quiet=false,statusOnly=quiet}={}){
   }
   if(!quiet){
     state.plan=null;state.planError=null;state.weather=null;state.weatherError=null;state.loading=true;
+    planSchoolWeather?.setForecast(null);
     renderContent();
   }
   const grade=state.grade,schoolId=state.school.id;
@@ -590,8 +594,20 @@ async function reload({quiet=false,statusOnly=quiet}={}){
   const requests=[statusOnly
     ?fetchJSON(state.plan?.jobId?`/api/ai-status?job=${encodeURIComponent(state.plan.jobId)}`:`/api/plan?school=${encodeURIComponent(schoolId)}&grade=${encodeURIComponent(grade)}&statusOnly=1${viewingNextWeek?'&nextWeek=1':''}`,12000)
     :fetchJSON(`/api/plan?school=${encodeURIComponent(schoolId)}&grade=${encodeURIComponent(grade)}${viewingNextWeek?'&nextWeek=1':''}`,60000)];
-  if(features.weather&&!quiet)requests.push(fetchJSON(`/api/weather?school=${encodeURIComponent(schoolId)}`));
-  const [plan,weather]=await Promise.allSettled(requests);
+  // Fetch the public forecast independently, rather than waiting for a PDF
+  // download or AI analysis to finish before showing the temperature.
+  if(features.weather&&!quiet){
+    void fetchJSON(`/api/weather?school=${encodeURIComponent(schoolId)}`).then(weather=>{
+      if(id!==state.requestId||state.grade!==grade||state.school?.id!==schoolId)return;
+      state.weather=weather;state.weatherError=null;
+      planSchoolWeather?.setForecast(weather);renderWeather();
+    }).catch(()=>{
+      if(id!==state.requestId||state.grade!==grade||state.school?.id!==schoolId)return;
+      state.weatherError='Været er midlertidig utilgjengelig.';
+      planSchoolWeather?.setError(state.weatherError);
+    });
+  }
+  const [plan]=await Promise.allSettled(requests);
   if(statusOnly)state.statusChecking=false;
   if(id!==state.requestId||state.grade!==grade||state.school?.id!==schoolId)return;
   if(plan.status==='fulfilled'){
@@ -614,8 +630,6 @@ async function reload({quiet=false,statusOnly=quiet}={}){
       state.plan={...state.plan,aiStatus:'failed',warning:fresh.warning||'AI-analysen ble ikke fullført.'};
     }else state.plan=fresh;
   }else if(!quiet)state.planError='Kunne ikke hente ukeplan. Åpne trinnsiden, eller prøv igjen.';
-  if(weather){if(weather.status==='fulfilled')state.weather=weather.value;else state.weatherError='Været er midlertidig utilgjengelig.';}
-  else if(!quiet)state.weatherError='Værvisning er slått av.';
   state.loading=false;
   if(!quiet && !viewingNextWeek && !dayWasSelected && currentChoice().tryNextWeek && state.plan?.status!=='error'){
     // In weekends show next week only when an actual next-week PDF is published.
@@ -750,9 +764,13 @@ function openFamilyProfile(profile,{upcoming=false,cachedPlan=null,record=true,
    const requestId=state.requestId;
    void fetchJSON('/api/weather?school='+encodeURIComponent(profile.school)).then(weather=>{
     if(state.requestId===requestId&&state.profileId===profile.id&&!familyUI.isActive()){
-     state.weather=weather;renderWeather();
+     state.weather=weather;planSchoolWeather?.setForecast(weather);renderWeather();
     }
-   }).catch(()=>{ /* Weather is optional and must not block the cached week plan. */ });
+   }).catch(()=>{
+    // A failed public weather request must never block the cached school plan.
+    if(state.profileId===profile.id&&!familyUI.isActive())
+     planSchoolWeather?.setError('Været er midlertidig utilgjengelig.');
+   });
   }
 }
 function restoreNavigation(target){
@@ -796,6 +814,7 @@ function restoreNavigation(target){
  }finally{restoringRoute=false;scrollNewViewToTop();}
 }
 function boot(){
+  planSchoolWeather=initSchoolWeather({host:$('plan-school-weather'),external:true});
   // Capture the exact SPA route before the asynchronous account recovery may
   // replace history.state while fetching children from Supabase.
   const initialRoute=savedRoute();
@@ -971,10 +990,6 @@ function boot(){
   $('change-school').addEventListener('click',clearSchool);
   $('mobile-change-grade').addEventListener('click',()=>{$('mobile-selection-menu').open=false;clearGrade();});
   $('mobile-change-school').addEventListener('click',()=>{$('mobile-selection-menu').open=false;clearSchool();});
-  $('weather-toggle').addEventListener('click',()=>{
-    const expanded=$('weather-panel').classList.toggle('is-expanded');
-    $('weather-toggle').setAttribute('aria-expanded',String(expanded));
-  });
   const reportCurrentPlan=()=>{
     if(!state.school?.id||!state.grade)return;
     issueReporter.open({contexts:[{school:state.school.id,grade:state.grade,
