@@ -65,7 +65,8 @@ test('Preview-only fail closed, no credentials exposed by status',async()=>{
  assert.equal((await h(new Request('https://deploy-preview-173--ukeplanen.netlify.app/api/feide-oidc/status'))).status,404);
  assert.equal((await h(req('start',{method:'POST'}))).status,405);
  const unavailable=await createFeideOidcHandler({env:{},now:()=>now})(req('status'));
- assert.deepEqual(await unavailable.json(),{ready:false,authenticated:false});
+ assert.equal(unavailable.status,404,'Unconfigured hosts must fail closed');
+ assert.deepEqual(await unavailable.json(),{error:'Not available'});
 });
 
 test('Encrypted HttpOnly cookie binds name, uses AEAD and rejects tampering and expiry',()=>{
