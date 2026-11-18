@@ -11,7 +11,7 @@ const owner=randomUUID(),stranger=randomUUID(),childId=randomUUID(),familyId=ran
 const tokenA='A'.repeat(48), tokenB='B'.repeat(48), invite='c'.repeat(64),pin='283941';
 const env={CONTEXT:'deploy-preview',FEIDE_POC_ENABLED:'true',FEIDE_POC_CLIENT_ID:randomUUID(),
  FEIDE_POC_CLIENT_SECRET:'TEST_ONLY_NOT_A_REAL_SECRET',
- FEIDE_POC_COOKIE_KEY:cookieKey.toString('base64url'),SUPABASE_URL:'https://testprojectabcdefghi.supabase.co',FEIDE_LINK_TEST_SUPABASE_REF:'testprojectabcdefghi',
+ FEIDE_POC_COOKIE_KEY:cookieKey.toString('base64url'),SUPABASE_URL:'https://qxejliyfgfeigvxsqupg.supabase.co',
  SUPABASE_SERVICE_ROLE_KEY:'sb_secret_'+'x'.repeat(40),
  SUPABASE_PUBLISHABLE_KEY:'sb_publishable_'+'y'.repeat(40)};
 const feideCookie='__Host-skoleuka-feide-session='+seal('__Host-skoleuka-feide-session',
@@ -89,16 +89,16 @@ function fakeDb(){
  return {fetchImpl,requests,links,calls};
 }
 
-test('PR2 restricts API to isolated Supabase test project, exact preview and same-origin changes',async()=>{
+test('PR2 allows only the configured project on exact preview #170 and denies cross-origin requests',async()=>{
  const db=fakeDb(),h=createFeideLinkHandler({env,fetchImpl:db.fetchImpl,now:()=>new Date(nowMs)});
  assert.equal((await h(new Request('https://www.skoleuka.no/api/feide-child-link?action=create',{method:'POST'}))).status,404);
- const production=createFeideLinkHandler({env:{...env,SUPABASE_URL:'https://qxejliyfgfeigvxsqupg.supabase.co',FEIDE_LINK_TEST_SUPABASE_REF:'qxejliyfgfeigvxsqupg'},fetchImpl:db.fetchImpl,now:()=>new Date(nowMs)});
- const blocked=await production(req('create',{method:'POST',body:{}}));
+ const misconfigured=createFeideLinkHandler({
+   env:{...env,SUPABASE_URL:'https://wrongproject.supabase.co'},
+   fetchImpl:db.fetchImpl,now:()=>new Date(nowMs)
+ });
+ const blocked=await misconfigured(req('create',{method:'POST',body:{}}));
  assert.equal(blocked.status,503);
- assert.match((await blocked.json()).error,/isolert Supabase-testprosjekt/);
  assert.equal(db.calls.length,0);
- const missingRef=createFeideLinkHandler({env:{...env,FEIDE_LINK_TEST_SUPABASE_REF:''},fetchImpl:db.fetchImpl,now:()=>new Date(nowMs)});
- assert.equal((await missingRef(req('create',{method:'POST',body:{}}))).status,503);
  assert.equal((await h(new Request('https://deploy-preview-169--ukeplanen.netlify.app/api/feide-child-link?action=me'))).status,404);
  assert.equal((await h(req('create',{method:'POST',body:{},origin:'https://attacker.example'}))).status,403);
  assert.equal((await h(req('claim',{method:'POST',body:{token:invite}}))).status,401);
