@@ -99,7 +99,7 @@ test('PR2 restricts API to exact preview and enforces same-origin state changes'
 });
 
 test('Only guardian with fresh Supabase JWT and children RLS can initiate linking',async()=>{
- const db=fakeDb(),h=createFeideLinkHandler({env,fetchImpl:db.fetchImpl,now:()=>new Date(nowMs),secret:()=>invite});
+ const db=fakeDb();let issued=0;const h=createFeideLinkHandler({env,fetchImpl:db.fetchImpl,now:()=>new Date(nowMs),secret:()=>issued++===0?invite:randomBytes(32).toString('hex')});
  const outsider=await h(req('create',{method:'POST',guardian:tokenB,body:{}}));
  assert.equal(outsider.status,403);
  const created=await h(req('create',{method:'POST',body:{}}));
