@@ -21,6 +21,7 @@ on:
       - 'tests/quality/original-pdf-goldens.mjs'
       - 'lib/plan-core.mjs'
       - 'lib/homework-*.mjs'
+      - 'tests/ai-quality-homework-shared-deadline.test.mjs'
   push:
     branches: [main]
     paths:
@@ -38,6 +39,7 @@ on:
       - 'tests/quality/original-pdf-goldens.mjs'
       - 'lib/plan-core.mjs'
       - 'lib/homework-*.mjs'
+      - 'tests/ai-quality-homework-shared-deadline.test.mjs'
 
 permissions:
   contents: read
@@ -53,14 +55,23 @@ jobs:
           node-version: '22'
       - run: npm ci --no-audit --no-fund
       - name: Validate visually reviewed source manifest and evaluator contracts
-        run: node --test tests/quality-original-source-collection.test.mjs tests/ai-quality-original-pdfs.test.mjs tests/ai-quality-approved-baseline.test.mjs tests/parser-gap-triage.test.mjs tests/ai-quality-school-closures.test.mjs tests/school-closure-source.test.mjs
+        run: node --test tests/quality-original-source-collection.test.mjs tests/ai-quality-original-pdfs.test.mjs tests/ai-quality-approved-baseline.test.mjs tests/parser-gap-triage.test.mjs tests/ai-quality-school-closures.test.mjs tests/school-closure-source.test.mjs tests/ai-quality-homework-shared-deadline.test.mjs
       - name: Fetch originals, verify SHA-256 and score existing rules parser
         run: node scripts/evaluate-original-pdf-quality.mjs quality-real-results
       - name: Verify source-backed closure dates and future-week safety
+        # Keep reporting independent checks when a historical source expires;
+        # their failure states still block merge.
+        if: ${{ (success() || failure()) && hashFiles('quality-real-results/original-pdf-quality.json') != '' }}
         run: node scripts/check-original-school-closures.mjs quality-real-results/original-pdf-quality.json
       - name: Enforce no regressions of previously correct original-PDF facts
+        # Keep reporting independent checks when a historical source expires;
+        # their failure states still block merge.
+        if: ${{ (success() || failure()) && hashFiles('quality-real-results/original-pdf-quality.json') != '' }}
         run: node scripts/check-approved-original-pdf-baseline.mjs quality-real-results/original-pdf-quality.json
       - name: Triage reviewed parser gaps and check source integrity
+        # Keep reporting independent checks when a historical source expires;
+        # their failure states still block merge.
+        if: ${{ (success() || failure()) && hashFiles('quality-real-results/original-pdf-quality.json') != '' }}
         run: node scripts/report-parser-gaps.mjs quality-real-results/original-pdf-quality.json quality-real-results
       - name: Publish parser gap triage to GitHub Actions summary
         if: always()
