@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="nb">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<title>Koble Feide – foresatt (test) | Skoleuka</title>
+<link rel="stylesheet" href="/barn/feide/poc.css">
+<script type="module" src="/barn/feide/foresatt/guardian.mjs"></script>
+</head>
+<body><main class="shell">
+<header><img src="/brand/skoleuka-icon.svg" alt="" width="44" height="44">
+<div><small>SKOLEUKA · KUN TEST · PR #170</small><h1>Koble Feide til barnet</h1></div></header>
+<p>For foresatte. Logg inn på <a href="/">Skoleuka-familien</a> i denne Deploy Preview først.
+Du kan bare velge barn du allerede har tilgang til. Dagens QR-innlogging påvirkes ikke.</p>
+<section class="panel">
+<h2>1. Velg barn</h2><p id="status" role="status" aria-live="polite">Henter familiekonto …</p>
+<label for="child">Barneprofil</label><select id="child" disabled><option value="">Velg barn</option></select>
+<p><button id="create" type="button" disabled>Lag Feide-invitasjon</button></p>
+<div id="invite" hidden><label for="link">Engangslenke (gyldig i 10 minutter)</label>
+<input id="link" readonly style="width:100%;padding:.65rem" aria-label="Engangslenke til barnet">
+<button type="button" id="copy">Kopier lenke</button>
+<p class="muted">Åpne lenken på barnets enhet. Barnet logger inn med Feide og viser deg en 6-sifret kode.</p></div>
+</section>
+<section class="panel">
+<h2>2. Godkjenn etter Feide-innlogging</h2>
+<p>Be barnet vise koden på sin skjerm før du godkjenner. Knytt aldri konto basert på navn eller e-post.</p>
+<button id="refresh" type="button" disabled>Oppdater status</button>
+<div id="request-list"></div>
+<label for="pin">Bekreftelseskode fra barnets skjerm</label>
+<input id="pin" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" style="padding:.65rem">
+<button id="approve" type="button" disabled>Bekreft kobling</button>
+</section>
+<section class="panel">
+<h2>3. Administrer kobling</h2>
+<p id="linked">Ikke kontrollert</p>
+<button id="revoke" type="button" disabled class="secondary">Fjern Feide-kobling</button>
+</section>
+<p class="warning">Ingen elev får tilgang til ukeplaner via Feide fra denne PR-en. Databaseendringene skal først prøves i isolert testmiljø. Denne siden skal ikke brukes med ekte elevkontoer.</p>
+</main></body></html>

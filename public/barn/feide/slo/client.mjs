@@ -1,7 +1,7 @@
 const $=id=>document.getElementById(id);
 const status=$('status'),check=$('confirm'),start=$('start'),logout=$('logout');
 let ready=false,authenticated=false;
-const previewHost='deploy-preview-169--ukeplanen.netlify.app';
+const previewHost='deploy-preview-170--ukeplanen.netlify.app';
 const messages={
   'signed-in':'Feide-innlogging er bekreftet. Prøv nå full utlogging.',
   'logged-out':'Feide sendte nettleseren tilbake med korrekt logout-state. Lokal økt er avsluttet.',
@@ -21,7 +21,7 @@ function sanitizeURL() {
 async function init(){
   const result=sanitizeURL();
   if(location.hostname!==previewHost||location.protocol!=='https:'){
-    setMessage('Denne testen er ikke tilgjengelig utenfor Deploy Preview #169.');return;
+    setMessage('Denne testen er ikke tilgjengelig utenfor Deploy Preview #170.');return;
   }
   try{
     const response=await fetch('/api/feide-oidc/status',{cache:'no-store',credentials:'same-origin'});
