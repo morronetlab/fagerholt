@@ -45,7 +45,7 @@ test('Identity only matches custom Feide provider; linked parental identities ar
   {feide:false,stableSubject:false,otherIdentities:true});
  const feide={identities:[{provider:PROVIDER,identity_data:{sub:'test-opaque-sub'}}]};
  assert.deepEqual(identitySummary(feide),{feide:true,stableSubject:true,otherIdentities:false});
- assert.deepEqual(identitySummary({identities:[...feide.identities[0]?[feide.identities[0]]:[],{provider:'email'}]}),
+ assert.deepEqual(identitySummary({identities:[feide.identities[0],{provider:'email'}]}),
   {feide:true,stableSubject:true,otherIdentities:true});
 });
 test('No family access, persistent credentials, or unsanctioned Feide SLO in test UI',()=>{
