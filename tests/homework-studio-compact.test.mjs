@@ -26,7 +26,7 @@ test('Homework UI retains indexed helper and checkboxes; packing remains a separ
  assert.match(js,/data-helper-task/);
  assert.match(js,/data-check="homework"/);
  assert.match(js,/data-index="\$\{entry.index\}"/);
- assert.match(js,/if\(section==='homework'\)return/);
+ assert.match(js,/if\(section==='homework'\)\{/);
  assert.match(js,/return \`<label class="checkrow/);
  assert.match(html,/homework-studio-compact\.css/);
 });
