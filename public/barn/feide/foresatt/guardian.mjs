@@ -34,7 +34,7 @@ async function refresh(){
  const host=$('request-list');host.replaceChildren();
  const pending=Array.isArray(data.pending)?data.pending:[];
  const valid=pending.filter(r=>r.status==='awaiting-parent-confirmation'&&!r.locked);
- if(valid.length){
+ if(valid.length&&!linked){
   const label=document.createElement('label');
   label.textContent='Invitasjon barnet har bekreftet: ';
   const select=document.createElement('select');
@@ -51,7 +51,8 @@ async function refresh(){
  }else{
   const p=document.createElement('p');
   p.className='muted';
-  p.textContent=pending.length?'Venter på at barnet logger inn med Feide. Oppdater etter innlogging.':
+  p.textContent=linked?'Feide-koblingen er godkjent. Ingen flere bekreftelser trengs.':
+    pending.length?'Venter på at barnet logger inn med Feide. Oppdater etter innlogging.':
     'Ingen aktive invitasjoner.';
   host.appendChild(p);
  }
