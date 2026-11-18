@@ -148,6 +148,33 @@ test('Full server flow: PKCE state, code exchange, verify ID token, local revoke
  assert.equal(new URL(invalidComplete.headers.get('location')).searchParams.get('result'),'logout-unconfirmed');
 });
 
+test('Feide child app login and logout preserve return route and validate logout state',async()=>{
+ const mock=makeMock();
+ const handler=createFeideOidcHandler({env,fetchImpl:mock.fetchImpl,now:()=>now});
+ const start=await handler(req('start?return=child'));
+ const authorize=new URL(start.headers.get('location'));
+ const flowCookie=cookieOf(start,'__Host-skoleuka-feide-flow');
+ const flow=unseal('__Host-skoleuka-feide-flow',flowCookie.split('=')[1],cookieKey,now);
+ assert.equal(flow.purpose,'child');
+ mock.setNonce(flow.nonce);
+ const callback=await handler(req('callback?code=testing-code&state='+authorize.searchParams.get('state'),
+  {headers:{Cookie:flowCookie}}));
+ assert.equal(callback.headers.get('location'),POC_ORIGIN+'/barn/');
+ const sessionCookie=cookieOf(callback,'__Host-skoleuka-feide-session');
+ const session=unseal('__Host-skoleuka-feide-session',sessionCookie.split('=')[1],cookieKey,now,15*60_000);
+ assert.equal(session.exp,Math.floor(now/1000)+600);
+ const logout=await handler(req('logout?return=child',{headers:{Cookie:sessionCookie}}));
+ assert.equal(logout.status,303);
+ const end=new URL(logout.headers.get('location'));
+ assert.equal(end.searchParams.get('id_token_hint'),mock.getToken());
+ const saved=cookieOf(logout,'__Host-skoleuka-feide-logout');
+ assert.ok(logout.headers.getSetCookie().some(s=>s.includes('__Host-skoleuka-feide-session=;')&&s.includes('Max-Age=0')));
+ const done=await handler(req('complete?state='+end.searchParams.get('state'),{headers:{Cookie:saved}}));
+ assert.equal(done.headers.get('location'),POC_ORIGIN+'/barn/?feide=logged-out');
+ const bad=await handler(req('complete?state=invalid',{headers:{Cookie:saved}}));
+ assert.equal(bad.headers.get('location'),POC_ORIGIN+'/barn/?feide=logout-unconfirmed');
+});
+
 test('Feide callback refuses missing encrypted flow and performs no token exchange',async()=>{
  const mock=makeMock();
  const h=createFeideOidcHandler({env,fetchImpl:mock.fetchImpl,now:()=>now});
