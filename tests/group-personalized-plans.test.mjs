@@ -74,8 +74,8 @@ test('Shared notices remain visible, but child-specific week notices are isolate
  assert.ok(texts(r.weeklyNotices).some(s=>s.includes('stengt')));
  assert.ok(texts(b.weeklyNotices).some(s=>s.includes('stengt')));
  assert.ok(texts(r.weeklyNotices).some(s=>s.includes('biblioteket')));
- assert.ok(!texts(r.weeklyNotices).some(s=>s.includes('Gymtøy')));
- assert.ok(texts(b.weeklyNotices).some(s=>s.includes('Gymtøy')));
+ assert.ok(!texts(r.weeklyNotices).some(s=>s.includes('gymtøy')));
+ assert.ok(texts(b.weeklyNotices).some(s=>s.includes('gymtøy')));
  assert.ok(!texts(b.weeklyNotices).some(s=>s.includes('biblioteket')));
  const own=childSchoolDayDetails(plan,red,'Onsdag');
  assert.ok(own.notes.some(x=>x.text.includes('Viktig for alle')));
