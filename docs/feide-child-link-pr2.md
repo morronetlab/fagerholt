@@ -31,7 +31,7 @@
 - `lib/feide-child-link.mjs` og Netlify `/api/feide-child-link` (kun forhåndsvisning #170).
 - Foresatt-side `/barn/feide/foresatt/` (må være innlogget i familiens eksisterende Supabase-konto i samme preview). Lenke finnes også kun i QR-dialogen på PR170.
 - Elev-side `/barn/feide/koble/` for Feide-testinnlogging og sekssifret engangskode. Alle token/ID-token-behandlinger skjer server-side.
-- `supabase/migrations/20261118093000_feide_child_link_preview.sql` med to server-only RLS-tabeller. **Kun commit i GitHub, IKKE kjørt i Supabase.**
+- `supabase/migrations/20261118094522_feide_child_link_preview.sql` med to server-only RLS-tabeller. **Kun commit i GitHub, IKKE kjørt i Supabase.**
 - Positiv og negativ enhetstest for invitasjon, RLS, engangskode, tilbakekalling og preview-kontroll.
 
 **Ingen Feide-login gir tilgang til ukeplanen i denne PR.** Dette er bare bekreftet kontokobling til eksisterende barneprofil. Den faktiske elevsesjonen, lekse- og aktivitets-API, SLO-invalidering og iOS/PWA-regresjonstester kommer etter at koblingsflyten er validert.
