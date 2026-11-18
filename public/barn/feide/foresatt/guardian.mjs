@@ -1,7 +1,8 @@
 import {CloudAccount} from '/shared/cloud-account.mjs';
 
 const $=id=>document.getElementById(id);
-const previewHost='deploy-preview-171--ukeplanen.netlify.app';
+const supportedHost=()=>location.protocol==='https:'&&
+ ['deploy-preview-172--ukeplanen.netlify.app','www.skoleuka.no'].includes(location.hostname);
 let cloud=null,selectedRequest=null,childId='',linked=false;
 
 const message=text=>{$('status').textContent=text};
@@ -60,10 +61,13 @@ async function refresh(){
  buttons();
 }
 async function init(){
- if(location.hostname!==previewHost||location.protocol!=='https:'){
-  message('Bare tilgjengelig i testmiljø PR #170.');return;
+ if(!supportedHost()){
+  message('Feide-kobling er ikke tilgjengelig her.');return;
  }
  try{
+  const auth=await fetch('/api/feide-oidc/status',{cache:'no-store',credentials:'same-origin'});
+  if(!auth.ok||(await auth.json()).ready!==true)
+   throw Error('Feide-innlogging er ikke aktivert på denne adressen.');
   const response=await fetch('/api/account-config',{cache:'no-store'});
   const config=await response.json();
   if(!config.enabled)throw Error('Supabase er ikke aktivert for denne previewen.');
