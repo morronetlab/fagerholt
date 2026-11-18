@@ -5,6 +5,7 @@ import {
   POC_ORIGIN,POC_HOST,CALLBACK,COMPLETE,FEIDE_ISSUER,
   configReady,seal,unseal,validateFeideIdToken,createFeideOidcHandler,PRODUCTION_ORIGIN,feideOrigin
 } from '../lib/feide-oidc.mjs';
+import {feideRuntimeEnv} from '../lib/feide-runtime-env.mjs';
 
 const now=Date.parse('2026-11-18T08:35:00Z');
 // Never embed the actual Feide client ID: Netlify scans env-variable values in source.
@@ -27,7 +28,7 @@ const cookieOf=(r,name)=>{
  return values.flatMap(v=>v.split(/,(?=__Host-)/)).map(x=>x.trim())
   .find(x=>x.startsWith(name+'='))?.split(';')[0]||'';
 };
-const makeMock=({redirect=CALLBACK}={})=>{
+const makeMock=({redirect=CALLBACK,audience=client}={})=>{
  let tokenNonce=null, issuedToken=null, exchangeCount=0;
  const fetchImpl=async (url,opts={})=>{
   const u=String(url);
@@ -47,7 +48,7 @@ const makeMock=({redirect=CALLBACK}={})=>{
    assert.equal(body.get('grant_type'),'authorization_code');
    assert.equal(body.get('code'),'testing-code');
    exchangeCount++;
-   issuedToken=signClaims({iss:FEIDE_ISSUER,aud:client,sub:'FEIDE_TEST_SUB',
+   issuedToken=signClaims({iss:FEIDE_ISSUER,aud:audience,sub:'FEIDE_TEST_SUB',
      nonce:tokenNonce,iat:Math.floor(now/1000),exp:Math.floor(now/1000)+600});
    return Response.json({id_token:issuedToken,access_token:'test-provider-access-token'});
   }
@@ -190,19 +191,21 @@ test('Production is fail-closed until canonical origin, separate keys and explic
  const blocked=createFeideOidcHandler({env:prod,now:()=>now});
  assert.equal((await blocked(new Request(PRODUCTION_ORIGIN+'/api/feide-oidc/status'))).status,404);
  const active={...prod,FEIDE_ENABLED:'true',FEIDE_ORIGIN:PRODUCTION_ORIGIN,
-  FEIDE_CLIENT_ID:client,FEIDE_CLIENT_SECRET:'SYNTHETIC_PROD_SECRET',
+  FEIDE_CLIENT_ID:randomUUID(),FEIDE_CLIENT_SECRET:'SYNTHETIC_PROD_SECRET',
   FEIDE_SESSION_COOKIE_KEY:cookieKey.toString('base64url'),
   FEIDE_SUBJECT_HASH_KEY:randomBytes(32).toString('base64url'),
   FEIDE_LINK_PIN_KEY:randomBytes(32).toString('base64url')};
  assert.equal(configReady(active),true);
  assert.equal(configReady({...active,FEIDE_ORIGIN:'https://skoleuka.no'}),false);
  assert.equal(configReady({...active,FEIDE_LINK_PIN_KEY:undefined}),false);
- const mock=makeMock({redirect:PRODUCTION_ORIGIN+'/api/feide-oidc/callback'});
+ const mock=makeMock({redirect:PRODUCTION_ORIGIN+'/api/feide-oidc/callback',audience:active.FEIDE_CLIENT_ID});
  const h=createFeideOidcHandler({env:active,now:()=>now,fetchImpl:mock.fetchImpl});
  const target=p=>new Request(PRODUCTION_ORIGIN+'/api/feide-oidc/'+p);
  const started=await h(target('start?return=child'));
  const authorize=new URL(started.headers.get('Location'));
  assert.equal(authorize.searchParams.get('redirect_uri'),PRODUCTION_ORIGIN+'/api/feide-oidc/callback');
+ assert.equal(authorize.searchParams.get('client_id'),active.FEIDE_CLIENT_ID);
+ assert.notEqual(authorize.searchParams.get('client_id'),active.FEIDE_POC_CLIENT_ID);
  const flowCookie=cookieOf(started,'__Host-skoleuka-feide-flow');
  const flow=unseal('__Host-skoleuka-feide-flow',flowCookie.split('=')[1],cookieKey,now,10*60_000,'www.skoleuka.no');
  mock.setNonce(flow.nonce);
@@ -222,4 +225,28 @@ test('Production is fail-closed until canonical origin, separate keys and explic
  assert.equal(new URL(logout.headers.get('Location')).searchParams.get('post_logout_redirect_uri'),
   PRODUCTION_ORIGIN+'/api/feide-oidc/complete');
  assert.ok(logout.headers.getSetCookie().some(x=>x.startsWith('__Host-skoleuka-feide-session=;')));
+});
+
+test('Netlify deployment context enables production handlers when build-time CONTEXT is absent',async()=>{
+ const base={...env,CONTEXT:undefined,FEIDE_ENABLED:'true',
+  FEIDE_ORIGIN:PRODUCTION_ORIGIN,FEIDE_CLIENT_ID:randomUUID(),
+  FEIDE_CLIENT_SECRET:'MOCK_ONLY_SECURE_SECRET',
+  FEIDE_SESSION_COOKIE_KEY:randomBytes(32).toString('base64url'),
+  FEIDE_SUBJECT_HASH_KEY:randomBytes(32).toString('base64url'),
+  FEIDE_LINK_PIN_KEY:randomBytes(32).toString('base64url')};
+ const production=feideRuntimeEnv({deploy:{context:'production'}},base);
+ assert.equal(production.CONTEXT,'production');
+ assert.equal(configReady(production),true);
+ const status=await createFeideOidcHandler({env:production,now:()=>now})(
+  new Request(PRODUCTION_ORIGIN+'/api/feide-oidc/status'));
+ assert.equal(status.status,200);
+ assert.deepEqual(await status.json(),{ready:true,authenticated:false});
+ const noContext=feideRuntimeEnv({},base);
+ assert.equal(noContext.CONTEXT,undefined);
+ assert.equal(feideOrigin(noContext),null);
+ const preview=feideRuntimeEnv({deploy:{context:'deploy-preview'}},{...base,CONTEXT:'production'});
+ assert.equal(preview.CONTEXT,'deploy-preview');
+ assert.equal(feideOrigin(preview),POC_ORIGIN);
+ const other=feideRuntimeEnv({deploy:{context:'branch-deploy'}},{...base,CONTEXT:'production'});
+ assert.equal(feideOrigin(other),null);
 });
