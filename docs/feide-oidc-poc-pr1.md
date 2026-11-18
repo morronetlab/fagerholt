@@ -51,3 +51,51 @@ Se også [issue #168](https://github.com/morronetlab/fagerholt/issues/168).
 - https://supabase.com/docs/guides/auth/redirect-urls
 - https://supabase.com/docs/guides/auth/signout
 - https://docs.feide.no/service_providers/manage/openid_connect/redir_etter_logout.html
+
+## PR 1b – Serverstyrt Feide OIDC + full logout (separat POC)
+
+**Bakgrunn:** Første manuelle test 18.11.2026 viste vellykket Supabase `custom:feide`-login og stabil `sub`, men Supabase eksponerte ikke Feides opprinnelige ID-token på callback. Derfor ble det lagt til en **annen** preview-only testflyt som får og verifiserer Feide ID-token på serveren. Den første Supabase-testen ligger fortsatt på `/barn/feide/`.
+
+### Testflyt
+
+1. Åpne `https://deploy-preview-169--ukeplanen.netlify.app/barn/feide/slo/`.
+2. Klikk «Logg inn med Feide (server-test)» med kun en dedikert testkonto.
+3. Netlify Function starter **Authorization Code + PKCE** med tilfeldig state og nonce, bundet til en kryptert, HttpOnly cookie.
+4. Feide sender `code` til Netlify callback, Netlify bruker Client Secret server-side for kodebytte. Feides originale `id_token` valideres mot JWKS (RS256, eksakt issuer, audience, nonce, tidskrav).
+5. Netlify lagrer kun nødvendig verifisert ID-token i en kortlivet (15 minutter), AES-256-GCM-kryptert, Secure/HttpOnly/SameSite=Lax `__Host-` cookie. Ingen tokenverdier sendes til JavaScript, Supabase eller barnedata-API.
+6. Ved «Logg ut fra Skoleuka og Feide» fjernes lokal sesjonscookie **før** Feide `end_session_endpoint` kalles med originalt `id_token_hint`, registrert `post_logout_redirect_uri` og tilfeldig `state`.
+7. Feide returnerer til Netlify `/api/feide-oidc/complete`, som validerer logout-state og viser kun «Retur verifisert». En mismatch rapporteres som «Ikke verifisert». Ingen familie- eller barnedata nås.
+
+### Må settes opp manuelt før testen fungerer
+
+**Feide kundeportal, eksisterende OIDC-konfig for Skoleuka:** legg til to ekstra **eksakte** URI-er under innlogging og utlogging (behold allerede registrerte Supabase URI-er):
+
+- **Redirect URI til etter innlogging:** `https://deploy-preview-169--ukeplanen.netlify.app/api/feide-oidc/callback`
+- **Redirect URI til etter utlogging:** `https://deploy-preview-169--ukeplanen.netlify.app/api/feide-oidc/complete`
+
+**Netlify → prosjekt `ukeplanen` → Environment variables**, scope **Functions**, context **Deploy Previews** (ikke produksjon):
+
+- `FEIDE_POC_ENABLED=true`
+- `FEIDE_POC_CLIENT_ID`: Feide Client ID for samme konfigurasjon som URI-ene.
+- `FEIDE_POC_CLIENT_SECRET`: Feide Client Secret, lagres som hemmelig variabel kun i Netlify.
+- `FEIDE_POC_COOKIE_KEY`: generer 32 kryptografisk tilfeldige bytes, lagret som base64url (43 tegn). Hemmelig variabel.
+
+**OBS:** Legg aldri secret eller cookie-key inn i GitHub, chat, frontend eller `netlify.toml`. Endringer i Netlify env vars krever ny deploy av PR #169. Feide testbrukere må fortsatt være tillatt.
+
+### Akseptansekriterier
+
+- [ ] Netlify miljøvariabler tilgjengelige på PR169, og **ikke** på production.
+- [ ] Feide godtar den nye eksakte login redirect URI.
+- [ ] Server-side kodeutveksling lykkes, ID-token signatur og claims er kontrollert.
+- [ ] `/api/feide-oidc/status` viser bare `ready` og `authenticated`, aldri tokens.
+- [ ] Siden bekrefter aktiv Feide-testøkt (uten personidentifikatorer).
+- [ ] Logout går til `https://auth.dataporten.no/openid/endsession` med riktig `id_token_hint`.
+- [ ] Feide returnerer til `/api/feide-oidc/complete` og state kontrolleres.
+- [ ] Lokal testøkt er borte før retur og kan ikke gjenbrukes.
+- [ ] Direkte kall på `www.skoleuka.no` og andre deploy previews gir 404.
+- [ ] Gamle QR/foreldre-flyter og Supabase-auth fungerer fortsatt uendret.
+- [ ] Automatiske tester består og manuelle nettlesertester gjennomføres før merge.
+
+### Avgrensning
+
+Denne serverstyrte POC-en er **ikke** en ny innloggingsmetode for ordinære Skoleuka-elever. Den kobler ikke automatisk Feide-kontoen til Supabase Auth eller `children.id`; det krever separat sikkerhetsdesign og kontokobling i PR 2. Hvis id-tokenets størrelse overstiger den sikre cookie-grensen, feiler testen lukket i stedet for å opprette usikker session. Feides RP-logout logger ikke automatisk ut andre, separate Feide-tjenester.
