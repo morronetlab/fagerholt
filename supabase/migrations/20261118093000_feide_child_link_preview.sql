@@ -1,4 +1,6 @@
--- Feide PR 2 (PREVIEW/TEST ONLY until explicitly reviewed and applied).
+-- Feide PR 2: additive tables applied to existing Supabase project with user approval.
+-- This creates new tables only; no existing family or child rows are changed.
+-- Feature remains accessible only through exact PR #170 preview endpoints.
 -- Authenticated guardians must pass existing children RLS via the Netlify backend.
 -- No anon/authenticated Data API privileges: only service_role can read/write.
 create table public.feide_link_requests (
