@@ -24,3 +24,29 @@
 - [ ] Feide-kobling gis ingen direkte Supabase- eller QR-tokens.
 - [ ] Foresatt kan trekke tilbake koblingen.
 - [ ] Tester og CI er grønne. Ingen merge til produksjon.
+
+## Implementert i første PR 2-iterasjon
+- `lib/feide-child-link.mjs` og Netlify `/api/feide-child-link` (kun forhåndsvisning #170).
+- Foresatt-side `/barn/feide/foresatt/` (må være innlogget i familiens eksisterende Supabase-konto i samme preview). Lenke finnes også kun i QR-dialogen på PR170.
+- Elev-side `/barn/feide/koble/` for Feide-testinnlogging og sekssifret engangskode. Alle token/ID-token-behandlinger skjer server-side.
+- `supabase/migrations/20261118093000_feide_child_link_preview.sql` med to server-only RLS-tabeller. **Kun commit i GitHub, IKKE kjørt i Supabase.**
+- Positiv og negativ enhetstest for invitasjon, RLS, engangskode, tilbakekalling og preview-kontroll.
+
+**Ingen Feide-login gir tilgang til ukeplanen i denne PR.** Dette er bare bekreftet kontokobling til eksisterende barneprofil. Den faktiske elevsesjonen, lekse- og aktivitets-API, SLO-invalidering og iOS/PWA-regresjonstester kommer etter at koblingsflyten er validert.
+
+### Eksterne steg før manuell ende-til-ende-test
+1. **Opprett isolert Supabase-testprosjekt/branch**, eller godkjenn særskilt et migreringsmiljø som ikke berører produksjonsdata. Ikke bruk produksjonsdatabasen til denne første testen. Kjør/skjematest kun den nye migrasjonen i dette testmiljøet, og kontroller at `anon`/`authenticated` har null grants til de to tabellene.
+2. Knytt Netlify Deploy Preview #170 til passende Supabase-testprosjekt (Functions-miljøvariabler `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` må ha samme prosjekt og aldri eksponeres i frontend).
+3. Under Skoleukas Feide OIDC-konfigurasjon, legg til **to eksakte PR #170-URL-er**:
+   - Login callback: `https://deploy-preview-170--ukeplanen.netlify.app/api/feide-oidc/callback`
+   - Logout callback: `https://deploy-preview-170--ukeplanen.netlify.app/api/feide-oidc/complete`
+4. Sørg for at `FEIDE_POC_ENABLED`, `FEIDE_POC_CLIENT_ID`, `FEIDE_POC_CLIENT_SECRET` og `FEIDE_POC_COOKIE_KEY` er tilgjengelige i **Deploy Previews / Functions**. Oppdater miljøvariabler manuelt i Netlify. Ikke del secrets i GitHub eller chat.
+5. Logg inn som foresatt i PR170 og åpne `/barn/feide/foresatt/`. Velg en **fiktiv** barneprofil, opprett invitasjon.
+6. Åpne invitasjonen på barnets test-enhet, logg inn med dedikert Feide-testkonto på PR170, vis PIN på elevsiden; foresatt skriver denne inn på egen side.
+7. Verifiser at annen familie ikke kan godkjenne, at brukt/utløpt QR/invitasjon avvises, at koblingen kan trekkes tilbake, og at familiedata ikke blir tilgjengelige for eleven.
+
+### Forutsetninger og åpne sikkerhetspunkter
+- Eksempelimplementasjonen bruker en kortlivet, kryptert Feide-cookie (15 min); hvis `FEIDE_POC_COOKIE_KEY` roteres, vil eksisterende pseudonymiserte testkoblinger ikke gjenkjennes. Egen, rotasjonsstyrt identitetsnøkkel kreves før produksjon.
+- Databasen sikrer unik aktiv kobling, men godkjenningen bruker foreløpig flere REST-operasjoner. Bør gjøres til én atomisk transaksjon før produksjon.
+- 6-sifret kode har maks fem feilforsøk per forespørsel, og foresatt må ha en egen verifisert Supabase-økt.
+- Ingen eksakte ID-token, Feide-sub, e-postadresser, Client Secret eller familieopplysninger returneres til andre parter.
