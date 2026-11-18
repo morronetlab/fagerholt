@@ -62,7 +62,7 @@ test('Preview-only fail closed, no credentials exposed by status',async()=>{
  assert.equal(configReady({...env,FEIDE_POC_COOKIE_KEY:'bad'}),false);
  const h=createFeideOidcHandler({env,now:()=>now,fetchImpl:async()=>{throw Error('no');}});
  assert.equal((await h(new Request('https://www.skoleuka.no/api/feide-oidc/status'))).status,404);
- assert.equal((await h(new Request('https://deploy-preview-171--ukeplanen.netlify.app/api/feide-oidc/status'))).status,404);
+ assert.equal((await h(new Request('https://deploy-preview-172--ukeplanen.netlify.app/api/feide-oidc/status'))).status,404);
  assert.equal((await h(req('start',{method:'POST'}))).status,405);
  const unavailable=await createFeideOidcHandler({env:{},now:()=>now})(req('status'));
  assert.deepEqual(await unavailable.json(),{ready:false,authenticated:false});
