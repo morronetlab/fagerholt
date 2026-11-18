@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {generateKeyPairSync, sign as signJwt, randomBytes, randomUUID} from 'node:crypto';
 import {
   POC_ORIGIN,POC_HOST,CALLBACK,COMPLETE,FEIDE_ISSUER,
-  configReady,seal,unseal,validateFeideIdToken,createFeideOidcHandler
+  configReady,seal,unseal,validateFeideIdToken,createFeideOidcHandler,PRODUCTION_ORIGIN,feideOrigin
 } from '../lib/feide-oidc.mjs';
 
 const now=Date.parse('2026-11-18T08:35:00Z');
@@ -27,7 +27,7 @@ const cookieOf=(r,name)=>{
  return values.flatMap(v=>v.split(/,(?=__Host-)/)).map(x=>x.trim())
   .find(x=>x.startsWith(name+'='))?.split(';')[0]||'';
 };
-const makeMock=()=>{
+const makeMock=({redirect=CALLBACK}={})=>{
  let tokenNonce=null, issuedToken=null, exchangeCount=0;
  const fetchImpl=async (url,opts={})=>{
   const u=String(url);
@@ -43,7 +43,7 @@ const makeMock=()=>{
    assert.match(opts.headers.Authorization,/^Basic /);
    const body=new URLSearchParams(opts.body);
    assert.equal(body.get('code_verifier')?.length,43);
-   assert.equal(body.get('redirect_uri'),CALLBACK);
+   assert.equal(body.get('redirect_uri'),redirect);
    assert.equal(body.get('grant_type'),'authorization_code');
    assert.equal(body.get('code'),'testing-code');
    exchangeCount++;
@@ -62,10 +62,11 @@ test('Preview-only fail closed, no credentials exposed by status',async()=>{
  assert.equal(configReady({...env,FEIDE_POC_COOKIE_KEY:'bad'}),false);
  const h=createFeideOidcHandler({env,now:()=>now,fetchImpl:async()=>{throw Error('no');}});
  assert.equal((await h(new Request('https://www.skoleuka.no/api/feide-oidc/status'))).status,404);
- assert.equal((await h(new Request('https://deploy-preview-172--ukeplanen.netlify.app/api/feide-oidc/status'))).status,404);
+ assert.equal((await h(new Request('https://deploy-preview-173--ukeplanen.netlify.app/api/feide-oidc/status'))).status,404);
  assert.equal((await h(req('start',{method:'POST'}))).status,405);
  const unavailable=await createFeideOidcHandler({env:{},now:()=>now})(req('status'));
- assert.deepEqual(await unavailable.json(),{ready:false,authenticated:false});
+ assert.equal(unavailable.status,404,'Unconfigured hosts must fail closed');
+ assert.deepEqual(await unavailable.json(),{error:'Not available'});
 });
 
 test('Encrypted HttpOnly cookie binds name, uses AEAD and rejects tampering and expiry',()=>{
@@ -181,4 +182,44 @@ test('Feide callback refuses missing encrypted flow and performs no token exchan
  const r=await h(req('callback?state=anything&code=testing-code'));
  assert.equal(new URL(r.headers.get('location')).searchParams.get('result'),'login-invalid');
  assert.equal(mock.exchanges(),0);
+});
+
+test('Production is fail-closed until canonical origin, separate keys and explicit flag exist',async()=>{
+ const prod={...env,CONTEXT:'production',FEIDE_POC_ENABLED:'true'};
+ assert.equal(feideOrigin(prod),null);
+ const blocked=createFeideOidcHandler({env:prod,now:()=>now});
+ assert.equal((await blocked(new Request(PRODUCTION_ORIGIN+'/api/feide-oidc/status'))).status,404);
+ const active={...prod,FEIDE_ENABLED:'true',FEIDE_ORIGIN:PRODUCTION_ORIGIN,
+  FEIDE_CLIENT_ID:client,FEIDE_CLIENT_SECRET:'SYNTHETIC_PROD_SECRET',
+  FEIDE_SESSION_COOKIE_KEY:cookieKey.toString('base64url'),
+  FEIDE_SUBJECT_HASH_KEY:randomBytes(32).toString('base64url'),
+  FEIDE_LINK_PIN_KEY:randomBytes(32).toString('base64url')};
+ assert.equal(configReady(active),true);
+ assert.equal(configReady({...active,FEIDE_ORIGIN:'https://skoleuka.no'}),false);
+ assert.equal(configReady({...active,FEIDE_LINK_PIN_KEY:undefined}),false);
+ const mock=makeMock({redirect:PRODUCTION_ORIGIN+'/api/feide-oidc/callback'});
+ const h=createFeideOidcHandler({env:active,now:()=>now,fetchImpl:mock.fetchImpl});
+ const target=p=>new Request(PRODUCTION_ORIGIN+'/api/feide-oidc/'+p);
+ const started=await h(target('start?return=child'));
+ const authorize=new URL(started.headers.get('Location'));
+ assert.equal(authorize.searchParams.get('redirect_uri'),PRODUCTION_ORIGIN+'/api/feide-oidc/callback');
+ const flowCookie=cookieOf(started,'__Host-skoleuka-feide-flow');
+ const flow=unseal('__Host-skoleuka-feide-flow',flowCookie.split('=')[1],cookieKey,now,10*60_000,'www.skoleuka.no');
+ mock.setNonce(flow.nonce);
+ const signed=await h(new Request(PRODUCTION_ORIGIN+'/api/feide-oidc/callback?state='+
+  authorize.searchParams.get('state')+'&code=testing-code',{headers:{Cookie:flowCookie}}));
+ assert.equal(signed.status,303);
+ assert.equal(signed.headers.get('Location'),PRODUCTION_ORIGIN+'/barn/');
+ const sessionCookie=cookieOf(signed,'__Host-skoleuka-feide-session');
+ assert.ok(sessionCookie);
+ assert.equal((await (await h(new Request(PRODUCTION_ORIGIN+'/api/feide-oidc/status',{
+  headers:{Cookie:sessionCookie}}))).json()).authenticated,true);
+ const wrongHost=createFeideOidcHandler({env:active,now:()=>now,fetchImpl:mock.fetchImpl});
+ assert.equal((await wrongHost(new Request('https://deploy-preview-172--ukeplanen.netlify.app/api/feide-oidc/status',{
+  headers:{Cookie:sessionCookie}}))).status,404);
+ const logout=await h(new Request(PRODUCTION_ORIGIN+'/api/feide-oidc/logout?return=child',{
+  headers:{Cookie:sessionCookie}}));
+ assert.equal(new URL(logout.headers.get('Location')).searchParams.get('post_logout_redirect_uri'),
+  PRODUCTION_ORIGIN+'/api/feide-oidc/complete');
+ assert.ok(logout.headers.getSetCookie().some(x=>x.startsWith('__Host-skoleuka-feide-session=;')));
 });

@@ -16,7 +16,20 @@ import {contentCategoryLabel} from '../shared/content-categories.mjs';
 
 const $=id=>document.getElementById(id);
 const KEY='skoleuka.child.device.v1';
-const FEIDE_PILOT=location.protocol==='https:'&&location.hostname==='deploy-preview-171--ukeplanen.netlify.app';
+const FEIDE_CANDIDATE=location.protocol==='https:'&&
+ ['deploy-preview-172--ukeplanen.netlify.app','www.skoleuka.no'].includes(location.hostname);
+let feideReady=false,feideAuthenticated=false;
+async function checkFeide(){
+ if(!FEIDE_CANDIDATE)return false;
+ try{
+  const response=await fetch('/api/feide-oidc/status',{cache:'no-store',
+   credentials:'same-origin',referrerPolicy:'no-referrer'});
+  const result=await response.json();
+  feideReady=response.ok&&result?.ready===true;
+  feideAuthenticated=feideReady&&result?.authenticated===true;
+ }catch{feideReady=false;feideAuthenticated=false;}
+ return feideReady;
+}
 const schoolWeather=initSchoolWeather({host:$('child-school-weather')});
 const esc=s=>String(s??'').replace(/[&<>"']/gu,c=>({
  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
@@ -59,8 +72,9 @@ function setup(message){
  state.child=null;state.plan=null;state.planError=null;state.activities=[];state.municipal=null;state.progress=null;
  state.progressBusy=false;state.progressError='';state.packing=null;state.packingBusy=false;state.packingError='';
  $('child-ready').hidden=true;$('child-setup').hidden=false;
- $('child-feide-login').hidden=!FEIDE_PILOT;
- $('child-feide-setup-note').hidden=!FEIDE_PILOT;
+ $('child-feide-login').hidden=!feideReady;
+ $('child-feide-setup-logout').hidden=!feideAuthenticated;
+ $('child-feide-setup-note').hidden=!feideReady;
  $('child-feide-logout').hidden=true;
  $('child-setup-message').textContent=message||
   'Be en foresatt åpne «Inviter barn» under din profil og skann QR-koden med denne enheten.';
@@ -214,7 +228,9 @@ async function load(){
   }catch{/* No transfer cookie, offline or revoked; show safe setup guidance. */}
  }
  const hasQr=/^[a-f0-9]{64}$/u.test(state.session||'');
- state.authMode=hasQr?'qr':FEIDE_PILOT?'feide':null;
+ const logoutResult=new URL(location.href).searchParams.get('feide');
+ if(!hasQr)await checkFeide();
+ state.authMode=hasQr?'qr':feideReady?'feide':null;
  if(!state.authMode){
   setup(isPresent()?
    'Den installerte appen mangler tilgang fra nettleseren. Fjern det gamle appikonet, be en foresatt lage en ny QR-kode, åpne lenken i Safari på iPad og legg til på Hjem-skjerm på nytt.':
@@ -273,7 +289,11 @@ async function load(){
    if(state.authMode==='qr')setToken(null);
    state.session=null;
    setup(state.authMode==='feide'?
-    'Feide-økten er utløpt, eller koblingen er fjernet av en foresatt. Logg inn på nytt med Feide.':
+    logoutResult==='logout-unconfirmed'?
+    'Skoleuka-økten er avsluttet, men vi kunne ikke bekrefte at Feide-økten er avsluttet. Logg inn på nytt for å forsøke full utlogging, eller lukk nettleseren.':
+    logoutResult==='logged-out'?'Du er logget ut fra Skoleuka og Feide.':
+    feideAuthenticated?'Feide-kontoen har ikke tilgang til denne barneprofilen. Kontakt en foresatt, eller logg ut fra Feide.':
+    'Feide-økten er utløpt. Logg inn på nytt med Feide.':
     e.message);
   }else setup(e.message||'Kan ikke hente ukeplanen akkurat nå.');
  }
@@ -391,14 +411,17 @@ $('child-days').addEventListener('click',e=>{
 });
 $('child-refresh').addEventListener('click',()=>void load());
 $('child-feide-login').addEventListener('click',()=>{
- if(FEIDE_PILOT)location.assign('/api/feide-oidc/start?return=child');
+ if(feideReady&&FEIDE_CANDIDATE)location.assign('/api/feide-oidc/start?return=child');
 });
-$('child-feide-logout').addEventListener('click',()=>{
- if(FEIDE_PILOT&&state.authMode==='feide'){
-  // Remove private data from the visible page before leaving for Feide logout.
+const feideLogout=()=>{
+ if(feideReady&&FEIDE_CANDIDATE){
   setup('Logger ut fra Skoleuka og Feide …');
   location.assign('/api/feide-oidc/logout?return=child');
  }
+};
+$('child-feide-setup-logout').addEventListener('click',feideLogout);
+$('child-feide-logout').addEventListener('click',()=>{
+ if(state.authMode==='feide')feideLogout();
 });
 $('child-retry').addEventListener('click',()=>void load());
 $('child-remove').addEventListener('click',async()=>{
@@ -417,10 +440,10 @@ $('child-remove').addEventListener('click',async()=>{
  }
 });
 document.addEventListener('visibilitychange',()=>{
- if(document.visibilityState==='visible'&&(getToken()||FEIDE_PILOT))void load();
+ if(document.visibilityState==='visible'&&(getToken()||feideReady))void load();
 });
 // Re-check guardian revocations while the app stays open.
-setInterval(()=>{if(document.visibilityState==='visible'&&(getToken()||FEIDE_PILOT))void load();},15*60_000);
+setInterval(()=>{if(document.visibilityState==='visible'&&(getToken()||feideReady))void load();},15*60_000);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/barn/sw.js',{scope:'/barn/'}).catch(()=>{});
 const pair=new URL(location.href).searchParams.get('pair');
 if(pair)void activate(pair);

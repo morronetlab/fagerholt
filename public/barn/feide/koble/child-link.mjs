@@ -1,6 +1,7 @@
 const $=id=>document.getElementById(id);
-const preview='deploy-preview-171--ukeplanen.netlify.app';
-const key='skoleuka.feide.link171.invite.v1';
+const eligibleHost=()=>location.protocol==='https:'&&
+ ['deploy-preview-172--ukeplanen.netlify.app','www.skoleuka.no'].includes(location.hostname);
+const key='skoleuka.feide.invite.v2.'+location.hostname;
 let authenticated=false,ready=false,claimed=false;
 const message=text=>{$('status').textContent=text};
 function repaint(){
@@ -12,8 +13,8 @@ async function init(){
  const url=new URL(location.href);
  const token=url.searchParams.get('token');
  history.replaceState(null,'',url.pathname);
- if(location.hostname!==preview||location.protocol!=='https:'){
-  message('Feide-kobling er bare tilgjengelig i testmiljøet.');return;
+ if(!eligibleHost()){
+  message('Feide-kobling er ikke aktivert på denne adressen.');return;
  }
  if(token&&/^[a-f0-9]{64}$/.test(token))sessionStorage.setItem(key,token);
  try{

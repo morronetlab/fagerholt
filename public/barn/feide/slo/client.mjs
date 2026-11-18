@@ -1,7 +1,7 @@
 const $=id=>document.getElementById(id);
 const status=$('status'),check=$('confirm'),start=$('start'),logout=$('logout');
 let ready=false,authenticated=false;
-const previewHost='deploy-preview-171--ukeplanen.netlify.app';
+const previewHost='deploy-preview-172--ukeplanen.netlify.app';
 const messages={
   'signed-in':'Feide-innlogging er bekreftet. Prøv nå full utlogging.',
   'logged-out':'Feide sendte nettleseren tilbake med korrekt logout-state. Lokal økt er avsluttet.',

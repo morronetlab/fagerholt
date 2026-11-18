@@ -7,14 +7,18 @@ const e=s=>String(s??'').replace(/[&<>"']/gu,c=>({
 export function initChildPairingUI({getCloud,onStatusChange=()=>{}}){
  const panel=$('child-pair-dialog');let child=null,previous=null,scrollY=0;
  // Available only on PR2 preview: production and existing QR flow never change.
- if(location.hostname==='deploy-preview-171--ukeplanen.netlify.app'){
-  const info=document.createElement('p');
-  info.className='family-muted';
-  const link=document.createElement('a');
-  link.href='/barn/feide/foresatt/';
-  link.textContent='Koble barnet til Feide (test – PR 3)';
-  info.appendChild(link);
-  panel.appendChild(info);
+ if(location.protocol==='https:'&&
+    ['deploy-preview-172--ukeplanen.netlify.app','www.skoleuka.no'].includes(location.hostname)){
+  void fetch('/api/feide-oidc/status',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(auth=>{
+   if(auth?.ready!==true)return;
+   const info=document.createElement('p');
+   info.className='family-muted';
+   const link=document.createElement('a');
+   link.href='/barn/feide/foresatt/';
+   link.textContent='Koble barnet til Feide';
+   info.appendChild(link);
+   panel.appendChild(info);
+  }).catch(()=>{});
  }
  const setup=new Map();let statusVersion=0,statusFamilyId=null;
  let platform='ios',pollTimer=null,refreshing=false,qrExpiresAt=0,qrMode=null;
