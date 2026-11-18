@@ -128,3 +128,38 @@
   margin:2px 11px 9px;padding:8px 11px
  }
 }
+
+
+/* Feide access lives next to QR onboarding for each cloud child. The action
+ * remains visible on small screens, even when the secondary card menu closes. */
+#family-view .family-child-feide{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ margin:8px 12px 10px;padding:11px 13px;border:1px solid #cbdedb;
+ border-radius:12px;background:#f1f8f9;min-width:0
+}
+#family-view .family-child-feide-status{
+ display:flex;flex-direction:column;gap:3px;min-width:0
+}
+#family-view .family-child-feide-status strong{
+ font-size:13px;color:#244f52;line-height:1.35
+}
+#family-view .family-child-feide-status small{
+ font-size:12px;color:#537275;line-height:1.35
+}
+#family-view .family-child-feide-link{
+ display:inline-flex;align-items:center;justify-content:center;text-align:center;
+ min-height:39px;flex-shrink:0;padding:8px 12px;
+ border:1px solid #aad2ce;border-radius:10px;background:#fff;color:#245a55;
+ font-weight:800;font-size:12px;text-decoration:none;box-sizing:border-box
+}
+#family-view .family-child-feide-link:hover{background:#e4f4ee}
+#family-view .family-child-feide-link:focus-visible{outline:3px solid #d3a04a;outline-offset:2px}
+#family-view .family-child-feide[data-feide-status="linked"]{
+ background:#ecf7f0;border-color:#c8e0ce
+}
+@media(max-width:700px){
+ #family-view .family-child-feide{margin:5px 11px 9px;padding:9px 10px;gap:9px}
+ #family-view .family-child-feide-status strong{font-size:12px}
+ #family-view .family-child-feide-status small{font-size:11px}
+ #family-view .family-child-feide-link{font-size:11px;min-height:39px;padding:7px 9px}
+}
