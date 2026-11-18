@@ -103,7 +103,7 @@ function render(){
  $('child-feide-logout').hidden=state.authMode!=='feide';
  schoolWeather.updateSchools([child.school]);
  $('child-grade').textContent=(siteConfig.schools[child.school]?.name||'Skolen')+
-  ' · '+child.grade+'. trinn';
+  ' · '+child.grade+'. trinn'+(child.group?' · '+child.group:' · Gruppe ikke valgt');
  $('child-greeting').textContent='Hei, '+child.name+'! 👋';
  $('child-week-info').textContent='Uke '+calendar.week+' · '+calendar.year+
   (calendar.upcoming?' · neste skoleuke':'');
