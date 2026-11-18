@@ -165,7 +165,8 @@ function renderGuardianSummary(){
  const profile=state.profileId?familyUI?.profileById(state.profileId):null;
  if(!profile||familyUI?.isActive())return;
  $('guardian-plan-day-title').textContent=DAYS[state.day]+' '+titleDay(state.day);
- $('guardian-plan-day-subtitle').textContent=(state.school?.name||'Skole')+' · '+state.grade+'. trinn';
+ $('guardian-plan-day-subtitle').textContent=(state.school?.name||'Skole')+
+  ' · '+state.grade+'. trinn'+(profile.group?' · '+profile.group:' · Gruppe ikke valgt');
  if(state.loading||!state.plan||state.plan.aiStatus==='processing'||
   !['ok','partial'].includes(state.plan.status)){
   $('guardian-plan-homework-state').textContent='Henter ukeplan …';
