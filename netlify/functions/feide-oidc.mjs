@@ -1,6 +1,8 @@
-/** Preview-only Feide OIDC code flow + logout test endpoints. */
+/** Feide OIDC endpoints: resolve trusted Netlify deploy context at request time. */
 import {createFeideOidcHandler} from '../../lib/feide-oidc.mjs';
-export default createFeideOidcHandler();
+import {feideRuntimeEnv} from '../../lib/feide-runtime-env.mjs';
+export default (request,context)=>
+  createFeideOidcHandler({env:feideRuntimeEnv(context)})(request);
 export const config = {
   path: [
     '/api/feide-oidc/start',
