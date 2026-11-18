@@ -24,7 +24,18 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --no-audit --no-fund
+      # On pull requests, the pending change is NOT on www.skoleuka.no.
+      # Verify the candidate code locally, while the independent Netlify
+      # deploy-preview status verifies preview publishing. Never probe main as
+      # a proxy for unmerged PR code.
+      - name: Verify PR parser and syntax without production dependency
+        if: github.event_name == 'pull_request'
+        run: |
+          npm run check:syntax
+          node --test tests/ai-quality-homework-shared-deadline.test.mjs
+          echo "::notice::PR smoke validated candidate code; live production verification runs on main."
       - name: Wait for Netlify to publish the expected production commit
+        if: github.event_name != 'pull_request'
         env:
           PRODUCTION_URL: https://www.skoleuka.no
           EXPECTED_COMMIT: ${{ github.event.pull_request.base.sha || github.sha }}
@@ -42,6 +53,7 @@ jobs:
           echo "::error::Production did not serve expected commit $EXPECTED_COMMIT"
           exit 1
       - name: Check live production and original school PDFs
+        if: github.event_name != 'pull_request'
         env:
           PRODUCTION_URL: https://www.skoleuka.no
           EXPECTED_COMMIT: ${{ github.event.pull_request.base.sha || github.sha }}
