@@ -1,13 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {generateKeyPairSync, sign as signJwt, randomBytes} from 'node:crypto';
+import {generateKeyPairSync, sign as signJwt, randomBytes, randomUUID} from 'node:crypto';
 import {
   POC_ORIGIN,POC_HOST,CALLBACK,COMPLETE,FEIDE_ISSUER,
   configReady,seal,unseal,validateFeideIdToken,createFeideOidcHandler
 } from '../lib/feide-oidc.mjs';
 
 const now=Date.parse('2026-11-18T08:35:00Z');
-const client='e1060474-47dd-4bb6-822e-d4243d015a47'; // Public Feide client ID in admin screenshot.
+// Never embed the actual Feide client ID: Netlify scans env-variable values in source.
+// A synthetic client ID exercises the same OIDC audience validation in tests.
+const client=randomUUID();
 const cookieKey=randomBytes(32);
 const env={CONTEXT:'deploy-preview',FEIDE_POC_ENABLED:'true',
  FEIDE_POC_CLIENT_ID:client,FEIDE_POC_CLIENT_SECRET:'TEST_ONLY_never_real_secret',
