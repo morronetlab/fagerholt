@@ -38,7 +38,7 @@
 
 ### Eksterne steg før manuell ende-til-ende-test
 1. **Opprett isolert Supabase-testprosjekt/branch**, eller godkjenn særskilt et migreringsmiljø som ikke berører produksjonsdata. Ikke bruk produksjonsdatabasen til denne første testen. Kjør/skjematest kun den nye migrasjonen i dette testmiljøet, og kontroller at `anon`/`authenticated` har null grants til de to tabellene.
-2. Knytt Netlify Deploy Preview #170 til passende Supabase-testprosjekt (Functions-miljøvariabler `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` må ha samme prosjekt og aldri eksponeres i frontend).
+2. Knytt Netlify Deploy Preview #170 til passende Supabase-testprosjekt (Functions-miljøvariabler `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` må ha samme prosjekt og aldri eksponeres i frontend). Sett i tillegg `FEIDE_LINK_TEST_SUPABASE_REF` til **testprosjektets** 20-tegns prosjekt-ID, aldri produksjons-ID. Serverfunksjonen avviser eksplisitt `ukeplanen` sitt produksjonsprosjekt og alle uverifiserte konfigurasjoner.
 3. Under Skoleukas Feide OIDC-konfigurasjon, legg til **to eksakte PR #170-URL-er**:
    - Login callback: `https://deploy-preview-170--ukeplanen.netlify.app/api/feide-oidc/callback`
    - Logout callback: `https://deploy-preview-170--ukeplanen.netlify.app/api/feide-oidc/complete`
@@ -52,3 +52,9 @@
 - Databasen sikrer unik aktiv kobling, men godkjenningen bruker foreløpig flere REST-operasjoner. Bør gjøres til én atomisk transaksjon før produksjon.
 - 6-sifret kode har maks fem feilforsøk per forespørsel, og foresatt må ha en egen verifisert Supabase-økt.
 - Ingen eksakte ID-token, Feide-sub, e-postadresser, Client Secret eller familieopplysninger returneres til andre parter.
+
+## Feil ved første browser-test 18. november 2026
+
+Feilmeldingen «Feide-databasetabeller er ikke klargjort» er forventet fordi `feide_link_requests` og `feide_child_links` **ikke finnes i produksjonsprosjektet**. SQL-filen er kun committet; database endres ikke ved en Netlify-deploy. Supabase sin nye testgren har ingen produksjons-brukere eller familie-/barnedata, så lag **fiktiv foresatt, familie og barn** i testmiljøet. Ikke bruk faktiske barn fra produksjon.
+
+Fra og med denne PR-versjonen avvises alle koblingskall der Supabase-URL fortsatt peker mot produksjon, uavhengig av om tabellene senere skulle finnes der. Foresatt-testsiden viser heller ikke eksisterende produksjonsbarn. Dette gir en sikker sperre mens testmiljøet klargjøres.
