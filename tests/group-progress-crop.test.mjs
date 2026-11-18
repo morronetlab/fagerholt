@@ -79,7 +79,7 @@ test('Accessible progress and the per-image full-page escape route exist in the 
  assert.match(script,/data-special-expand/);
  assert.match(script,/fullPageGeometry/);
  assert.match(script,/groupBadge\(x\.group\)/);
- assert.match(script,/homeworkProgress\(homework/);
+ assert.match(script,/homeworkProgress\(visible/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 });
 
