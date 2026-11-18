@@ -4,7 +4,7 @@ import {randomBytes,randomUUID} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {createChildAccessHandler} from '../lib/child-access.mjs';
 import {resolveFeideChildContext,feidePilotRequest} from '../lib/feide-child-session.mjs';
-import {POC_ORIGIN,seal} from '../lib/feide-oidc.mjs';
+import {POC_ORIGIN,PRODUCTION_ORIGIN,seal,configReady} from '../lib/feide-oidc.mjs';
 import {subjectDigest} from '../lib/feide-child-link.mjs';
 import {taskFingerprint} from '../public/shared/task-fingerprint.mjs';
 const now=()=>new Date('2026-11-18T10:30:00Z');
@@ -137,4 +137,47 @@ test('The real child app has separate Feide and QR logout controls only in previ
  assert.match(html,/id="child-feide-logout"/);
  assert.match(oidc,/id_token_hint/);
  assert.match(oidc,/post_logout_redirect_uri/);
+});
+
+test('Production child context uses separate key, canonical origin and live revocation',async()=>{
+ const prodKey=randomBytes(32),hashKey=randomBytes(32),pinKey=randomBytes(32);
+ const prodEnv={...env,CONTEXT:'production',FEIDE_ENABLED:'true',FEIDE_ORIGIN:PRODUCTION_ORIGIN,
+  FEIDE_CLIENT_ID:env.FEIDE_POC_CLIENT_ID,FEIDE_CLIENT_SECRET:'SYNTHETIC_ONLY_PROD',
+  FEIDE_SESSION_COOKIE_KEY:prodKey.toString('base64url'),
+  FEIDE_SUBJECT_HASH_KEY:hashKey.toString('base64url'),
+  FEIDE_LINK_PIN_KEY:pinKey.toString('base64url')};
+ assert.equal(configReady(prodEnv),true);
+ const cookieProd='__Host-skoleuka-feide-session='+seal('__Host-skoleuka-feide-session',{
+  createdAt:now().getTime(),idToken:'synthetic-verified',
+  sub:subject,exp:Math.floor(now().getTime()/1000)+600},prodKey,'www.skoleuka.no');
+ let active=true,calls=0;
+ const fetchImpl=async raw=>{
+  calls++;const u=new URL(raw);
+  if(u.pathname==='/rest/v1/feide_child_links'){
+   assert.equal(u.searchParams.get('subject_hash'),'eq.'+subjectDigest(subject,prodEnv));
+   return ok(active?[{id:randomUUID(),child_id:childId,family_id:familyId}]:[]);
+  }
+  if(u.pathname==='/rest/v1/children')return ok([child]);
+  throw Error('Unexpected lookup '+u.pathname);
+ };
+ const req=new Request(PRODUCTION_ORIGIN+'/api/child-access?action=child',{
+  headers:{Cookie:cookieProd}});
+ const linked=await resolveFeideChildContext(req,fetchImpl,prodEnv,now,'child');
+ assert.equal(linked.child.id,childId);
+ assert.equal(linked.child.family_id,familyId);
+ assert.equal(linked.s.feide,true);
+ assert.ok(calls>=2);
+ active=false;
+ assert.equal(await resolveFeideChildContext(req,fetchImpl,prodEnv,now,'child'),null);
+ const late=()=>new Date(now().getTime()+21*60_000);
+ active=true;
+ assert.equal((await resolveFeideChildContext(req,fetchImpl,prodEnv,late,'child'))?.child.id,childId,
+  'A verified local session is not tied to expired short-lived ID token');
+ const tooLate=()=>new Date(now().getTime()+2*60*60_000+1000);
+ assert.equal(await resolveFeideChildContext(req,fetchImpl,prodEnv,tooLate,'child'),null);
+ const wrongHost=new Request('https://skoleuka.no/api/child-access?action=child',{headers:{Cookie:cookieProd}});
+ assert.equal(await resolveFeideChildContext(wrongHost,fetchImpl,prodEnv,now,'child'),null);
+ assert.equal(feidePilotRequest(req,{...prodEnv,FEIDE_ENABLED:'false'},'child'),false);
+ assert.equal(feidePilotRequest(req,{...prodEnv,FEIDE_SESSION_COOKIE_KEY:''},'child'),false);
+ assert.equal(feidePilotRequest(req,prodEnv,'devices'),false);
 });
