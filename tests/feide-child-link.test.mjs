@@ -158,7 +158,7 @@ test('Feide claim requires verified session and parent confirms code before link
 });
 
 test('Link schema has RLS, server-only grants and uniqueness for active identities',()=>{
- const sql=readFileSync(new URL('../supabase/migrations/20261118093000_feide_child_link_preview.sql',import.meta.url),'utf8');
+ const sql=readFileSync(new URL('../supabase/migrations/20261118094522_feide_child_link_preview.sql',import.meta.url),'utf8');
  assert.match(sql,/alter table public\.feide_link_requests enable row level security;/);
  assert.match(sql,/alter table public\.feide_child_links enable row level security;/);
  assert.match(sql,/revoke all on public\.feide_link_requests,public\.feide_child_links from public,anon,authenticated;/);
