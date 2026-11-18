@@ -4,6 +4,7 @@ const $=id=>document.getElementById(id);
 const supportedHost=()=>location.protocol==='https:'&&
  ['deploy-preview-172--ukeplanen.netlify.app','www.skoleuka.no'].includes(location.hostname);
 let cloud=null,selectedRequest=null,childId='',linked=false;
+const requestedChildId=new URL(location.href).searchParams.get('childId')||'';
 
 const message=text=>{$('status').textContent=text};
 function buttons(){
@@ -70,14 +71,14 @@ async function init(){
    throw Error('Feide-innlogging er ikke aktivert på denne adressen.');
   const response=await fetch('/api/account-config',{cache:'no-store'});
   const config=await response.json();
-  if(!config.enabled)throw Error('Supabase er ikke aktivert for denne previewen.');
-  // PR #170 uses the existing family in Supabase with explicit guardian
-  // approval. The Feide child still receives NO family-data access.
+  if(!config.enabled)throw Error('Familiekontoer er ikke tilgjengelige nå.');
+  // A guardian's Supabase session and existing child RLS authorize the
+  // linking flow. Feide never grants guardian access.
   if(new URL(config.url).hostname!=='qxejliyfgfeigvxsqupg.supabase.co')
-   throw Error('Feide-testen må være koblet til Skoleukas Supabase-prosjekt.');
+   throw Error('Feide-koblingen er ikke konfigurert for riktig familiedatabase.');
   cloud=new CloudAccount({url:config.url,publishableKey:config.publishableKey});
   const parent=await cloud.restore();
-  if(!parent?.id)throw Error('Logg inn som foresatt på denne forhåndsvisningen først.');
+  if(!parent?.id)throw Error('Logg inn som foresatt på Skoleuka først. Gå til Min familie og åpne Feide-koblingen igjen.');
   const children=await cloud.rows('children','select=id,nickname,grade,school_id&order=nickname.asc');
   if(!Array.isArray(children)||!children.length)throw Error('Fant ingen barneprofiler for familiekontoen.');
   for(const child of children){
@@ -87,7 +88,13 @@ async function init(){
    $('child').appendChild(option);
   }
   $('child').disabled=false;
-  message('Velg barnet som skal knyttes til Feide-testkontoen.');
+  message('Velg hvilket barn som skal bruke skolekontoen sin til å logge inn.');
+  // Links from "Barna mine" select ONLY an RLS-visible existing child.
+  // Never trust the query parameter as an authorization decision.
+  if(requestedChildId&&children.some(child=>child.id===requestedChildId)){
+   $('child').value=requestedChildId;
+   $('child').dispatchEvent(new Event('change'));
+  }
  }catch(err){message(err.message||'Kunne ikke laste familiekonto.');}
 }
 $('child').addEventListener('change',async()=>{
