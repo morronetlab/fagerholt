@@ -69,7 +69,7 @@ async function init(){
   cloud=new CloudAccount({url:config.url,publishableKey:config.publishableKey});
   const parent=await cloud.restore();
   if(!parent?.id)throw Error('Logg inn som foresatt på denne forhåndsvisningen først.');
-  const children=await cloud.rows('children','?select=id,nickname,grade,school_id&order=nickname.asc');
+  const children=await cloud.rows('children','select=id,nickname,grade,school_id&order=nickname.asc');
   if(!Array.isArray(children)||!children.length)throw Error('Fant ingen barneprofiler for familiekontoen.');
   for(const child of children){
    const option=document.createElement('option');
