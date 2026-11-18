@@ -67,6 +67,9 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  let firstRunFamilyId='';
  try{firstRunFamilyId=sessionStorage.getItem(FIRST_RUN_KEY)||'';}catch{}
  let cloud=null,cloudChecks=new Map(),bagChecks=new Map(),focus='next',lastSynced=null,syncError='';
+ // Feide is an optional guardian-managed alternative to QR. Never infer
+ // availability from domain alone; production must explicitly enable it.
+ let feideReady=false,feideLinks=new Map(),feideCheckVersion=0;
  let initialProgressPending=false;
  // A stale read must not overwrite optimistic child/guardian writes.
  let cloudReadSequence=0,cloudWriteRevision=0,cloudWrites=0,cloudResyncPending=false;
@@ -585,6 +588,21 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
       escape(p.id)+'" aria-label="Hjelp med barneappen til '+escape(p.name)+'">Hjelp</button></span>':'')+
    '</div>';
  }
+ function feideCardMarkup(p){
+  if(!cloud?.familyId||!feideReady)return '';
+  const current=feideLinks.get(p.id);
+  const linked=current===true;
+  const label=linked?'Feide-konto koblet':current===false?
+   'Feide-konto ikke koblet':'Sjekker Feide-kobling';
+  const action=linked?'Administrer Feide':'Koble til Feide';
+  return '<div class="family-child-feide" data-feide-status="'+
+   (linked?'linked':current===false?'unlinked':'checking')+'">'+
+   '<span class="family-child-feide-status"><strong><span aria-hidden="true">🎓</span> Feide-innlogging</strong>'+
+   '<small>'+escape(label)+'</small></span>'+
+   '<a class="sk-action sk-action--modal family-child-feide-link" href="/barn/feide/foresatt/?childId='+
+    encodeURIComponent(p.id)+'" aria-label="'+escape(action+' for '+p.name)+'">'+
+   escape(action)+'</a></div>';
+ }
  function childCard(p,s,now){
   const school=siteConfig.schools[p.school],stored=plans.get(p.id);
   const plan=stored?.year===now.year&&stored?.week===now.week?stored:null;
@@ -650,6 +668,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    '<div><h3>'+escape(p.name)+'</h3><p>'+escape(school?.name||'Skole')+' · '+escape(p.grade)+'. klasse'+(p.group?' · '+escape(p.group):'')+'</p>'+
    '<span class="family-child-week">UKE '+now.week+' · '+now.year+(now.upcoming?' · NESTE UKE':'')+'</span></div></div>'+
    childSetupMarkup(p)+
+   feideCardMarkup(p)+
    (aiLabel?'<p class="family-ai-label" role="status">'+escape(aiLabel)+'</p>':'')+
    details+'<div class="family-child-actions">'+
    (plan?.aiStatus==='failed'?'<button type="button" class="family-soft sk-action sk-action--utility" data-family-retry="'+escape(pairOf(p))+'">Prøv AI-tolkning igjen</button>':'')+
@@ -1119,6 +1138,42 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
  const schools=Object.values(siteConfig.schools).sort((a,b)=>a.name.localeCompare(b.name,'nb-NO'));
  el('family-school').innerHTML='<option value="">Velg skole</option>'+schools.map(s=>
   '<option value="'+escape(s.id)+'">'+escape(s.name)+'</option>').join('');
+ async function refreshFeideLinks(){
+  const current=cloud,sequence=++feideCheckVersion;
+  if(!current?.familyId){feideReady=false;feideLinks.clear();return;}
+  try{
+   const response=await fetch('/api/feide-oidc/status',{
+    cache:'no-store',credentials:'same-origin',referrerPolicy:'no-referrer'});
+   const status=response.ok?await response.json():null;
+   if(sequence!==feideCheckVersion||cloud!==current)return;
+   feideReady=status?.ready===true;
+   feideLinks.clear();
+   if(active)render();
+   if(!feideReady)return;
+   await current.client.ensureSession();
+   const headers={Authorization:'Bearer '+current.client.session.access_token,
+    Accept:'application/json'};
+   const results=await Promise.all(profiles.map(async p=>{
+    try{
+     const res=await fetch('/api/feide-child-link?action=status&childId='+
+       encodeURIComponent(p.id),{headers,cache:'no-store',referrerPolicy:'no-referrer'});
+     if(!res.ok)return [p.id,null];
+     const result=await res.json();
+     return [p.id,result.linked===true];
+    }catch{return [p.id,null];}
+   }));
+   if(sequence!==feideCheckVersion||cloud!==current)return;
+   feideLinks=new Map(results);
+   if(active)render();
+  }catch{
+   if(sequence===feideCheckVersion&&cloud===current){
+    // Keep a known feature flag from a successful previous check, but
+    // never claim that an unavailable child link is active or absent.
+    feideLinks.clear();
+    if(active)render();
+   }
+  }
+ }
  const api={
   isActive:()=>active,hasCloudFamily:()=>Boolean(cloud?.familyId),
   hasProfiles:()=>profiles.length>0,profileById:byId,
@@ -1162,13 +1217,15 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     if(active){render();void fetchPlans();}
     void syncCloud();
     void childPairingUI.loadStatuses(profiles);
+    void refreshFeideLinks();
   },
   clearCloud:()=>{
-    cloud=null;cloudReadSequence++;cloudWriteRevision++;cloudResyncPending=false;
+    cloud=null;feideCheckVersion++;feideReady=false;feideLinks.clear();
+    cloudReadSequence++;cloudWriteRevision++;cloudResyncPending=false;
     initialProgressPending=false;syncCloudChrome();childPairingUI.clearStatuses();cloudChecks.clear();bagChecks.clear();lastSynced=null;syncError='';profiles=readFamily(read(FAMILY_STORAGE_KEY),siteConfig.schools);
     plans.clear();loadedWeekKey=null;activityUI.onFamilyChanged();if(active){render();void fetchPlans();}
   },
-  refreshCloud:async()=>{await Promise.all([syncCloud(),activityUI.refresh()]);},
+  refreshCloud:async()=>{await Promise.all([syncCloud(),activityUI.refresh(),refreshFeideLinks()]);},
   showFirstRunGuide:()=>{
    if(!cloud?.familyId)return;
    firstRunFamilyId=cloud.familyId;
@@ -1178,7 +1235,10 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
   enter:()=>{
     if(active)return;
     active=true;syncCloudChrome();activityUI.enter();onModeChange();
-    if(cloud)void childPairingUI.loadStatuses(profiles);
+    if(cloud){
+     void childPairingUI.loadStatuses(profiles);
+     void refreshFeideLinks();
+    }
     // Returning from an already-open child plan should restore instantly,
     // not re-download the same school PDF seconds later.
     const now=calendar();
@@ -1271,7 +1331,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     if(active)render(); // update day focus when returning to an inactive tab
     if(active&&cloud)void syncCloud();
     // A child may install the PWA on another phone while the guardian is away.
-    if(cloud)void childPairingUI.loadStatuses(profiles);
+    if(cloud){void childPairingUI.loadStatuses(profiles);if(active)void refreshFeideLinks();}
    }
   });
  setInterval(()=>{
