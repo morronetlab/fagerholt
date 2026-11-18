@@ -69,6 +69,24 @@ function fakeDb(){
    }
    return json(found.slice(0,Number(p.get('limit')||100)));
   }
+  if(u.pathname==='/rest/v1/rpc/feide_confirm_link'){
+   const d=JSON.parse(opts.body||'{}'),r=requests.find(x=>x.id===d.p_request_id);
+   if(!r||r.child_id!==d.p_child_id||r.family_id!==d.p_family_id||
+      r.created_by!==d.p_parent_id)return json('invalid');
+   if(r.approved_at)return json('already_approved');
+   if(Date.parse(r.expires_at)<=nowMs)return json('expired');
+   if(r.failed_attempts>=5)return json('locked');
+   if(!r.subject_hash||!r.confirmation_hash)return json('not_claimed');
+   if(r.confirmation_hash!==d.p_confirmation_hash){
+     r.failed_attempts++;return json('incorrect');
+   }
+   if(links.some(l=>!l.revoked_at&&(l.child_id===r.child_id||l.subject_hash===r.subject_hash)))
+     return json('conflict');
+   links.push({id:randomUUID(),revoked_at:null,child_id:r.child_id,
+    family_id:r.family_id,subject_hash:r.subject_hash,linked_by:d.p_parent_id});
+   r.approved_at=new Date(nowMs).toISOString();
+   return json('linked');
+  }
   if(u.pathname==='/rest/v1/feide_child_links'){
    const body=opts.body?JSON.parse(opts.body):{};
    if(opts.method==='POST'){
@@ -112,7 +130,7 @@ test('Only guardian with fresh Supabase JWT and children RLS can initiate linkin
  const created=await h(req('create',{method:'POST',body:{}}));
  assert.equal(created.status,201);
  const payload=await created.json();
- assert.match(payload.link,/^https:\/\/deploy-preview-171--ukeplanen\.netlify\.app\/barn\/feide\/koble\/\?token=[a-f0-9]{64}$/);
+ assert.match(payload.link,/^https:\/\/deploy-preview-172--ukeplanen\.netlify\.app\/barn\/feide\/koble\/\?token=[a-f0-9]{64}$/);
  assert.equal(db.requests[0].child_id,childId);
  assert.equal(db.requests[0].created_by,owner);
  assert.doesNotMatch(JSON.stringify(db.requests),/subject-from-feide|283941/);
@@ -155,6 +173,7 @@ test('Feide claim requires verified session and parent confirms code before link
  const revoked=await h(req('revoke',{method:'POST',body:{}}));
  assert.equal(revoked.status,200);
  assert.equal((await (await h(req('me',{guardian:null,cookie:feideCookie}))).json()).linked,false);
+ assert.equal(db.calls.filter(x=>x.path==='/rest/v1/rpc/feide_confirm_link').length,3);
 });
 
 test('Link schema has RLS, server-only grants and uniqueness for active identities',()=>{
@@ -165,4 +184,9 @@ test('Link schema has RLS, server-only grants and uniqueness for active identiti
  assert.match(sql,/unique index feide_child_links_subject_active_uidx/);
  assert.match(sql,/unique index feide_child_links_child_active_uidx/);
  assert.doesNotMatch(sql,/grant .* to (?:anon|authenticated)/i);
+ const atomic=readFileSync(new URL('../supabase/migrations/20261118114000_feide_atomic_link.sql',import.meta.url),'utf8');
+ assert.match(atomic,/for update/i);
+ assert.match(atomic,/security invoker/i);
+ assert.match(atomic,/revoke all on function public\.feide_confirm_link/);
+ assert.match(atomic,/grant execute on function public\.feide_confirm_link[\s\S]+to service_role/);
 });
