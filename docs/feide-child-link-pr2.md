@@ -2,6 +2,8 @@
 
 **Status:** Utvikling pågår. Stablet oppå [PR #169](https://github.com/morronetlab/fagerholt/pull/169). Ikke produksjonsklar.
 
+**GitHub PR-base:** `main` brukes midlertidig for automatisk Netlify Deploy Preview #170. Grenen inneholder fortsatt alle endringer fra PR #169; ikke merge #170 før #169 er gjennomgått og merget. Når #169 er merget, vil GitHub-diffen for #170 bli redusert til PR2-endringene.
+
 ## Sikkerhetsmodell
 1. Foresatt må være logget inn i Supabase og ha tilgang til barnet via **eksisterende children-RLS**, verifisert på server ved hver handling.
 2. Foresatt starter en engangsinvitasjon (tilfeldig 256-bit token, 10 minutter, SHA-256 hash lagres).
