@@ -3,7 +3,7 @@ import {siteConfig} from '../site-config.mjs';
 import {initSchoolWeather} from '../shared/school-weather-ui.mjs';
 import {planAvailability} from '../shared/plan-availability.mjs';
 import {DAYS,dayDate,familyWeekCalendar} from '../shared/calendar.mjs';
-import {groupColorClass} from '../shared/group-scope.mjs';
+import {groupColorClass,vocabularyForProfile} from '../shared/group-scope.mjs';
 import {needsHomeworkHelp} from '../shared/homework-help-eligibility.mjs';
 import {scopedHomeworkItems,scopedPackingItems,childSchoolDayDetails,
  childCheckedKey,readChildChecks,setChildCheck,homeworkItemKey} from './child-learning.mjs';
@@ -130,8 +130,10 @@ function render(){
   '<div class="child-attendance"><strong>⏰ Særskilt oppmøte</strong>'+
   details.attendance.map(item=>'<p>'+groupBadge(item.group)+'Kl. '+esc(item.time)+' · '+
    esc(item.text||'')+'</p>').join('')+'</div>':'';
- $('child-other-groups').hidden=!details.other.length;
- $('child-other-events').innerHTML=details.other.length?timeline(details.other):'';
+ // Unrelated class-group events belong in the original school PDF, not
+ // the child's default schedule. Shared events remain above.
+ $('child-other-groups').hidden=true;
+ $('child-other-events').replaceChildren();
  const official=state.municipal;
  const municipalRows=official?.schoolId===child.school&&official?.year===calendar.year&&
   official?.week===calendar.week&&['live','snapshot'].includes(official.sourceStatus)?
@@ -199,7 +201,7 @@ function render(){
     (needsHomeworkHelp(item)?'<button class="child-outline child-help-button sk-action sk-action--modal" data-child-help-task="'+item.index+
      '" type="button">✨ Få leksehjelp</button>':'')+'</article>';
   }).join('')+'</div>':empty('Ingen lekser registrert for denne uka.');
- renderChildQuiz(ok?plan?.vocabulary:[],{child,school:child.school,grade:child.grade,
+ renderChildQuiz(ok?vocabularyForProfile(plan?.vocabulary,child):[],{child,school:child.school,grade:child.grade,
   year:calendar.year,week:calendar.week});
  const link=safeURL(plan?.pdf)||safeURL(plan?.source);
  $('child-source').innerHTML=link?
