@@ -1,4 +1,9 @@
-/** Single child data API: QR bearer or preview-only approved Feide cookie. */
+/** Child data API: existing QR bearer or active linked Feide browser session. */
 import {createChildAccessHandler} from '../../lib/child-access.mjs';
 import {resolveFeideChildContext} from '../../lib/feide-child-session.mjs';
-export default createChildAccessHandler({feideContextResolver:resolveFeideChildContext});
+import {feideRuntimeEnv} from '../../lib/feide-runtime-env.mjs';
+export default (request,context)=>
+  createChildAccessHandler({
+    env:feideRuntimeEnv(context),
+    feideContextResolver:resolveFeideChildContext
+  })(request);
