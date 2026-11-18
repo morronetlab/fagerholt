@@ -14,7 +14,7 @@ import {familyWeekCalendar,schoolCalendar,dayDate,DAYS} from './shared/calendar.
 import {schoolSelectionKey,validSchool,gradeSelectionKey,validGrade,progressKey} from './shared/selection.mjs';
 import {planFeedback} from './shared/plan-feedback.mjs';
 import {normalizeVisualRegion,adjustableVisualRegion,visualCropGeometry,fullPageGeometry} from './shared/visual-region.mjs';
-import {homeworkProgress,groupColorClass} from './shared/group-scope.mjs';
+import {homeworkProgress,groupColorClass,vocabularyForProfile} from './shared/group-scope.mjs';
 import {expandHomework,repeatDayLabel} from './shared/homework-view.mjs';
 import {homeworkDisplayGroups} from './shared/homework-card-groups.mjs';
 import {contentCategoryLabel} from './shared/content-categories.mjs';
@@ -165,7 +165,8 @@ function renderGuardianSummary(){
  const profile=state.profileId?familyUI?.profileById(state.profileId):null;
  if(!profile||familyUI?.isActive())return;
  $('guardian-plan-day-title').textContent=DAYS[state.day]+' '+titleDay(state.day);
- $('guardian-plan-day-subtitle').textContent=(state.school?.name||'Skole')+' · '+state.grade+'. trinn';
+ $('guardian-plan-day-subtitle').textContent=(state.school?.name||'Skole')+
+  ' · '+state.grade+'. trinn'+(profile.group?' · '+profile.group:' · Gruppe ikke valgt');
  if(state.loading||!state.plan||state.plan.aiStatus==='processing'||
   !['ok','partial'].includes(state.plan.status)){
   $('guardian-plan-homework-state').textContent='Henter ukeplan …';
@@ -289,7 +290,11 @@ function groupBadge(group){
     .map(label=>`<span class="group-badge ${groupColorClass(label)}">${safe(label)}</span>`).join('');
 }
 function checklist(items,section,day='all'){
-  if(section==='homework')return homeworkDisplayGroups(items).map(group=>{
+  if(section==='homework'){
+  const profile=state.profileId?familyUI?.profileById(state.profileId):null;
+  // Keep original source indices intact for shared progress and action IDs.
+  return homeworkDisplayGroups(items).filter(x=>
+   !profile||groupApplies(x.item,profile)).map(group=>{
     const item=group.item,i=group.index;
     const label=typeof item==='string'?item:(item?.text||item?.label||'');
     const due=dueDayLabel(item,{allowTextFallback:state.plan?.parser!=='ai'});
@@ -314,6 +319,7 @@ function checklist(items,section,day='all'){
       `<span class="homework-repeat">${safe(repeatDayLabel(item))}</span>`:'';
     return `<div class="homework-assist-row"><div class="homework-card-tags">${groupLabel}${dueBadge}${repeatBadge}${meta}</div><label class="checkrow ${isChecked(section,i,day)?'done':''}"><input type="checkbox" data-check="${section}" data-index="${i}" data-progress-day="${day}" ${isChecked(section,i,day)?'checked':''} aria-label="Marker leksen som ferdig"><span class="checktext">${text}</span></label>${actions}</div>`;
   }).join('');
+  }
   return items.map((item,i)=>{
     const label=typeof item==='string'?item:(item?.text||item?.label||'');
     const displayLabel=packingText(label);
@@ -399,7 +405,8 @@ function renderContent(){
   const groupedEvents=groupSimultaneousEvents(events);
   const notes=notesWithImportantEvents(allEvents,(p?.dayNotes?.[DAYS[state.day]]||[])
    .filter(x=>x&&x.text&&(!selectedProfile||groupApplies(x,selectedProfile))));
-  const groups=[...new Set([...events,...getBag()].map(x=>x.group).filter(Boolean))];
+  const groups=[...new Set([...events,...getBag().filter(x=>!selectedProfile||groupApplies(x,selectedProfile))]
+   .map(x=>x.group).filter(Boolean))];
   $('day-group-summary').hidden=!groups.length;
   $('day-group-summary').innerHTML=groups.length?`<strong>Husk riktig gruppe denne dagen:</strong> ${groups.map(groupBadge).join(' ')}`:'';
   $('day-program').innerHTML=p?.status==='unpublished'?empty('Ingen ukeplan publisert for denne uken.'):
@@ -410,7 +417,8 @@ function renderContent(){
     empty(state.loading?'Henter dagsprogram …':noDayScheduleMessage({hasNotes:notes.length>0,complete:p?.status==='ok'&&p?.parser==='ai'}));
   $('day-notes').hidden=!notes.length;
   $('day-notes-list').innerHTML=notes.map(x=>`<p class="${x.important?'day-note-critical':''}"><span class="content-type-label content-kind-practical">${contentCategoryLabel('practical')}</span> ${x.important?'<strong>💉 Viktig: Vaksinasjon</strong>':''}${groupBadge(x.group)}${safe(x.text)}</p>`).join('');
-  const attendance=(p?.attendance||[]).filter(x=>x.day===DAYS[state.day]&&x.group&&x.time);
+  const attendance=(p?.attendance||[]).filter(x=>x.day===DAYS[state.day]&&x.group&&x.time&&
+   (!selectedProfile||groupApplies(x,selectedProfile)));
   $('day-attendance').hidden=!attendance.length;
   $('day-attendance').innerHTML=attendance.length?`<div class="attendance-heading">⏰ Særskilt oppmøte for enkelte grupper</div>${attendance.map(x=>`<div class="attendance-entry">${groupBadge(x.group)}<strong>Kl. ${safe(x.time)}</strong><span>${safe(x.text)}</span></div>`).join('')}`:'';
   const bag=getBag().filter(x=>!selectedProfile||groupApplies(x,selectedProfile));
@@ -427,7 +435,7 @@ function renderContent(){
    (x.location?'<small>'+safe(x.location)+'</small>':'')+
    (x.responsible?'<small>Ansvarlig: '+safe(x.responsible)+'</small>':'')+
    (x.notes?'<p>'+safe(x.notes)+'</p>':'')+'</div></article>').join('');
-  const vocabulary=Array.isArray(p?.vocabulary)?p.vocabulary:[];
+  const vocabulary=vocabularyForProfile(p?.vocabulary,selectedProfile);
   renderWordQuiz(vocabulary,{school:state.school?.id,grade:state.grade,week:calendar.week,year:calendar.year,...(state.profileId?{childId:state.profileId}:{})});
   const quizVocabulary=quizItems(vocabulary);
   const englishWords=quizVocabulary.filter(x=>x.language==='en');
@@ -446,7 +454,7 @@ function renderContent(){
   $('contacts-list').innerHTML=contacts.map(c=>typeof c==='string'?`<p>${safe(c)}</p>`:`<p><strong>${safe(c.name)}</strong> ${safe(c.role)} ${c.email?`<a class="sk-action sk-action--link" href="mailto:${encodeURIComponent(c.email)}">${safe(c.email)}</a>`:''} ${c.phone?`<span>${safe(c.phone)}</span>`:''}</p>`).join('');
   const hw=expandHomework(p?.homework||[]);
   $('homework-list').innerHTML=hw.length?checklist(hw,'homework'):empty(state.loading?'Henter lekser …':'Ingen lekser ble funnet i PDF-en.');
-  renderHomeworkProgress(hw);
+  renderHomeworkProgress(hw,selectedProfile);
   const hasTheme=features.theme&&Boolean(p?.weekTheme);
   // Older cached AI plans can also misclassify vaccination as a school subject.
   const subjects=(Array.isArray(p?.subjects)?p.subjects:[])
@@ -463,13 +471,14 @@ function renderContent(){
   $('mission-slot').innerHTML=(!hasMission?'':
     isChecked('mission',0)?`<button type="button" class="mission-done sk-action sk-action--utility" id="undo-mission">✓ Frivillig oppdrag fullført · Vis igjen</button>`:
     `<div class="mission"><div><strong>🌟 Frivillig oppdrag ${isSuggestedMission?'· forslag fra Ukeplanen':''}</strong><p>${safe(missionText)}</p></div><label class="mission-check"><input type="checkbox" data-check="mission" data-index="0" data-progress-day="all"> Fullført</label></div>`);
-  const notices=p?.notices||[];
+  const notices=(p?.notices||[]).filter(x=>!selectedProfile||groupApplies(x,selectedProfile));
   $('notices-count').textContent=notices.length?notices.length:'';
   $('notices-panel').classList.toggle('compact-empty',!notices.length);
   $('notices-empty-hint').hidden=Boolean(notices.length);
   if(!notices.length)$('notices-panel').open=false;
   $('notices-list').innerHTML=notices.length?notices.map(x=>`<p><span class="content-type-label content-kind-practical">${contentCategoryLabel('practical')}</span> ${groupBadge(x?.group)}${safe(typeof x==='string'?x:x?.text||x?.detail||x?.title)}</p>`).join(''):empty('Ingen beskjeder ble funnet i PDF-en.');
-  const goals=features.learningGoals?p?.learningGoals||[]:[];
+  const goals=(features.learningGoals?p?.learningGoals||[]:[])
+   .filter(x=>!selectedProfile||groupApplies(x,selectedProfile));
   $('goals-panel').hidden=!features.learningGoals;
   $('goals-panel').classList.toggle('compact-empty',!goals.length);
   $('goals-empty-hint').hidden=Boolean(goals.length);
@@ -479,9 +488,11 @@ function renderContent(){
   renderSpecialContent();
   renderWeather();
 }
-function renderHomeworkProgress(homework){
+function renderHomeworkProgress(homework,profile=null){
  const box=$('homework-progress');
- const progress=homeworkProgress(homework,i=>isChecked('homework',i));
+ const visible=homework.map((task,index)=>({task,index}))
+  .filter(x=>!profile||groupApplies(x.task,profile));
+ const progress=homeworkProgress(visible,i=>isChecked('homework',visible[i].index));
  box.hidden=!progress.total;
  if(!progress.total)return;
  $('homework-progress-bar').style.width=progress.percent+'%';
@@ -902,7 +913,7 @@ function boot(){
       const plan=state.plan||{},profile=state.profileId?familyUI?.profileById(state.profileId):null;
       const homework=expandHomework(plan.homework||[]);
       const list={
-        homework:homeworkDisplayGroups(homework).map(group=>({
+        homework:homeworkDisplayGroups(homework).filter(group=>!profile||groupApplies(group.item,profile)).map(group=>({
           text:group.item?.text||group.item?.label||'',
           sourcePage:group.item?.sourcePage,
           homework:{index:group.index,subject:group.item?.subject||'',
@@ -914,13 +925,13 @@ function boot(){
         })),
         program:(plan.days?.[DAYS[state.day]]?.events||[]).filter(item=>!profile||groupApplies(item,profile))
           .map(item=>({text:item?.title||'',sourcePage:item?.sourcePage})),
-        notices:(plan.notices||[]).map(item=>({
+        notices:(plan.notices||[]).filter(item=>!profile||groupApplies(item,profile)).map(item=>({
           text:typeof item==='string'?item:item?.text||item?.detail||item?.title||'',
           sourcePage:item?.sourcePage
         })),
-        vocabulary:quizItems(plan.vocabulary||[]).filter(x=>x.language==='en')
+        vocabulary:quizItems(vocabularyForProfile(plan.vocabulary,profile)).filter(x=>x.language==='en')
           .map(item=>({text:item.word||'',sourcePage:item.sourcePage})),
-        'vocabulary-nb':quizItems(plan.vocabulary||[]).filter(x=>x.language==='nb')
+        'vocabulary-nb':quizItems(vocabularyForProfile(plan.vocabulary,profile)).filter(x=>x.language==='nb')
           .map(item=>({text:item.word||'',sourcePage:item.sourcePage}))
       }[section];
       if(list)issueReporter.open({

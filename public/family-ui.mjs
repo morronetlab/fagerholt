@@ -14,6 +14,7 @@ import {practiceKey,restorePractice,practiceSummary} from './shared/word-practic
 import {taskFingerprint} from './shared/cloud-account.mjs';
 import {packingFingerprint} from './shared/packing-fingerprint.mjs';
 import {scopedPackingItems} from './barn/child-learning.mjs';
+import {vocabularyForProfile} from './shared/group-scope.mjs';
 import {contentCategoryLabel} from './shared/content-categories.mjs';
 import {expandHomework} from './shared/homework-view.mjs';
 import {practicalHighlights} from './shared/practical-highlights.mjs';
@@ -43,7 +44,7 @@ const getJson=async(url,timeout=40000)=>{
 };
 function wordStatus(profile,plan,calendar){
  if(!plan?.vocabulary)return null;
- const items=quizItems(plan.vocabulary);
+ const items=quizItems(vocabularyForProfile(plan.vocabulary,profile));
  let total=0,attempted=0,weak=0;
  for(const language of ['en','nb']){
   const rounds=buildQuizRounds(items,language);

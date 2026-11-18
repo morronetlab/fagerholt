@@ -94,3 +94,47 @@ export function sourcedGroup(raw,quote='',day=null,pageText=''){
  }
  return group.toLocaleLowerCase('nb-NO').split('/').every(part=>new RegExp('(?:^| )'+part+'(?: |$)','i').test(source))?group:null;
 }
+
+
+/**
+ * Exact group identifiers for content explicitly labelled by a school PDF.
+ * Never use substring matches (e.g. "Rød" inside "Rødgrønn"), and never
+ * hide unlabelled/ambiguous school-wide notices.
+ *
+ * A group is only inferred from the profile's selected group (not Feide
+ * identity). Class suffixes A-F can match 5A when grade=5.
+ */
+const groupToken=s=>String(s??'').normalize('NFKC').toLocaleLowerCase('nb-NO')
+ .replace(/[‐‑‒–—]/gu,'-').trim();
+export function targetGroupIds(label,grade=''){
+ let text=groupToken(label);
+ if(!text||text.length>90)return null;
+ text=text.replace(/([a-zæøå])-\s*(?=gruppe|gruppa)/gu,'$1 ')
+  .replace(/\b(?:gruppe|gruppa|klassen|klasse)\b/gu,' ')
+  .replace(/\s+/gu,' ').trim();
+ const segments=text.split(/\s*(?:\/|,|&|\+|\bog\b)\s*/u).map(x=>x.trim()).filter(Boolean);
+ if(!segments.length)return null;
+ const ids=[],gradeNumber=String(grade||'').trim().match(/^[1-7]/u)?.[0]||'';
+ for(const segment of segments){
+  if(groupColors.includes(segment))ids.push('color:'+segment);
+  else if(/^[1-7]\s*[a-f]$/u.test(segment))
+   ids.push('class:'+segment.replace(/\s/g,''));
+  else if(/^[a-f]$/u.test(segment))
+   ids.push('class:'+(gradeNumber||'')+segment);
+  else return null; // Unsupported labels are visible, not silently excluded.
+ }
+ return [...new Set(ids)];
+}
+export function groupMatches(label,selected,grade=''){
+ if(!label||!selected)return true;
+ const expected=targetGroupIds(selected,grade);
+ const actual=targetGroupIds(label,grade);
+ if(!expected?.length||!actual?.length)return true;
+ return expected.some(id=>actual.includes(id));
+}
+/** Use the SAME group policy for quizzes, published words and homework. */
+export function vocabularyForProfile(entries,profile){
+ const words=Array.isArray(entries)?entries:[];
+ if(!profile)return words;
+ return words.filter(entry=>groupMatches(entry?.group,profile.group,profile.grade));
+}

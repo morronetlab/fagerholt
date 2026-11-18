@@ -173,10 +173,10 @@ test('Child sees groups and deadlines; packing and homework sync with family pro
  assert.match(await page.locator('#child-events').innerText(),/Rød/);
  assert.match(await page.locator('#child-attendance').innerText(),/08:45/);
  assert.match(await page.locator('#child-attendance').innerText(),/biblioteket/);
- assert.equal(await page.locator('#child-other-groups').evaluate(el=>el.open),false);
- await page.locator('#child-other-groups > summary').click();
- assert.match(await page.locator('#child-other-events').innerText(),/Svømming for blå/);
- assert.match(await page.locator('#child-other-events').innerText(),/Blå/);
+ assert.equal(await page.locator('#child-other-groups').isVisible(),false,
+  'Only the child’s own group should appear in the default timetable');
+ assert.equal(await page.locator('#child-other-events').innerText(),'',
+  'Other group events are still sourced in the PDF, not rendered in child view');
  assert.match(await page.locator('#child-homework').innerText(),/Til fredag/);
  assert.match(await page.locator('#child-homework').innerText(),/Til torsdag/);
  assert.match(await page.locator('#child-homework-progress').innerText(),/0 av 2/);

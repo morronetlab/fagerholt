@@ -42,7 +42,7 @@ test('Group labels are refused when the individual source quote does not mention
  assert.equal(groupLabel('Alle elever','Alle elever har lekse'),null);
 });
 test('AI schema has required group fields and invalidates old cache schema',()=>{
- assert.equal(AI_SCHEMA_VERSION,20);
+ assert.equal(AI_SCHEMA_VERSION,21);
  for(const item of [AI_SCHEMA.properties.days.items.properties.events.items,
   AI_SCHEMA.properties.homework.items,AI_SCHEMA.properties.packing.items,
   AI_SCHEMA.properties.notices.items,AI_SCHEMA.properties.learningGoals.items,
@@ -79,7 +79,7 @@ test('Accessible progress and the per-image full-page escape route exist in the 
  assert.match(script,/data-special-expand/);
  assert.match(script,/fullPageGeometry/);
  assert.match(script,/groupBadge\(x\.group\)/);
- assert.match(script,/homeworkProgress\(homework/);
+ assert.match(script,/homeworkProgress\(visible/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 });
 
