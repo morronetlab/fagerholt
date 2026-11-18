@@ -66,6 +66,9 @@ async function init(){
   const response=await fetch('/api/account-config',{cache:'no-store'});
   const config=await response.json();
   if(!config.enabled)throw Error('Supabase er ikke aktivert for denne previewen.');
+  // Do not even list real children on this test-only linking page.
+  if(new URL(config.url).hostname==='qxejliyfgfeigvxsqupg.supabase.co')
+   throw Error('Feide-koblingen er deaktivert: denne forhåndsvisningen bruker produksjonsdatabasen. Et isolert Supabase-testmiljø må kobles til før vi kan teste med fiktive barn.');
   cloud=new CloudAccount({url:config.url,publishableKey:config.publishableKey});
   const parent=await cloud.restore();
   if(!parent?.id)throw Error('Logg inn som foresatt på denne forhåndsvisningen først.');
