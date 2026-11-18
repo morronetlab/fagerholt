@@ -73,7 +73,11 @@ test('Encrypted HttpOnly cookie binds name, uses AEAD and rejects tampering and 
  assert.equal(unseal('testcookie',enc,cookieKey,now).state,'1');
  assert.equal(unseal('othercookie',enc,cookieKey,now),null);
  assert.equal(unseal('testcookie',enc,cookieKey,now+11*60_000),null);
- assert.equal(unseal('testcookie',enc.slice(0,-1)+'Z',cookieKey,now),null);
+ // Mutate a real byte (the IV), not the final base64url character:
+ // changing unused padding bits can decode to exactly the same bytes.
+ const tampered=Buffer.from(enc,'base64url');
+ tampered[0]^=0x01;
+ assert.equal(unseal('testcookie',tampered.toString('base64url'),cookieKey,now),null);
 });
 
 test('RS256 Feide ID token must have verified issuer, audience, nonce, timestamps and signature',async()=>{
