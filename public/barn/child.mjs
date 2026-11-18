@@ -18,7 +18,7 @@ const $=id=>document.getElementById(id);
 const KEY='skoleuka.child.device.v1';
 const FEIDE_CANDIDATE=location.protocol==='https:'&&
  ['deploy-preview-172--ukeplanen.netlify.app','www.skoleuka.no'].includes(location.hostname);
-let feideReady=false;
+let feideReady=false,feideAuthenticated=false;
 async function checkFeide(){
  if(!FEIDE_CANDIDATE)return false;
  try{
@@ -26,7 +26,8 @@ async function checkFeide(){
    credentials:'same-origin',referrerPolicy:'no-referrer'});
   const result=await response.json();
   feideReady=response.ok&&result?.ready===true;
- }catch{feideReady=false;}
+  feideAuthenticated=feideReady&&result?.authenticated===true;
+ }catch{feideReady=false;feideAuthenticated=false;}
  return feideReady;
 }
 const schoolWeather=initSchoolWeather({host:$('child-school-weather')});
@@ -72,6 +73,7 @@ function setup(message){
  state.progressBusy=false;state.progressError='';state.packing=null;state.packingBusy=false;state.packingError='';
  $('child-ready').hidden=true;$('child-setup').hidden=false;
  $('child-feide-login').hidden=!feideReady;
+ $('child-feide-setup-logout').hidden=!feideAuthenticated;
  $('child-feide-setup-note').hidden=!feideReady;
  $('child-feide-logout').hidden=true;
  $('child-setup-message').textContent=message||
@@ -286,7 +288,8 @@ async function load(){
    if(state.authMode==='qr')setToken(null);
    state.session=null;
    setup(state.authMode==='feide'?
-    'Feide-økten er utløpt, eller koblingen er fjernet av en foresatt. Logg inn på nytt med Feide.':
+    feideAuthenticated?'Feide-kontoen har ikke lenger tilgang til denne barneprofilen. Kontakt en foresatt, eller logg ut fra Feide.':
+    'Feide-økten er utløpt. Logg inn på nytt med Feide.':
     e.message);
   }else setup(e.message||'Kan ikke hente ukeplanen akkurat nå.');
  }
@@ -406,12 +409,15 @@ $('child-refresh').addEventListener('click',()=>void load());
 $('child-feide-login').addEventListener('click',()=>{
  if(feideReady&&FEIDE_CANDIDATE)location.assign('/api/feide-oidc/start?return=child');
 });
-$('child-feide-logout').addEventListener('click',()=>{
- if(feideReady&&FEIDE_CANDIDATE&&state.authMode==='feide'){
-  // Remove private data from the visible page before leaving for Feide logout.
+const feideLogout=()=>{
+ if(feideReady&&FEIDE_CANDIDATE){
   setup('Logger ut fra Skoleuka og Feide …');
   location.assign('/api/feide-oidc/logout?return=child');
  }
+};
+$('child-feide-setup-logout').addEventListener('click',feideLogout);
+$('child-feide-logout').addEventListener('click',()=>{
+ if(state.authMode==='feide')feideLogout();
 });
 $('child-retry').addEventListener('click',()=>void load());
 $('child-remove').addEventListener('click',async()=>{
