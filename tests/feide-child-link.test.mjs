@@ -184,7 +184,7 @@ test('Link schema has RLS, server-only grants and uniqueness for active identiti
  assert.match(sql,/unique index feide_child_links_subject_active_uidx/);
  assert.match(sql,/unique index feide_child_links_child_active_uidx/);
  assert.doesNotMatch(sql,/grant .* to (?:anon|authenticated)/i);
- const atomic=readFileSync(new URL('../supabase/migrations/20261118114000_feide_atomic_link.sql',import.meta.url),'utf8');
+ const atomic=readFileSync(new URL('../supabase/migrations/20261118105952_feide_atomic_link.sql',import.meta.url),'utf8');
  assert.match(atomic,/for update/i);
  assert.match(atomic,/security invoker/i);
  assert.match(atomic,/revoke all on function public\.feide_confirm_link/);
