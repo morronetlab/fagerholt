@@ -3,6 +3,7 @@ import {progressKey} from './selection.mjs';
 import {expandHomework} from './homework-view.mjs';
 import {DAYS,dayDate} from './calendar.mjs';
 import {planAvailability} from './plan-availability.mjs';
+import {groupMatches} from './group-scope.mjs';
 
 export const FAMILY_STORAGE_KEY='ukeplanen.family.v2';
 export const FAMILY_MAX_PROFILES=6;
@@ -44,14 +45,7 @@ export function childProgressKey(profile,year,week,section,day='all'){
  return progressKey(profile.school,profile.grade,year,week,section,day)+'.child.'+profile.id;
 }
 export function groupApplies(item,profile){
- if(!item?.group)return true;
- if(!profile?.group)return true; // No selected group: show labelled source items rather than hide evidence.
- const group=norm(item.group),selected=norm(profile.group);
- if(group===selected)return true;
- const pieces=group.split(/\s*(?:\/|,|&|\bog\b)\s*/).filter(Boolean);
- const base=selected.replace(/\s+gruppe$/,'');
- return pieces.some(piece=>piece===selected||piece===base||piece+' gruppe'===selected)||
-  group.includes(selected)||group.includes(base+' og ');
+ return groupMatches(item?.group,profile?.group,profile?.grade);
 }
 function checked(storage,profile,cal,section,index,day='all'){
  try{
@@ -102,8 +96,9 @@ export function profileSummary(profile,plan,calendar,storage=()=>null,cloudCheck
    .map(gear=>({...gear,day})))
  ];
  const weeklyNotices=[
-  ...(plan.notices||[]).filter(item=>typeof item==='string'&&item.trim())
-   .map(text=>({day:'Hele uka',text})),
+  ...(plan.notices||[]).filter(item=>groupApplies(item,profile))
+   .map(item=>({day:'Hele uka',text:typeof item==='string'?item:
+    String(item?.text||item?.detail||item?.title||'')})).filter(x=>x.text.trim()),
   ...DAYS.flatMap((day,i)=>dayNotes(i).map(text=>({day,text})))
  ];
  return {ready:true,total:tasks.length,done:tasks.filter(x=>x.checked).length,
