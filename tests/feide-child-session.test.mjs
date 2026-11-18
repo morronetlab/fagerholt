@@ -114,6 +114,9 @@ test('Feide cannot use QR-device privileges, other hosts, unexpected origins or 
    body:{year:2026,week:47,taskKey:progressKey,completed:true}})).status,403);
  assert.equal(feidePilotRequest(new Request(POC_ORIGIN+'/api/child-access',{
    method:'POST',headers:{Origin:POC_ORIGIN,'Content-Type':'application/json'}}),env,'self-revoke'),false);
+ assert.equal(feidePilotRequest(new Request(POC_ORIGIN+'/api/child-access'),{
+  ...env,CONTEXT:'production'},'child'),false,'Feide preview cannot be activated under production context');
+
  const stale=seal('__Host-skoleuka-feide-session',{
    createdAt:now().getTime()-20*60_000,idToken:'verified',sub:subject,
    exp:Math.floor(now().getTime()/1000)+600},key);
