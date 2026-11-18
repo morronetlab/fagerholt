@@ -1,3 +1,4 @@
-/** Read-only child device access; service key stays on the server. */
+/** Single child data API: QR bearer or preview-only approved Feide cookie. */
 import {createChildAccessHandler} from '../../lib/child-access.mjs';
-export default createChildAccessHandler();
+import {resolveFeideChildContext} from '../../lib/feide-child-session.mjs';
+export default createChildAccessHandler({feideContextResolver:resolveFeideChildContext});

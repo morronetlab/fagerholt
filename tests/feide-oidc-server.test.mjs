@@ -62,7 +62,7 @@ test('Preview-only fail closed, no credentials exposed by status',async()=>{
  assert.equal(configReady({...env,FEIDE_POC_COOKIE_KEY:'bad'}),false);
  const h=createFeideOidcHandler({env,now:()=>now,fetchImpl:async()=>{throw Error('no');}});
  assert.equal((await h(new Request('https://www.skoleuka.no/api/feide-oidc/status'))).status,404);
- assert.equal((await h(new Request('https://deploy-preview-171--ukeplanen.netlify.app/api/feide-oidc/status'))).status,404);
+ assert.equal((await h(new Request('https://deploy-preview-172--ukeplanen.netlify.app/api/feide-oidc/status'))).status,404);
  assert.equal((await h(req('start',{method:'POST'}))).status,405);
  const unavailable=await createFeideOidcHandler({env:{},now:()=>now})(req('status'));
  assert.deepEqual(await unavailable.json(),{ready:false,authenticated:false});
@@ -146,6 +146,33 @@ test('Full server flow: PKCE state, code exchange, verify ID token, local revoke
  assert.equal((await noSession.json()).authenticated,false);
  const invalidComplete=await handler(req('complete?state=wrong',{headers:{Cookie:logoutCookie}}));
  assert.equal(new URL(invalidComplete.headers.get('location')).searchParams.get('result'),'logout-unconfirmed');
+});
+
+test('Feide child app login and logout preserve return route and validate logout state',async()=>{
+ const mock=makeMock();
+ const handler=createFeideOidcHandler({env,fetchImpl:mock.fetchImpl,now:()=>now});
+ const start=await handler(req('start?return=child'));
+ const authorize=new URL(start.headers.get('location'));
+ const flowCookie=cookieOf(start,'__Host-skoleuka-feide-flow');
+ const flow=unseal('__Host-skoleuka-feide-flow',flowCookie.split('=')[1],cookieKey,now);
+ assert.equal(flow.purpose,'child');
+ mock.setNonce(flow.nonce);
+ const callback=await handler(req('callback?code=testing-code&state='+authorize.searchParams.get('state'),
+  {headers:{Cookie:flowCookie}}));
+ assert.equal(callback.headers.get('location'),POC_ORIGIN+'/barn/');
+ const sessionCookie=cookieOf(callback,'__Host-skoleuka-feide-session');
+ const session=unseal('__Host-skoleuka-feide-session',sessionCookie.split('=')[1],cookieKey,now,15*60_000);
+ assert.equal(session.exp,Math.floor(now/1000)+600);
+ const logout=await handler(req('logout?return=child',{headers:{Cookie:sessionCookie}}));
+ assert.equal(logout.status,303);
+ const end=new URL(logout.headers.get('location'));
+ assert.equal(end.searchParams.get('id_token_hint'),mock.getToken());
+ const saved=cookieOf(logout,'__Host-skoleuka-feide-logout');
+ assert.ok(logout.headers.getSetCookie().some(s=>s.includes('__Host-skoleuka-feide-session=;')&&s.includes('Max-Age=0')));
+ const done=await handler(req('complete?state='+end.searchParams.get('state'),{headers:{Cookie:saved}}));
+ assert.equal(done.headers.get('location'),POC_ORIGIN+'/barn/?feide=logged-out');
+ const bad=await handler(req('complete?state=invalid',{headers:{Cookie:saved}}));
+ assert.equal(bad.headers.get('location'),POC_ORIGIN+'/barn/?feide=logout-unconfirmed');
 });
 
 test('Feide callback refuses missing encrypted flow and performs no token exchange',async()=>{

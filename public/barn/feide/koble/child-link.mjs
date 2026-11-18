@@ -1,6 +1,6 @@
 const $=id=>document.getElementById(id);
-const preview='deploy-preview-170--ukeplanen.netlify.app';
-const key='skoleuka.feide.link170.invite.v1';
+const preview='deploy-preview-171--ukeplanen.netlify.app';
+const key='skoleuka.feide.link171.invite.v1';
 let authenticated=false,ready=false,claimed=false;
 const message=text=>{$('status').textContent=text};
 function repaint(){

@@ -15,7 +15,7 @@ const env={CONTEXT:'deploy-preview',FEIDE_POC_ENABLED:'true',FEIDE_POC_CLIENT_ID
  SUPABASE_SERVICE_ROLE_KEY:'sb_secret_'+'x'.repeat(40),
  SUPABASE_PUBLISHABLE_KEY:'sb_publishable_'+'y'.repeat(40)};
 const feideCookie='__Host-skoleuka-feide-session='+seal('__Host-skoleuka-feide-session',
-  {createdAt:nowMs,idToken:'already-verified-on-server',sub:'subject-from-feide'},cookieKey);
+  {createdAt:nowMs,idToken:'already-verified-on-server',sub:'subject-from-feide',exp:Math.floor(nowMs/1000)+600},cookieKey);
 const req=(action,{method='GET',body,guardian=tokenA,cookie,origin=POC_ORIGIN,child=childId}={})=>{
  const query=new URLSearchParams({action});
  if(method==='GET'&&['status'].includes(action))query.set('childId',child);
@@ -112,7 +112,7 @@ test('Only guardian with fresh Supabase JWT and children RLS can initiate linkin
  const created=await h(req('create',{method:'POST',body:{}}));
  assert.equal(created.status,201);
  const payload=await created.json();
- assert.match(payload.link,/^https:\/\/deploy-preview-170--ukeplanen\.netlify\.app\/barn\/feide\/koble\/\?token=[a-f0-9]{64}$/);
+ assert.match(payload.link,/^https:\/\/deploy-preview-171--ukeplanen\.netlify\.app\/barn\/feide\/koble\/\?token=[a-f0-9]{64}$/);
  assert.equal(db.requests[0].child_id,childId);
  assert.equal(db.requests[0].created_by,owner);
  assert.doesNotMatch(JSON.stringify(db.requests),/subject-from-feide|283941/);

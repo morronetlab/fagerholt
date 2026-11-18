@@ -1,7 +1,7 @@
 import {CloudAccount} from '/shared/cloud-account.mjs';
 
 const $=id=>document.getElementById(id);
-const previewHost='deploy-preview-170--ukeplanen.netlify.app';
+const previewHost='deploy-preview-171--ukeplanen.netlify.app';
 let cloud=null,selectedRequest=null,childId='',linked=false;
 
 const message=text=>{$('status').textContent=text};
