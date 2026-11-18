@@ -228,6 +228,7 @@ async function load(){
   }catch{/* No transfer cookie, offline or revoked; show safe setup guidance. */}
  }
  const hasQr=/^[a-f0-9]{64}$/u.test(state.session||'');
+ const logoutResult=new URL(location.href).searchParams.get('feide');
  if(!hasQr)await checkFeide();
  state.authMode=hasQr?'qr':feideReady?'feide':null;
  if(!state.authMode){
@@ -288,7 +289,10 @@ async function load(){
    if(state.authMode==='qr')setToken(null);
    state.session=null;
    setup(state.authMode==='feide'?
-    feideAuthenticated?'Feide-kontoen har ikke lenger tilgang til denne barneprofilen. Kontakt en foresatt, eller logg ut fra Feide.':
+    logoutResult==='logout-unconfirmed'?
+    'Skoleuka-økten er avsluttet, men vi kunne ikke bekrefte at Feide-økten er avsluttet. Logg inn på nytt for å forsøke full utlogging, eller lukk nettleseren.':
+    logoutResult==='logged-out'?'Du er logget ut fra Skoleuka og Feide.':
+    feideAuthenticated?'Feide-kontoen har ikke tilgang til denne barneprofilen. Kontakt en foresatt, eller logg ut fra Feide.':
     'Feide-økten er utløpt. Logg inn på nytt med Feide.':
     e.message);
   }else setup(e.message||'Kan ikke hente ukeplanen akkurat nå.');
