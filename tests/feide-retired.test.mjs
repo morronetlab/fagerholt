@@ -28,3 +28,10 @@ test('Existing child group personalization and QR installation are preserved',()
  assert.match(child,/action:'redeem'/);
  assert.match(child,/action:'restore-install'/);
 });
+
+test('Previously installed child PWA cache is rotated to discard old Feide UI shell',()=>{
+ const worker=read('public/barn/sw.js');
+ assert.match(worker,/skoleuka-child-shell-v10/);
+ assert.match(worker,/keys\.filter\(key=>key!==CACHE/);
+ assert.match(worker,/self\.skipWaiting\(\)/);
+});
