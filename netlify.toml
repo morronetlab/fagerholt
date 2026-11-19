@@ -111,24 +111,9 @@
   force = true
 
 [[redirects]]
-  from = "/barn/feide/callback"
-  to = "/barn/feide/index.html"
-  status = 200
-  force = true
-
-[[redirects]]
   from = "/barn"
   to = "/barn/"
   status = 301
-
-[[headers]]
-  for = "/barn/feide/*"
-  [headers.values]
-    Cache-Control = "private, no-store"
-    Referrer-Policy = "no-referrer"
-    X-Robots-Tag = "noindex, nofollow"
-    X-Content-Type-Options = "nosniff"
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self' https://qxejliyfgfeigvxsqupg.supabase.co; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 
 [[headers]]
   for = "/barn/*"
