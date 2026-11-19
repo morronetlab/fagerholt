@@ -57,7 +57,7 @@ test('Family and child app have separate visible-entry points using same weather
 });
 test('Child PWA caches weather shell but not forecast API',()=>{
  const sw=read('public/barn/sw.js');
- assert.match(sw,/skoleuka-child-shell-v9/);
+ assert.match(sw,/skoleuka-child-shell-v10/);
  assert.match(sw,/shared\/school-weather-ui\.mjs/);
  assert.match(sw,/shared\/school-weather\.css/);
  assert.match(sw,/url\.pathname\.startsWith\('\/api\/'\)/);

@@ -6,22 +6,6 @@ const e=s=>String(s??'').replace(/[&<>"']/gu,c=>({
 }[c]));
 export function initChildPairingUI({getCloud,onStatusChange=()=>{}}){
  const panel=$('child-pair-dialog');let child=null,previous=null,scrollY=0;
- // The optional Feide path complements QR but never modifies QR credentials.
- if(location.protocol==='https:'&&
-    ['deploy-preview-172--ukeplanen.netlify.app','www.skoleuka.no'].includes(location.hostname)){
-  void fetch('/api/feide-oidc/status',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(auth=>{
-   if(auth?.ready!==true)return;
-   const info=document.createElement('p');
-   info.className='family-muted';
-   const link=document.createElement('a');
-   link.id='child-pair-feide-link';
-   link.href='/barn/feide/foresatt/'+
-    (child?.id?'?childId='+encodeURIComponent(child.id):'');
-   link.textContent='Koble barnet til Feide';
-   info.appendChild(link);
-   panel.appendChild(info);
-  }).catch(()=>{});
- }
  const setup=new Map();let statusVersion=0,statusFamilyId=null;
  let platform='ios',pollTimer=null,refreshing=false,qrExpiresAt=0,qrMode=null;
  const clearQr=()=>{
@@ -247,9 +231,6 @@ export function initChildPairingUI({getCloud,onStatusChange=()=>{}}){
   }
   if(panel.open)return;
   child=profile;previous=document.activeElement;scrollY=window.scrollY;
-  const feideLink=panel.querySelector('#child-pair-feide-link');
-  if(feideLink)feideLink.href='/barn/feide/foresatt/?childId='+
-   encodeURIComponent(child.id);
   $('child-pair-title').textContent='Installer Skoleuka for '+child.name;
   $('child-pair-intro').textContent='1. Skann QR-koden på enheten til '+child.name+
    '. 2. Åpne ukeplanen og legg den på Hjem-skjerm. 3. Start appikonet. Barnet ser bare sin egen ukeplan.';
