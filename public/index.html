@@ -64,6 +64,7 @@
   <link rel="stylesheet" href="/homework-studio-compact.css">
   <link rel="stylesheet" href="/family-homework-dialog.css"><link rel="stylesheet" href="/shared/school-weather.css"><link rel="stylesheet" href="/plan-weather-unified.css"><link rel="stylesheet" href="/action-system.css">
   <link rel="stylesheet" href="/plan-mobile-refinement.css"><link rel="stylesheet" href="/family-calendar-24.css">
+  <link rel="stylesheet" href="/family-overview-child-picker.css">
   <link rel="stylesheet" href="/landing-first-time.css">
 </head>
 <body>
@@ -328,6 +329,9 @@
           </div>
         </div>
       </div>
+      <div id="family-overview-child-picker" class="family-overview-child-picker" hidden>
+        <button id="family-overview-child-open" type="button" class="sk-action sk-action--modal" aria-haspopup="dialog" aria-controls="family-overview-child-dialog">Vis barnekort: Alle barn <span aria-hidden="true">⌄</span></button>
+      </div>
       <p id="family-load-status" class="family-status" role="status" aria-live="polite"></p>
       <div id="family-empty" class="family-empty"><span aria-hidden="true">🏠</span><h3>Legg til det første barnet</h3><p>Velg skole og klassetrinn, så finner vi ukeplanen.</p><button id="family-empty-add" type="button" class="family-add-button sk-action sk-action--modal">+ Legg til første barn</button></div>
       <div id="family-cards" class="family-cards" aria-live="polite"></div>
@@ -569,6 +573,13 @@
     <div id="family-mobile-child-options" class="family-mobile-child-options"></div>
   </div>
 </dialog>
+<dialog id="family-overview-child-dialog" class="family-overview-child-dialog" aria-labelledby="family-overview-child-title">
+ <div class="family-overview-child-sheet">
+  <div class="family-overview-child-head"><h2 id="family-overview-child-title">Velg barn</h2><button id="family-overview-child-close" type="button" class="sk-action sk-action--close" aria-label="Lukk barnevalg">✕</button></div>
+  <p>Velg hvilke barnekort du vil se. Morgendagens oversikt gjelder fortsatt hele familien.</p>
+  <div id="family-overview-child-options" class="family-overview-child-options"></div>
+ </div>
+</dialog>
 <dialog id="family-activity-dialog" class="family-activity-dialog" aria-modal="true" aria-labelledby="family-activity-form-title">
 <form id="family-activity-form" class="family-activity-form" aria-labelledby="family-activity-form-title">
           <div class="family-form-head"><h3 id="family-activity-form-title">Ny aktivitet</h3>
@@ -695,5 +706,6 @@
 </div>
 <script type="module" src="/mobile-keyboard.mjs"></script>
 <script type="module" src="/app.js"></script>
+<script type="module" src="/family-overview-child-picker.mjs"></script>
 </body>
 </html>
