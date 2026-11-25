@@ -35,3 +35,66 @@ dialog.family-activity-dialog #family-activity-save{width:100%;min-height:46px}
  dialog.family-activity-dialog .family-activity-fields label{grid-column:1/-1}
  dialog.family-activity-dialog .family-activity-dialog-actions{bottom:-18px;padding:11px 0 3px}
 }
+
+/* Skoleuka 2.4: accessible, keyboard-safe mobile activity editor. */
+.family-activity-child-choices{display:none}
+@media(max-width:700px){
+ dialog.family-activity-dialog{
+  inset:auto 0 0;margin:0 auto;
+  width:100%;max-height:calc(100dvh - 10px);
+  padding:20px 18px calc(12px + env(safe-area-inset-bottom,0px));
+  border-radius:22px 22px 0 0;
+  scroll-padding-bottom:130px;
+ }
+ dialog.family-activity-dialog .family-form-head{
+  top:-20px;padding:5px 0 13px;margin:-5px 0 14px;
+ }
+ dialog.family-activity-dialog .family-form-close{
+  min-width:44px;min-height:44px;width:44px;height:44px;
+ }
+ dialog.family-activity-dialog .family-activity-child-field select{display:none}
+ dialog.family-activity-dialog .family-activity-child-choices{
+  display:grid;grid-column:1/-1;
+  grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+ }
+ dialog.family-activity-dialog .family-activity-child-choices button{
+  min-height:48px;min-width:0;padding:10px 8px;border:1px solid #c9ded0;
+  border-radius:12px;background:#fff;color:#225b42;
+  font-size:13px;font-weight:750;overflow-wrap:anywhere;
+ }
+ dialog.family-activity-dialog .family-activity-child-choices button[aria-pressed=true]{
+  background:#e7f5ea;border-color:#328461;color:#164f39;
+ }
+ dialog.family-activity-dialog .family-activity-dialog-actions{
+  display:grid;grid-template-columns:minmax(88px,0.72fr) minmax(0,1.28fr);
+  align-items:center;gap:10px;
+  bottom:calc(-12px - env(safe-area-inset-bottom,0px));
+  padding:13px 0 calc(10px + env(safe-area-inset-bottom,0px));
+  margin-top:12px;background:#fff;
+ }
+ dialog.family-activity-dialog #family-activity-save,
+ dialog.family-activity-dialog #family-activity-back{
+  width:100%;min-height:48px;border-radius:12px;
+  padding:10px 8px;font-size:14px;
+ }
+ dialog.family-activity-dialog #family-activity-back{
+  border:1px solid #cbded2;background:#f6faf7;color:#245b43;
+ }
+ dialog.family-activity-dialog .family-activity-fields label{line-height:1.5}
+ dialog.family-activity-dialog .family-activity-fields input,
+ dialog.family-activity-dialog .family-activity-fields select,
+ dialog.family-activity-dialog .family-activity-fields textarea{
+  min-height:46px;
+ }
+ dialog.family-activity-dialog .family-activity-child-choices button:focus-visible,
+ dialog.family-activity-dialog .family-activity-dialog-actions button:focus-visible{
+  outline:3px solid #b97b37;outline-offset:2px;
+ }
+ body[data-mobile-keyboard=open] dialog.family-activity-dialog[open]{
+  width:min(100%,600px);padding-bottom:10px;
+  scroll-padding-bottom:135px;
+ }
+ body[data-mobile-keyboard=open] dialog.family-activity-dialog[open] .family-activity-dialog-actions{
+  bottom:0;
+ }
+}
