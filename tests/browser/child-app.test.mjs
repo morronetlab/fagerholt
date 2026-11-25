@@ -1,11 +1,13 @@
-/** Chromium checks for the installed child-only app; no real Supabase data. */
+/** Mock-isolated child app tests; optionally run in WebKit and Firefox in CI. */
 import test,{before,after} from 'node:test';
 import assert from 'node:assert/strict';
-import {chromium} from 'playwright';
+import {chromium,firefox,webkit} from 'playwright';
 import {startStaticServer} from './static-server.mjs';
 import {taskFingerprint} from '../../public/shared/task-fingerprint.mjs';
+const engine={chromium,firefox,webkit}[process.env.QA_BROWSER||'chromium'];
+if(!engine)throw Error('Unsupported QA_BROWSER');
 let browser,server;
-before(async()=>{server=await startStaticServer();browser=await chromium.launch({headless:true,args:['--no-sandbox']});});
+before(async()=>{server=await startStaticServer();browser=await engine.launch({headless:true});});
 after(async()=>{await browser?.close();await server?.close();});
 const session='a'.repeat(64),pair='b'.repeat(64),child='00000000-0000-4000-8000-000000000022';
 const plan={status:'ok',parser:'ai',aiStatus:'ready',year:2026,week:44,
@@ -23,7 +25,8 @@ const plan={status:'ok',parser:'ai',aiStatus:'ready',year:2026,week:44,
  vocabulary:[{category:'engelske gloser',text:'apple - eple; dog - hund'},
   {category:'norske øveord',text:'skole, sol'}],notices:[]};
 async function open(t,query='',{redeem=true,sharedProgress=null,saveReject=false,readReject=false,
- planResponse=plan,planHttpStatus=200,standalone=false,transferCookie=false}={}){
+ planResponse=plan,planHttpStatus=200,standalone=false,transferCookie=false,
+ childHttpStatus=200}={}){
  const context=await browser.newContext({viewport:{width:390,height:790},locale:'nb-NO',timezoneId:'Europe/Oslo'});
  t.after(()=>context.close());
  const page=await context.newPage(),errors=[];
@@ -45,6 +48,9 @@ async function open(t,query='',{redeem=true,sharedProgress=null,saveReject=false
    contentType:'application/json',
    body:JSON.stringify(transferCookie?{session,expiresAt:'2027-01-01T00:00:00Z'}:
     {error:'Ingen overførbar barnetilgang.'})});
+  if(url.searchParams.get('action')==='child'&&childHttpStatus!==200)
+   return route.fulfill({status:childHttpStatus,contentType:'application/json',
+    body:JSON.stringify({error:'Enhetens tilgang er utløpt.'})});
   const isRedeem=action==='redeem',isSelfRevoke=action==='self-revoke',
    isProgress=url.searchParams.get('action')==='progress',isSave=action==='set-progress',
    isPacking=url.searchParams.get('action')==='packing',isPackSave=action==='set-packing';
@@ -373,4 +379,15 @@ test('Child sees today weather immediately and opens hourly details on a phone',
  await page.keyboard.press('Escape');
  assert.equal(await dialog.evaluate(node=>node.open),false);
  assert.deepEqual(errors,[]);
+});
+
+
+test('Revoked or expired child access clears local QR capability and hides private data',async t=>{
+ for(const code of [401,403]){
+  const {page,errors}=await open(t,'?pair='+pair,{childHttpStatus:code});
+  await page.locator('#child-setup').waitFor({state:'visible'});
+  assert.equal(await page.locator('#child-ready').isVisible(),false);
+  assert.equal(await page.evaluate(()=>localStorage.getItem('skoleuka.child.device.v1')),null);
+  assert.deepEqual(errors,[]);
+ }
 });
