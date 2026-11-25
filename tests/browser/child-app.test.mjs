@@ -1,11 +1,13 @@
-/** Chromium checks for the installed child-only app; no real Supabase data. */
+/** Mock-isolated child app tests; optionally run in WebKit and Firefox in CI. */
 import test,{before,after} from 'node:test';
 import assert from 'node:assert/strict';
-import {chromium} from 'playwright';
+import {chromium,firefox,webkit} from 'playwright';
 import {startStaticServer} from './static-server.mjs';
 import {taskFingerprint} from '../../public/shared/task-fingerprint.mjs';
+const engine={chromium,firefox,webkit}[process.env.QA_BROWSER||'chromium'];
+if(!engine)throw Error('Unsupported QA_BROWSER');
 let browser,server;
-before(async()=>{server=await startStaticServer();browser=await chromium.launch({headless:true,args:['--no-sandbox']});});
+before(async()=>{server=await startStaticServer();browser=await engine.launch({headless:true});});
 after(async()=>{await browser?.close();await server?.close();});
 const session='a'.repeat(64),pair='b'.repeat(64),child='00000000-0000-4000-8000-000000000022';
 const plan={status:'ok',parser:'ai',aiStatus:'ready',year:2026,week:44,
@@ -23,8 +25,9 @@ const plan={status:'ok',parser:'ai',aiStatus:'ready',year:2026,week:44,
  vocabulary:[{category:'engelske gloser',text:'apple - eple; dog - hund'},
   {category:'norske øveord',text:'skole, sol'}],notices:[]};
 async function open(t,query='',{redeem=true,sharedProgress=null,saveReject=false,readReject=false,
- planResponse=plan,planHttpStatus=200,standalone=false,transferCookie=false}={}){
- const context=await browser.newContext({viewport:{width:390,height:790},locale:'nb-NO',timezoneId:'Europe/Oslo'});
+ planResponse=plan,planHttpStatus=200,standalone=false,transferCookie=false,
+ childHttpStatus=200}={}){
+ const context=await browser.newContext({viewport:{width:390,height:790},locale:'nb-NO',timezoneId:'Europe/Oslo',serviceWorkers:'block'});
  t.after(()=>context.close());
  const page=await context.newPage(),errors=[];
  if(standalone)await page.addInitScript(()=>
@@ -45,6 +48,9 @@ async function open(t,query='',{redeem=true,sharedProgress=null,saveReject=false
    contentType:'application/json',
    body:JSON.stringify(transferCookie?{session,expiresAt:'2027-01-01T00:00:00Z'}:
     {error:'Ingen overførbar barnetilgang.'})});
+  if(url.searchParams.get('action')==='child'&&childHttpStatus!==200)
+   return route.fulfill({status:childHttpStatus,contentType:'application/json',
+    body:JSON.stringify({error:'Enhetens tilgang er utløpt.'})});
   const isRedeem=action==='redeem',isSelfRevoke=action==='self-revoke',
    isProgress=url.searchParams.get('action')==='progress',isSave=action==='set-progress',
    isPacking=url.searchParams.get('action')==='packing',isPackSave=action==='set-packing';
@@ -181,9 +187,11 @@ test('Child sees groups and deadlines; packing and homework sync with family pro
  assert.match(await page.locator('#child-homework').innerText(),/Til torsdag/);
  assert.match(await page.locator('#child-homework-progress').innerText(),/0 av 2/);
  assert.equal(await page.locator('#child-bag input[type=checkbox]').count(),1);
- await page.locator('#child-bag input[type=checkbox]').check();
+ await page.locator('#child-bag input[type=checkbox]').click();
+ await page.waitForFunction(()=>document.querySelector('#child-bag-progress')?.textContent?.includes('1 av 1'));
  assert.equal(packing.size,1);
- await page.locator('#child-homework input[data-child-homework="1"]').check();
+ await page.locator('#child-homework input[data-child-homework="1"]').click();
+ await page.waitForFunction(()=>document.querySelector('#child-homework-progress')?.textContent?.includes('1 av 2'));
  await page.locator('#child-homework-sync').getByText(/deles med foresatte/).waitFor();
  const fingerprint=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:44,
   task:plan.homework[1]});
@@ -243,14 +251,16 @@ test('Guardian-shared completion appears on another child device, including unch
  const sharedProgress=new Map();
  const a=await open(t,'?pair='+pair,{sharedProgress});
  await a.page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
- await a.page.locator('#child-homework input[data-child-homework="1"]').check();
+ await a.page.locator('#child-homework input[data-child-homework="1"]').click();
+ await a.page.waitForFunction(()=>document.querySelector('#child-homework-progress')?.textContent?.includes('1 av 2'));
  await a.page.locator('#child-homework-sync').getByText(/deles med foresatte/).waitFor();
  const key=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:44,task:plan.homework[1]});
  assert.equal(sharedProgress.get(key),true);
  const b=await open(t,'?pair='+pair,{sharedProgress});
  await b.page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
  assert.equal(await b.page.locator('#child-homework input[data-child-homework="1"]').isChecked(),true);
- await b.page.locator('#child-homework input[data-child-homework="1"]').uncheck();
+ await b.page.locator('#child-homework input[data-child-homework="1"]').click();
+ await b.page.waitForFunction(()=>document.querySelector('#child-homework-progress')?.textContent?.includes('0 av 2'));
  await b.page.locator('#child-homework-sync').getByText(/deles med foresatte/).waitFor();
  assert.equal(sharedProgress.get(key),false);
  await a.page.reload({waitUntil:'domcontentloaded'});
@@ -274,7 +284,7 @@ test('Offline shared status disables homework writes, not unrelated child packin
  await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
  assert.match(await page.locator('#child-homework-sync').innerText(),/Synkronisering er utilgjengelig/);
  assert.equal(await page.locator('#child-homework input[data-child-homework="1"]').isDisabled(),true);
- await page.locator('#child-bag input[type=checkbox]').check();
+ await page.locator('#child-bag input[type=checkbox]').click();
  assert.equal(await page.locator('#child-bag input[type=checkbox]').isChecked(),true);
  assert.deepEqual(errors,[]);
 });
@@ -373,4 +383,15 @@ test('Child sees today weather immediately and opens hourly details on a phone',
  await page.keyboard.press('Escape');
  assert.equal(await dialog.evaluate(node=>node.open),false);
  assert.deepEqual(errors,[]);
+});
+
+
+test('Revoked or expired child access clears local QR capability and hides private data',async t=>{
+ for(const code of [401,403]){
+  const {page,errors}=await open(t,'?pair='+pair,{childHttpStatus:code});
+  await page.locator('#child-setup').waitFor({state:'visible'});
+  assert.equal(await page.locator('#child-ready').isVisible(),false);
+  assert.equal(await page.evaluate(()=>localStorage.getItem('skoleuka.child.device.v1')),null);
+  assert.deepEqual(errors,[]);
+ }
 });

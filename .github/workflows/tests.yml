@@ -52,3 +52,24 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
+
+  child-cross-browser:
+    # Existing full browser suite remains on Chromium in the browser job.
+    # WebKit/Firefox run the same isolated child flows plus responsive smoke.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [webkit, firefox]
+    env:
+      QA_BROWSER: ${{ matrix.engine }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Child QR, progress and responsive regression
+        run: node --test tests/browser/child-app.test.mjs tests/browser/responsive-shell.test.mjs
