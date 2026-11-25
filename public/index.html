@@ -557,9 +557,10 @@
           <div class="family-form-head"><h3 id="family-activity-form-title">Ny aktivitet</h3>
             <button type="button" id="family-activity-cancel" class="family-form-close sk-action sk-action--close" aria-label="Lukk aktivitetsskjema">✕</button></div>
           <div class="family-activity-fields">
-            <label class="family-activity-wide">Aktivitet<input id="family-activity-name" type="text" maxlength="120" placeholder="F.eks. Korpsøvelse" required></label>
-            <label>Hvem gjelder det?<select id="family-activity-child"><option value="">Hele familien</option></select></label>
-            <label>Dato<input id="family-activity-date" type="date" min="2020-01-01" max="2100-12-31" required></label>
+            <label class="family-activity-wide">Tittel *<input id="family-activity-name" type="text" maxlength="120" placeholder="F.eks. Korpsøvelse" required></label>
+            <label class="family-activity-child-field">Hvem gjelder det?<select id="family-activity-child"><option value="">Hele familien</option></select></label>
+            <div id="family-activity-child-choices" class="family-activity-child-choices" role="group" aria-label="Hvem gjelder aktiviteten?"></div>
+            <label>Dato *<input id="family-activity-date" type="date" min="2020-01-01" max="2100-12-31" required></label>
             <label>Starttid (valgfritt)<input id="family-activity-start" type="time"></label>
             <label>Sluttid (valgfritt)<input id="family-activity-end" type="time"></label>
             <label>Gjentakelse<select id="family-activity-repeat"><option value="none">Kun denne dagen</option><option value="weekly">Hver uke</option></select></label>
@@ -570,7 +571,7 @@
           </div>
           <p class="family-activity-help">Med familiekonto deles aktivitetene mellom foresatte. Uten innlogging lagres de kun på denne enheten. Endringer i en gjentakende aktivitet gjelder hele serien.</p>
           <p id="family-activity-form-status" class="family-form-status" role="status" aria-live="polite"></p>
-          <div class="family-activity-dialog-actions"><button id="family-activity-save" type="submit" class="family-add-button sk-action sk-action--submit">Lagre aktivitet</button></div>
+          <div class="family-activity-dialog-actions"><button id="family-activity-back" type="button" class="family-light-button sk-action sk-action--utility">Avbryt</button><button id="family-activity-save" type="submit" class="family-add-button sk-action sk-action--submit">Lagre aktivitet</button></div>
         </form>
 </dialog>
 <dialog id="family-child-dialog" class="family-child-dialog" aria-labelledby="family-form-title" aria-describedby="family-form-tip" aria-modal="true">
