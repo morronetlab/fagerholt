@@ -11,11 +11,32 @@ const stored=()=>{try{return JSON.parse(sessionStorage.getItem(KEY)||'null');}ca
 export function initFamilyMobileUI(){
  const previous=stored();
  let view=VIEWS.has(previous?.view)?previous.view:'overview';
+ let kind=['all','homework','family'].includes(previous?.kind)?previous.kind:'all';
  let day=previous?.day==='all'||previous?.day==='today'||/^[0-6]$/.test(String(previous?.day))?
   String(previous.day):'today';
- const save=()=>{try{sessionStorage.setItem(KEY,JSON.stringify({view,day}));}catch{}};
+ const save=()=>{try{sessionStorage.setItem(KEY,JSON.stringify({view,day,kind}));}catch{}};
  const options=document.getElementById('family-mobile-calendar-options');
  const dayStatus=document.getElementById('family-mobile-day-status');
+ const kindNav=document.getElementById('family-mobile-kind-filter');
+ const childDialog=document.getElementById('family-mobile-child-dialog');
+ const childOpen=document.getElementById('family-mobile-child-open');
+ const childSelect=document.getElementById('family-agenda-child');
+ const childOptions=document.getElementById('family-mobile-child-options');
+ const childEmpty=document.getElementById('family-mobile-filter-empty');
+ function refreshChildSelector(){
+  childOpen.firstChild.textContent=childSelect.selectedOptions[0]?.textContent||'Alle barn';
+ }
+ function renderChildOptions(){
+  childOptions.replaceChildren();
+  for(const option of childSelect.options){
+   const button=document.createElement('button');
+   button.type='button';button.className='family-mobile-child-option sk-action sk-action--choice';
+   button.textContent=option.value?'👤 '+option.textContent:'👪 Alle barn';
+   button.dataset.childId=option.value;
+   button.setAttribute('aria-pressed',String(childSelect.value===option.value));
+   childOptions.append(button);
+  }
+ }
  function paintTabs(){
   root().dataset.familyMobileView=view;
   for(const button of nav().querySelectorAll('[data-family-mobile-tab]'))
@@ -26,7 +47,16 @@ export function initFamilyMobileUI(){
    document.getElementById('family-activity-manage').open=true;
  }
  function refreshDays(){
+  refreshChildSelector();
+  for(const button of kindNav.querySelectorAll('[data-family-kind]'))
+   button.setAttribute('aria-pressed',String(button.dataset.familyKind===kind));
   const list=days();
+  for(const item of document.querySelectorAll('#family-agenda-days .family-agenda-item')){
+   const visible=kind==='all'||item.classList.contains('kind-'+kind);
+   item.classList.toggle('family-mobile-kind-hidden',!visible);
+  }
+  const visibleCount=dayEl=>[...dayEl.querySelectorAll('.family-agenda-item')].filter(item=>
+   kind==='all'||item.classList.contains('kind-'+kind)).length;
   if(!list.length)return;
   const current=list.findIndex(el=>el.classList.contains('today'));
   const chosen=day==='all'?-1:day==='today'?
@@ -37,7 +67,7 @@ export function initFamilyMobileUI(){
   dayNav().innerHTML=list.slice(0,5).map((el,index)=>{
    const heading=el.querySelector('h3')?.textContent||'';
    const date=heading.match(/\b(\d{1,2})\b/)?.[1]||'–';
-   const count=el.querySelectorAll('.family-agenda-item').length;
+   const count=visibleCount(el);
    return '<button type="button" class="family-mobile-day-tile" data-family-mobile-day="'+index+
     '" aria-pressed="'+String(select===String(index))+
     '" aria-label="'+SHORT_DAYS[index]+' '+date+', '+count+' hendelser">'+
@@ -49,10 +79,11 @@ export function initFamilyMobileUI(){
   list.forEach((el,index)=>el.classList.toggle('family-mobile-day-hidden',
    chosen!==-1&&index!==chosen));
   const full=select==='all';
-  const count=full?list.reduce((total,el)=>total+el.querySelectorAll('.family-agenda-item').length,0):
-   list[chosen]?.querySelectorAll('.family-agenda-item').length||0;
+  const count=full?list.reduce((total,el)=>total+visibleCount(el),0):
+   list[chosen]?visibleCount(list[chosen]):0;
   const heading=full?'Hele uka':list[chosen]?.querySelector('h3')?.textContent||'Valgt dag';
   dayStatus.textContent=heading+' · '+count+' hendelse'+(count===1?'':'r');
+  childEmpty.hidden=count!==0||kind==='all';
   const weekButton=options.querySelector('[data-family-mobile-range]');
   weekButton.textContent=full?'Vis én dag':'Vis hele uka';
   weekButton.setAttribute('aria-pressed',String(full));
@@ -67,6 +98,21 @@ export function initFamilyMobileUI(){
   view=next;save();paintTabs();
   if(scroll)root().scrollIntoView({block:'start',behavior:'auto'});
  }
+ childOpen.addEventListener('click',()=>{renderChildOptions();childDialog.showModal();});
+ document.getElementById('family-mobile-child-close').addEventListener('click',()=>childDialog.close());
+ childOptions.addEventListener('click',event=>{
+  const button=event.target.closest('[data-child-id]');
+  if(!button)return;
+  childSelect.value=button.dataset.childId;
+  childDialog.close();
+  childSelect.dispatchEvent(new Event('change',{bubbles:true}));
+ });
+ childDialog.addEventListener('close',()=>childOpen.focus({preventScroll:true}));
+ kindNav.addEventListener('click',event=>{
+  const button=event.target.closest('[data-family-kind]');
+  if(!button)return;
+  kind=button.dataset.familyKind;save();refreshDays();
+ });
  nav().addEventListener('click',event=>{
   const button=event.target.closest('[data-family-mobile-tab]');
   if(button)selectView(button.dataset.familyMobileTab,{scroll:true});

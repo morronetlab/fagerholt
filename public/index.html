@@ -63,7 +63,8 @@
   <link rel="stylesheet" href="/family-practical-controls.css">
   <link rel="stylesheet" href="/homework-studio-compact.css">
   <link rel="stylesheet" href="/family-homework-dialog.css"><link rel="stylesheet" href="/shared/school-weather.css"><link rel="stylesheet" href="/plan-weather-unified.css"><link rel="stylesheet" href="/action-system.css">
-  <link rel="stylesheet" href="/plan-mobile-refinement.css"><link rel="stylesheet" href="/family-overview-child-picker.css">
+  <link rel="stylesheet" href="/plan-mobile-refinement.css"><link rel="stylesheet" href="/family-calendar-24.css">
+  <link rel="stylesheet" href="/family-overview-child-picker.css">
   <link rel="stylesheet" href="/landing-first-time.css">
 </head>
 <body>
@@ -271,6 +272,20 @@
           <button type="button" id="family-first-run-calendar" class="family-light-button sk-action sk-action--navigate" hidden>Se familiekalender</button>
         </div>
       </aside>
+      <section id="family-tomorrow-brief" class="family-tomorrow-brief" aria-labelledby="family-tomorrow-brief-title" hidden>
+        <div class="family-tomorrow-brief-head">
+          <div><p class="family-tomorrow-eyebrow">FORBERED MORGENDAGEN</p>
+            <h2 id="family-tomorrow-brief-title">Hva skjer i morgen?</h2>
+            <p id="family-tomorrow-brief-date"></p></div>
+          <span id="family-tomorrow-brief-count" class="family-tomorrow-brief-count"></span>
+        </div>
+        <p id="family-tomorrow-brief-notice" class="family-tomorrow-brief-notice" role="status"></p>
+        <ul id="family-tomorrow-brief-items" class="family-tomorrow-brief-items"></ul>
+        <div class="family-tomorrow-brief-actions">
+          <button type="button" id="family-tomorrow-brief-more" class="family-light-button sk-action sk-action--disclosure" hidden aria-expanded="false" aria-controls="family-tomorrow-brief-items">Vis resten</button>
+          <button type="button" id="family-tomorrow-brief-calendar" class="family-light-button sk-action sk-action--navigate" hidden>Se dagen i kalenderen →</button>
+        </div>
+      </section>
       <section class="family-tomorrow family-important" aria-labelledby="family-tomorrow-title">
         <div class="family-important-heading">
           <div><p class="family-eyebrow">DET SOM KREVER OPPMERKSOMHET</p>
@@ -302,20 +317,6 @@
           </details>
         </div>
       </section>
-      <section id="family-tomorrow-brief" class="family-tomorrow-brief" aria-labelledby="family-tomorrow-brief-title" hidden>
-        <div class="family-tomorrow-brief-head">
-          <div><p class="family-tomorrow-eyebrow">FORBERED MORGENDAGEN</p>
-            <h2 id="family-tomorrow-brief-title">Hva skjer i morgen?</h2>
-            <p id="family-tomorrow-brief-date"></p></div>
-          <span id="family-tomorrow-brief-count" class="family-tomorrow-brief-count"></span>
-        </div>
-        <p id="family-tomorrow-brief-notice" class="family-tomorrow-brief-notice" role="status"></p>
-        <ul id="family-tomorrow-brief-items" class="family-tomorrow-brief-items"></ul>
-        <div class="family-tomorrow-brief-actions">
-          <button type="button" id="family-tomorrow-brief-more" class="family-light-button sk-action sk-action--disclosure" hidden aria-expanded="false" aria-controls="family-tomorrow-brief-items">Vis resten</button>
-          <button type="button" id="family-tomorrow-brief-calendar" class="family-light-button sk-action sk-action--navigate" hidden>Se dagen i kalenderen →</button>
-        </div>
-      </section>
       <section id="family-children" class="family-children" aria-labelledby="family-children-title">
       <div class="family-toolbar">
         <div><h2 id="family-children-title">Barna mine</h2><p>Hvert barn har sin egen ukeplan og lekseprogresjon.</p></div>
@@ -341,6 +342,7 @@
             <h2 id="family-agenda-title">Skole og fritid</h2>
             <p class="family-agenda-subtitle">Det som skjer mandag–fredag, med mulighet til å se helgens avtaler.</p>
           </div>
+          <button id="family-mobile-child-open" class="family-mobile-child-open sk-action sk-action--modal" type="button" aria-haspopup="dialog" aria-controls="family-mobile-child-dialog">Alle barn <span aria-hidden="true">⌄</span></button>
           <label class="family-agenda-filter"><span class="family-desktop-filter-label">Vis aktiviteter for</span>
             <select id="family-agenda-child" aria-label="Velg barn for kalenderen">
               <option value="">Alle i familien</option>
@@ -364,6 +366,12 @@
           </details>
         </div>
         <p id="family-mobile-day-status" class="family-mobile-day-status" role="status" aria-live="polite"></p>
+        <div id="family-mobile-kind-filter" class="family-mobile-kind-filter" role="group" aria-label="Filtrer kalenderen">
+          <button type="button" class="sk-action sk-action--choice" data-family-kind="all" aria-pressed="true">Alle</button>
+          <button type="button" class="sk-action sk-action--choice" data-family-kind="homework" aria-pressed="false">Lekser</button>
+          <button type="button" class="sk-action sk-action--choice" data-family-kind="family" aria-pressed="false">Aktiviteter</button>
+        </div>
+        <p id="family-mobile-filter-empty" class="family-mobile-filter-empty" role="status" hidden>Ingen punkter i dette filteret for valgt dag.</p>
         <p id="family-agenda-status" class="family-agenda-status" role="status" aria-live="polite"></p>
         <div id="family-agenda-days" class="family-agenda-days"></div>
         <button type="button" id="family-agenda-weekend-toggle" class="family-agenda-weekend-toggle sk-action sk-action--disclosure"
@@ -556,6 +564,15 @@
  <p id="family-homework-status" class="family-homework-status" role="status" aria-live="polite"></p><div id="family-homework-items" class="family-homework-items"></div>
  </div>
 </dialog>
+<dialog id="family-mobile-child-dialog" class="family-mobile-child-dialog" aria-labelledby="family-mobile-child-title">
+  <div class="family-mobile-child-sheet">
+    <div class="family-mobile-child-head"><h2 id="family-mobile-child-title">Velg barn</h2>
+      <button id="family-mobile-child-close" type="button" aria-label="Lukk valg av barn" class="sk-action sk-action--close">✕</button>
+    </div>
+    <p>Velg hvem du vil se i kalenderen.</p>
+    <div id="family-mobile-child-options" class="family-mobile-child-options"></div>
+  </div>
+</dialog>
 <dialog id="family-overview-child-dialog" class="family-overview-child-dialog" aria-labelledby="family-overview-child-title">
  <div class="family-overview-child-sheet">
   <div class="family-overview-child-head"><h2 id="family-overview-child-title">Velg barn</h2><button id="family-overview-child-close" type="button" class="sk-action sk-action--close" aria-label="Lukk barnevalg">✕</button></div>
@@ -568,9 +585,10 @@
           <div class="family-form-head"><h3 id="family-activity-form-title">Ny aktivitet</h3>
             <button type="button" id="family-activity-cancel" class="family-form-close sk-action sk-action--close" aria-label="Lukk aktivitetsskjema">✕</button></div>
           <div class="family-activity-fields">
-            <label class="family-activity-wide">Aktivitet<input id="family-activity-name" type="text" maxlength="120" placeholder="F.eks. Korpsøvelse" required></label>
-            <label>Hvem gjelder det?<select id="family-activity-child"><option value="">Hele familien</option></select></label>
-            <label>Dato<input id="family-activity-date" type="date" min="2020-01-01" max="2100-12-31" required></label>
+            <label class="family-activity-wide">Tittel *<input id="family-activity-name" type="text" maxlength="120" placeholder="F.eks. Korpsøvelse" required></label>
+            <label class="family-activity-child-field">Hvem gjelder det?<select id="family-activity-child"><option value="">Hele familien</option></select></label>
+            <div id="family-activity-child-choices" class="family-activity-child-choices" role="group" aria-label="Hvem gjelder aktiviteten?"></div>
+            <label>Dato *<input id="family-activity-date" type="date" min="2020-01-01" max="2100-12-31" required></label>
             <label>Starttid (valgfritt)<input id="family-activity-start" type="time"></label>
             <label>Sluttid (valgfritt)<input id="family-activity-end" type="time"></label>
             <label>Gjentakelse<select id="family-activity-repeat"><option value="none">Kun denne dagen</option><option value="weekly">Hver uke</option></select></label>
@@ -581,7 +599,7 @@
           </div>
           <p class="family-activity-help">Med familiekonto deles aktivitetene mellom foresatte. Uten innlogging lagres de kun på denne enheten. Endringer i en gjentakende aktivitet gjelder hele serien.</p>
           <p id="family-activity-form-status" class="family-form-status" role="status" aria-live="polite"></p>
-          <div class="family-activity-dialog-actions"><button id="family-activity-save" type="submit" class="family-add-button sk-action sk-action--submit">Lagre aktivitet</button></div>
+          <div class="family-activity-dialog-actions"><button id="family-activity-back" type="button" class="family-light-button sk-action sk-action--utility">Avbryt</button><button id="family-activity-save" type="submit" class="family-add-button sk-action sk-action--submit">Lagre aktivitet</button></div>
         </form>
 </dialog>
 <dialog id="family-child-dialog" class="family-child-dialog" aria-labelledby="family-form-title" aria-describedby="family-form-tip" aria-modal="true">

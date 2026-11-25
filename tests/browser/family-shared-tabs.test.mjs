@@ -4,11 +4,11 @@ import {readFileSync} from 'node:fs';
 import {chromium} from 'playwright';
 import {startStaticServer} from './static-server.mjs';
 const html=readFileSync(new URL('../../public/index.html',import.meta.url),'utf8');
-test('Overview DOM prioritizes important notices, next school day, then children',()=>{
+test('Overview DOM prioritizes tomorrow, weekly notices, then children',()=>{
  const important=html.indexOf('<section class="family-tomorrow family-important"');
  const next=html.indexOf('<section id="family-tomorrow-brief"');
  const children=html.indexOf('<section id="family-children"');
- assert.ok(important>=0&&important<next&&next<children);
+ assert.ok(next>=0&&next<important&&important<children);
 });
 let browser,server;
 before(async()=>{server=await startStaticServer();browser=await chromium.launch({headless:true,args:['--no-sandbox']});});

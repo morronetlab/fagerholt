@@ -1,0 +1,56 @@
+/* Skoleuka 2.4 – calendar day focus and native child picker.
+ * Family dashboard only; desktop select and child PWA stay unchanged. */
+.family-mobile-child-open,.family-mobile-kind-filter,.family-mobile-filter-empty{display:none}
+dialog.family-mobile-child-dialog:not([open]){display:none}
+dialog.family-mobile-child-dialog{
+ position:fixed;inset:auto 0 0;margin:0 auto;width:min(100%,700px);
+ max-width:700px;max-height:78dvh;box-sizing:border-box;
+ padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px));
+ border:1px solid #cfe0d4;border-radius:22px 22px 0 0;
+ background:#fff;color:#245b45;box-shadow:0 -12px 45px #153d2a28;
+ overflow:auto;overscroll-behavior:contain;
+}
+dialog.family-mobile-child-dialog::backdrop{background:rgba(13,35,27,.58)}
+.family-mobile-child-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.family-mobile-child-head h2{font-size:22px;margin:0}
+.family-mobile-child-head button{min-width:44px;min-height:44px;border:0;border-radius:10px;background:#edf5ee;color:#245b45}
+.family-mobile-child-sheet>p{margin:7px 0 16px;font-size:13px;color:#567260}
+.family-mobile-child-options{display:grid;gap:10px}
+.family-mobile-child-option{
+ display:flex;align-items:center;justify-content:space-between;width:100%;
+ min-height:58px;text-align:left;padding:14px 16px;border:1px solid #cbdcd0;
+ border-radius:14px;background:#fff;color:#245b45;font:inherit;font-weight:750;
+}
+.family-mobile-child-option[aria-pressed=true]{background:#e8f4e9;border-color:#4a9466}
+.family-mobile-child-option[aria-pressed=true]::after{content:'✓';font-weight:900;color:#23714b}
+.family-mobile-child-option:focus-visible,.family-mobile-child-head button:focus-visible{
+ outline:3px solid #b97b37;outline-offset:3px
+}
+@media(max-width:700px){
+ body.family-dashboard-active #family-view[data-family-mobile-view=calendar] .family-agenda-filter{
+  display:none!important;
+ }
+ body.family-dashboard-active #family-view[data-family-mobile-view=calendar] .family-mobile-child-open{
+  display:flex;align-items:center;justify-content:space-between;width:100%;
+  min-height:48px;padding:10px 14px;border:1px solid #cbded1;
+  border-radius:12px;background:#f3faf5;color:#255e47;font-size:14px;font-weight:800;
+ }
+ body.family-dashboard-active #family-view[data-family-mobile-view=calendar] .family-mobile-kind-filter{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;
+  margin:9px 0 12px;
+ }
+ #family-view .family-mobile-kind-filter button{
+  min-height:44px;min-width:0;padding:7px 5px;
+  border:1px solid #cfe0d4;border-radius:12px;background:#fff;
+  color:#305f48;font-size:12px;font-weight:750;
+ }
+ #family-view .family-mobile-kind-filter button[aria-pressed=true]{
+  background:#e4f2e7;border-color:#3b8762;color:#175b3c;
+ }
+ #family-view .family-agenda-item.family-mobile-kind-hidden{display:none!important}
+ #family-view .family-mobile-filter-empty:not([hidden]){
+  display:block;padding:14px;margin:0 0 10px;border-radius:11px;
+  background:#f7faf8;color:#416453;font-size:13px;
+ }
+ #family-view .family-mobile-day-status{margin-bottom:4px}
+}
