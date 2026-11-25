@@ -256,3 +256,47 @@
     background:#eef7f1
   }
 }
+
+/* Skoleuka 2.3: keep primary family actions comfortably tappable.
+   Earlier compact overrides used 36–40px targets on phones. */
+@media(max-width:700px){
+  #family-view .family-mobile-nav button,
+  #family-view .family-mobile-days button,
+  #family-view .family-mobile-more,
+  #family-view .family-child-actions [data-family-open],
+  #family-view .family-child.mobile-more-open .family-child-actions [data-family-pair],
+  #family-view .family-child.mobile-more-open .family-child-actions [data-family-edit],
+  #family-view .family-child.mobile-more-open .family-child-actions [data-family-remove],
+  #family-view .family-child.mobile-more-open .family-child-actions [data-family-retry],
+  #family-view #family-mobile-add,
+  #family-view #family-mobile-admin-toggle,
+  #family-view #family-activity-add,
+  #family-view .family-activity-actions button,
+  #family-view .family-important-actions #family-mobile-important-more,
+  #family-view .family-important-actions .family-disclosure>summary{
+    min-height:44px;
+  }
+  #family-view #family-mobile-admin-toggle{
+    min-width:44px;
+    width:44px;
+    flex-basis:44px;
+  }
+  #family-view[data-family-mobile-view=overview] #family-children .family-toolbar h2{
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+}
+
+/* Match the more specific overview-toolbar selector from the earlier polish
+   so these two controls cannot regress to the old 40px minimum. */
+@media(max-width:700px){
+  body.family-dashboard-active #family-view[data-family-mobile-view=overview] #family-mobile-add,
+  body.family-dashboard-active #family-view[data-family-mobile-view=overview] #family-mobile-admin-toggle{
+    min-height:44px;
+  }
+  body.family-dashboard-active #family-view[data-family-mobile-view=overview] #family-mobile-admin-toggle{
+    min-width:44px;
+    width:44px;
+    flex-basis:44px;
+  }
+}
