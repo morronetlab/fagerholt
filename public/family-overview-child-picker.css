@@ -1,0 +1,43 @@
+/* Skoleuka 2.4 – mobile family child-card picker. */
+.family-overview-child-picker{display:none}
+dialog.family-overview-child-dialog:not([open]){display:none}
+dialog.family-overview-child-dialog{
+ position:fixed;inset:auto 0 0;margin:0 auto;
+ box-sizing:border-box;width:min(100%,700px);max-width:700px;max-height:80dvh;
+ padding:20px 18px calc(22px + env(safe-area-inset-bottom,0px));
+ border:1px solid #cde1d1;border-radius:22px 22px 0 0;
+ background:#fff;color:#245940;box-shadow:0 -10px 38px #173d2a29;
+ overflow:auto;overscroll-behavior:contain;
+}
+dialog.family-overview-child-dialog::backdrop{background:rgba(12,33,25,.59)}
+.family-overview-child-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.family-overview-child-head h2{font-size:22px;margin:0}
+.family-overview-child-head button{
+ min-width:44px;min-height:44px;border:0;border-radius:10px;background:#eff6f1;color:#245940;
+}
+.family-overview-child-sheet>p{font-size:13px;color:#557363;line-height:1.5;margin:5px 0 15px}
+.family-overview-child-options{display:grid;gap:8px}
+.family-overview-child-choice{
+ min-height:58px;width:100%;padding:13px 15px;
+ border:1px solid #c8dbce;border-radius:13px;background:#fff;
+ color:#23553f;font-size:15px;text-align:left;font-weight:750;
+}
+.family-overview-child-choice[aria-pressed=true]{background:#e7f4e9;border-color:#428c63}
+.family-overview-child-choice[aria-pressed=true]::after{
+ content:'✓';float:right;font-weight:900;color:#267344;
+}
+.family-overview-child-choice:focus-visible,.family-overview-child-head button:focus-visible{
+ outline:3px solid #b97b37;outline-offset:2px;
+}
+@media(max-width:700px){
+ #family-view[data-family-mobile-view=overview] .family-overview-child-picker:not([hidden]){
+  display:block;margin:1px 0 10px;
+ }
+ #family-view .family-overview-child-picker button{
+  display:flex;align-items:center;justify-content:space-between;width:100%;
+  min-height:44px;padding:10px 13px;
+  border:1px solid #cbded0;border-radius:12px;
+  background:#f6faf7;color:#285d46;font-size:13px;font-weight:750;
+ }
+ #family-view .family-child.family-overview-child-hidden{display:none!important}
+}
