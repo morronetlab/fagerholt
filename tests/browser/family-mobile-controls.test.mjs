@@ -57,6 +57,11 @@ for(const width of [320,390,700]){
     };
    });
    for(const control of measurements.controls){
+    // In normal overview mode, some actions live behind the manage toggle.
+    // Their computed minimum still matters, but hidden controls have no box.
+    assert.ok(parseFloat(control.minHeight)>=43.5,
+     'CSS minimum tap height too short at '+width+'px: '+JSON.stringify(control));
+    if(control.height<1)continue;
     assert.ok(control.height>=43.5,
      'Tap target too short at '+width+'px: '+JSON.stringify(control));
     assert.ok(control.left>=-2&&control.right<=width+2,
