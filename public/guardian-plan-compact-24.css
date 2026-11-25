@@ -1,0 +1,142 @@
+/* Skoleuka 2.4 – focused parent view for a single child's school day.
+ * Scoped to guardian-plan-active: public school plans and /barn/ stay unchanged.
+ * Keep all status/source links visible and preserve all four content shortcuts. */
+@media(max-width:700px){
+  body.guardian-plan-active #app-view{
+    min-width:0;
+  }
+  body.guardian-plan-active #app-view .guardian-plan-toolbar{
+    display:flex;align-items:center;
+    min-height:52px;gap:6px;
+    padding:5px 8px;margin:0 -3px 6px;
+    border-radius:0 0 12px 12px;
+  }
+  body.guardian-plan-active #app-view .guardian-plan-toolbar .guardian-plan-back{
+    min-height:44px;padding:7px 10px;
+    border-radius:10px;font-size:12px;white-space:nowrap;
+  }
+  body.guardian-plan-active #app-view .guardian-plan-profiles{
+    gap:5px;padding:0;min-width:0;
+    scrollbar-width:none;
+  }
+  body.guardian-plan-active #app-view .guardian-plan-profiles::-webkit-scrollbar{display:none}
+  body.guardian-plan-active #app-view .guardian-plan-profiles button{
+    min-height:44px;padding:7px 12px;
+    border-radius:10px;font-size:12px;
+  }
+
+  /* Date, relevant homework and packing stay above source/AI metadata. */
+  body.guardian-plan-active #app-view #guardian-plan-summary{
+    padding:11px 12px;margin:5px 0 9px;
+    border-radius:15px;background:#f4faf6;
+  }
+  body.guardian-plan-active #app-view .guardian-plan-summary-line{
+    align-items:flex-start;gap:8px;
+  }
+  body.guardian-plan-active #app-view .guardian-plan-summary-line strong{
+    font-size:17px;line-height:1.2;letter-spacing:-.3px;
+  }
+  body.guardian-plan-active #app-view .guardian-plan-summary-line span:not(.guardian-plan-progress){
+    font-size:12px;line-height:1.4;
+  }
+  body.guardian-plan-active #app-view .guardian-plan-progress{
+    max-width:42%;white-space:normal;text-align:center;
+    padding:6px 8px;font-size:11px;line-height:1.35;border-radius:10px;
+  }
+  body.guardian-plan-active #app-view .guardian-plan-packing-state{
+    font-size:12px;line-height:1.4;margin:5px 0 9px;
+  }
+  body.guardian-plan-active #app-view .guardian-plan-shortcuts{
+    display:flex;gap:6px;flex-wrap:nowrap;
+    overflow-x:auto;overscroll-behavior-x:contain;
+    scrollbar-width:none;padding:1px 0 3px;
+  }
+  body.guardian-plan-active #app-view .guardian-plan-shortcuts::-webkit-scrollbar{display:none}
+  body.guardian-plan-active #app-view .guardian-plan-shortcuts button{
+    flex:1 0 auto;min-width:0;min-height:44px;
+    padding:8px 10px;font-size:12px;line-height:1.25;
+    white-space:nowrap;border-radius:11px;
+  }
+
+  /* The former tall AI/source hero becomes a compact information strip
+     followed by the existing unified weather card. */
+  body.guardian-plan-active #app-view #app-hero{
+    display:grid;grid-template-columns:minmax(0,1fr);
+    gap:8px;min-height:0;
+    padding:9px;margin:0 0 10px;
+    border-radius:15px;background:#f5faf6;
+  }
+  body.guardian-plan-active #app-view #app-hero .hero-intro{
+    display:block;min-height:0!important;
+    padding:7px 8px!important;margin:0;
+    border-radius:11px;
+    border:0;background:transparent;box-shadow:none;
+  }
+  body.guardian-plan-active #app-view #app-hero .hero-intro::after{display:none}
+  body.guardian-plan-active #app-view #app-hero .hero-actions{
+    display:flex;align-items:center;justify-content:flex-start;
+    gap:7px;row-gap:6px;margin:0;
+  }
+  body.guardian-plan-active #app-view #app-hero #status-pill{
+    max-width:100%;min-height:34px;
+    padding:6px 9px;font-size:11px;
+    line-height:1.3;white-space:normal;
+  }
+  body.guardian-plan-active #app-view #app-hero #reload{
+    flex:0 0 auto;min-height:44px;
+    padding:9px 11px;font-size:12px;border-radius:10px;
+  }
+  body.guardian-plan-active #app-view #app-hero #school-source{
+    display:inline-flex;align-items:center;
+    min-height:40px;padding:5px 4px;
+    font-size:12px;line-height:1.25;
+    white-space:normal;text-underline-offset:3px;
+  }
+  body.guardian-plan-active #app-view #app-hero #plan-school-weather{
+    min-width:0;margin:0;align-self:stretch;
+  }
+  body.guardian-plan-active #app-view #app-hero #plan-school-weather .school-weather-open{
+    min-height:62px;height:auto;padding:10px 12px;
+  }
+  body.guardian-plan-active #app-view #app-hero #plan-school-weather .school-weather-card{
+    border-radius:12px;
+  }
+
+  /* Avoid huge notice gutters and preserve source warning text. */
+  body.guardian-plan-active #app-view #warning-area{
+    padding:10px 12px;margin:0 0 9px;
+    font-size:12px;line-height:1.45;border-radius:12px;
+  }
+  body.guardian-plan-active #app-view #rain-reminder{
+    margin-bottom:8px;padding:10px 12px;font-size:12px;
+  }
+  body.guardian-plan-active #app-view #day-buttons{
+    gap:4px;padding:5px;margin:0 0 10px;
+    border-radius:14px;
+  }
+  body.guardian-plan-active #app-view #day-buttons .day{
+    min-width:0;min-height:58px;padding:8px 2px;
+    border-radius:11px;line-height:1.2;
+  }
+  body.guardian-plan-active #app-view #day-buttons .day span{
+    font-size:11px;line-height:1.2;
+  }
+  body.guardian-plan-active #app-view #day-buttons .day strong{
+    font-size:10px;line-height:1.2;
+  }
+  body.guardian-plan-active #app-view #plan-columns>.panel{
+    padding:14px 13px;margin-bottom:11px;
+  }
+  body.guardian-plan-active #app-view #plan-columns .panel-head{
+    margin-bottom:10px;
+  }
+  body.guardian-plan-active #app-view #plan-columns .panel-head h2{
+    font-size:19px;letter-spacing:-.3px;
+  }
+}
+@media(max-width:365px){
+  body.guardian-plan-active #app-view .guardian-plan-summary-line strong{font-size:16px}
+  body.guardian-plan-active #app-view .guardian-plan-shortcuts button{padding:8px;font-size:11px}
+  body.guardian-plan-active #app-view #app-hero .hero-actions{gap:5px}
+  body.guardian-plan-active #app-view #app-hero #school-source{font-size:11px}
+}
