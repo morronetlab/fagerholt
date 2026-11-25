@@ -72,4 +72,4 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npx playwright install --with-deps ${{ matrix.engine }}
       - name: Child QR, progress and responsive regression
-        run: node --test tests/browser/child-app.test.mjs tests/browser/responsive-shell.test.mjs tests/browser/family-mobile-controls.test.mjs tests/browser/family-overview-child-picker.test.mjs
+        run: node --test tests/browser/child-app.test.mjs tests/browser/responsive-shell.test.mjs tests/browser/family-mobile-controls.test.mjs tests/browser/tomorrow-layout.test.mjs
