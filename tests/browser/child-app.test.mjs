@@ -187,9 +187,9 @@ test('Child sees groups and deadlines; packing and homework sync with family pro
  assert.match(await page.locator('#child-homework').innerText(),/Til torsdag/);
  assert.match(await page.locator('#child-homework-progress').innerText(),/0 av 2/);
  assert.equal(await page.locator('#child-bag input[type=checkbox]').count(),1);
- await page.locator('#child-bag input[type=checkbox]').check();
+ await page.locator('#child-bag input[type=checkbox]').click();
  assert.equal(packing.size,1);
- await page.locator('#child-homework input[data-child-homework="1"]').check();
+ await page.locator('#child-homework input[data-child-homework="1"]').click();
  await page.locator('#child-homework-sync').getByText(/deles med foresatte/).waitFor();
  const fingerprint=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:44,
   task:plan.homework[1]});
@@ -249,14 +249,14 @@ test('Guardian-shared completion appears on another child device, including unch
  const sharedProgress=new Map();
  const a=await open(t,'?pair='+pair,{sharedProgress});
  await a.page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
- await a.page.locator('#child-homework input[data-child-homework="1"]').check();
+ await a.page.locator('#child-homework input[data-child-homework="1"]').click();
  await a.page.locator('#child-homework-sync').getByText(/deles med foresatte/).waitFor();
  const key=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:44,task:plan.homework[1]});
  assert.equal(sharedProgress.get(key),true);
  const b=await open(t,'?pair='+pair,{sharedProgress});
  await b.page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
  assert.equal(await b.page.locator('#child-homework input[data-child-homework="1"]').isChecked(),true);
- await b.page.locator('#child-homework input[data-child-homework="1"]').uncheck();
+ await b.page.locator('#child-homework input[data-child-homework="1"]').click();
  await b.page.locator('#child-homework-sync').getByText(/deles med foresatte/).waitFor();
  assert.equal(sharedProgress.get(key),false);
  await a.page.reload({waitUntil:'domcontentloaded'});
@@ -280,7 +280,7 @@ test('Offline shared status disables homework writes, not unrelated child packin
  await page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
  assert.match(await page.locator('#child-homework-sync').innerText(),/Synkronisering er utilgjengelig/);
  assert.equal(await page.locator('#child-homework input[data-child-homework="1"]').isDisabled(),true);
- await page.locator('#child-bag input[type=checkbox]').check();
+ await page.locator('#child-bag input[type=checkbox]').click();
  assert.equal(await page.locator('#child-bag input[type=checkbox]').isChecked(),true);
  assert.deepEqual(errors,[]);
 });
