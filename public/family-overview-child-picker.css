@@ -41,3 +41,9 @@ dialog.family-overview-child-dialog::backdrop{background:rgba(12,33,25,.59)}
  }
  #family-view .family-child.family-overview-child-hidden{display:none!important}
 }
+
+@media(max-width:700px){
+ #family-view[data-family-mobile-view=overview] #family-overview-child-open{
+  display:flex;align-items:center;min-height:48px!important;padding-block:12px;
+ }
+}
