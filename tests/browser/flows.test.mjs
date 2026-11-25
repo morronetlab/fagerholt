@@ -357,7 +357,7 @@ test('Tomorrow and important notices reveal one complete batch, not partial scho
  await started;
  await page.waitForFunction(()=>document.querySelector('#family-tomorrow-brief')?.dataset.loading==='true');
  assert.equal(await page.locator('#family-tomorrow-brief-items button').count(),0);
- assert.equal(await page.locator('#family-tomorrow-brief-items .tomorrow-loading-item').count(),4);
+ assert.equal(await page.locator('#family-tomorrow-brief-items .tomorrow-loading-item').count(),2);
  assert.match(await page.locator('#family-important-cards').innerText(),/Samler viktige beskjeder/);
  assert.doesNotMatch(await page.locator('#family-tomorrow-brief-items').innerText(),/Les torsdag/);
  await page.locator('#family-tomorrow-brief').waitFor({state:'visible'});
@@ -368,14 +368,16 @@ test('Tomorrow and important notices reveal one complete batch, not partial scho
   tab:el.closest('#family-view').dataset.familyMobileView,
   width:innerWidth
  }));
- assert.ok(skeleton.height>=330,
-  'Loading state reserves space to prevent scroll jumps: '+JSON.stringify(skeleton));
+ assert.ok(skeleton.height>=220,
+  'Compact loading state reserves space to prevent scroll jumps: '+JSON.stringify(skeleton));
  releaseSecond();
  await page.waitForFunction(()=>document.querySelector('#family-tomorrow-brief')?.dataset.loading==='false');
  await page.locator('#family-tomorrow-brief-items').getByText('Les torsdag').waitFor();
  await page.locator('#family-tomorrow-brief-items').getByText('Ta med notebok torsdag').waitFor();
  const finalHeight=await page.locator('#family-tomorrow-brief').evaluate(el=>el.getBoundingClientRect().height);
- assert.ok(finalHeight>=330,'Final list keeps a stable minimum height');
+ assert.ok(finalHeight>=200,'Compact preview remains usable after loading');
+ assert.ok(Math.abs(finalHeight-skeleton.height)<140,
+  'Preview should not jump excessively between loading and ready');
  assert.deepEqual(errors,[]);
 });
 
@@ -2100,7 +2102,8 @@ test('Family calendar displays four typed sources, verified homework, optional w
  await page.locator('#family-agenda-undated').getByText('Husk informasjonsskriv fra skolen').first().waitFor();
  assert.doesNotMatch(await page.locator('#family-agenda-undated').innerText(),/Øv på gangetabellen/);
  assert.equal(await page.locator('#family-agenda-undated').isVisible(),true);
- await page.locator('#family-agenda-child').selectOption(profiles[1].id);
+ await page.locator('#family-mobile-child-open').click();
+ await page.locator('#family-mobile-child-options [data-child-id="'+profiles[1].id+'"]').click();
  const filtered=await page.locator('#family-agenda-days').innerText();
  assert.match(filtered,/Lær gloser/);
  assert.doesNotMatch(filtered,/Les sidene 30|Gymtøy/);
@@ -2108,7 +2111,8 @@ test('Family calendar displays four typed sources, verified homework, optional w
  assert.match(filtered,/Planleggingsdag/);
  assert.doesNotMatch(filtered,/Søndagskonsert|Les sidene 30|Vaksinasjon/);
  assert.equal(await page.locator('[data-family-mobile-weekend]').evaluate(el=>el.hidden),true);
- await page.locator('#family-agenda-child').selectOption(profiles[0].id);
+ await page.locator('#family-mobile-child-open').click();
+ await page.locator('#family-mobile-child-options [data-child-id="'+profiles[0].id+'"]').click();
  assert.equal(await page.locator('.family-agenda-day').count(),5);
  assert.equal(await page.locator('[data-family-mobile-weekend]').evaluate(el=>el.hidden),false);
  await toggleFamilyCalendarWeekend(page);

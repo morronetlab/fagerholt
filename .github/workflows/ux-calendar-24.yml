@@ -1,0 +1,25 @@
+name: "UX 2.4 – Kalender og barnefilter"
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  ux-browser:
+    if: github.head_ref == 'ux/skoleuka-24-calendar-child-filter'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, firefox, webkit]
+    env:
+      QA_BROWSER: ${{ matrix.engine }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Kalender og barnefilter – mobilregresjon
+        run: node --test tests/browser/family-calendar-24.test.mjs

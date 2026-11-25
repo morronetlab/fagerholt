@@ -77,3 +77,19 @@
  #family-tomorrow-brief[data-loading="true"]{min-height:335px}
  #family-tomorrow-brief .tomorrow-loading-item{min-height:45px}
 }
+
+/* Skoleuka 2.4: concise overview without sacrificing tap targets. */
+@media(max-width:700px){
+ #family-tomorrow-brief{min-height:0}
+ #family-tomorrow-brief[data-loading="true"]{min-height:225px}
+ #family-tomorrow-brief .tomorrow-loading-item{min-height:45px}
+ #family-view #family-tomorrow-brief .family-tomorrow-brief-actions button{
+  min-height:44px;
+ }
+ #family-view #family-tomorrow-brief .family-tomorrow-brief-items button.tomorrow-item-content{
+  min-height:44px;
+ }
+ #family-view #family-tomorrow-brief .family-tomorrow-brief-items>li{
+  min-height:49px;
+ }
+}
