@@ -37,7 +37,7 @@ test('Calendar child sheet and kind filter remain usable on mobile ('+engineName
   </main>
   <dialog id="family-mobile-child-dialog"><button id="family-mobile-child-close">Lukk</button><div id="family-mobile-child-options"></div></dialog>
   </body></html>`,{waitUntil:'load'});
-  await page.evaluate(async()=>{const {initFamilyMobileUI}=await import('/family-mobile.mjs');initFamilyMobileUI();});
+  await page.evaluate(async()=>{const {initFamilyMobileUI}=await import('/family-mobile.mjs');initFamilyMobileUI().selectView('calendar');});
   assert.equal(await page.locator('#family-mobile-child-open').isVisible(),true);
   await page.locator('#family-mobile-child-open').click();
   assert.equal(await page.locator('#family-mobile-child-dialog').evaluate(x=>x.open),true);
