@@ -105,6 +105,19 @@ export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar,onChang
      $('family-view').dataset.familyMobileView==='activities')
    $('family-activity-manage').open=true;
  });
+ function renderChildChoices(){
+  const host=$('family-activity-child-choices');
+  const select=$('family-activity-child');
+  host.replaceChildren();
+  for(const option of select.options){
+   const button=document.createElement('button');
+   button.type='button';button.className='sk-action sk-action--choice';
+   button.dataset.activityChild=option.value;
+   button.textContent=option.value?option.textContent:'👪 Hele familien';
+   button.setAttribute('aria-pressed',String(select.value===option.value));
+   host.append(button);
+  }
+ }
  function openForm(item=null){
   if(dialog.open)return;
   editing=item?.id||null;
@@ -120,6 +133,7 @@ export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar,onChang
   $('family-activity-child').value=item?.child_id&&getProfiles().some(p=>p.id===item.child_id)?
    item.child_id:'';
   $('family-activity-form-title').textContent=item?'Endre aktivitet':'Ny aktivitet';
+  renderChildChoices();
   save.textContent=item?'Lagre endringer':'Lagre aktivitet';
   $('family-activity-until-wrap').hidden=$('family-activity-repeat').value!=='weekly';
   returnFocus=document.activeElement;returnScrollY=window.scrollY;
@@ -155,6 +169,13 @@ export function initFamilyActivitiesUI({getProfiles,getCloud,getCalendar,onChang
  }
  $('family-activity-add').addEventListener('click',()=>openForm());
  $('family-activity-cancel').addEventListener('click',resetForm);
+ $('family-activity-back').addEventListener('click',resetForm);
+ $('family-activity-child-choices').addEventListener('click',event=>{
+  const choice=event.target.closest('[data-activity-child]');
+  if(!choice)return;
+  $('family-activity-child').value=choice.dataset.activityChild;
+  renderChildChoices();
+ });
  $('family-activity-repeat').addEventListener('change',()=>{
   const repeat=$('family-activity-repeat').value==='weekly';
   $('family-activity-until-wrap').hidden=!repeat;
