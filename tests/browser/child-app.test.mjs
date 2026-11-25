@@ -27,7 +27,7 @@ const plan={status:'ok',parser:'ai',aiStatus:'ready',year:2026,week:44,
 async function open(t,query='',{redeem=true,sharedProgress=null,saveReject=false,readReject=false,
  planResponse=plan,planHttpStatus=200,standalone=false,transferCookie=false,
  childHttpStatus=200}={}){
- const context=await browser.newContext({viewport:{width:390,height:790},locale:'nb-NO',timezoneId:'Europe/Oslo'});
+ const context=await browser.newContext({viewport:{width:390,height:790},locale:'nb-NO',timezoneId:'Europe/Oslo',serviceWorkers:'block'});
  t.after(()=>context.close());
  const page=await context.newPage(),errors=[];
  if(standalone)await page.addInitScript(()=>
