@@ -1,0 +1,24 @@
+name: "UX 2.4 – Kompakt barneukeplan"
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+jobs:
+  guardian-mobile:
+    if: github.head_ref == 'ux/skoleuka-24-guardian-plan-compact'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, firefox, webkit]
+    env:
+      QA_BROWSER: ${{ matrix.engine }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Compact child detail UX regression
+        run: node --test tests/browser/guardian-plan-compact-24.test.mjs
