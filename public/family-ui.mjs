@@ -480,7 +480,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    el('family-tomorrow-brief-count').textContent='Sjekker …';
    el('family-tomorrow-brief-notice').textContent='Samler ukeplaner, skolerute og familieaktiviteter.';
    setHtml('family-tomorrow-brief-items',
-    Array.from({length:4},()=>'<li class="tomorrow-loading-item" aria-hidden="true">'+
+    Array.from({length:window.matchMedia('(max-width:700px)').matches?2:4},()=>'<li class="tomorrow-loading-item" aria-hidden="true">'+
      '<span class="tomorrow-loading-line"></span></li>').join(''));
    el('family-tomorrow-brief-more').hidden=true;
    el('family-tomorrow-brief-calendar').hidden=true;
