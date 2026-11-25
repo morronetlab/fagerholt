@@ -63,7 +63,8 @@
   <link rel="stylesheet" href="/family-practical-controls.css">
   <link rel="stylesheet" href="/homework-studio-compact.css">
   <link rel="stylesheet" href="/family-homework-dialog.css"><link rel="stylesheet" href="/shared/school-weather.css"><link rel="stylesheet" href="/plan-weather-unified.css"><link rel="stylesheet" href="/action-system.css">
-  <link rel="stylesheet" href="/plan-mobile-refinement.css"><link rel="stylesheet" href="/landing-first-time.css">
+  <link rel="stylesheet" href="/plan-mobile-refinement.css"><link rel="stylesheet" href="/family-calendar-24.css">
+  <link rel="stylesheet" href="/landing-first-time.css">
 </head>
 <body>
 <a class="skip-link" href="#main-content">Hopp til innhold</a>
@@ -337,6 +338,7 @@
             <h2 id="family-agenda-title">Skole og fritid</h2>
             <p class="family-agenda-subtitle">Det som skjer mandag–fredag, med mulighet til å se helgens avtaler.</p>
           </div>
+          <button id="family-mobile-child-open" class="family-mobile-child-open sk-action sk-action--modal" type="button" aria-haspopup="dialog" aria-controls="family-mobile-child-dialog">Alle barn <span aria-hidden="true">⌄</span></button>
           <label class="family-agenda-filter"><span class="family-desktop-filter-label">Vis aktiviteter for</span>
             <select id="family-agenda-child" aria-label="Velg barn for kalenderen">
               <option value="">Alle i familien</option>
@@ -360,6 +362,12 @@
           </details>
         </div>
         <p id="family-mobile-day-status" class="family-mobile-day-status" role="status" aria-live="polite"></p>
+        <div id="family-mobile-kind-filter" class="family-mobile-kind-filter" role="group" aria-label="Filtrer kalenderen">
+          <button type="button" class="sk-action sk-action--choice" data-family-kind="all" aria-pressed="true">Alle</button>
+          <button type="button" class="sk-action sk-action--choice" data-family-kind="homework" aria-pressed="false">Lekser</button>
+          <button type="button" class="sk-action sk-action--choice" data-family-kind="family" aria-pressed="false">Aktiviteter</button>
+        </div>
+        <p id="family-mobile-filter-empty" class="family-mobile-filter-empty" role="status" hidden>Ingen punkter i dette filteret for valgt dag.</p>
         <p id="family-agenda-status" class="family-agenda-status" role="status" aria-live="polite"></p>
         <div id="family-agenda-days" class="family-agenda-days"></div>
         <button type="button" id="family-agenda-weekend-toggle" class="family-agenda-weekend-toggle sk-action sk-action--disclosure"
@@ -551,6 +559,15 @@
  <div class="family-homework-controls"><label>Barn <select id="family-homework-child"><option value="">Alle barn</option></select></label><fieldset><legend>Vis lekser</legend><div class="family-homework-filters"><button type="button" class="sk-action sk-action--choice" data-homework-filter="remaining" aria-pressed="true">Gjenstår</button><button type="button" class="sk-action sk-action--choice" data-homework-filter="all" aria-pressed="false">Alle</button><button type="button" class="sk-action sk-action--choice" data-homework-filter="completed" aria-pressed="false">Fullført</button></div></fieldset></div>
  <p id="family-homework-status" class="family-homework-status" role="status" aria-live="polite"></p><div id="family-homework-items" class="family-homework-items"></div>
  </div>
+</dialog>
+<dialog id="family-mobile-child-dialog" class="family-mobile-child-dialog" aria-labelledby="family-mobile-child-title">
+  <div class="family-mobile-child-sheet">
+    <div class="family-mobile-child-head"><h2 id="family-mobile-child-title">Velg barn</h2>
+      <button id="family-mobile-child-close" type="button" aria-label="Lukk valg av barn" class="sk-action sk-action--close">✕</button>
+    </div>
+    <p>Velg hvem du vil se i kalenderen.</p>
+    <div id="family-mobile-child-options" class="family-mobile-child-options"></div>
+  </div>
 </dialog>
 <dialog id="family-activity-dialog" class="family-activity-dialog" aria-modal="true" aria-labelledby="family-activity-form-title">
 <form id="family-activity-form" class="family-activity-form" aria-labelledby="family-activity-form-title">
