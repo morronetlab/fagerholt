@@ -286,3 +286,17 @@
     overflow-wrap:anywhere;
   }
 }
+
+/* Match the more specific overview-toolbar selector from the earlier polish
+   so these two controls cannot regress to the old 40px minimum. */
+@media(max-width:700px){
+  body.family-dashboard-active #family-view[data-family-mobile-view=overview] #family-mobile-add,
+  body.family-dashboard-active #family-view[data-family-mobile-view=overview] #family-mobile-admin-toggle{
+    min-height:44px;
+  }
+  body.family-dashboard-active #family-view[data-family-mobile-view=overview] #family-mobile-admin-toggle{
+    min-width:44px;
+    width:44px;
+    flex-basis:44px;
+  }
+}
