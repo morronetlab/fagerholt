@@ -480,7 +480,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    el('family-tomorrow-brief-count').textContent='Sjekker …';
    el('family-tomorrow-brief-notice').textContent='Samler ukeplaner, skolerute og familieaktiviteter.';
    setHtml('family-tomorrow-brief-items',
-    Array.from({length:4},()=>'<li class="tomorrow-loading-item" aria-hidden="true">'+
+    Array.from({length:window.matchMedia('(max-width:700px)').matches?2:4},()=>'<li class="tomorrow-loading-item" aria-hidden="true">'+
      '<span class="tomorrow-loading-line"></span></li>').join(''));
    el('family-tomorrow-brief-more').hidden=true;
    el('family-tomorrow-brief-calendar').hidden=true;
@@ -499,7 +499,8 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
    count+' punkt'+(count===1?'':'er')+(completed?' · '+completed+' ferdig':'');
   const status=el('family-tomorrow-brief-notice');
   if(status.textContent!==next.notice)status.textContent=next.notice||'';
-  const visible=showAllTomorrow?next.items:next.items.slice(0,4);
+  const previewLimit=window.matchMedia('(max-width:700px)').matches?2:4;
+  const visible=showAllTomorrow?next.items:next.items.slice(0,previewLimit);
   const icons={municipal:'🏫',school:'📌',family:'⚽',homework:'📚',packing:'🎒'};
   setHtml('family-tomorrow-brief-items',visible.map(item=>{
    const meta=[item.time||'',item.scope||'',item.checked?'✓ Ferdig':''].filter(Boolean).join(' · ');
@@ -518,7 +519,7 @@ export function initFamilyUI({onModeChange,onOpenProfile,onOpenSingle,onReportIs
     '</'+tag+'></li>';
   }).join(''));
   const more=el('family-tomorrow-brief-more');
-  more.hidden=count<=4;
+  more.hidden=count<=previewLimit;
   more.setAttribute('aria-expanded',String(showAllTomorrow));
   more.textContent=showAllTomorrow?'Vis færre':'Vis alle '+count+' punkter';
   el('family-tomorrow-brief-calendar').hidden=!next.inDisplayedWeek;
