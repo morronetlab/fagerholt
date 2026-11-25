@@ -188,8 +188,10 @@ test('Child sees groups and deadlines; packing and homework sync with family pro
  assert.match(await page.locator('#child-homework-progress').innerText(),/0 av 2/);
  assert.equal(await page.locator('#child-bag input[type=checkbox]').count(),1);
  await page.locator('#child-bag input[type=checkbox]').click();
+ await page.waitForFunction(()=>document.querySelector('#child-bag-progress')?.textContent?.includes('1 av 1'));
  assert.equal(packing.size,1);
  await page.locator('#child-homework input[data-child-homework="1"]').click();
+ await page.waitForFunction(()=>document.querySelector('#child-homework-progress')?.textContent?.includes('1 av 2'));
  await page.locator('#child-homework-sync').getByText(/deles med foresatte/).waitFor();
  const fingerprint=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:44,
   task:plan.homework[1]});
@@ -250,6 +252,7 @@ test('Guardian-shared completion appears on another child device, including unch
  const a=await open(t,'?pair='+pair,{sharedProgress});
  await a.page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
  await a.page.locator('#child-homework input[data-child-homework="1"]').click();
+ await a.page.waitForFunction(()=>document.querySelector('#child-homework-progress')?.textContent?.includes('1 av 2'));
  await a.page.locator('#child-homework-sync').getByText(/deles med foresatte/).waitFor();
  const key=taskFingerprint({school:'fagerholt',grade:'3',year:2026,week:44,task:plan.homework[1]});
  assert.equal(sharedProgress.get(key),true);
@@ -257,6 +260,7 @@ test('Guardian-shared completion appears on another child device, including unch
  await b.page.locator('#child-greeting').getByText('Hei, Barn A!').waitFor();
  assert.equal(await b.page.locator('#child-homework input[data-child-homework="1"]').isChecked(),true);
  await b.page.locator('#child-homework input[data-child-homework="1"]').click();
+ await b.page.waitForFunction(()=>document.querySelector('#child-homework-progress')?.textContent?.includes('0 av 2'));
  await b.page.locator('#child-homework-sync').getByText(/deles med foresatte/).waitFor();
  assert.equal(sharedProgress.get(key),false);
  await a.page.reload({waitUntil:'domcontentloaded'});
