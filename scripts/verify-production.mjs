@@ -1,4 +1,5 @@
 /** Read-only smoke check of live deployment and official PDFs; log only counts. */
+import {checkProductionGuard} from './production-guard.mjs';
 import {schoolCalendar} from '../lib/calendar.mjs';
 import {pdfPages} from '../netlify/functions/plan.mjs';
 import {extractEnglishGlossaries} from '../lib/english-glossaries.mjs';
@@ -107,6 +108,12 @@ try{
  if(!/^[a-f0-9]{40}$/i.test(build.commit||''))errors.push('Production build SHA missing');
  else if(expected&&build.commit!==expected)errors.push('Production build does not match latest main: '+build.commit);
 }catch(e){errors.push('Production deployment: '+e.message);}
+try{
+ const guard=await checkProductionGuard(base);
+ checks.push({type:'operations-guard',dashboardReady:guard.dashboardReady,
+  privateApiDenied:guard.privateApiDenied,privateApiNoStore:guard.privateApiNoStore});
+ errors.push(...guard.errors);
+}catch(e){errors.push('Operations guard unavailable: '+e.message);}
 await inspect('fagerholt',['3','7']);
 await inspect('sjostrand',['5A']);
 await inspect('sjostrand',['2A','2B','2']);
