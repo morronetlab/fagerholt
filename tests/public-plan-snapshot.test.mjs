@@ -59,3 +59,29 @@ test('Static assets revalidate and HTML stays fresh; no global API edge caching'
  assert.match(toml,/for = "\/index\.html"[\s\S]*?Cache-Control = "no-cache, must-revalidate"/);
  assert.doesNotMatch(toml,/for = "\/api\/\*"/);
 });
+
+function browserStorage(){
+ const values=new Map();
+ return {values,get length(){return values.size;},key:i=>[...values.keys()][i]??null,
+  getItem:key=>values.get(key)??null,setItem:(key,v)=>values.set(key,v),removeItem:key=>values.delete(key)};
+}
+test('Expired snapshots are pruned and the public cache stays bounded',()=>{
+ const store=browserStorage(),now=1770000000000;
+ store.setItem('unrelated-session-key','keep');
+ storePublicPlanSnapshot(store,verified,'fagerholt','3',2026,46,now);
+ for(let i=1;i<=10;i++){
+  const plan={...verified,grade:String(i)};
+  storePublicPlanSnapshot(store,plan,'fagerholt',String(i),2026,46,now+PUBLIC_PLAN_SNAPSHOT_TTL+i);
+ }
+ assert.equal(store.values.size,9);
+ assert.equal(store.getItem('unrelated-session-key'),'keep');
+ assert.equal(store.getItem(planSnapshotKey('fagerholt','1',2026,46)),null);
+ assert.ok(readPublicPlanSnapshot(store,'fagerholt','10',2026,46,now+PUBLIC_PLAN_SNAPSHOT_TTL+11));
+});
+test('A fresh non-ready response invalidates a previously cached plan',()=>{
+ const store=browserStorage(),now=1770000000000;
+ assert.equal(storePublicPlanSnapshot(store,verified,'fagerholt','3',2026,46,now),true);
+ assert.equal(storePublicPlanSnapshot(store,{...verified,aiStatus:'processing'},'fagerholt','3',2026,46,now+1),false);
+ assert.equal(readPublicPlanSnapshot(store,'fagerholt','3',2026,46,now+2),null);
+ assert.equal(storePublicPlanSnapshot(null,verified,'fagerholt','3',2026,46,now),false);
+});
